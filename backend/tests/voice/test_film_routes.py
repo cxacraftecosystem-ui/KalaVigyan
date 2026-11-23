@@ -1,5 +1,7 @@
+import asyncio
 import uuid
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -9,16 +11,20 @@ from app.api import film_deps
 from app.api.routes import knowledge
 from app.core.deps import get_current_user
 from app.core.errors import ExternalFailure
+from app.core.shielded import ShieldedWork
 from app.main import create_app
 from app.models import User
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaRouter
 from app.providers.router import RouterError
 from app.research.explainer import Explainer
-from app.schemas.film import FilmScore
+from app.schemas.film import FilmScore, FilmScoreMaking
+from app.services.naming import score_manifest_key
 from app.voice.availability import HIDDEN_VOICE
+from app.voice.object_lease import LEASE_LEAF, ObjectLease
 
 from .listen_fakes import LEARNER, MemoryObjects, golden_explainer
-from .score_fakes import MemoryMaker
+from .score_fakes import MemoryMaker, score_ask, score_deps
 
 ANSWER = golden_explainer().answer_id
 PATH = f"/api/answers/{ANSWER}/film-score"
@@ -38,7 +44,8 @@ class Client:
         store = MemoryFilmStore()
         store.explainers[(ANSWER, LEARNER)] = golden_explainer()
         self.maker = maker or MemoryMaker()
-        tools = film_deps.FilmTools(objects=MemoryObjects(), maker=self.maker)
+        self.objects = MemoryObjects()
+        tools = film_deps.FilmTools(objects=self.objects, maker=self.maker)
         user = User(id=LEARNER, name="Meera Rao", email="meera@example.org", role=role)
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[film_deps.film_store] = lambda: store
@@ -54,10 +61,10 @@ def test_the_reader_s_own_explainer_gets_its_score_and_a_second_ask_reuses_it() 
     assert (score.answer_id, score.language, [cue.block_id for cue in score.cues]) == (
         ANSWER,
         "en",
-        ["s1.b1", "s2.b1"],
+        ["s1.b1"],
     )
     assert client.http.get(PATH, params={"language": "en"}).status_code == 200
-    assert len(client.maker.calls) == 3
+    assert len(client.maker.calls) == 2
 
 
 @pytest.mark.parametrize(
@@ -91,12 +98,60 @@ def test_a_failing_elevenlabs_answers_503() -> None:
     assert response.status_code == 503
 
 
-def test_more_than_ten_scores_in_ten_minutes_are_throttled_except_for_a_master_admin() -> None:
-    student = Client()
+def test_more_than_ten_makings_in_ten_minutes_are_throttled_except_for_a_master_admin() -> None:
+    student = Client(maker=MemoryMaker(failing=AiTask.MUSIC))
     answers = [student.http.get(PATH, params={"language": "en"}).status_code for _ in range(11)]
-    assert answers[:10] == [200] * 10 and answers[10] == 429
-    master = Client(role="MASTER_ADMIN")
-    assert {master.http.get(PATH, params={"language": "en"}).status_code for _ in range(12)} == {200}
+    assert answers[:10] == [503] * 10 and answers[10] == 429
+    master = Client(role="MASTER_ADMIN", maker=MemoryMaker(failing=AiTask.MUSIC))
+    assert {master.http.get(PATH, params={"language": "en"}).status_code for _ in range(12)} == {503}
+
+
+def test_a_stored_score_is_served_again_without_counting_against_the_throttle() -> None:
+    student = Client()
+    assert {student.http.get(PATH, params={"language": "en"}).status_code for _ in range(12)} == {200}
+    assert len(student.maker.calls) == 2
+
+
+def test_a_score_another_ask_is_making_answers_202_with_when_to_ask_again() -> None:
+    client = Client()
+    lease = ObjectLease(schema_version=1, cache_id="d" * 64, taken_at=datetime.now(UTC))
+    client.objects.stored[score_manifest_key(ANSWER, "en", leaf=LEASE_LEAF)] = (
+        lease.model_dump_json().encode(),
+        "application/json",
+    )
+    response = client.http.get(PATH, params={"language": "en"})
+    assert response.status_code == 202
+    assert FilmScoreMaking.model_validate(response.json()) == FilmScoreMaking(
+        answer_id=ANSWER, language="en", poll_after_seconds=5
+    )
+    assert client.maker.calls == []
+
+
+async def test_a_score_longer_than_the_wait_answers_202_and_is_kept_for_the_next_ask(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(film_deps, "SCORE_WAIT_SECONDS", 0.01)
+    gate = asyncio.Event()
+
+    class Slow(MemoryMaker):
+        async def generate(self, ask: Any) -> Any:
+            await gate.wait()
+            return await super().generate(ask)
+
+    objects, maker, shield = MemoryObjects(), Slow(), ShieldedWork()
+    user = User(id=LEARNER, name="Meera Rao", email="meera@example.org", role="MASTER_ADMIN")
+    ask = score_ask(golden_explainer(), role="MASTER_ADMIN")
+    first = await film_deps.answered_score(ask, score_deps(objects, maker), shield, user)
+    assert isinstance(first, FilmScoreMaking)
+    assert isinstance(
+        await film_deps.answered_score(ask, score_deps(objects, maker), shield, user), FilmScoreMaking
+    )
+    gate.set()
+    await shield.drain()
+    assert isinstance(
+        await film_deps.answered_score(ask, score_deps(objects, maker), shield, user), FilmScore
+    )
+    assert maker.tasks() == ["MUSIC", "SOUND_EFFECT"]
 
 
 def test_the_ask_config_offers_the_score_only_when_music_can_be_made(monkeypatch: pytest.MonkeyPatch) -> None:

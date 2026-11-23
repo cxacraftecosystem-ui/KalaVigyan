@@ -192,6 +192,7 @@ test("a concept result marks the term in its cited sentence and reads its count"
   expect(markTerms("Nothing here names it.", [])).toEqual([{ text: "Nothing here names it.", mark: false }]);
   const crafts = catalogue().crafts.slice(1, 3);
   expect(conceptDek(conceptRows(crafts, null))).toBe("Linked to 2 crafts on the craft list.");
+  expect(conceptDek(conceptRows(crafts, null), 250)).toBe("Named in the cited sentences of 250 crafts.");
   expect(searchStatus("indigo", 1, 3, "Indigo")).toBe("Indigo: 3 crafts.");
   expect(searchStatus("ajrakh", 0, 1, null)).toBe("1 craft matches.");
   expect(searchStatus(" ", 0, 0, null)).toBe("");

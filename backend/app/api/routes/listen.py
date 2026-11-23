@@ -49,9 +49,7 @@ async def listen(
     explainer = await store.explainer(answer_id, user.id)
     if explainer is None or language not in (None, explainer.understood.language):
         raise HTTPException(status.HTTP_404_NOT_FOUND, NOTHING_MESSAGE)
-    deps = ListenDeps(
-        ledger=store, objects=tools.objects, narrator=tools.narrator, voice_id=tools.voice_id, clock=utc_now
-    )
+    deps = ListenDeps(ledger=store, objects=tools.objects, voices=tools.voices, clock=utc_now)
     try:
         script = await listen_script(
             ListenAsk(user_id=user.id, explainer=explainer, section_id=section), deps

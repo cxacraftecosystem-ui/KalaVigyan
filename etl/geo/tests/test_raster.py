@@ -1,12 +1,79 @@
+import threading
+
 import geopandas as gpd
 import numpy as np
 import pytest
+import rasterio
 from rasterio.crs import CRS
 from rasterio.transform import from_origin
 from shapely.geometry import box
+from test_chirps import serve
 
-from geo_etl import raster
+from geo_etl import raster, remote
 from geo_etl.districts import load_districts
+
+WEST_TILE = "https://tiles.test/west.tif"
+EAST_TILE = "https://tiles.test/east.tif"
+BOTH = (0.0, 0.0, 4.0, 2.0)
+
+
+def tile(path, west: float, value: float) -> str:
+    profile = {"driver": "GTiff", "height": 2, "width": 2, "count": 1, "dtype": "float32", "crs": "EPSG:4326"}
+    with rasterio.open(path, "w", **profile, transform=from_origin(west, 2.0, 1.0, 1.0)) as dataset:
+        dataset.write(np.full((2, 2), value, dtype="float32"), 1)
+    return str(path)
+
+
+@pytest.fixture
+def two_tiles(tmp_path, monkeypatch) -> dict[str, str]:
+    local = {WEST_TILE: tile(tmp_path / "west.tif", 0.0, 7.0), EAST_TILE: tile(tmp_path / "east.tif", 2.0, 9.0)}
+    monkeypatch.setattr(raster, "vsicurl", lambda location: local.get(location, location))
+    return local
+
+
+def test_read_mosaics_local_files_without_probing_them(two_tiles, monkeypatch):
+    def no_network(*args, **kwargs):
+        raise AssertionError("a local file was probed over HTTP")
+
+    monkeypatch.setattr(remote.requests, "request", no_network)
+    grid = raster.read([two_tiles[WEST_TILE], two_tiles[EAST_TILE]], BOTH)
+    assert grid.values.tolist() == [[7.0, 7.0, 9.0, 9.0], [7.0, 7.0, 9.0, 9.0]]
+
+
+def test_a_tile_that_answers_404_is_left_out_of_the_mosaic(two_tiles, monkeypatch, sleeps):
+    server = serve(monkeypatch, {("HEAD", WEST_TILE): [200], ("HEAD", EAST_TILE): [404]})
+    grid = raster.read([WEST_TILE, EAST_TILE], BOTH)
+    assert server.calls == [("HEAD", WEST_TILE), ("HEAD", EAST_TILE)]
+    assert grid.values[:, :2].tolist() == [[7.0, 7.0], [7.0, 7.0]]
+    assert np.isnan(grid.values[:, 2:]).all()
+
+
+def test_no_tile_that_exists_reads_as_none(monkeypatch, sleeps):
+    serve(monkeypatch, {("HEAD", WEST_TILE): [404], ("HEAD", EAST_TILE): [410]})
+    assert raster.read([WEST_TILE, EAST_TILE], BOTH) is None
+
+
+def test_a_tile_that_answers_neither_200_nor_404_fails_the_read(two_tiles, monkeypatch, sleeps):
+    serve(monkeypatch, {("HEAD", WEST_TILE): [200], ("HEAD", EAST_TILE): [503]})
+    with pytest.raises(remote.Unreachable, match=r"east\.tif is unreachable: 503"):
+        raster.read([WEST_TILE, EAST_TILE], BOTH)
+    assert sleeps == [5.0, 10.0, 15.0]
+
+
+def test_a_read_past_its_deadline_fails_as_unreachable(two_tiles, monkeypatch):
+    released = threading.Event()
+
+    def stalled_open(*args, **kwargs):
+        released.wait(5.0)
+        raise RuntimeError("released")
+
+    monkeypatch.setattr(remote, "FILE_DEADLINE_S", 0.05)
+    monkeypatch.setattr(raster.rasterio, "open", stalled_open)
+    try:
+        with pytest.raises(remote.Unreachable, match=r"2 file\(s\) from .*west\.tif not read within 0\.1 s"):
+            raster.read([two_tiles[WEST_TILE], two_tiles[EAST_TILE]], BOTH)
+    finally:
+        released.set()
 
 
 def grid_of(values: np.ndarray) -> raster.Grid:

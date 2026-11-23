@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.geo.climate import TREND_DATASETS, ClimateTrends, climate_trends
+from app.geo.groundwater import GROUNDWATER_DATASETS, with_groundwater
 
 from .knowledge_view import resolve_craft
 from .place_offers import district_refs, mapped_districts
@@ -20,7 +21,7 @@ async def craft_climate(session: AsyncSession, craft_slug: str) -> ClimateTrends
         return ClimateTrends()
     named = await district_refs(session, lgds)
     districts = [named[lgd] for lgd in lgds if lgd in named]
-    codes = set(TREND_DATASETS.values())
+    codes = {*TREND_DATASETS.values(), *GROUNDWATER_DATASETS}
     datasets = await dataset_records(session, codes)
     values = await district_values(session, [district.district_lgd for district in districts], codes=codes)
-    return climate_trends(districts, values, datasets)
+    return with_groundwater(climate_trends(districts, values, datasets), districts, values, datasets)

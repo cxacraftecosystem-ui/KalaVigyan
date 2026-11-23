@@ -129,6 +129,7 @@ class AiModel:
     price_changes: tuple[tuple[date, tuple[float, float]], ...] = field(default_factory=tuple)
     price_verified: bool = True
     max_output_tokens: int | None = None
+    media_price_per_mtok: float | None = None
 
     def token_price_on(self, day: date) -> tuple[float, float] | None:
         price = self.price_per_mtok

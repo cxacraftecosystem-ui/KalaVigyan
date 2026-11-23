@@ -160,7 +160,7 @@ async def stored_story(session: AsyncSession, *, acls: Sequence[str] = OPEN_CHUN
     await session.execute(
         update(PieceRow)
         .where(PieceRow.createdFromAnswerId == answer_id, PieceRow.kind == "prose")
-        .values(topicKey="water:kachchh")
+        .values(topicKey=f"water:lgd-{KACHCHH}")
     )
     return answer_id
 

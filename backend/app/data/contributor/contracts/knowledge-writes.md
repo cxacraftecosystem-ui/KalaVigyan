@@ -55,7 +55,7 @@ route queue the fact first (The contribution queue, below).
 | Routes and tools | `api/routes/knowledge_writes.py`, `api/mcp_fact_tools.py`, `api/proposal_deps.py` |
 | The limits | `core/rate_limit.py` and `api/proposal_limits.py` |
 | Layout proposals | `research/layout_proposals.py`, `services/page_layout_proposals.py`, `services/review_queue_layouts.py`, `api/mcp_page_tools.py`, `models/layout_proposals.py` |
-| Structure proposals | `research/structure_proposals.py` (the contract), `research/structure_proposals_values.py` (the STATED check), `services/structure_proposals.py` (the proposal), `services/structure_proposals_dossier.py` (the dossier's own rules), `services/structure_proposals_page.py` (where an item lands on the page index), `services/structure_proposals_write.py` and `services/structure_proposals_claims.py` (what approval writes), `services/structure_proposals_review.py` (approve, reject), `api/routes/structure_proposals.py`, `api/mcp_structure_tools.py`, `api/structure_proposal_deps.py`, `models/structure_proposals.py` |
+| Structure proposals | `research/structure_proposals.py` (the contract), `research/structure_proposals_values.py` (the STATED check), `services/structure_proposals.py` (the proposal), `services/structure_proposals_dossier.py` (the dossier's own rules), `services/structure_proposals_page.py` (where an item lands on the page index), `services/structure_proposals_write.py`, `services/structure_proposals_claims.py` and `services/structure_proposals_rows.py` (what approval writes), `services/structure_proposals_review.py` (approve, reject), `api/routes/structure_proposals.py`, `api/mcp_structure_tools.py`, `api/structure_proposal_deps.py`, `models/structure_proposals.py` |
 | Supplied sources (decision 0110) | `research/supplied_sources.py` (the contract, the cite url, the grade and the identity match), `services/supplied_sources.py` (storing and the upload slot), `services/supplied_sources_identity.py` (the index lookups), `services/supplied_sources_pdf.py` (a file's text), `services/supplied_sources_gate.py` (what the gates read and keep), `services/supplied_sources_review.py` (the review queue's provenance), `services/supplied_sources_views.py`, `api/mcp_studio_sources.py`, `api/routes/supplied_sources.py`, `models/studio.py` |
 
 ## Who may do what
@@ -340,8 +340,8 @@ or the judge down) is queued again after 30 seconds, doubling each try up to 30 
 
 **The worker** (`kv-contributions`, started and stopped with the other workers by
 `infra/deploy/blue_green.sh`) claims one proposal at a time (`SELECT ... FOR UPDATE SKIP LOCKED`,
-oldest first; the facts of one call keep their order) and checks up to `--concurrency` (4,
-`CONTRIBUTION_WORKERS` in the box's `.env`) at once, never two of the same subject together, so the
+oldest first; the facts of one call keep their order) and checks up to `--concurrency` (2,
+`CONTRIBUTION_WORKERS`, no more than its connection budget carries, decision 0163) at once, never two of the same subject together, so the
 duplicate gate sees the first before the second. Each check is `services/fact_proposals.propose_fact_run`
 in a savepoint, under the request id `contribution-<proposal id hex>`; the kept sources' passages are embedded once the outcome is stored (`embed_sources`, which commits as it goes);
 `python -m app.scripts.contribution_worker --once` checks what is queued and stops.
@@ -482,9 +482,12 @@ the item still fits the page (409 otherwise, and the proposal can only be reject
   <slug>:S<next>` with the proposal's language and access `OPEN`, else, when another dossier keeps the
   page, a copy row `curated_id(slug, S<next>)` (refused with 409 when that page is named by its DOI);
 - the item joins the page index under the next key of its letter (`R`, `W`, `O`, two digits): a stage's
-  `after` or `whyClaimId` (replacing what was there), a native name, a reaction (no stored science row),
-  a botanical name with its fact added to the material's, a glossary term (no shared glossary entry), a
-  conflict (both facts marked `sourcesDiffer`, with its `about` as their `differsOn`), an open question; a GI record writes `CraftGiRecord`
+  `after` or `whyClaimId` (replacing what was there), a native name, a reaction (on a stage, also its
+  stored `Reaction` row `curated_id(slug, reaction, R<nn>)` with a `ReactionCitation` per quote of its
+  fact, as the import writes it, and the entry's `reactionId`), a botanical name with its fact added to
+  the material's, a glossary term (also its shared glossary entry: the `Term` keyed by the term's slug,
+  its `TermCraft` and `TermConcept` links, the entry's `termKey` and the term's stored English summary;
+  decision 0162), a conflict (both facts marked `sourcesDiffer`, with its `about` as their `differsOn`), an open question; a GI record writes `CraftGiRecord`
   (the parts given replace, proprietors and facts are added); a concept missing for the fact is created
   as the import would (`curation:<slug>:craft:<FIELD>` or `curation:<slug>:W<nn>`);
 - the proposal is `APPROVED` with the reviewer, the time, the note and `claimId`, audited

@@ -12,6 +12,7 @@ Date: 2026-11-17. Status: accepted.
 | The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
 | The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
 | The contracts it names | [region.md](../contracts/region.md) |
+| What amended it | [0153 Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md): a district's stretch from the basin file's reach districts |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

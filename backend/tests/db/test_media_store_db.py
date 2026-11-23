@@ -29,6 +29,7 @@ from app.models import (
     QuotaLedger,
     Source,
     StageMaterial,
+    UsageEvent,
     User,
 )
 
@@ -279,6 +280,46 @@ async def test_success_stores_the_labelled_asset_and_links_the_job(stores: Store
     await session.commit()
     shared = await media.shared_asset(job.prompt_hash)
     assert shared is not None and shared.id == asset.id
+
+
+async def test_the_hold_of_a_queued_job_is_renewed_and_a_running_one_is_not(stores: Stores) -> None:
+    media, queue, session = stores
+    stage, ids = await stage_with_claims(session)
+    owner = await user(session)
+    waiting = await queued(media, owner, stage, (ids["verified"], ids["quoted"]))
+    running = await queued(media, owner, stage, (ids["verified"], ids["quoted"]))
+    held_at = NOW - timedelta(minutes=10)
+    holds = {
+        job.id: UsageEvent(task="IMAGE", outcome="RESERVED", createdAt=held_at) for job in (waiting, running)
+    }
+    session.add_all(holds.values())
+    await session.flush()
+    for job_id, hold in holds.items():
+        row = await session.get(MediaJob, job_id)
+        row.params = {**(row.params or {}), "holdId": str(hold.id)}
+    (await session.get(MediaJob, running.id)).status = "RUNNING"
+    await session.commit()
+    assert await queue.renew_holds(NOW - timedelta(minutes=7, seconds=30)) == 1
+    await session.refresh(holds[waiting.id])
+    await session.refresh(holds[running.id])
+    assert holds[waiting.id].createdAt > held_at and holds[running.id].createdAt == held_at
+
+
+async def test_a_refund_counts_on_the_day_its_job_was_asked_for(stores: Stores) -> None:
+    media, queue, session = stores
+    stage, ids = await stage_with_claims(session)
+    owner = await user(session)
+    job = await queued(media, owner, stage, (ids["verified"], ids["quoted"]))
+    await queue.claim("IMAGE", limit=1, worker_id="w1")
+    asked = NOW - timedelta(days=1)
+    await queue.fail(
+        job.id, status="FAILED", error="timeout", refund=refund_entry(replace(job, created_at=asked))
+    )
+    refunded = await session.scalar(
+        select(QuotaLedger.createdAt).where(QuotaLedger.idempotencyKey == f"media-refund:{job.id}")
+    )
+    assert refunded == asked
+    assert await media.units_used(owner.id, "IMAGE", NOW) == 1
 
 
 async def test_a_failure_refunds_the_unit_once(stores: Stores) -> None:

@@ -56,11 +56,11 @@ async def test_a_miss_holds_the_estimate_then_refunds_what_the_audio_did_not_use
     await listen_script(ask(golden_explainer(), "s3", request=7), listening.deps())
     held, refund = listening.ledger.rows
     assert (held.key, held.units, held.resource) == (
-        "listen:00000000-0000-0000-0000-000000000007:hold",
+        "listen:00000000-0000-0000-0000-000000000007:elevenlabs:hold",
         19,
         "VOICE_SECONDS",
     )
-    assert (refund.key, refund.units) == ("listen-refund:00000000-0000-0000-0000-000000000007", -3)
+    assert (refund.key, refund.units) == ("listen-refund:00000000-0000-0000-0000-000000000007:elevenlabs", -3)
     assert (held.ref_type, held.ref_id) == ("Answer", str(golden_explainer().answer_id))
 
 
@@ -71,7 +71,7 @@ async def test_audio_longer_than_its_estimate_is_settled_within_what_is_left() -
     held, settled = listening.ledger.rows
     assert (held.units, settled.key, settled.units) == (
         19,
-        "listen-settle:00000000-0000-0000-0000-000000000008",
+        "listen-settle:00000000-0000-0000-0000-000000000008:elevenlabs",
         13,
     )
 

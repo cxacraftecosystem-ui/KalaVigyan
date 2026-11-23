@@ -6,6 +6,18 @@ from dataclasses import dataclass
 from itertools import pairwise
 from types import MappingProxyType
 
+from .calendar_words import (
+    EXCLUDING_BIGRAMS,
+    NEGATING_WORDS,
+    POINT_WORDS,
+    REGIONAL_MONTHS,
+    SEASON_WORDS,
+    SPAN_WORDS_AFTER,
+    SPAN_WORDS_BEFORE,
+    SPRING_WORDS_AFTER_REFUSED,
+    SPRING_WORDS_BEFORE,
+)
+
 __all__ = [
     "EXCLUDING_WORDS",
     "EXCLUDING_WORDS_BEFORE",
@@ -13,11 +25,12 @@ __all__ = [
     "MAPPING_WORDS_BEFORE",
     "MONTHS",
     "MONTH_NAMES",
-    "SEASONS",
-    "SEASON_WORDS",
     "first_season",
     "months_named",
     "only_season",
+    "regional_month",
+    "regional_month_months",
+    "regional_months_named",
     "season_months",
     "seasons_named",
     "year_months",
@@ -38,109 +51,46 @@ MONTH_NAMES = (
     "November",
     "December",
 )
-SEASONS = ("MONSOON", "WINTER", "SUMMER")
-SEASON_WORDS: Mapping[str, tuple[str, ...]] = MappingProxyType(
-    {
-        "MONSOON": ("monsoon", "rainy season", "rains"),
-        "WINTER": ("winter", "cold season"),
-        "SUMMER": ("summer", "hot season"),
-    }
-)
 AMBIGUOUS_MONTH = "May"
 SENTENCE_START = re.compile(r"(?:^|[.!?;:]\s*)$")
 MONTH = re.compile(
     r"\b(" + "|".join(name for month in MONTH_NAMES for name in (month, month[:3])) + r"|Sept)\.?(?![a-z])"
 )
-RANGE_JOIN = re.compile(r"^\s*(?:to|till|until|through|-|–|—)\s*$")
+QUALIFIER = r"(?:(?:early|mid|late)[\s-]+)?"
+RANGE_JOIN = re.compile(rf"^\s*(?:to|till|until|through|-|–|—)\s*{QUALIFIER}$")
+PAIR_JOIN = re.compile(rf"^\s*(?:and|or)\s*{QUALIFIER}$")
+BETWEEN_BEFORE = re.compile(rf"\bbetween\s+{QUALIFIER}$", re.IGNORECASE)
 DAY_OR_YEAR_AFTER = re.compile(r"^[\s,/-]*(?:\d{4}|\d{1,2}(?:st|nd|rd|th)?)\b")
 DAY_BEFORE = re.compile(r"\b\d{1,2}(?:st|nd|rd|th)?[\s,/-]*$")
+DATED_AFTER = re.compile(r"^\s+of\s+\d{4}\b")
 CLAUSE_BREAK = re.compile(r"[.;:!?]")
 WORD = re.compile(r"\w+")
-SPAN_WORDS_AFTER = frozenset(
-    {
-        "months",
-        "month",
-        "season",
-        "period",
-        "rain",
-        "rainfall",
-        "of",
-        "from",
-        "between",
-        "is",
-        "are",
-        "lasts",
-        "runs",
-        "spans",
-        "extends",
-        "falls",
-        "fall",
-        "comes",
-        "brings",
-        "bringing",
-        "the",
-        "its",
-        "in",
-        "with",
-        "usually",
-        "typically",
-        "roughly",
-        "about",
-        "around",
-        "mm",
-        "cm",
-    }
+MONTH_CONTEXT_BEFORE = re.compile(r"\bmonths?\s+of\s+['‘’\"]?$", re.IGNORECASE)
+MONTH_CONTEXT_AFTER = re.compile(r"^['‘’\"]?\s+(?:month|maas|masa|mahina)\b", re.IGNORECASE)
+REGIONAL_PREFIX = "month:"
+SEASON_SURFACES: Mapping[str, str] = MappingProxyType(
+    {word: season for season, words in SEASON_WORDS.items() for word in words}
 )
-SPAN_WORDS_BEFORE = frozenset({"the", "a", "is", "are", "its", "of", "in"})
-POINT_WORDS = frozenset(
-    {
-        "after",
-        "before",
-        "until",
-        "till",
-        "since",
-        "outside",
-        "except",
-        "unlike",
-        "beyond",
-        "following",
-        "preceding",
-        "end",
-        "start",
-        "onset",
-        "beginning",
-        "early",
-        "late",
-        "mid",
-    }
+SEASON_PATTERN = re.compile(
+    r"(?<![\w-])(?:"
+    + "|".join(re.escape(word) for word in sorted(SEASON_SURFACES, key=lambda word: (-len(word), word)))
+    + r")(?!\w)",
+    re.IGNORECASE,
 )
-SEASON_PATTERNS: Mapping[str, re.Pattern[str]] = MappingProxyType(
-    {
-        season: re.compile(
-            r"(?<!-)\b(?:" + "|".join(re.escape(word) for word in words) + r")\b", re.IGNORECASE
-        )
-        for season, words in SEASON_WORDS.items()
-    }
+REGIONAL_SURFACES: Mapping[str, str] = MappingProxyType(
+    {name.casefold(): month for month, names in REGIONAL_MONTHS.items() for name in names}
 )
-EXCLUDING_WORDS = POINT_WORDS | frozenset(
-    {
-        "not",
-        "no",
-        "never",
-        "nor",
-        "neither",
-        "without",
-        "avoid",
-        "avoided",
-        "avoids",
-        "stop",
-        "stops",
-        "stopped",
-    }
+REGIONAL_PATTERN = re.compile(
+    r"(?<![\w-])(?:"
+    + "|".join(re.escape(name) for name in sorted(REGIONAL_SURFACES, key=lambda name: (-len(name), name)))
+    + r")(?![\w-])",
+    re.IGNORECASE,
 )
+SPRING = "spring"
+EXCLUDING_WORDS = POINT_WORDS | NEGATING_WORDS
 NEGATION = "not"
 CONTRACTED_NOT = "n't"
-POINT_CLAUSE = re.compile(r"[,.;:!?(]")
+POINT_CLAUSE = re.compile(r"[,.;:!?]")
 CLAUSE_TOKEN = re.compile(r"[\w'’]+")
 BARE_ABBREVIATIONS = frozenset({"Jan", "Mar", "Dec"})
 NAME_AFTER = re.compile(r"\s+[A-Z]")
@@ -167,14 +117,17 @@ class _Range(_Span):
 
 
 @dataclass(frozen=True)
-class _SeasonMention(_Span):
-    season: str
+class _NameMention(_Span):
+    name: str
 
 
 def months_named(texts: Iterable[str]) -> frozenset[int]:
     named: set[int] = set()
     for text in texts:
-        named |= _months(text, _mentions(text))
+        mentions = _mentions(text)
+        named |= {mention.month for mention in mentions}
+        for found in _joined(text, mentions):
+            named |= found.months
     return frozenset(named)
 
 
@@ -186,28 +139,46 @@ def year_months(texts: Iterable[str]) -> frozenset[int]:
 
 
 def seasons_named(texts: Iterable[str]) -> frozenset[str]:
-    return frozenset(mention.season for text in texts for mention in _season_mentions(text))
+    return frozenset(mention.name for text in texts for mention in _season_mentions(text))
 
 
 def first_season(texts: Iterable[str]) -> str | None:
     for text in texts:
         mentions = _season_mentions(text)
         if mentions:
-            return mentions[0].season
+            return mentions[0].name
     return None
 
 
 def only_season(text: str) -> str | None:
-    mentions = _season_mentions(text)
-    named = {mention.season for mention in mentions}
-    if len(named) != 1 or any(_excluded(text, mention.start) for mention in mentions):
-        return None
-    return next(iter(named))
+    return _only_name(text, _season_mentions(text))
+
+
+def regional_months_named(texts: Iterable[str]) -> frozenset[str]:
+    named: set[str] = set()
+    for text in texts:
+        mapped = _calendar_months(text, _regional_mentions(text))
+        named |= {_key(mention.name) for mention in _regional_in_context(text)}
+        named |= {_key(name) for name in mapped}
+    return frozenset(named)
+
+
+def regional_month(text: str) -> str | None:
+    found = _only_name(text, _regional_in_context(text))
+    return _key(found) if found is not None else None
 
 
 def season_months(text: str) -> dict[str, frozenset[int]]:
-    found = _SeasonText(text)
-    taken: dict[_SeasonMention, _Range] = {}
+    return _calendar_months(text, _season_mentions(text))
+
+
+def regional_month_months(text: str) -> dict[str, frozenset[int]]:
+    return {_key(name): months for name, months in _calendar_months(text, _regional_mentions(text)).items()}
+
+
+def _calendar_months(text: str, mentions: Sequence[_NameMention]) -> dict[str, frozenset[int]]:
+    found = _NamedText(text, mentions)
+    taken: dict[_NameMention, _Range] = {}
     for look in (found.after, found.before):
         for mention in found.mentions:
             span = None if mention in taken else look(mention)
@@ -215,8 +186,20 @@ def season_months(text: str) -> dict[str, frozenset[int]]:
                 taken[mention] = span
     stated: dict[str, set[frozenset[int]]] = {}
     for mention, span in taken.items():
-        stated.setdefault(mention.season, set()).add(span.months)
-    return {season: next(iter(spans)) for season, spans in stated.items() if len(spans) == 1}
+        stated.setdefault(mention.name, set()).add(span.months)
+    return {name: next(iter(spans)) for name, spans in stated.items() if len(spans) == 1}
+
+
+def _only_name(text: str, mentions: Sequence[_NameMention]) -> str | None:
+    kept = [mention for mention in mentions if not _a_point(text, mention)]
+    named = {mention.name for mention in kept}
+    if len(named) != 1 or any(_negated(text, mention.start) for mention in kept):
+        return None
+    return next(iter(named))
+
+
+def _key(name: str) -> str:
+    return name.removeprefix(REGIONAL_PREFIX)
 
 
 def _mentions(text: str) -> list[_Mention]:
@@ -233,13 +216,6 @@ def _undated(text: str) -> list[_Mention]:
         for mention in _mentions(text)
         if not DAY_OR_YEAR_AFTER.match(text[mention.end :]) and not DAY_BEFORE.search(text[: mention.start])
     ]
-
-
-def _months(text: str, mentions: Sequence[_Mention]) -> set[int]:
-    months = {mention.month for mention in mentions}
-    for found in _joined(text, mentions):
-        months |= found.months
-    return months
 
 
 def _timed_months(text: str, mentions: Sequence[_Mention]) -> set[int]:
@@ -259,9 +235,21 @@ def _excluded(text: str, start: int) -> bool:
     return bool(EXCLUDING_WORDS.intersection(_clause_words(text, start, EXCLUDING_WORDS_BEFORE)))
 
 
+def _negated(text: str, start: int) -> bool:
+    return bool(NEGATING_WORDS.intersection(_clause_words(text, start, EXCLUDING_WORDS_BEFORE)))
+
+
+def _a_point(text: str, mention: _Span) -> bool:
+    return bool(POINT_WORDS.intersection(_clause_words(text, mention.start, POINT_WORDS_BEFORE)))
+
+
 def _clause_words(text: str, start: int, most: int) -> list[str]:
     clause = POINT_CLAUSE.split(text[:start])[-1]
-    return [_clause_word(token) for token in CLAUSE_TOKEN.findall(clause)][-most:]
+    words = [_clause_word(token) for token in CLAUSE_TOKEN.findall(clause)]
+    joined = [
+        EXCLUDING_BIGRAMS.get((before, word), word) for before, word in zip(["", *words], words, strict=False)
+    ]
+    return joined[-most:]
 
 
 def _clause_word(token: str) -> str:
@@ -274,44 +262,82 @@ def _ranges(text: str) -> list[_Range]:
 
 
 def _joined(text: str, mentions: Sequence[_Mention]) -> list[_Range]:
+    found: list[_Range] = []
+    for first, last in pairwise(mentions):
+        months = _joined_months(text, first, last)
+        if months:
+            found.append(_Range(first.start, last.end, frozenset(months)))
+    return found
+
+
+def _joined_months(text: str, first: _Mention, last: _Mention) -> set[int]:
+    gap = text[first.end : last.start]
+    if RANGE_JOIN.match(gap):
+        return _months_between(first.month, last.month)
+    if not PAIR_JOIN.match(gap):
+        return set()
+    if BETWEEN_BEFORE.search(text[: first.start]):
+        return _months_between(first.month, last.month)
+    return {first.month, last.month} if last.month == first.month % MONTHS + 1 else set()
+
+
+def _season_mentions(text: str) -> list[_NameMention]:
     return [
-        _Range(first.start, last.end, frozenset(_months_between(first.month, last.month)))
-        for first, last in pairwise(mentions)
-        if RANGE_JOIN.match(text[first.end : last.start])
+        _NameMention(match.start(), match.end(), SEASON_SURFACES[match.group(0).casefold()])
+        for match in SEASON_PATTERN.finditer(text)
+        if not DATED_AFTER.match(text[match.end() :]) and _a_season(text, match)
     ]
 
 
-def _season_mentions(text: str) -> list[_SeasonMention]:
-    found = [
-        _SeasonMention(match.start(), match.end(), season)
-        for season, pattern in SEASON_PATTERNS.items()
-        for match in pattern.finditer(text)
+def _a_season(text: str, match: re.Match[str]) -> bool:
+    if match.group(0).casefold() != SPRING:
+        return True
+    before = WORD.findall(text[: match.start()])
+    after = WORD.findall(text[match.end() :])
+    opens = not before or SENTENCE_START.search(text[: match.start()]) is not None
+    led = (
+        opens or before[-1].casefold() in SPRING_WORDS_BEFORE or text[: match.start()].rstrip().endswith(",")
+    )
+    return led and not (after and after[0].casefold() in SPRING_WORDS_AFTER_REFUSED)
+
+
+def _regional_mentions(text: str) -> list[_NameMention]:
+    return [
+        _NameMention(
+            match.start(), match.end(), REGIONAL_PREFIX + REGIONAL_SURFACES[match.group(0).casefold()]
+        )
+        for match in REGIONAL_PATTERN.finditer(text)
     ]
-    return sorted(found, key=lambda mention: mention.start)
 
 
-class _SeasonText:
-    def __init__(self, text: str) -> None:
+def _regional_in_context(text: str) -> list[_NameMention]:
+    return [
+        mention
+        for mention in _regional_mentions(text)
+        if MONTH_CONTEXT_BEFORE.search(text[: mention.start])
+        or MONTH_CONTEXT_AFTER.match(text[mention.end :])
+    ]
+
+
+class _NamedText:
+    def __init__(self, text: str, mentions: Sequence[_NameMention]) -> None:
         self.text = text
         self.ranges = _ranges(text)
-        self.mentions = _season_mentions(text)
+        self.mentions = list(mentions)
 
-    def after(self, mention: _SeasonMention) -> _Range | None:
+    def after(self, mention: _NameMention) -> _Range | None:
         span = next((span for span in self.ranges if span.start >= mention.end), None)
-        if span is None or self._a_point(mention):
+        if span is None or _a_point(self.text, mention):
             return None
         gap = _Span(mention.end, span.start)
         return span if self._joins(gap, SPAN_WORDS_AFTER, MAPPING_WORDS_AFTER) else None
 
-    def before(self, mention: _SeasonMention) -> _Range | None:
+    def before(self, mention: _NameMention) -> _Range | None:
         span = next((span for span in reversed(self.ranges) if span.end <= mention.start), None)
-        if span is None or self._a_point(mention):
+        if span is None or _a_point(self.text, mention):
             return None
         gap = _Span(span.end, mention.start)
         return span if self._joins(gap, SPAN_WORDS_BEFORE, MAPPING_WORDS_BEFORE) else None
-
-    def _a_point(self, mention: _SeasonMention) -> bool:
-        return bool(POINT_WORDS.intersection(_clause_words(self.text, mention.start, POINT_WORDS_BEFORE)))
 
     def _joins(self, gap: _Span, allowed: frozenset[str], most_words: int) -> bool:
         between = self.text[gap.start : gap.end]

@@ -1,3 +1,4 @@
+import base64
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -7,6 +8,7 @@ import pytest
 
 from app.core.errors import ExternalFailure, InvalidInput, NotConfigured
 from app.providers.elevenlabs import ElevenLabs, speech_seconds
+from app.scripts.paid_check_steps import NARRATIONS
 
 FIXTURES = Path(__file__).parent / "fixtures"
 KEY = "test-only-elevenlabs-key-not-a-secret"
@@ -173,7 +175,7 @@ def test_an_empty_key_is_not_configured() -> None:
         ElevenLabs(api_key=" ", client=httpx.AsyncClient())
 
 
-NARRATED = "Alum fastens colours."
+NARRATED = NARRATIONS["en"]
 
 
 async def test_narration_asks_for_character_timings_from_the_narration_model() -> None:
@@ -190,8 +192,14 @@ async def test_narration_asks_for_character_timings_from_the_narration_model() -
         "previous_text": "Before.",
         "next_text": "After.",
     }
-    assert speech.audio == bytes([0xFF, 0xFB]) * 800
-    assert (len(speech.starts), speech.starts[5], speech.ends[11], speech.ends[-1]) == (21, 0.3, 0.72, 1.26)
+    kept = json.loads(recorded("narration_with_timestamps.json"))["audio_base64"]
+    assert speech.audio == base64.b64decode(kept)
+    assert (len(speech.starts), speech.starts[5], speech.ends[11], speech.ends[-1]) == (
+        101,
+        0.427,
+        0.96,
+        6.88,
+    )
 
 
 async def test_narration_without_neighbours_sends_no_context() -> None:

@@ -7,7 +7,6 @@ import { createElement } from "react";
 import type { CitationLookup } from "@/components/answer/CitationContext";
 import { MaterialCardView } from "@/components/answer/matter/MaterialCardView";
 import { StepDetail } from "@/components/answer/matter/StepDetail";
-import { itemSourceIds } from "@/lib/craftChapterReads";
 import { materialCardBlockShape, reactionPlayerBlockShape, stepEnergy } from "@/lib/explainerMatter";
 import type { SectionView } from "@/lib/explainerState";
 import { blockSourceIds, explainerSourceNumbers } from "@/lib/explainerView";
@@ -101,7 +100,7 @@ test("a material card cites its compound's PubChem record beside the formula and
   expect(attribute(bare, "source-chip", "href")).toEqual(["https://pubchem.ncbi.nlm.nih.gov/compound/6293"]);
 });
 
-test("a card's compound record joins the one numbering and the craft page's sources", () => {
+test("a card's compound record joins the one numbering", () => {
   expect(blockSourceIds(card())).toEqual([GI_JOURNAL, GI_JOURNAL, GI_JOURNAL, GI_JOURNAL]);
   expect(blockSourceIds(alizarinCard())).toEqual([GI_JOURNAL, GI_JOURNAL, GI_JOURNAL, GI_JOURNAL, ALIZARIN_RECORD]);
   const section = { id: "s4", discipline: "CHEMISTRY", title: "Chemistry", order: 1, state: "READY", searched: null, blocks: [alizarinCard()] } as unknown as SectionView;
@@ -109,7 +108,6 @@ test("a card's compound record joins the one numbering and the craft page's sour
     [GI_JOURNAL, 1],
     [ALIZARIN_RECORD, 2]
   ]);
-  expect(itemSourceIds({ block: alizarinCard(), part: null, figure: null, origin: null, pieceId: null })).toContain(ALIZARIN_RECORD);
 });
 
 test("the record chip has one home, shared by the molecule caption and the material card", () => {

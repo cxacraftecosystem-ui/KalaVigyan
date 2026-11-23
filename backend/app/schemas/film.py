@@ -21,8 +21,11 @@ __all__ = [
     "SCORE_LABEL",
     "SCORE_MUSIC_SECONDS_MAX",
     "SCORE_MUSIC_SECONDS_MIN",
+    "SCORE_POLL_SECONDS",
+    "SCORE_POLL_SECONDS_MAX",
     "FilmOffer",
     "FilmScore",
+    "FilmScoreMaking",
     "ScoreCue",
     "ScoreLabel",
     "ScoreMusic",
@@ -35,6 +38,8 @@ SCORE_MUSIC_SECONDS_MAX = 300.0
 SCORE_CUE_SECONDS_MIN = 0.5
 SCORE_CUE_SECONDS_MAX = 30.0
 SCORE_CUES_MAX = 12
+SCORE_POLL_SECONDS = 5
+SCORE_POLL_SECONDS_MAX = 60
 FILM_SCENE_SECONDS: Mapping[str, float] = MappingProxyType({"step": 4.0, "picture": 3.0, "block": 6.0})
 
 
@@ -80,6 +85,12 @@ class FilmScore(ContractModel):
                 f"score of answer {self.answer_id} names each model that made it, once, in order"
             )
         return self
+
+
+class FilmScoreMaking(ContractModel):
+    answer_id: uuid.UUID
+    language: AnswerLanguage
+    poll_after_seconds: int = Field(ge=1, le=SCORE_POLL_SECONDS_MAX)
 
 
 class FilmOffer(ContractModel):

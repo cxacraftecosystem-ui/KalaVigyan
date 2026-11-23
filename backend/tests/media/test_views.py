@@ -112,3 +112,13 @@ def test_billed_tokens_decide_the_cost_at_the_published_prices() -> None:
     assert media_cost(choice("gemini-nano-banana-2.1"), unknown, units=1.0, overrides={}) == Decimal(
         "0.033600"
     )
+
+
+def test_image_tokens_are_priced_at_the_image_rate_and_the_rest_of_the_output_at_the_text_rate() -> None:
+    recorded = MediaResult(b"", "image/jpeg", 57, 1389, 1120, None, None)
+    image = choice("gemini-3.1-flash-image")
+    assert media_cost(image, recorded, units=1.0, overrides={}) == Decimal("0.068036")
+    unsplit = MediaResult(b"", "image/jpeg", 57, 1389, None, None, None)
+    assert media_cost(image, unsplit, units=1.0, overrides={}) == Decimal("0.083369")
+    set_by_hand = {"gemini-3.1-flash-image": {"in": 0.5, "out": 3, "media": 30}}
+    assert media_cost(image, recorded, units=1.0, overrides=set_by_hand) == Decimal("0.034436")

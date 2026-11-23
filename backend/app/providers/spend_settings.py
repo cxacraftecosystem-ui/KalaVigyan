@@ -23,6 +23,7 @@ __all__ = [
     "UNCAPPED_ROLE_DAILY_USD",
     "load_spend_settings",
     "spend_defaults",
+    "stored_spend_value",
 ]
 
 MONTHLY_CEILING_USD = "AI_MONTHLY_CEILING_USD"
@@ -53,11 +54,17 @@ def spend_defaults() -> dict[str, Any]:
     }
 
 
+def stored_spend_value(key: str, stored: Any) -> Any:
+    if key == ROLE_DAILY_USD and isinstance(stored, Mapping):
+        return {**SPEND_DEFAULTS[key], **stored}
+    return stored
+
+
 async def load_spend_settings(session: AsyncSession) -> dict[str, Any]:
     rows = (
         (await session.execute(select(AppSetting).where(AppSetting.key.in_(SPEND_DEFAULTS)))).scalars().all()
     )
     values = spend_defaults()
     for row in rows:
-        values[row.key] = row.value
+        values[row.key] = stored_spend_value(row.key, row.value)
     return values

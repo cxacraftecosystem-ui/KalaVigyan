@@ -443,7 +443,7 @@ If the custom-LLM request cannot carry a server-injected value the client cannot
   ElevenLabs speech models support them (owner 2026-11-16, decision 0025).
 - Transcript stored Fernet-encrypted (`TRANSCRIPT_ENCRYPTION_KEY`), phone and email scrubbed before storage, kept 30 days then purged by the worker; never written to logs, `AnswerTrace` or eval fixtures.
 - Consent notice before the first voice session (`ConsentRecord` VOICE_NOTICE).
-- ElevenLabs down → Voice button hidden; `Listen` is hidden too, since its highlighting needs ElevenLabs' word timings (decision 0035; a `gemini-3.8-flash-tts` read-aloud without timings is in `docs/TECH_DEBT.md`). The live call itself is switched off (owner, 2026-11-17).
+- ElevenLabs down → Voice button hidden; `Listen` reads aloud with the Gemini voice (`gemini-3.8-flash-tts`) and highlights by sentence only, since it gives no word timings (owner, 2026-11-22; decision 0161). The live call itself is switched off (owner, 2026-11-17).
 
 ---
 

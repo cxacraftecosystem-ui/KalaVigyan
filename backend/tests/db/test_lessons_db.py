@@ -41,8 +41,8 @@ async def test_a_pack_is_built_from_the_stored_version_and_kept_for_its_builder_
     assert await lesson_of(db.session, builder.id, pack.id) == pack
     assert await lesson_of(db.session, stranger.id, pack.id) is None
     assert (await lesson_list(db.session, stranger.id)).items == []
-    assert await delete_lesson(db.session, stranger.id, pack.id) is False
-    assert await delete_lesson(db.session, builder.id, pack.id) is True
+    assert await delete_lesson(db.session, stranger.id, pack.id, objects=None) is False
+    assert await delete_lesson(db.session, builder.id, pack.id, objects=None) is True
     assert (await lesson_list(db.session, builder.id)).items == []
 
 

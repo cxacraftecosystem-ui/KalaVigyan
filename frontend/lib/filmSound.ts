@@ -5,6 +5,7 @@ export const BED_GAIN = 0.25;
 export const CUE_GAIN = 0.8;
 export const BED_FADE_SECONDS = 2;
 export const RESYNC_SECONDS = 1.5;
+const PROBE_VOLUME = 0.5;
 
 export type FilmMix = { muted: boolean; music: number; effects: number };
 
@@ -32,9 +33,19 @@ export function filmLevels(mix: FilmMix, elapsed: number, total: number): FilmLe
   return { bed: { volume: bedVolume(mix, elapsed, total), muted: mix.muted }, cue: { volume: cueVolume(mix), muted: mix.muted } };
 }
 
-export function applyLevel(audio: SoundLevel, level: SoundLevel): void {
-  audio.volume = level.volume;
+export type GainTarget = { gain: { value: number } };
+
+export function applyLevel(audio: SoundLevel, level: SoundLevel, gain: GainTarget | null = null): void {
   audio.muted = level.muted;
+  if (gain) gain.gain.value = level.volume;
+  else audio.volume = level.volume;
+}
+
+export function volumeIsFixed(probe: { volume: number }): boolean {
+  probe.volume = PROBE_VOLUME;
+  const fixed = probe.volume !== PROBE_VOLUME;
+  probe.volume = 1;
+  return fixed;
 }
 
 export function bedTime(elapsed: number, durationSeconds: number): number {

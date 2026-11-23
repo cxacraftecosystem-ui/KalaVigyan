@@ -203,7 +203,7 @@ async def test_leaving_the_student_role_deletes_the_student_profile() -> None:
         )
     async with session_scope() as session:
         user = (await session.execute(select(User).where(User.email == email))).scalar_one()
-        await reader_profiles.apply_role_change(session, user, "RESEARCHER")
+        await reader_profiles.apply_role_change(session, user, "RESEARCHER", objects=None)
         user.role = "RESEARCHER"
     async with session_scope() as session:
         assert await session.get(StudentProfile, user.id) is None
@@ -230,7 +230,7 @@ async def test_leaving_the_artisan_role_without_shown_words_deletes_the_profile(
         session.add(ArtisanCraft(userId=user.id, craftId=craft.id, position=1))
     async with session_scope() as session:
         user = (await session.execute(select(User).where(User.email == email))).scalar_one()
-        await reader_profiles.apply_role_change(session, user, "STUDENT")
+        await reader_profiles.apply_role_change(session, user, "STUDENT", objects=None)
         user.role = "STUDENT"
     async with session_scope() as session:
         assert await session.get(ArtisanProfile, user.id) is None

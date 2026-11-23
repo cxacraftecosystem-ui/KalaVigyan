@@ -7,7 +7,7 @@ from rasterio.crs import CRS
 from rasterio.transform import from_origin
 from shapely.geometry import box
 
-from geo_etl import raster
+from geo_etl import raster, remote
 from geo_etl.layers import Options, chirps
 
 MONTHLY = re.compile(r"chirps-v3\.0\.(\d{4})\.(\d{2})\.tif$")
@@ -69,6 +69,36 @@ def test_the_annual_normal_and_monsoon_share_come_from_the_same_years(monkeypatc
     assert values[("annual_precipitation", "2024-2025", "NORMAL")] == pytest.approx(800.0)
     assert values[("annual_precipitation_cv", "2024-2025", "NORMAL")] == pytest.approx(0.125)
     assert values[("monsoon_share_jjas", "2024-2025", "NORMAL")] == pytest.approx(308.0 / 804.0)
+
+
+def test_an_unreachable_file_ends_the_shards_reads(monkeypatch, two_years):
+    read: list[str] = []
+
+    def stalled(urls, bounds, **kwargs):
+        read.append(urls[0])
+        if urls[0] == chirps.annual_url(2025):
+            raise remote.Unreachable(f"{urls[0]} not read within 600 s")
+        return constant_grid(700.0)
+
+    monkeypatch.setattr(raster, "read", stalled)
+    result = chirps.run(kachchh(), two_years)
+    assert read == [chirps.annual_url(2024), chirps.annual_url(2025)]
+    assert [failure["step"] for failure in result.failures] == ["chirps annual 2025"]
+    assert result.failures[0]["districtLgds"] == [449]
+
+
+def test_the_last_year_given_once_for_every_shard_is_used_without_a_lookup(monkeypatch, tmp_path):
+    def no_lookup():
+        raise AssertionError("the layer looked the year up itself")
+
+    monkeypatch.setattr(chirps, "latest_year", no_lookup)
+    monkeypatch.setattr(raster, "read", tiny_chirps())
+    options = Options(cache=tmp_path, climate_first_year=2024, chirps_last_year=2024, chirps_monthly=False)
+    result = chirps.run(kachchh(), options)
+    assert result.failures == []
+    assert result.dataset.period == "2024-2024"
+    assert result.notes == {"period": "2024-2024"}
+    assert sorted(set(result.values["depthOrPeriod"])) == ["2024", "2024-2024"]
 
 
 def test_a_month_that_cannot_be_read_leaves_every_district_without_monthly_normals(monkeypatch, two_years):

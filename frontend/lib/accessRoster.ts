@@ -1,9 +1,16 @@
 import { apiFetch, buildQuery } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { canManageAccessEntry, canSuspendUsers, roleLabel } from "@/lib/permissions";
-import type { PageResult, User, UserRole } from "@/lib/types";
+import { roleLabel } from "@/lib/permissions";
+import type { PageResult, UserRole } from "@/lib/types";
 
 export type AccessStatus = "ACTIVE" | "PENDING" | "REJECTED" | "SUSPENDED";
+
+export type AccessEntryOffers = {
+  update: boolean;
+  suspend: boolean;
+  admit: boolean;
+  refuse: boolean;
+};
 
 export type AccessRosterEntry = {
   id: string;
@@ -24,6 +31,7 @@ export type AccessRosterEntry = {
   addedById: string | null;
   addedByName?: string | null;
   decidedByName?: string | null;
+  offers?: AccessEntryOffers;
 };
 
 export type AccessRosterPage = PageResult<AccessRosterEntry>;
@@ -101,22 +109,10 @@ export async function suspendAccessEntry(id: string): Promise<AccessRosterEntry>
   return apiFetch<AccessRosterEntry>(`/access/roster/${id}`, { method: "DELETE" });
 }
 
-export type AccessEntryOffers = {
-  update: boolean;
-  suspend: boolean;
-  admit: boolean;
-  refuse: boolean;
-};
+const NO_OFFERS: AccessEntryOffers = { update: false, suspend: false, admit: false, refuse: false };
 
-export function accessEntryOffers(viewer: User | null | undefined, entry: AccessRosterEntry): AccessEntryOffers {
-  if (!canManageAccessEntry(viewer, entry.admitRole)) return { update: false, suspend: false, admit: false, refuse: false };
-  const pending = entry.status === "PENDING";
-  return {
-    update: true,
-    suspend: entry.status === "ACTIVE",
-    admit: pending || (entry.status !== "ACTIVE" && canSuspendUsers(viewer)),
-    refuse: pending
-  };
+export function accessEntryOffers(entry: AccessRosterEntry): AccessEntryOffers {
+  return entry.offers ?? NO_OFFERS;
 }
 
 export type AccessRefusalKind =

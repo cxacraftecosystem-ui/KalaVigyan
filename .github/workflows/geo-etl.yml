@@ -1,10 +1,20 @@
 name: Geo ETL
 
 on:
+  pull_request:
+    paths:
+      - "etl/geo/**"
+      - "backend/app/data/datasets/registry.json"
+      - "backend/app/geo/region_rules.json"
+      - "backend/migrations/versions/0005_region_profile.py"
+      - "shared/region.state-values.sql"
+      - "shared/river.topology.golden.json"
+      - "shared/naming-golden.json"
+      - ".github/workflows/geo-etl.yml"
   workflow_dispatch:
     inputs:
       datasets:
-        description: "Layers, comma separated: soilgrids,worldcover,hansen,chelsa,chirps,ghcncams,copdem,hydrorivers,mrds,glim,riverlines or all (ghcncams, the vector layers and riverlines ignore shards; riverlines ignores states)"
+        description: "Layers, comma separated: soilgrids,worldcover,hansen,chelsa,chirps,ghcncams,groundwater,copdem,hydrorivers,mrds,glim,riverlines or all (ghcncams, groundwater, the vector layers and riverlines ignore shards; riverlines ignores states)"
         type: string
         default: all
       states:
@@ -24,7 +34,7 @@ on:
         type: boolean
         default: false
       allow_failures:
-        description: "Keep a part whose failures are scattered districts; a state with no values and no district measured without valid cells, or a step failed for all its districts, still fails"
+        description: "Keep a part whose failures are scattered districts; a lost state, a silent district or a district without valid cells outside the reviewed list still fails"
         type: boolean
         default: false
 
@@ -32,8 +42,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: geo-etl
-  cancel-in-progress: false
+  group: geo-etl-${{ github.event_name == 'pull_request' && github.ref || 'run' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PYTHON_VERSION: "3.14"
@@ -69,12 +79,14 @@ jobs:
   plan:
     name: Plan the extract matrix
     needs: test
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-26.04
-    timeout-minutes: 5
+    timeout-minutes: 20
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       count: ${{ steps.plan.outputs.count }}
       rivers: ${{ steps.plan.outputs.rivers }}
+      chirps_last_year: ${{ steps.chirps.outputs.last_year }}
     steps:
       - id: plan
         env:
@@ -89,7 +101,7 @@ jobs:
 
           raster = ["soilgrids", "worldcover", "hansen", "chelsa", "chirps", "copdem"]
           vector = ["hydrorivers", "mrds", "glim"]
-          whole = ["ghcncams"]
+          whole = ["ghcncams", "groundwater"]
           lines = ["riverlines"]
           known = raster + vector + whole + lines
           text = os.environ["DATASETS"].replace(" ", "").lower()
@@ -113,10 +125,32 @@ jobs:
               out.write(f"matrix={json.dumps({'include': include})}\n")
               out.write(f"count={len(include)}\n")
               out.write(f"rivers={'true' if 'riverlines' in chosen else 'false'}\n")
+              out.write(f"chirps={'true' if 'chirps' in chosen else 'false'}\n")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write(f"{len(include)} extract jobs: {', '.join(i['part'] for i in include)}\n")
               if "riverlines" in chosen:
                   summary.write("River lines and basin topologies: one job\n")
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ steps.plan.outputs.chirps == 'true' }}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        if: ${{ steps.plan.outputs.chirps == 'true' }}
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: etl/geo/pyproject.toml
+      - name: Install
+        if: ${{ steps.plan.outputs.chirps == 'true' }}
+        working-directory: etl/geo
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+      - name: Resolve the CHIRPS last year once for every shard
+        id: chirps
+        if: ${{ steps.plan.outputs.chirps == 'true' }}
+        working-directory: etl/geo
+        run: |
+          year=$(python -m geo_etl chirps-last-year)
+          if ! [[ "$year" =~ ^[0-9]{4}$ ]]; then echo "::error::chirps-last-year printed '$year', not a year"; exit 1; fi
+          echo "last_year=$year" >> "$GITHUB_OUTPUT"
+          echo "CHIRPS last year, the same for every shard: $year" >> "$GITHUB_STEP_SUMMARY"
 
   extract:
     name: Extract ${{ matrix.part }}
@@ -154,9 +188,12 @@ jobs:
           SHARD: ${{ matrix.shard }}
           STATES: ${{ inputs.states }}
           ALLOW_FAILURES: ${{ inputs.allow_failures }}
+          CHIRPS_LAST_YEAR: ${{ needs.plan.outputs.chirps_last_year }}
+          DATA_GOV_IN_API_KEY: ${{ secrets.DATA_GOV_IN_API_KEY }}
         run: |
           args=(extract --datasets "$LAYER" --states "${STATES:-all}" --parts out/parts --cache "$HOME/.cache/kalavigyan-geo")
           if [ -n "$SHARD" ]; then args+=(--shard "$SHARD"); fi
+          if [ "$LAYER" = "chirps" ]; then args+=(--chirps-last-year "$CHIRPS_LAST_YEAR"); fi
           if [ "$ALLOW_FAILURES" = "true" ]; then args+=(--allow-failures); fi
           python -m geo_etl "${args[@]}"
       - name: Upload the part
@@ -207,10 +244,10 @@ jobs:
           s = json.load(open("out/district_env_summary.json", encoding="utf-8"))
           print(f"{s['rows']} values over {s['districts']} districts, {s['geologyRows']} geology rows")
           print()
-          print("| layer | shard | rows | failures | districts without values | of which without valid cells | seconds |")
-          print("|---|---|---|---|---|---|---|")
+          print("| layer | shard | rows | failures | districts without values | of which without valid cells | of those not reviewed | silent districts | seconds |")
+          print("|---|---|---|---|---|---|---|---|---|")
           for layer in s["layers"]:
-              print(f"| {layer['layer']} | {layer['shard'] or ''} | {layer['rows']} | {layer['failureCount']} | {len(layer['districtsWithoutValues'])} | {len(layer['districtsWithoutCells'])} | {layer['seconds']} |")
+              print(f"| {layer['layer']} | {layer['shard'] or ''} | {layer['rows']} | {layer['failureCount']} | {len(layer['districtsWithoutValues'])} | {len(layer['districtsWithoutCells'])} | {len(layer['unexpectedWithoutCells'])} | {len(layer['silentDistricts'])} | {layer['seconds']} |")
           EOF
       - name: Upload the outputs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -284,6 +321,10 @@ jobs:
             kalavigyan-geo-riverlines-
       - name: Build
         run: python -m geo_etl rivers --out out/rivers --cache "$HOME/.cache/kalavigyan-geo"
+      - name: Install osmium
+        run: sudo apt-get update && sudo apt-get install -y osmium-tool
+      - name: Name the rivers
+        run: python -m geo_etl river-names --rivers out/rivers --scratch "$RUNNER_TEMP/osm"
       - name: Validate for loading
         run: python load_rivers.py --out out/rivers --dry-run
       - name: Summary
@@ -291,9 +332,15 @@ jobs:
           python - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           import json
           m = json.load(open("out/rivers/river_basins.json", encoding="utf-8"))
+          n = json.load(open("out/rivers/river_names_summary.json", encoding="utf-8"))
           sizes = sorted(b["bytes"] for b in m["basins"])
           print(f"{m['reaches']} reaches with upstream area >= {m['uplandMinSkm']} km2 in {len(sizes)} basins")
+          print(f"{m['reachDistricts']} reach districts")
           print(f"largest topology {sizes[-1]} bytes, median {sizes[len(sizes) // 2]} bytes")
+          print()
+          print(f"{n['wikidataRivers']} rivers named from Wikidata over {n['wikidataReaches']} reaches, of {n['wikidataItems']} items")
+          print(f"{n['osmRivers']} rivers named from OpenStreetMap over {n['osmReaches']} reaches, from {n['osmWays']} ways")
+          print(f"Wikidata items refused: {n['wikidataRefused']}")
           EOF
       - name: Upload the outputs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -2,10 +2,11 @@ import math
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 
 from geo_etl import raster
 from geo_etl.catalog import WORLDCOVER
-from geo_etl.layers import Measured, Options, Result, by_district, failure
+from geo_etl.layers import Measured, Options, Result, each_district
 from geo_etl.rows import Rows, pick
 
 BASE = "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map"
@@ -48,33 +49,34 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
         f"exactextract class fractions, coverage weight area_spherical_km2, read at {effective}; "
         "share of mapped area inside the district polygon",
     )
-    failures: list[dict] = []
     measured = Measured()
-    for group in by_district(districts):
-        district = group.iloc[0]
-        try:
-            bounds = raster.bounds_in(group, "EPSG:4326", 0.01)
-            grid = raster.read(tiles(bounds), bounds, factor=factor, nodata_values=(0,), dtype="float32")
-            if grid is None:
-                raise RuntimeError("no WorldCover tile reachable")
-            record = measured.add(raster.zonal(grid, group, raster.class_ops(grid))).iloc[0]
-            if not raster.has_cells(record["pixels"]):
-                continue
-            classes = np.asarray(pick(record, "classes"), dtype=float)
-            shares = np.asarray(pick(record, "shares"), dtype=float)
-            found = {int(c): float(s) for c, s in zip(classes, shares, strict=True)}
-            pixels = float(record["pixels"])
-            for code, name in CLASSES.items():
-                rows.add(
-                    district,
-                    f"landcover_{name}",
-                    "2021",
-                    "SHARE",
-                    found.get(code, 0.0),
-                    "fraction",
-                    pixels=pixels,
-                    resolution=effective,
-                )
-        except Exception as error:
-            failures.append(failure(group, "worldcover", error))
+
+    def measure(group: gpd.GeoDataFrame) -> None:
+        bounds = raster.bounds_in(group, "EPSG:4326", 0.01)
+        grid = raster.read(tiles(bounds), bounds, factor=factor, nodata_values=(0,), dtype="float32")
+        if grid is None:
+            raise RuntimeError(f"no WorldCover tile exists under {bounds}")
+        record = measured.add(raster.zonal(grid, group, raster.class_ops(grid))).iloc[0]
+        if raster.has_cells(record["pixels"]):
+            add_shares(rows, group.iloc[0], record, effective)
+
+    failures = each_district(districts, "worldcover", measure)
     return Result(WORLDCOVER, rows.frame(), failures=failures, districts_without_cells=measured.without_cells())
+
+
+def add_shares(rows: Rows, district: pd.Series, record: pd.Series, effective: str) -> None:
+    classes = np.asarray(pick(record, "classes"), dtype=float)
+    shares = np.asarray(pick(record, "shares"), dtype=float)
+    found = {int(c): float(s) for c, s in zip(classes, shares, strict=True)}
+    pixels = float(record["pixels"])
+    for code, name in CLASSES.items():
+        rows.add(
+            district,
+            f"landcover_{name}",
+            "2021",
+            "SHARE",
+            found.get(code, 0.0),
+            "fraction",
+            pixels=pixels,
+            resolution=effective,
+        )

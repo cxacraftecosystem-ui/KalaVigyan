@@ -26,8 +26,8 @@ export function prerenderedParams(pages: StaticPages | null, kind: PrerenderedKi
   return PRERENDERED_PAGES[kind].filter((slug) => listed.has(slug)).map((slug) => ({ slug }));
 }
 
-export const serverCraftPage = cache(async (slug: string, version?: number): Promise<CraftPage | null> => {
-  const result = await publicFetch(CRAFT_PAGE_PATH(slug, version), {
+export const serverCraftPage = cache(async (slug: string): Promise<CraftPage | null> => {
+  const result = await publicFetch(CRAFT_PAGE_PATH(slug), {
     parse: (body) => checkedCraftPage(parseShape(craftPageShape, body)),
     tags: [craftPageTag(slug)],
     revalidateSeconds: STATIC_PAGE_REVALIDATE_SECONDS,

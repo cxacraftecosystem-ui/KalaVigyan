@@ -1,8 +1,9 @@
-import functools
 import math
 import os
 from collections.abc import Iterable, Sequence
+from contextlib import ExitStack
 from dataclasses import dataclass
+from functools import partial
 
 import geopandas as gpd
 import numpy as np
@@ -12,9 +13,10 @@ from exactextract import exact_extract
 from exactextract.raster import NumPyRasterSource
 from rasterio.crs import CRS
 from rasterio.enums import Resampling
-from rasterio.errors import RasterioIOError
 from rasterio.merge import merge
 from rasterio.transform import Affine
+
+from geo_etl import remote
 
 GDAL_ENV = {
     "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
@@ -40,20 +42,6 @@ def vsicurl(url: str) -> str:
     return url if url.startswith("/vsi") or not url.startswith("http") else "/vsicurl/" + url
 
 
-@functools.cache
-def exists(url: str) -> bool:
-    try:
-        with gdal_env(), rasterio.open(vsicurl(url)):
-            return True
-    except RasterioIOError:
-        return False
-
-
-def crs_of(url: str) -> CRS:
-    with gdal_env(), rasterio.open(vsicurl(url)) as dataset:
-        return dataset.crs
-
-
 @dataclass
 class Grid:
     values: np.ndarray
@@ -77,6 +65,16 @@ class Grid:
         return NumPyRasterSource(self.values, xmin, ymin, xmax, ymax, srs_wkt=self.crs.to_wkt())
 
 
+@dataclass(frozen=True)
+class Mosaic:
+    raw: np.ndarray
+    transform: Affine
+    crs: CRS
+    fill: float
+    scale: float
+    offset: float
+
+
 def read(
     urls: Sequence[str],
     bounds: tuple[float, float, float, float],
@@ -89,43 +87,50 @@ def read(
     offset: float | None = None,
     dtype: str = "float32",
 ) -> Grid | None:
-    present = [u for u in urls if exists(u)]
+    present = [location for location in urls if not remote.is_remote(location) or remote.found(location)]
     if not present:
         return None
-    with gdal_env():
-        datasets = [rasterio.open(vsicurl(u)) for u in present]
-        try:
-            first = datasets[0]
-            rx, ry = first.res
-            res = (rx * factor, ry * factor)
-            origin = (first.transform.c, first.transform.f)
-            snapped = snap_bounds(bounds, origin, res)
-            native_nodata = first.nodata
-            fill = native_nodata if native_nodata is not None else _fill_for(first.dtypes[0])
-            array, transform = merge(
-                datasets,
-                bounds=snapped,
-                res=res,
-                nodata=fill,
-                resampling=resampling,
-                indexes=[1],
-            )
-            crs = first.crs
-            file_scale = first.scales[0] if first.scales else 1.0
-            file_offset = first.offsets[0] if first.offsets else 0.0
-        finally:
-            for ds in datasets:
-                ds.close()
-    raw = array[0]
-    mask = np.isnan(raw) if np.isnan(fill) else raw == fill
-    for value in nodata_values:
-        mask |= raw == value
-    values = raw.astype("float64")
-    values = values * (file_scale if scale is None else scale) + (file_offset if offset is None else offset)
+    mosaic = remote.within_deadline(
+        partial(mosaic_of, present, bounds, factor=factor, resampling=resampling),
+        seconds=remote.FILE_DEADLINE_S * len(present),
+        what=f"{len(present)} file(s) from {present[0]}",
+    )
+    values = mosaic.raw.astype("float64")
+    values = values * (mosaic.scale if scale is None else scale) + (mosaic.offset if offset is None else offset)
+    mask = nodata_mask(mosaic, nodata_values)
     if valid_min is not None:
         mask |= values < valid_min
     values[mask] = np.nan
-    return Grid(values=values.astype(dtype), transform=transform, crs=crs)
+    return Grid(values=values.astype(dtype), transform=mosaic.transform, crs=mosaic.crs)
+
+
+def mosaic_of(
+    locations: Sequence[str], bounds: tuple[float, float, float, float], *, factor: int, resampling: Resampling
+) -> Mosaic:
+    with gdal_env(), ExitStack() as opened:
+        datasets = [opened.enter_context(rasterio.open(vsicurl(location))) for location in locations]
+        first = datasets[0]
+        rx, ry = first.res
+        res = (rx * factor, ry * factor)
+        snapped = snap_bounds(bounds, (first.transform.c, first.transform.f), res)
+        fill = first.nodata if first.nodata is not None else _fill_for(first.dtypes[0])
+        array, transform = merge(datasets, bounds=snapped, res=res, nodata=fill, resampling=resampling, indexes=[1])
+        return Mosaic(
+            raw=array[0],
+            transform=transform,
+            crs=first.crs,
+            fill=fill,
+            scale=first.scales[0] if first.scales else 1.0,
+            offset=first.offsets[0] if first.offsets else 0.0,
+        )
+
+
+def nodata_mask(mosaic: Mosaic, nodata_values: Iterable[float]) -> np.ndarray:
+    raw = mosaic.raw
+    mask = np.isnan(raw) if np.isnan(mosaic.fill) else raw == mosaic.fill
+    for value in nodata_values:
+        mask |= raw == value
+    return mask
 
 
 def _fill_for(dtype: str) -> float:

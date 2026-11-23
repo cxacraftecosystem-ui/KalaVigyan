@@ -12,10 +12,9 @@ from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from app.core.errors import InvalidInput
 
 from .base import ContractModel, absent
-from .citations import AnswerSentence, Citation, SourceRef
+from .citations import AnswerSentence, SourceRef
 from .explainer import EXPLAINER_EVENTS
 from .explainer_versions import VERSION_EVENTS
-from .vocabulary import ShownLevel
 
 __all__ = [
     "HEARTBEAT_FRAME",
@@ -28,7 +27,6 @@ __all__ = [
     "FollowUpsEvent",
     "NotEnoughEvidenceEvent",
     "OpenQuestionEvent",
-    "ReactionEvent",
     "ResearchProgress",
     "StatusEvent",
     "StatusStep",
@@ -66,16 +64,6 @@ class OpenQuestionEvent(ContractModel):
     sentence: AnswerSentence
 
 
-class ReactionEvent(ContractModel):
-    id: str = Field(min_length=1)
-    label: str = Field(min_length=1)
-    equation: str = Field(min_length=1)
-    balanced: bool
-    level: ShownLevel
-    conditions: str | None
-    citations: list[Citation] = Field(min_length=1)
-
-
 class FollowUpsEvent(ContractModel):
     items: list[str]
 
@@ -98,7 +86,6 @@ STREAM_EVENTS: Mapping[str, TypeAdapter[Any]] = MappingProxyType(
         "status": TypeAdapter(StatusEvent),
         "source": TypeAdapter(SourceRef),
         "open_question": TypeAdapter(OpenQuestionEvent),
-        "reaction": TypeAdapter(ReactionEvent),
         "follow_ups": TypeAdapter(FollowUpsEvent),
         "not_enough_evidence": TypeAdapter(NotEnoughEvidenceEvent),
         "done": TypeAdapter(DoneEvent),

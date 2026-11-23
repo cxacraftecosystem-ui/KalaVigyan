@@ -5,11 +5,14 @@ from pydantic import TypeAdapter
 
 from app.core.errors import InvalidInput
 from app.geo.district_view import DistrictLocation, DistrictRecords, district_crafts
+from app.geo.headline import headline_rows
+from app.geo.records import ValueRecord
 from app.research.blocks_place import DistrictRef
 from app.research.citations import SourceRef
 from app.research.explainer import Block
+from app.schemas.district_crafts import DistrictCrafts
 
-from ..contracts.golden import golden_json
+from ..contracts.golden import dumped, golden_json, golden_text
 from .golden_region import (
     AJRAKH,
     GI_JOURNAL,
@@ -30,6 +33,10 @@ def golden() -> dict[str, Any]:
     return golden_json(DISTRICT_CRAFTS)
 
 
+def region_card_values() -> tuple[ValueRecord, ...]:
+    return tuple(headline_rows(kachchh_values(), golden_datasets()))
+
+
 def location(**changes: Any) -> DistrictLocation:
     fields: dict[str, Any] = {
         "id": "location-kachchh",
@@ -48,7 +55,7 @@ def records(**changes: Any) -> DistrictRecords:
         "district": DistrictRef.model_validate(body["district"]),
         "boundary": dataset_record(body["datasets"][0]),
         "locations": (location(),),
-        "values": kachchh_values(),
+        "values": region_card_values(),
         "datasets": golden_datasets(),
         "blocks": tuple(TypeAdapter(Block).validate_python(block) for block in body["land"]["blocks"]),
         "sources": {source["id"]: SourceRef.model_validate(source) for source in body["sources"]},
@@ -56,14 +63,20 @@ def records(**changes: Any) -> DistrictRecords:
     return DistrictRecords(**(fields | changes))
 
 
-def test_a_district_answers_its_located_crafts_and_its_land_as_stored() -> None:
-    assert district_crafts(records()).model_dump(mode="json", by_alias=True) == golden()
+def test_kachchh_s_stored_rows_build_the_golden_district() -> None:
+    assert dumped(DistrictCrafts, district_crafts(records())) == golden_text(DISTRICT_CRAFTS)
 
 
 def test_the_land_shows_only_the_district_s_soil_climate_water_and_terrain() -> None:
-    body = district_crafts(records())
+    body = district_crafts(records(values=kachchh_values()))
     shown = {value.dataset_code for facet in body.land.facets for value in facet.values}
-    assert {row.dataset_code for row in kachchh_values()} - shown == {"ESA_WORLDCOVER_2021_V200", "USGS_MRDS"}
+    assert {row.dataset_code for row in kachchh_values()} - shown == {
+        "ESA_WORLDCOVER_2021_V200",
+        "GLIM_1_0_05DEG",
+        "HANSEN_GFC_2025_V1_13",
+        "USGS_MRDS",
+    }
+    assert [facet.facet for facet in body.land.facets] == ["SOIL", "CLIMATE", "WATER", "TERRAIN"]
 
 
 def test_a_craft_is_placed_by_its_strongest_location_with_every_role_it_holds() -> None:

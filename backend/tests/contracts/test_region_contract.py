@@ -5,7 +5,9 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from app.models import StateEnvValue
 from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE
+from app.research.rivers import RIVER_NAME_DATASET_CODES
 from app.schemas.region import (
     DATASET_FACETS,
     CraftRegion,
@@ -17,8 +19,9 @@ from app.schemas.region import (
     split_depth_or_period,
 )
 
-from .golden import golden_json, plan_text, reproduces
+from .golden import SHARED, golden_json, plan_text, reproduces
 from .phase_b_golden import geo_etl_datasets
+from .test_river_contract import GEO_ETL, constants
 
 
 def place() -> dict[str, Any]:
@@ -137,7 +140,7 @@ def test_region_datasets_are_exactly_the_cited_ones() -> None:
 def test_layer_classes_are_contiguous_and_hold_every_value() -> None:
     body = golden_json("region.layer.golden.json")
     gap = copy.deepcopy(body)
-    gap["classes"][1]["min"] = 7.1
+    gap["classes"][1]["min"] = (gap["classes"][1]["min"] + gap["classes"][1]["max"]) / 2
     with pytest.raises(ValidationError, match="contiguous"):
         MapLayer.model_validate(gap)
     outside = copy.deepcopy(body)
@@ -161,8 +164,15 @@ def test_the_boundary_caption_is_the_plan_eight_text() -> None:
 
 
 def test_every_dataset_the_geo_etl_builds_has_a_region_facet() -> None:
-    codes = set(geo_etl_datasets()) - {BOUNDARY_DATASET_CODE}
+    codes = set(geo_etl_datasets()) - {BOUNDARY_DATASET_CODE, *RIVER_NAME_DATASET_CODES}
     assert codes and codes <= set(DATASET_FACETS)
+
+
+def test_the_geo_load_refreshes_the_state_series_the_region_reads() -> None:
+    load = constants(GEO_ETL / "load.py")
+    assert load["STATE_TABLE"] == StateEnvValue.__tablename__
+    assert (SHARED / load["STATE_SQL_NAME"]).is_file()
+    assert load["STATE_REQUIRED"] <= {column.name for column in StateEnvValue.__table__.columns}
 
 
 def test_region_sources_are_every_place_source_once_in_place_order() -> None:

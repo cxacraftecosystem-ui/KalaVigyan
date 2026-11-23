@@ -12,6 +12,7 @@ Date: 2026-11-17. Status: accepted.
 | The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
 | The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
 | The rebuild rests a group it tried for a week and spends no more than the day has left | [decision 0142](0142-curated-crafts-read-only-curated-rows.md) |
+| Place facets keyed by district code, any district set stored and curated ids kept (amends the topic keys) | [decision 0160](0160-place-builders-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

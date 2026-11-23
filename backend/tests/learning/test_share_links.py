@@ -182,8 +182,14 @@ def test_shared_files_are_filed_under_no_reader_s_id(monkeypatch: pytest.MonkeyP
     async def shared_pack(session: Any, token: str) -> Any:
         return golden_pack() if token == TOKEN else None
 
+    recorded: list[tuple[str, list[str]]] = []
+
+    async def record(session: Any, token: str, keys: list[str], *, objects: Any) -> None:
+        recorded.append((token, list(keys)))
+
     monkeypatch.setattr(export_deps, "accessed_dates", no_dates)
     monkeypatch.setattr(shared, "shared_lesson", shared_pack)
+    monkeypatch.setattr(shared, "record_shared_files", record)
     bucket = FakeBucket()
     reader = client(None, bucket=bucket)
     pdf = reader.get(f"/api/shared/answers/{TOKEN}/pdf")
@@ -192,6 +198,8 @@ def test_shared_files_are_filed_under_no_reader_s_id(monkeypatch: pytest.MonkeyP
     assert pdf.json()["fileName"].endswith("_Report_v2.pdf")
     assert pdf.headers["cache-control"] == slides.headers["cache-control"] == PRIVATE_NO_CACHE
     assert len(bucket.stored) == 2 and all(key.startswith(NEUTRAL_EXPORTS) for key in bucket.stored)
+    assert [token for token, _keys in recorded] == [TOKEN, TOKEN]
+    assert sorted(key for _token, keys in recorded for key in keys) == sorted(bucket.stored)
     assert reader.get(f"/api/shared/lessons/{TOKEN[::-1]}").status_code == 404
 
 
@@ -233,7 +241,7 @@ def test_only_a_lesson_builder_shares_a_lesson_and_only_their_own(monkeypatch: p
     async def share(session: Any, user_id: uuid.UUID, lesson_id: uuid.UUID, *, now: datetime) -> Any:
         return LESSON_SHARED if (user_id, lesson_id) == (PROFESSOR.id, pack_id) else None
 
-    async def unshare(session: Any, user_id: uuid.UUID, lesson_id: uuid.UUID) -> bool:
+    async def unshare(session: Any, user_id: uuid.UUID, lesson_id: uuid.UUID, *, objects: Any) -> bool:
         return (user_id, lesson_id) == (PROFESSOR.id, pack_id)
 
     monkeypatch.setattr(lessons, "share_lesson", share)
@@ -318,7 +326,7 @@ def test_a_former_lesson_builder_still_reads_and_stops_their_own_share(
     async def share_of(session: Any, user_id: uuid.UUID, lesson_id: uuid.UUID) -> Any:
         return LESSON_SHARED if (user_id, lesson_id) == owned else None
 
-    async def unshare(session: Any, user_id: uuid.UUID, lesson_id: uuid.UUID) -> bool:
+    async def unshare(session: Any, user_id: uuid.UUID, lesson_id: uuid.UUID, *, objects: Any) -> bool:
         return (user_id, lesson_id) == owned
 
     monkeypatch.setattr(lessons, "lesson_share", share_of)

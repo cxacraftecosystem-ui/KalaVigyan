@@ -104,7 +104,7 @@ async def media_options(deps: MediaDeps, user: Any, craft_slug: str) -> MediaOpt
     if found is None or not _craft_visible(found[0], user):
         raise MediaRefused("not_found")
     craft, stages = found
-    kinds = await _offered_kinds(deps, user) if deps.bundle_key and deps.links else []
+    kinds = await _offered_kinds(deps, user) if await _makeable(deps) else []
     offered = [option.kind for option in kinds]
     claims = await deps.store.stage_claims([stage.id for stage in stages]) if offered else {}
     acls = chunk_acls_for(user)
@@ -219,6 +219,8 @@ async def _queued(
     deps: MediaDeps, user: Any, request: MediaJobRequest, new: NewJob, key: bytes
 ) -> tuple[MediaJobView, bool]:
     job = new.record
+    if not await deps.store.worker_listening(deps.now):
+        raise MediaRefused("not_configured")
     _refuse_without_units(user, job.kind, await deps.store.units_used(user.id, job.kind, deps.now), deps.now)
     if await deps.store.active_jobs(user.id) >= MAX_ACTIVE_JOBS_PER_USER:
         raise MediaRefused("busy", retry_after=BUSY_RETRY_SECONDS)
@@ -272,6 +274,10 @@ async def _hold(deps: MediaDeps, ask: MediaAsk) -> uuid.UUID:
         if error.kind == SPEND_REFUSAL_KIND:
             raise MediaRefused("budget", error.message) from None
         raise MediaRefused("not_configured") from None
+
+
+async def _makeable(deps: MediaDeps) -> bool:
+    return bool(deps.bundle_key and deps.links) and await deps.store.worker_listening(deps.now)
 
 
 def _refuse_without_units(user: Any, kind: str, used: int, now: datetime) -> None:

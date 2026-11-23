@@ -24,7 +24,7 @@ def new_secrets() -> dict[str, str]:
 async def provision_both(secrets: dict[str, str]) -> None:
     async with session_scope() as session:
         for account in E2E_ROLE_ACCOUNTS:
-            await provision_role_account(session, account, PASSWORD, secrets[account.role])
+            await provision_role_account(session, account, PASSWORD, secrets[account.role], objects=None)
 
 
 async def user_at(email: str) -> User:
@@ -97,7 +97,9 @@ async def test_other_accounts_are_left_exactly_as_they_were() -> None:
     forged = E2ERoleAccount("ADMIN", other, "Forged")
     async with session_scope() as session:
         with pytest.raises(NotAnE2EAccount):
-            await provision_role_account(session, forged, PASSWORD, two_factor.generate_secret())
+            await provision_role_account(
+                session, forged, PASSWORD, two_factor.generate_secret(), objects=None
+            )
     after = await user_at(other)
     columns = ("name", "role", "passwordHash", "tokenVersion", "twoFactorSecret", "twoFactorEnabledAt")
     assert {column: getattr(after, column) for column in columns} == {

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from app.composer.supply_map import NO_MATERIAL, SupplyBrief, SupplyItem, SupplyLinkChoice
 from app.research.blocks import ExplainerSentence
 from app.research.blocks_place import SupplyLink, SupplyMapBlock
+from app.research.datasets import DatasetRef
 from app.research.explainer import Block
 from app.research.vocabulary import FACT_LEVELS
 from app.science.records import KnownClaim
@@ -17,13 +18,13 @@ from .answer_events import CitedClaims
 from .builder_evidence import section_facts
 from .craft_matter import CraftMatter, MaterialRows, first_naming, section_sentences
 from .material_cards import material_term
+from .place_points import OriginPlace, RegisterPoint, ShownPlace
 
 __all__ = [
     "SUPPLY_LINKS_MAX",
     "SUPPLY_MATERIALS_MAX",
     "SUPPLY_SECTION_FACTS_MAX",
     "SUPPLY_STATEMENTS_MAX",
-    "OriginPlace",
     "SupplyOffer",
     "supply_links",
     "supply_map_block",
@@ -36,13 +37,6 @@ SUPPLY_MATERIALS_MAX = 8
 SUPPLY_SECTION_FACTS_MAX = 12
 SUPPLY_STATEMENTS_MAX = 16
 SUPPLY_LINKS_MAX = 12
-
-
-@dataclass(frozen=True)
-class OriginPlace:
-    wikidata_id: str
-    latitude: float
-    longitude: float
 
 
 @dataclass(frozen=True)
@@ -93,17 +87,25 @@ def supply_links(
 
 
 def supply_map_block(
-    links: Sequence[SupplyLink], places: Mapping[str, OriginPlace], *, block_id: str
+    links: Sequence[SupplyLink],
+    places: Mapping[str, ShownPlace],
+    *,
+    block_id: str,
+    boundary: DatasetRef | None = None,
 ) -> SupplyMapBlock | None:
     if not links:
         return None
+    shown = {key: place for key, place in places.items() if boundary or isinstance(place, OriginPlace)}
+    placed = [_placed(link, shown.get(link.origin.casefold())) for link in links]
+    districted = any(link.district_lgd is not None for link in placed)
     try:
         return SupplyMapBlock(
             id=block_id,
             kind="supply_map",
             version=1,
             reuse=None,
-            links=[_placed(link, places.get(link.origin.casefold())) for link in links],
+            links=placed,
+            datasets=[boundary] if districted and boundary is not None else [],
         )
     except ValidationError as refused:
         logger.warning("the supply map %s is refused: %s", block_id, refused)
@@ -161,11 +163,15 @@ def _about_material(material: MaterialRows, claim: KnownClaim, sentence: Explain
     return claim.id in own or first_naming([sentence], material.surfaces()) is not None
 
 
-def _placed(link: SupplyLink, place: OriginPlace | None) -> SupplyLink:
+def _placed(link: SupplyLink, place: ShownPlace | None) -> SupplyLink:
     if place is None:
         return link
     fields = link.model_dump(by_alias=False)
-    fields.update(wikidata_id=place.wikidata_id, latitude=place.latitude, longitude=place.longitude)
+    fields.update(latitude=place.latitude, longitude=place.longitude)
+    if isinstance(place, RegisterPoint):
+        fields.update(wikidata_id=None, district_lgd=place.district_lgd)
+    else:
+        fields.update(wikidata_id=place.wikidata_id, district_lgd=None)
     return SupplyLink.model_validate(fields)
 
 

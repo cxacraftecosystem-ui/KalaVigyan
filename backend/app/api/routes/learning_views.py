@@ -18,7 +18,7 @@ from app.services import knowledge_view
 from app.services.answer_quiz import owned_explainer, shown_explainer, shown_quiz
 from app.services.answering import NOT_FOUND_DETAIL
 from app.services.craft_compare import craft_comparison
-from app.services.shared_concepts import craft_shared_science, shared_concept_of
+from app.services.shared_concepts import craft_shared_science, shared_concept_crafts, shared_concept_of
 
 router = APIRouter(tags=["learning"])
 
@@ -55,6 +55,24 @@ async def get_shared_concept(
 ) -> Any:
     focus = await _known_craft(session, craft) if craft is not None else None
     body = await shared_concept_of(session, term_key, focus, acls=reading_acls(reader))
+    if body is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_DETAIL)
+    return cached_read(request, response, reader, body.model_dump(mode="json", by_alias=True))
+
+
+@router.get("/shared-science/{term_key}/crafts")
+async def get_shared_concept_crafts(
+    request: Request,
+    response: Response,
+    term_key: str = Path(max_length=TERM_KEY_MAX_CHARS, pattern=TERM_KEY.pattern),
+    craft: str | None = Query(default=None, min_length=1, max_length=SLUG_MAX_CHARS),
+    offset: int = Query(default=0, ge=0),
+    *,
+    reader: User | None = Depends(public_reader),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    focus = await _known_craft(session, craft) if craft is not None else None
+    body = await shared_concept_crafts(session, term_key, focus, offset=offset, acls=reading_acls(reader))
     if body is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_DETAIL)
     return cached_read(request, response, reader, body.model_dump(mode="json", by_alias=True))

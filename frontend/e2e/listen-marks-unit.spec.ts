@@ -7,7 +7,7 @@ import { ExplainerReadingProvider } from "@/components/answer/ExplainerReading";
 import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
 import { ENGLISH } from "@/lib/answerLanguages";
 import { explainerShape, type ProseBlock } from "@/lib/explainerContract";
-import type { ListenWord } from "@/lib/listen";
+import type { ListenSentence, ListenWord } from "@/lib/listen";
 import { listenMarkStore, markOfSentence, type ListenMarks } from "@/lib/listenMarks";
 import { parseShape } from "@/lib/shape";
 
@@ -19,6 +19,10 @@ const WORDS: ListenWord[] = [
   { sentenceId: "s1", text: "fixes.", start: 0.5, end: 1 },
   { sentenceId: "s2", text: "Iron", start: 1.2, end: 1.5 },
   { sentenceId: "s2", text: "darkens.", start: 1.6, end: 2 }
+];
+const SENTENCES: ListenSentence[] = [
+  { sentenceId: "s1", start: 0, end: 1 },
+  { sentenceId: "s2", start: 1.2, end: 2 }
 ];
 const TIME_UPDATES = [0.1, 0.3, 0.6, 0.8, 1.3, 1.4, 1.7, 1.9];
 
@@ -47,15 +51,23 @@ function renderCounts(marks: ListenMarks, sentenceIds: string[]): Map<string, nu
 test("a time update re-renders only the sentence whose read word changed", () => {
   const marks = listenMarkStore();
   const renders = renderCounts(marks, ["s1", "s2", "s3"]);
-  for (const time of TIME_UPDATES) marks.follow(WORDS, time);
+  for (const time of TIME_UPDATES) marks.follow({ words: WORDS }, time);
   expect(Object.fromEntries(renders)).toEqual({ s1: 3, s2: 2, s3: 0 });
+});
+
+test("a track timed by its sentences re-renders a sentence only when reading enters or leaves it", () => {
+  const marks = listenMarkStore();
+  const renders = renderCounts(marks, ["s1", "s2", "s3"]);
+  for (const time of TIME_UPDATES) marks.follow({ words: [], sentences: SENTENCES }, time);
+  expect(Object.fromEntries(renders)).toEqual({ s1: 2, s2: 1, s3: 0 });
+  expect(marks.mark()).toEqual({ sentenceId: "s2", words: [], wordIndex: -1 });
 });
 
 test("every time update still reaches the dock's clock", () => {
   const marks = listenMarkStore();
   let heard = 0;
   marks.subscribe(() => (heard += 1));
-  for (const time of TIME_UPDATES) marks.follow(WORDS, time);
+  for (const time of TIME_UPDATES) marks.follow({ words: WORDS }, time);
   expect([heard, marks.time()]).toEqual([TIME_UPDATES.length, 1.9]);
   marks.follow(null, 0);
   expect([marks.mark(), marks.time()]).toEqual([null, 0]);
@@ -77,5 +89,8 @@ test("the sentence being read draws its word from the store, and the explainer k
   expect(attribute(drawn, "answer-sentence", "data-listening")).toEqual(["true"]);
   expect(drawn).toContain('data-testid="listen-word">Presence</mark>');
   expect(attribute(readSentence(listenMarkStore()), "answer-sentence", "data-listening")).toEqual([""]);
+  const sentenceOnly = readSentence(listenMarkStore({ sentenceId: "s2.b1.1", words: [], wordIndex: -1 }));
+  expect(attribute(sentenceOnly, "answer-sentence", "data-listening")).toEqual(["true"]);
+  expect(sentenceOnly).not.toContain('data-testid="listen-word"');
   expect(readRepo("frontend", "components", "answer", "ExplainerView.tsx")).toContain("listen: listen.marks }");
 });

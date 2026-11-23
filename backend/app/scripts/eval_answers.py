@@ -10,7 +10,7 @@ from typing import Any
 
 from sqlalchemy import select
 
-from app.core.db import dispose_engine, session_scope, sessionmaker
+from app.core.db import dispose_engine, research_sessionmaker, session_scope
 from app.core.shielded import ShieldedWork
 from app.models import Answer
 from app.providers import router
@@ -46,7 +46,7 @@ async def eval_pipeline(depth: str) -> AsyncIterator[AnswerPipeline]:
     system = Principal()
     try:
         yield build_answer_pipeline(
-            sessions=sessionmaker(),
+            sessions=research_sessionmaker(),
             index=INDEX,
             live=live,
             models=answer_models(depth, principal=system, optional=system),

@@ -91,6 +91,12 @@ def test_a_district_written_by_its_other_name_is_read_as_its_register_place() ->
     assert unstated_names("Kutch Ajrakh is printed in Barmer.", ["ajrakh is printed in barmer"]) == []
 
 
+def test_a_regional_month_a_sentence_names_must_be_stated_by_a_support_in_any_spelling() -> None:
+    assert unstated_names("Wear is bought in the month of Kartik.", ["bought at kartika fairs"]) == []
+    assert unstated_names("Wear is bought in the month of Kartik.", ["bought around diwali"]) == ["kartika"]
+    assert unstated_names("Kartik Chandra Pal made the statue.", ["a statue by pal"]) == []
+
+
 def test_a_sentence_naming_what_its_sources_do_not_is_dropped_alone() -> None:
     sentences = [
         kept("Alum is the mordant.", ALUM_CLAIM_ID),

@@ -79,12 +79,12 @@ export function useListen(answerId: string | null, language: string): Listen {
     else start();
   }, [status, start]);
 
-  const onTime = useCallback((time: number) => marks.follow(script?.tracks[track]?.words ?? null, time), [marks, script, track]);
+  const onTime = useCallback((time: number) => marks.follow(script?.tracks[track] ?? null, time), [marks, script, track]);
 
   const onEnded = useCallback(() => {
     if (script && track + 1 < script.tracks.length) {
       setTrack(track + 1);
-      marks.follow(script.tracks[track + 1].words, 0);
+      marks.follow(script.tracks[track + 1], 0);
     } else stop();
   }, [script, track, marks, stop]);
 

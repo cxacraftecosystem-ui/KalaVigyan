@@ -30,7 +30,7 @@ flowchart LR
   class REG accent
 ```
 
-Owner direction: open datasets only, nothing that needs registration or a login. Heavy downloads run in GitHub Actions (`.github/workflows/geo-etl.yml`), never on a laptop.
+Owner direction: open datasets only, nothing that needs registration or a login; the one exception is the India data portal's key, which the owner took into the ETL for groundwater on 2026-11-22 (Groundwater, below). Heavy downloads run in GitHub Actions (`.github/workflows/geo-etl.yml`), never on a laptop.
 
 ## Datasets
 
@@ -43,12 +43,15 @@ Owner direction: open datasets only, nothing that needs registration or a login.
 | `CHELSA_2_1_1981_2010` | CHELSA V2.1 climatologies 1981-2010 | Swiss Federal Institute for Forest, Snow and Landscape Research WSL, via EnviDat | V2.1 | 1981-2010 | 30 arc-seconds (about 1 km) | EPSG:4326 |
 | `CHIRPS_3_0` | Climate Hazards Center InfraRed Precipitation with Stations v3.0 | Climate Hazards Center, UC Santa Barbara | 3.0 | set per run: 1981 (the record's first year) to the last complete year | 0.05 degree | EPSG:4326 |
 | `GHCN_CAMS_T2M` | GHCN CAMS gridded monthly land surface air temperature | NOAA Climate Prediction Center, distributed by NOAA Physical Sciences Laboratory | air.mon.mean.nc, file version 3.01 | set per run: 1981 to the last complete year in the file | 0.5 degree | EPSG:4326 |
+| `OGD_GW_RESOURCES_RAJASTHAN_2023` | District-wise Details of Ground Water Resources of Rajasthan as on 31-03-2023 | Rajya Sabha, on the Open Government Data Platform India | Rajya Sabha Session 265, Unstarred Question 737, answered 29 July 2024 (published on data.gov.in 2024-10-23) | 2023 (as on 31 March 2023) | district, the 33 districts before Rajasthan's reorganisation | none: a table of districts by name |
 | `COPERNICUS_DEM_GLO90` | Copernicus DEM GLO-90 | European Space Agency, Copernicus Programme | 2021_1 (AWS Open Data COG) | 2011-2015 acquisitions | 3 arc-seconds (about 90 m) | EPSG:4326 (EGM2008 heights) |
 | `HYDRORIVERS_1_0` | HydroRIVERS v1.0 (Asia) | WWF HydroSHEDS | v10 | static | 15 arc-second network (reaches with upstream area >= 10 km2 or discharge >= 0.1 m3/s) | EPSG:4326 |
 | `USGS_MRDS` | Mineral Resources Data System | U.S. Geological Survey | snapshot at retrieval | compiled to 2011, no longer updated | point locations | EPSG:4326 |
 | `ETOPO1_ICE` | ETOPO1 1 Arc-Minute Global Relief Model, ice surface (the relief layer) | NOAA National Centers for Environmental Information | ice surface, grid-registered | 2009 | 1 arc-minute | EPSG:4326 |
 | `NATURAL_EARTH_10M_PHYSICAL` | Natural Earth 1:10m physical vectors (rivers, lakes, regions and peaks) | Natural Earth | 1:10m, version 5.0.0 | static | 1:10 million | EPSG:4326 |
 | `GLIM_1_0_05DEG` | Global Lithological Map Database v1.0 (gridded to 0.5 degree) | Universitat Hamburg, via PANGAEA | 1.0 | 2012 | 0.5 degree | EPSG:4326 |
+| `WIKIDATA_RIVER_NAMES` | Wikidata river items: English names, mouths and sources | Wikidata, Wikimedia Foundation | set per run: the date the names were read | the same | item coordinates (river mouth and river source) | EPSG:4326 |
+| `OSM_RIVER_NAMES` | OpenStreetMap river names (waterway=river, India extract) | OpenStreetMap contributors, India extract by Geofabrik | set per run: the date the names were read | the same | way geometry, matched to HydroRIVERS reaches within 1 km | EPSG:4326 |
 
 ## Licence, attribution and redistribution
 
@@ -63,10 +66,13 @@ Owner direction: open datasets only, nothing that needs registration or a login.
 | `CHELSA_2_1_1981_2010` | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (EnviDat's record of the dataset, read 2026-11-21) | Yes | CHELSA V2.1, Karger et al. | https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/ |
 | `CHIRPS_3_0` | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Yes | Climate Hazards Center, UC Santa Barbara (CHIRPS3) | https://data.chc.ucsb.edu/products/CHIRPS/v3.0/ |
 | `GHCN_CAMS_T2M` | [Public domain (U.S. Government work on a federal server)](https://psl.noaa.gov/data/help/) (checked 2026-11-18) | Yes | GHCN_CAMS Gridded 2m Temperature (Land) data provided by the NOAA PSL, Boulder, Colorado, USA | https://downloads.psl.noaa.gov/Datasets/ghcncams/air.mon.mean.nc |
+| `OGD_GW_RESOURCES_RAJASTHAN_2023` | [Government Open Data License - India](https://www.data.gov.in/Godl) | Yes | Rajya Sabha, via the Open Government Data Platform India (data.gov.in), under the Government Open Data License - India | https://api.data.gov.in/resource/1dc76140-9468-4507-a1a2-2abb19e79782 (read with the key `DATA_GOV_IN_API_KEY`; the page is https://www.data.gov.in/resource/district-wise-details-ground-water-resources-rajasthan-31-03-2023) |
 | `COPERNICUS_DEM_GLO90` | [Copernicus DEM licence (GLO-90 free worldwide)](https://registry.opendata.aws/copernicus-dem/) | Yes | Produced using Copernicus WorldDEM-90 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved | https://copernicus-dem-90m.s3.amazonaws.com/ |
 | `HYDRORIVERS_1_0` | [HydroSHEDS v1 License Agreement](https://data.hydrosheds.org/file/technical-documentation/HydroSHEDS_TechDoc_v1_4.pdf) (Appendix A, checked 2026-11-17): free for non-commercial and commercial use; distributed only inside derived products, never on its own; attribution required | Yes, inside the app; the lines are never a download or export | The Exhibit B statement, below (River lines) | https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_as_shp.zip |
 | `USGS_MRDS` | [Public domain (U.S. Government work)](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits) | Yes | U.S. Geological Survey Mineral Resources Data System | https://mrdata.usgs.gov/services/wfs/mrds |
 | `GLIM_1_0_05DEG` | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | Yes | Hartmann and Moosdorf (2012), GLiM | https://doi.pangaea.de/10.1594/PANGAEA.788537?format=textfile |
+| `WIKIDATA_RIVER_NAMES` | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | Yes | River names from Wikidata | https://query.wikidata.org/sparql |
+| `OSM_RIVER_NAMES` | [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/): the names it gives are a derived database under the ODbL, kept in their own file and row | Yes, under the ODbL, apart from the CC-licensed data | © OpenStreetMap contributors | https://download.geofabrik.de/asia/india-latest.osm.pbf |
 | `ETOPO1_ICE` | [Public domain (U.S. Government work)](https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ngdc.mgg.dem:316) | Yes | NOAA National Centers for Environmental Information, ETOPO1 | https://coastwatch.pfeg.noaa.gov/erddap/griddap/etopo180.html |
 | `NATURAL_EARTH_10M_PHYSICAL` | [Public domain](https://www.naturalearthdata.com/about/terms-of-use/) | Yes | Made with Natural Earth. | https://naciscdn.org/naturalearth/10m/physical/ |
 
@@ -79,10 +85,13 @@ Owner direction: open datasets only, nothing that needs registration or a login.
 - `CHELSA_2_1_1981_2010`: Karger, D. N., Conrad, O., Bohner, J., et al. (2021). Climatologies at high resolution for the earth's land surface areas. EnviDat. https://doi.org/10.16904/envidat.228 (the dataset; the method paper is Scientific Data 4, 170122, 2017, https://doi.org/10.1038/sdata.2017.122)
 - `CHIRPS_3_0`: Climate Hazards Center InfraRed Precipitation with Stations version 3 (CHIRPS3) Data Repository (2025). https://doi.org/10.15780/G2JQ0P
 - `GHCN_CAMS_T2M`: Fan, Y., van den Dool, H. (2008). A global monthly land surface air temperature analysis for 1948-present. Journal of Geophysical Research 113, D01103. https://doi.org/10.1029/2007JD008470
+- `OGD_GW_RESOURCES_RAJASTHAN_2023`: Rajya Sabha (2024). District-wise Details of Ground Water Resources of Rajasthan as on 31-03-2023. Session 265, Unstarred Question 737, answered 29 July 2024. Open Government Data Platform India. https://www.data.gov.in/resource/district-wise-details-ground-water-resources-rajasthan-31-03-2023
 - `COPERNICUS_DEM_GLO90`: European Space Agency (2024). Copernicus Global Digital Elevation Model. https://doi.org/10.5270/ESA-c5d3d65
 - `HYDRORIVERS_1_0`: Lehner, B., Grill, G. (2013). Global river hydrography and network routing: baseline data and new approaches to study the world's large river systems. Hydrological Processes 27(15), 2171-2186. https://doi.org/10.1002/hyp.9740
 - `USGS_MRDS`: U.S. Geological Survey. Mineral Resources Data System (MRDS). Reston, Virginia. https://mrdata.usgs.gov/mrds/
 - `GLIM_1_0_05DEG`: Hartmann, J., Moosdorf, N. (2012). Global Lithological Map Database v1.0 (gridded to 0.5 degree spatial resolution). PANGAEA. https://doi.org/10.1594/PANGAEA.788537
+- `WIKIDATA_RIVER_NAMES`: Wikidata contributors. Wikidata, the free knowledge base. Wikimedia Foundation. https://www.wikidata.org/ (each name cites its item, `refs` in the names file).
+- `OSM_RIVER_NAMES`: OpenStreetMap contributors. OpenStreetMap, available under the Open Database License. https://www.openstreetmap.org/copyright (each name cites its ways, `refs` in the names file).
 - `ETOPO1_ICE`: Amante, C. and B.W. Eakins, 2009. ETOPO1 1 Arc-Minute Global Relief Model: Procedures, Data Sources and Analysis. NOAA Technical Memorandum NESDIS NGDC-24. https://doi.org/10.7289/V5C8276M
 - `NATURAL_EARTH_10M_PHYSICAL`: Natural Earth. Free vector and raster map data at naturalearthdata.com.
 
@@ -343,6 +352,8 @@ Each row in `district_env.parquet` is one `(districtLgd, datasetCode, variable, 
 | | `annual_mean_temperature` | run period, e.g. `1981-2025` | `NORMAL` | degC |
 | | `annual_mean_temperature` | run period | `TREND_PER_DECADE` | degC per decade |
 | | `annual_mean_temperature` | run period | `TREND_P_VALUE` | p-value |
+| Groundwater, Rajasthan 2023 (`groundwater`) | `annual_groundwater_recharge`, `annual_extractable_groundwater`, `annual_groundwater_extraction_irrigation`, `annual_groundwater_extraction_industrial`, `annual_groundwater_extraction_domestic`, `annual_groundwater_extraction` | `2023` | `TOTAL` | ham |
+| | `stage_of_groundwater_extraction` | `2023` | `SHARE` | % |
 | Copernicus DEM (`copdem`) | `elevation` | | `DISTRICT_MEAN`, `DISTRICT_P10`, `DISTRICT_P90`, `DISTRICT_MIN`, `DISTRICT_MAX` | m |
 | | `slope` | | `DISTRICT_MEAN`, `DISTRICT_P10`, `DISTRICT_P90` | degree |
 | HydroRIVERS (`hydrorivers`) | `river_length`, `major_river_length` | | `TOTAL` | km |
@@ -386,7 +397,7 @@ These sources were considered and not used:
 The river story draws HydroRIVERS v1.0 (Asia) lines, not just their district totals.
 
 - **Which reaches.** Every reach with an upstream area of at least 100 km2 (`UPLAND_SKM`), of every basin (`MAIN_RIV`) one of whose reaches of that size crosses a district polygon. The whole basin is kept, from its sources in Tibet, Nepal or Bhutan to its mouth, and so is every reach a kept reach flows into. A river's source as drawn is its first reach of that size, not the dataset's 10 km2 headwater.
-- **Files.** One TopoJSON per basin in the private media bucket, under `media/rivers/v10/<MAIN_RIV>/<sha256>/` (the file's own SHA-256, so a stored basin row and its file never drift, and a file that no longer matches its row is not served; decision 0050): each reach simplified on its own at 0.005 degree (about 550 m) with its ends kept, so junctions stay joined, and quantized to 100,000 steps over the basin. Served only to signed-in readers through `GET /api/rivers/<MAIN_RIV>`; never a download or an export.
+- **Files.** One TopoJSON per basin in the private media bucket, under `media/rivers/v10/<MAIN_RIV>/<sha256>/` (the file's own SHA-256, so a stored basin row and its file never drift, and a file that no longer matches its row is not served; decision 0050): each reach simplified on its own at 0.005 degree (about 550 m) with its ends kept, so junctions stay joined, and quantized to 100,000 steps over the basin; each reach carries the districts it crosses and the fraction of its length at which it enters each (decision 0153). Served only to signed-in readers through `GET /api/rivers/<MAIN_RIV>`, gzip-compressed to a reader that accepts it; never a download or an export. The production river job of 2026-11-17 (run 44154095333) wrote 410 basins; the largest, the Ganga-Brahmaputra (41067217, 42,650 reaches), is 5,412,393 bytes and 736,058 compressed, the median 1,597 bytes. With each reach's districts (run 45088759547, 2026-11-23) the largest is 6,347,825 bytes and 813,603 compressed. That run named 147 rivers from Wikidata (14,250 reaches, of 513 items with a qualified mouth in the box) and 4,303 from OpenStreetMap (36,626 reaches, from 11,476 named ways), of 128,756 reaches.
 - **Licence, checked 2026-11-17.** The HydroRIVERS Technical Documentation v1.0 (October 2019, section 4.1) puts the data under the HydroSHEDS License Agreement, which is Appendix A of the [HydroSHEDS Technical Documentation v1.4](https://data.hydrosheds.org/file/technical-documentation/HydroSHEDS_TechDoc_v1_4.pdf) (April 2022). The data are free for non-commercial and commercial use; they may be distributed only incorporated into derived products, never as a stand-alone product (2.1.2); and Exhibit B's statement must go with the product's documentation or metadata. The website's [terms of use](https://www.hydrosheds.org/terms-of-use) cover the site's own pages, not the data. The dataset row carries the statement as its attribution, so every citation of the river shows it:
 
   > This product KalaVigyan incorporates data from the HydroSHEDS version 1 database which is © World Wildlife Fund, Inc. (2006-2022) and has been used herein under license. WWF has not evaluated the data as altered and incorporated within KalaVigyan, and therefore gives no warranty regarding its accuracy, completeness, currency or suitability for any particular purpose. Portions of the HydroSHEDS v1 database incorporate data which are the intellectual property rights of © USGS (2006-2008), NASA (2000-2005), ESRI (1992-1998), CIAT (2004-2006), UNEP-WCMC (1993), WWF (2004), Commonwealth of Australia (2007), and Her Royal Majesty and the British Crown and are used under license. The HydroSHEDS v1 database and more information are available at https://www.hydrosheds.org.
@@ -411,13 +422,101 @@ downloads through CEDA, which needs an account, and the series ends in 2024); ER
 (Copernicus Climate Data Store key); Berkeley Earth (CC BY-NC); CHELSA monthly series (licence
 unconfirmed, as above, and ends in 2019); IMD gridded temperature (terms of reuse not stated).
 
+### River names: Wikidata first, OpenStreetMap to fill gaps (decision 0153)
+
+HydroRIVERS names no river. The owner's decision of 2026-11-22: river names come from Wikidata
+(CC0) and OpenStreetMap (ODbL), matched to the HydroRIVERS reaches the site draws by stated rules,
+Wikidata first. `python -m geo_etl river-names --rivers out/rivers` (the `riverlines` job of
+`geo-etl.yml`, after the lines are built) writes two files beside the river lines, each with its
+dataset row (`WIKIDATA_RIVER_NAMES`, `OSM_RIVER_NAMES`: the registry record with the date the names
+were read as its edition and period, `retrievedAt` and the SHA-256 of what was read), the
+HydroRIVERS edition, its matching rules and one row per named river: `name` as the source states
+it, `refs` (the Wikidata item, or the OpenStreetMap ways), `mainRiv`, `reachIds` from source to
+mouth and `districtLgds` in path order. Both are copied unchanged from the run's `geo-river-lines`
+artifact into `backend/app/data/rivers/` (`river_names.wikidata.json`,
+`river_names.osm.json`), which the backend reads (`app/data/river_names.py`).
+
+- **Wikidata** (`geo_etl/wikidata_rivers.py`, `river_names.py`). Two queries of the Wikidata Query
+  Service: every item with a coordinate qualified "applies to part: river mouth" (Q1233637) or
+  "river source" (Q7376362) inside the river lines' box; then, for those items that are an
+  instance of a subclass of river (Q4022), the English label, "mouth of the watercourse" (P403)
+  and drainage basin area (P2053, normalised to km²). An item is matched by its mouth, its course
+  and its basin: a reach must end within 10 km of its mouth (`MOUTH_KM`); with a source stated,
+  the reach's upstream must hold a headwater starting within 30 km of it (`SOURCE_KM`) and the
+  river is the path from that headwater down to the reach; without one, a stated area must be
+  within half of the reach's `UPLAND_SKM` (`AREA_RATIO`) and the river climbs the largest inflow;
+  with neither, only the one reach ending near the mouth, if it is a basin outlet, is taken. The
+  nearest such reach wins; two equally near and equally good are refused. When the mouth names a
+  river that is itself matched, the river's last reach must flow into that river's path and not
+  lie on it. A reach two matched rivers claim takes the name of the shorter, and of neither when
+  they are as long. Items without a mouth coordinate or an English label are not matched.
+- **OpenStreetMap** (`geo_etl/osm_rivers.py`, `river_names_osm.py`). The Geofabrik India extract,
+  filtered with osmium to ways tagged `waterway=river` and exported as line strings; a way is
+  named by its `name:en`, else by its `name` when that is in Latin script. A reach no Wikidata
+  river names takes an OpenStreetMap name when at least 80% of points every 500 m along it
+  (`SAMPLE_M`, `SHARE_MIN`) lie within 1 km (`NEAR_M`) of ways of that one name, measured in WGS 84
+  / India NSF LCC; neighbouring reaches of one name are one river.
+- **Licences, kept apart.** Wikidata's data is [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+  OpenStreetMap's is the [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/),
+  credited "© OpenStreetMap contributors" ([copyright](https://www.openstreetmap.org/copyright)):
+  the names it gives are a derived database under the ODbL, so they are kept in their own file
+  and their own dataset row, never merged with the Wikidata names, and every map that shows one
+  cites the `OSM_RIVER_NAMES` row, whose attribution is that credit. The open-data release
+  (decision 0116) holds no river names; should it ever, the OpenStreetMap names go in a separate
+  ODbL file, never into the CC BY tables.
+- **Where the names are used.** A region story names its river from the reach it is traced
+  through and cites the name's row; the story's offer puts first the rivers whose names its
+  statements name; a craft page draws a dossier river by its name and district
+  (`river_names.place_river`); and prose, headings and expert takes are checked for river names
+  no cited claim or quote states (`stated_names.river_names_named`): a name of several words as
+  the dataset writes it ("Suran River"), and a one-word form only of a Wikidata river ("Narmada")
+  that has four letters or more and is not an ordinary English word (decision 0144); an
+  OpenStreetMap name's one-word form ("Devi" of "Devi Nadi") is too often a person's or a god's
+  name to be checked alone.
+
 ### Groundwater
 
-No open district-level groundwater dataset is loaded. The Central Ground Water Board's district
-tables (Dynamic Ground Water Resources of India) are published as state PDFs, and the India Data
-Portal's machine-readable copies need an API key, so a climate block shows no groundwater value;
-groundwater appears only through cited claims. `GroundwaterValue` is ready for an open dataset
-when one exists (`docs/TECH_DEBT.md`).
+District groundwater comes from the India data portal (Open Government Data Platform India,
+data.gov.in), read with the owner's API key: the owner took the key into the ETL on 2026-11-22, the
+one exception to the no-key rule above. The key is the GitHub secret and Parameter Store name
+`DATA_GOV_IN_API_KEY`; the `groundwater` layer fails, naming the variable, when it is unset, and no
+failure, log or part file carries the key or an address that holds it.
+
+- **What the portal holds (searched 2026-11-23).** No all-India district table of the Dynamic
+  Ground Water Resources assessment is an API resource on the portal in any assessment year: the
+  Ministry of Jal Shakti's two catalogues of the assessment (`Dynamic Ground Water Resources`,
+  `Ground Water Resources`) hold no resources, and the National Compilation gives its district
+  tables only in PDF annexures. The portal's assessment tables are state-wise (2017, 2020, 2022,
+  2023, 2025), with district-wise Rajya Sabha answers for Rajasthan as on 31-03-2023 and for the
+  urban areas of Delhi and Bengaluru in 2023, the urban ones by assessment unit. The layer reads the
+  Rajasthan table, the one that gives whole districts.
+- **What is loaded.** `OGD_GW_RESOURCES_RAJASTHAN_2023` (API resource
+  `1dc76140-9468-4507-a1a2-2abb19e79782`), read in pages of 100 rows one second apart, a busy or
+  unanswered page asked again as the other layers' downloads are. Each district's seven figures
+  become `DistrictEnvValue` rows for the period `2023` in the units the resource states ("Data
+  Figures are in Hectare Metre (Ham)", the stage in %): total annual recharge, annual extractable
+  resource, annual extraction for irrigation, for industry, for domestic use and in total, and the
+  stage of extraction. The table states no category (Safe, Semi-Critical, Critical,
+  Over-Exploited), so none is stored and none is derived from the stage.
+- **Districts.** The table lists districts "as per the pre-reorganization districts list": the 33
+  districts the district shapes also draw. The eight districts created since (Balotra, Beawar,
+  Deeg, Didwana-Kuchaman, Khairthal-Tijara, Kotputli-Behror, Phalodi, Salumbar) have no polygon and
+  no value. A row matches the LGD district of Rajasthan whose name is the same after folding case,
+  spacing and punctuation; five rows spell their district another way, each listed in
+  `layers/groundwater.SPELLINGS` and named in the row's method: Chittaurgarh (Chittorgarh), Dhaulpur
+  (Dholpur), Jalor (Jalore), Jhunjhunun (Jhunjhunu) and Sri Ganganagar (Ganganagar). The row `Total`
+  is the state's total and is not stored. A row that matches no district or more than one, a
+  district named by two rows, a selected district of Rajasthan without a row and a figure that is
+  not a number are each a failure of the part, never guessed. Districts of other states lie outside
+  the table: the layer's result names the states it covers, and the part's notes count the
+  districts outside them.
+- **Shown.** The districts a craft is mapped to in Rajasthan show four of the figures (recharge,
+  extractable resource, extraction, stage of extraction; `app.geo.groundwater`) in the climate and
+  risk block, which cites the dataset row. Everywhere else groundwater appears only through cited
+  claims (`docs/TECH_DEBT.md`).
+- **Licence.** The portal publishes its data under the Government Open Data License - India, which
+  allows use, adaptation and sharing with an attribution statement naming the provider, the portal
+  and the licence; the dataset row carries that statement.
 
 ### District boundaries are indicative and not redistributable
 

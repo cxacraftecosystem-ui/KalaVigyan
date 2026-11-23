@@ -2,10 +2,17 @@ import { DataTable, type DataColumn, type DataRow } from "@/components/charts/Da
 import { DatasetCredit } from "@/components/DatasetCredit";
 import { safeOutboundUrl } from "@/lib/citations";
 import { formatNumber } from "@/lib/measure";
-import type { CraftGround, GroundLayer } from "@/lib/placeGround";
+import type { CraftGround, GroundLayer, GroundPin, GroundRiver } from "@/lib/placeGround";
 import { commodityWord, elevationText, LAYER_SHORT } from "@/lib/placeGroundView";
 import type { RegionDataset } from "@/lib/regionContract";
+import { wikidataUrl } from "@/lib/supplyView";
 import type { SourceRef } from "@/lib/types";
+
+export type CreditedMarks = { abroad: readonly GroundPin[]; rivers: readonly GroundRiver[] };
+type CreditsProps = { layers: readonly GroundLayer[]; datasets: readonly RegionDataset[]; sources: readonly SourceRef[]; marks?: CreditedMarks };
+
+export const WIKIDATA_LICENCE = "CC0";
+const NO_MARKS: CreditedMarks = { abroad: [], rivers: [] };
 
 const LINK = "kv-link font-normal";
 
@@ -45,17 +52,44 @@ export function PlaceSource({ source }: { source: SourceRef }) {
   );
 }
 
-export function GroundCredits({ layers, datasets, sources }: { layers: readonly GroundLayer[]; datasets: readonly RegionDataset[]; sources: readonly SourceRef[] }) {
+export function AbroadSource({ pin }: { pin: GroundPin }) {
+  const href = safeOutboundUrl(wikidataUrl(pin.wikidataId));
+  const item = `Wikidata ${pin.wikidataId}`;
+  return (
+    <span className="font-ui text-caption text-ink-3" data-testid="abroad-source">
+      {`${pin.name} placed by `}
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer" className={LINK}>
+          {item}
+        </a>
+      ) : (
+        item
+      )}
+      {` · ${WIKIDATA_LICENCE}`}
+    </span>
+  );
+}
+
+export function creditedDatasets(datasets: readonly RegionDataset[], rivers: readonly GroundRiver[]): RegionDataset[] {
+  const credited = new Map(datasets.map((dataset) => [dataset.code, dataset]));
+  for (const river of rivers) for (const dataset of [river.hydrorivers, river.names]) if (!credited.has(dataset.code)) credited.set(dataset.code, dataset);
+  return [...credited.values()];
+}
+
+export function GroundCredits({ layers, datasets, sources, marks = NO_MARKS }: CreditsProps) {
   return (
     <div className="mt-3 grid gap-2 border-t border-rule pt-3 md:grid-cols-2 md:gap-x-8" data-testid="ground-credits">
       {layers.map((layer) => (
         <LayerCredit key={layer.key} layer={layer} />
       ))}
-      {datasets.map((dataset) => (
+      {creditedDatasets(datasets, marks.rivers).map((dataset) => (
         <DatasetCredit key={dataset.code} dataset={dataset} />
       ))}
       {sources.map((source) => (
         <PlaceSource key={source.id} source={source} />
+      ))}
+      {marks.abroad.map((pin) => (
+        <AbroadSource key={pin.key} pin={pin} />
       ))}
     </div>
   );

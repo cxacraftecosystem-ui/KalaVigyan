@@ -21,14 +21,26 @@ class ShieldedWork:
         return len(self._running)
 
     async def run[T](self, work: Coroutine[Any, Any, T], *, name: str) -> T:
-        task = asyncio.create_task(work, name=name)
-        self._running.add(task)
-        task.add_done_callback(self._running.discard)
+        task = self._started(work, name)
         try:
             return await asyncio.shield(task)
         except asyncio.CancelledError:
             task.add_done_callback(_report_unattended)
             raise
+
+    async def run_within[T](self, work: Coroutine[Any, Any, T], *, name: str, seconds: float) -> T:
+        task = self._started(work, name)
+        try:
+            return await asyncio.wait_for(asyncio.shield(task), timeout=seconds)
+        except TimeoutError, asyncio.CancelledError:
+            task.add_done_callback(_report_unattended)
+            raise
+
+    def _started[T](self, work: Coroutine[Any, Any, T], name: str) -> asyncio.Task[T]:
+        task = asyncio.create_task(work, name=name)
+        self._running.add(task)
+        task.add_done_callback(self._running.discard)
+        return task
 
     async def drain(self, timeout: float = DRAIN_SECONDS) -> int:
         if not self._running:

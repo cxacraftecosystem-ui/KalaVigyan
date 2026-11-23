@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { splitSseBuffer } from "@/lib/answerStream";
-import { craftPageShape } from "@/lib/craftPageContract";
+import { craftPageShape, UNREAD_CHAPTERS } from "@/lib/craftPageContract";
 import { mediaJobShape, mediaOptionsShape } from "@/lib/mediaContract";
 import { craftRegionShape, layerClassOf, mapLayerListShape, mapLayerShape } from "@/lib/regionContract";
 import { parseShape, ShapeError, type Shape } from "@/lib/shape";
@@ -42,9 +42,20 @@ const GOLDEN: [string, Shape<unknown>][] = [
   ["media.options.golden.json", mediaOptionsShape]
 ];
 
+const UNREAD: Readonly<Record<string, readonly string[]>> = {
+  "craft.page.golden.json": [UNREAD_CHAPTERS],
+  "craft.page.register.golden.json": [UNREAD_CHAPTERS]
+};
+
+function withoutUnread(name: string): unknown {
+  const body = { ...(golden(name) as Record<string, unknown>) };
+  for (const field of UNREAD[name] ?? []) delete body[field];
+  return body;
+}
+
 for (const [name, shape] of GOLDEN) {
-  test(`the client parses ${name} as the backend writes it`, () => {
-    expect(parseShape(shape, golden(name))).toEqual(golden(name));
+  test(`the client parses ${name} as the backend writes it, keeping every field it reads`, () => {
+    expect(parseShape(shape, golden(name))).toEqual(withoutUnread(name));
   });
 }
 
@@ -75,7 +86,7 @@ test("a choropleth value falls in its class, the top class closed", () => {
   const layer = parsed(mapLayerShape, "region.layer.golden.json");
   expect(layerClassOf(layer, layer.values["444"])).toBe(0);
   expect(layerClassOf(layer, 7.08)).toBe(1);
-  expect(layerClassOf(layer, layer.values["460"])).toBe(4);
+  expect(layerClassOf(layer, layer.values["441"])).toBe(4);
   expect(() => layerClassOf(layer, 8.4)).toThrow(RangeError);
   expect(layer.boundary.caption).toBe("External boundaries of India as depicted by Survey of India. District boundaries are indicative.");
 });

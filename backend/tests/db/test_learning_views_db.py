@@ -12,7 +12,7 @@ from app.research.blocks import named_in
 from app.services import knowledge_view
 from app.services.claim_seed import seed_id
 from app.services.craft_compare import craft_comparison
-from app.services.shared_concepts import craft_shared_science, shared_concept_of
+from app.services.shared_concepts import craft_shared_science, shared_concept_crafts, shared_concept_of
 from app.services.shared_term_crafts import refresh_shared_terms
 
 pytestmark = pytest.mark.db
@@ -85,6 +85,22 @@ async def test_one_shared_term_lists_its_crafts_by_name_or_from_a_chosen_craft(s
     focused = await shared_concept_of(session, "alum", await craft(session, AJRAKH))
     assert focused is not None and [e.craft.slug for e in focused.node.crafts] == ALUM_CRAFTS
     assert await shared_concept_of(session, "no-such-term", None) is None
+
+
+async def test_a_node_counts_the_crafts_sharing_its_term_and_its_crafts_page_on(
+    session: AsyncSession,
+) -> None:
+    ajrakh = await craft(session, AJRAKH)
+    explored = await craft_shared_science(session, ajrakh)
+    alum = next(node for node in explored.nodes if node.term_key == "alum")
+    assert alum.craft_count == len(ALUM_CRAFTS)
+    page = await shared_concept_crafts(session, "alum", ajrakh, offset=2)
+    assert page is not None and (page.craft_count, page.offset) == (len(ALUM_CRAFTS), 2)
+    assert [entry.craft.slug for entry in page.crafts] == ALUM_CRAFTS[2:]
+    assert [entry.sentence.text for entry in page.crafts] == ALUM_SENTENCES[2:]
+    assert [entry.sentence.id for entry in page.crafts] == ["alum.3", "alum.4"]
+    assert await shared_concept_crafts(session, "alum", ajrakh, offset=len(ALUM_CRAFTS)) is None
+    assert await shared_concept_crafts(session, "no-such-term", None, offset=0) is None
 
 
 async def test_ajrakh_and_bagru_are_compared_term_by_term_on_their_own_materials(

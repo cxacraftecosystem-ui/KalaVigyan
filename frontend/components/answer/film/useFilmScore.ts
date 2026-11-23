@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError, apiErrorMessage } from "@/lib/api";
 import { fetchFilmScore, type FilmScore } from "@/lib/filmScore";
@@ -15,6 +15,9 @@ export function useFilmScore(answerId: string, language: string): FilmScoreState
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const asked = useRef(false);
+  const leaving = useRef<AbortController | null>(null);
+
+  useEffect(() => () => leaving.current?.abort(), []);
 
   const toggle = useCallback(
     (next: boolean) => {
@@ -23,9 +26,12 @@ export function useFilmScore(answerId: string, language: string): FilmScoreState
       if (!next || asked.current) return;
       asked.current = true;
       setLoading(true);
-      fetchFilmScore(answerId, language)
+      const controller = new AbortController();
+      leaving.current = controller;
+      fetchFilmScore(answerId, language, { signal: controller.signal })
         .then(setScore)
         .catch((cause: unknown) => {
+          if (controller.signal.aborted) return;
           if (!(cause instanceof ApiError)) console.error(cause);
           asked.current = false;
           setOn(false);

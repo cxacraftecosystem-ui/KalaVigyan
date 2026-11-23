@@ -72,12 +72,33 @@ async function film(page: Page): Promise<string[]> {
     () => true,
     () => false
   );
+  const played = shown ? await filmPlays(page) : [];
   await page.keyboard.press("Escape");
   const gone = await player.waitFor({ state: "hidden", timeout: QUICK_MS }).then(
     () => true,
     () => false
   );
-  return [...(shown ? [] : ["Film opens no player"]), ...(gone ? [] : ["Escape leaves the film open"])];
+  return [...(shown ? [] : ["Film opens no player"]), ...played, ...(gone ? [] : ["Escape leaves the film open"])];
+}
+
+async function filmPlays(page: Page): Promise<string[]> {
+  const play = page.getByTestId("film-play");
+  const ready = await reached(async () => String((await play.getAttribute("aria-disabled")) === null), "true", TIMEOUT_MS);
+  if (ready !== "true") return ["Film never became ready to play"];
+  if ((await play.getAttribute("aria-label")) !== "Pause") await play.click();
+  const bar = page.getByTestId("film-timing").getByRole("progressbar");
+  const caption = page.getByTestId("film-caption");
+  const word = page.getByTestId("film-caption-word");
+  const playedShare = async () => (await bar.getAttribute("aria-valuenow")) ?? "";
+  const heardWord = async () => {
+    const line = (await caption.count()) ? (await caption.first().innerText()).trim() : "";
+    return (await word.count()) ? `${line}|${(await word.first().innerText()).trim()}` : line;
+  };
+  const barBefore = await playedShare();
+  const wordBefore = await heardWord();
+  const barAfter = await changedFrom(playedShare, barBefore, TIMEOUT_MS);
+  const wordAfter = await changedFrom(heardWord, wordBefore, TIMEOUT_MS);
+  return [...unchangedProblems("The film's played bar", barBefore, barAfter), ...unchangedProblems("The film's caption", wordBefore, wordAfter)];
 }
 
 async function saveToggle(page: Page): Promise<string[]> {

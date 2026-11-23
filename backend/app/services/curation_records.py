@@ -22,6 +22,7 @@ from .term_glossary import term_id
 __all__ = [
     "gi_row",
     "glossary_key",
+    "label_key",
     "media_claim_rows",
     "media_rows",
     "picture_media_id",
@@ -91,7 +92,10 @@ def term_names(term: DossierTerm) -> list[str]:
 
 
 def glossary_key(term: DossierTerm) -> str | None:
-    label = term_names(term)[0]
+    return label_key(term_names(term)[0])
+
+
+def label_key(label: str) -> str | None:
     if len(label) > TERM_LABEL_MAX_CHARS:
         return None
     try:

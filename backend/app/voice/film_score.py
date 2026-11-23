@@ -22,11 +22,20 @@ from app.schemas.film import (
     ScoreLabel,
     ScoreMusic,
 )
-from app.services.naming import content_disposition, score_cue_file_name, score_key, score_music_file_name
+from app.services.naming import (
+    content_disposition,
+    score_cue_file_name,
+    score_key,
+    score_manifest_key,
+    score_music_file_name,
+)
 
-from .film_scenes import FilmScene, SceneCue, bed_seconds, film_scenes, scene_cues, scenes_hash
-from .narration_cache import AUDIO_TYPE, NarrationObjects
+from .film_plan import ScorePlan, score_plan
+from .film_scenes import SceneCue, scene_cues
+from .narration_cache import AUDIO_TYPE
+from .object_lease import LEASE_LEAF, LeasedObjects, held_lease, release_lease, take_lease
 from .score_cache import (
+    UNNAMED_LEAF,
     ScoreClip,
     ScoredCue,
     ScoredMusic,
@@ -40,16 +49,23 @@ from .score_cache import (
 from .score_prompts import SCORE_MUSIC_PROMPT
 
 __all__ = [
+    "MAKING_MESSAGE",
     "NOTHING_MESSAGE",
     "SCORE_CONCURRENCY",
+    "SCORE_LEASE_SECONDS",
     "SCORE_LENGTH_TOLERANCE_SECONDS",
     "SCORE_LINK_SECONDS",
     "ScoreAsk",
+    "ScoreBeingMade",
     "ScoreDeps",
     "ScoreMaker",
     "ScoreRefused",
     "checked_score_audio",
+    "current_score",
     "film_score",
+    "made_score",
+    "planned_score",
+    "score_in_making",
 ]
 
 logger = logging.getLogger(__name__)
@@ -57,10 +73,16 @@ logger = logging.getLogger(__name__)
 SCORE_LINK_SECONDS = 3600
 SCORE_CONCURRENCY = 3
 SCORE_LENGTH_TOLERANCE_SECONDS = 1.0
+SCORE_LEASE_SECONDS = 600
 NOTHING_MESSAGE = "There is nothing to play here."
+MAKING_MESSAGE = "The music for this film is being made."
 
 
 class ScoreRefused(Refused):
+    pass
+
+
+class ScoreBeingMade(Refused):
     pass
 
 
@@ -72,9 +94,10 @@ class ScoreMaker(Protocol):
 
 @dataclass(frozen=True)
 class ScoreDeps:
-    objects: NarrationObjects
+    objects: LeasedObjects
     maker: ScoreMaker
     clock: Callable[[], datetime]
+    voice_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -96,15 +119,42 @@ class _Clip:
 
 
 async def film_score(ask: ScoreAsk, deps: ScoreDeps) -> FilmScore:
-    scenes = film_scenes(ask.explainer)
-    if not scenes:
+    plan = await planned_score(ask, deps)
+    return await current_score(ask, deps, plan) or await made_score(ask, deps, plan)
+
+
+async def planned_score(ask: ScoreAsk, deps: ScoreDeps) -> ScorePlan:
+    plan = await score_plan(ask.explainer, deps.objects, deps.voice_id)
+    if not plan.scenes:
         raise ScoreRefused("nothing", NOTHING_MESSAGE)
-    digest = scenes_hash(scenes)
+    return plan
+
+
+async def current_score(ask: ScoreAsk, deps: ScoreDeps, plan: ScorePlan) -> FilmScore | None:
     explainer = ask.explainer
     manifest = await stored_score(deps.objects, explainer.answer_id, explainer.understood.language)
-    if manifest is None or manifest.scenes_hash != digest:
-        manifest = await _made_score(ask, deps, scenes, digest)
+    return _served(manifest, deps) if manifest is not None and plan.matches(manifest) else None
+
+
+async def score_in_making(ask: ScoreAsk, deps: ScoreDeps) -> bool:
+    held = await held_lease(deps.objects, _lease_key(ask))
+    return held is not None and deps.clock() < held.lapses_at(SCORE_LEASE_SECONDS)
+
+
+async def made_score(ask: ScoreAsk, deps: ScoreDeps, plan: ScorePlan) -> FilmScore:
+    key = _lease_key(ask)
+    tried = await take_lease(deps.objects, key, plan.digest, now=deps.clock(), seconds=SCORE_LEASE_SECONDS)
+    if not tried.ours:
+        raise ScoreBeingMade("making", MAKING_MESSAGE)
+    try:
+        manifest = await _made_score(ask, deps, plan)
+    finally:
+        await release_lease(deps.objects, key)
     return _served(manifest, deps)
+
+
+def _lease_key(ask: ScoreAsk) -> str:
+    return score_manifest_key(ask.explainer.answer_id, ask.explainer.understood.language, leaf=LEASE_LEAF)
 
 
 def checked_score_audio(call: MediaCall, seconds: float) -> bytes:
@@ -117,10 +167,10 @@ def checked_score_audio(call: MediaCall, seconds: float) -> bytes:
     return audio
 
 
-async def _made_score(ask: ScoreAsk, deps: ScoreDeps, scenes: list[FilmScene], digest: str) -> ScoreManifest:
+async def _made_score(ask: ScoreAsk, deps: ScoreDeps, plan: ScorePlan) -> ScoreManifest:
     models = {task: await deps.maker.first_model(task) for task in (AiTask.MUSIC, AiTask.SOUND_EFFECT)}
-    bed = _Clip(AiTask.MUSIC, SCORE_MUSIC_PROMPT, bed_seconds(scenes), None)
-    cued = scene_cues(scenes) if models[AiTask.SOUND_EFFECT] else []
+    bed = _Clip(AiTask.MUSIC, SCORE_MUSIC_PROMPT, plan.bed, None)
+    cued = scene_cues(plan.scenes) if models[AiTask.SOUND_EFFECT] else []
     if not cued:
         logger.info("film score of answer %s has no sound-effect cue", ask.explainer.answer_id)
     planned = [bed, *(_Clip(AiTask.SOUND_EFFECT, c.cue.prompt, c.cue.seconds, c.scene.number) for c in cued)]
@@ -129,7 +179,7 @@ async def _made_score(ask: ScoreAsk, deps: ScoreDeps, scenes: list[FilmScene], d
         schema_version=1,
         answer_id=ask.explainer.answer_id,
         language=ask.explainer.understood.language,
-        scenes_hash=digest,
+        scenes_hash=plan.digest,
         music=ScoredMusic(key=music.key, duration_seconds=music.duration_seconds, model=music.model),
         cues=[_scored_cue(cue, clip) for cue, clip in zip(cued, cue_clips, strict=True)],
         created_at=deps.clock(),
@@ -163,6 +213,7 @@ class _Making:
             cache_id = score_cache_id(clip.task.value, model, clip.prompt, clip.seconds)
             found = await stored_clip(self.deps.objects, cache_id)
             if found is not None:
+                await self.deps.objects.delete(score_key(cache_id, UNNAMED_LEAF))
                 return found
         async with self._gate:
             call = await self.deps.maker.generate(

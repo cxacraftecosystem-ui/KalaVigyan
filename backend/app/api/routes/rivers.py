@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.public_deps import public_asset_reader, read_headers, unchanged_read
+from app.api.public_deps import READER_VARY, public_asset_reader, read_headers, unchanged_read
 from app.core.db import get_session, release_connection
 from app.core.errors import AppError
 from app.models import User
@@ -19,6 +19,22 @@ logger = logging.getLogger(__name__)
 NO_RIVER_DETAIL = "There is no river by that id."
 UNAVAILABLE_DETAIL = "Rivers aren't available right now. Try again later."
 REACH_ID_MAX = 99_999_999
+GZIP = "gzip"
+GZIP_VERSION_SUFFIX = "-gzip"
+ENCODING_VARY = f"{READER_VARY}, Accept-Encoding"
+
+
+def accepts_gzip(request: Request) -> bool:
+    for offered in request.headers.get("accept-encoding", "").split(","):
+        coding, _, params = offered.partition(";")
+        if coding.strip().lower() != GZIP:
+            continue
+        weight = params.strip().lower().removeprefix("q=") or "1"
+        try:
+            return float(weight) > 0
+        except ValueError:
+            return False
+    return False
 
 
 def river_topologies(request: Request) -> TopologyCache:
@@ -39,8 +55,11 @@ async def river_basin(
     await release_connection(session)
     if basin is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_RIVER_DETAIL)
-    answered = unchanged_read(request, reader, basin.sha256)
+    gzipped = accepts_gzip(request)
+    version = basin.sha256 + (GZIP_VERSION_SUFFIX if gzipped else "")
+    answered = unchanged_read(request, reader, version)
     if answered is not None:
+        answered.headers["Vary"] = ENCODING_VARY
         return answered
     objects = media_bucket()
     if objects is None:
@@ -52,4 +71,7 @@ async def river_basin(
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, UNAVAILABLE_DETAIL) from None
     if found is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_RIVER_DETAIL)
-    return Response(found.body, media_type=TOPOLOGY_TYPE, headers=read_headers(reader, found.sha256))
+    headers = read_headers(reader, version) | {"Vary": ENCODING_VARY}
+    if not gzipped:
+        return Response(found.body, media_type=TOPOLOGY_TYPE, headers=headers)
+    return Response(found.gzipped, media_type=TOPOLOGY_TYPE, headers=headers | {"Content-Encoding": GZIP})

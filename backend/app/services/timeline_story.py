@@ -29,9 +29,9 @@ from app.science.records import KnownClaim
 
 from .answer_events import CitedClaims
 from .builder_evidence import fact_sentence, section_facts
-from .place_register import RegisterPoint, register_district
+from .place_points import RegisterPoint, ShownPlace
+from .place_register import register_district
 from .stated_names import register_places
-from .supply_links import OriginPlace
 from .supply_places import NamedPlace, stated_words
 
 __all__ = [
@@ -58,8 +58,6 @@ TIMELINE_ROUTES_MAX = 6
 TIMELINE_QUOTES_MAX = 3
 REGISTER_VERSION = 2
 FIRST_VERSION = 1
-
-ShownPlace = OriginPlace | RegisterPoint
 
 
 @dataclass(frozen=True)

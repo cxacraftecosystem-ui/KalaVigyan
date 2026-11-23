@@ -11,6 +11,7 @@ import { Chip } from "@/components/ui/Chip";
 import { craftHref } from "@/lib/atlasCollection";
 import { conceptNeighbours } from "@/lib/atlasIndex";
 import { conceptDek, conceptRows, conceptTerms, craftMeta, fetchSharedConcept, isTermKey, markTerms, RESULT_ROWS_SHOWN, type ConceptRow, type MarkedPart } from "@/lib/atlasSearch";
+import { nodeCraftCount } from "@/lib/conceptGraph";
 import type { ConceptHit } from "@/lib/craftCatalogue";
 import type { CraftCatalogue } from "@/lib/craftCatalogueContract";
 import type { SourceRef } from "@/lib/types";
@@ -93,7 +94,7 @@ export function ConceptGroup({ hit, catalogue, onQuery }: { hit: ConceptHit; cat
   return (
     <div className="pt-[22px] pb-2" data-testid="concept-match">
       <h3 className="font-reading text-h3 text-ink-1">{hit.concept.label}</h3>
-      <p className="mt-1.5 font-ui text-ui font-normal text-ink-2">{conceptDek(rows)}</p>
+      <p className="mt-1.5 font-ui text-ui font-normal text-ink-2">{conceptDek(rows, shared.data ? nodeCraftCount(shared.data.node) : 0)}</p>
       <Neighbours hit={hit} catalogue={catalogue} onQuery={onQuery} />
       <ol id={listId} className="mt-4 grid grid-cols-1 md:grid-cols-2 md:gap-x-12">
         {shown.map((row) => (

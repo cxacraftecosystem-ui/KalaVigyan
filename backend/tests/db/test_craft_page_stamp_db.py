@@ -17,7 +17,6 @@ from app.models import (
     Compound,
     Craft,
     CraftLocation,
-    CraftPageArchive,
     CraftPageSnapshot,
     CraftSubCategory,
     CuratedCategoryClaim,
@@ -36,7 +35,6 @@ from app.retrieval.statements import CraftScope, scope_claims
 from app.services import knowledge_view
 from app.services.category_import import import_categories
 from app.services.craft_chapters_job import build_craft_chapters
-from app.services.craft_page_archive import archived_page, curation_version
 from app.services.craft_page_cache import PageCache
 from app.services.craft_page_snapshots import rebuild_snapshots, served_page
 from app.services.craft_page_stamp import craft_compound_ids, page_stamp
@@ -251,32 +249,6 @@ async def test_a_process_cache_answers_a_repeat_read_without_the_snapshot(sessio
     await session.flush()
     again = await served_page(session, craft, "OPEN", cache=cache)
     assert again is first
-
-
-async def test_an_archived_version_is_read_without_its_field_voices(session: AsyncSession) -> None:
-    craft = await ajrakh(session)
-    version = await curation_version(session, craft)
-    assert version is not None
-    first = await served_page(session, craft, "OPEN")
-    voiced = {
-        **first.body,
-        "fieldVoicesTotal": {"quotes": 3, "images": 1},
-        "curation": {**first.body["curation"], "version": version - 1},
-    }
-    session.add(
-        CraftPageArchive(
-            craftId=craft.id,
-            curationVersion=version - 1,
-            variant="OPEN",
-            body=voiced,
-            etag="frozen",
-            frozenAt=datetime.now(UTC),
-        )
-    )
-    await session.flush()
-    archived = await archived_page(session, craft, "OPEN", version - 1)
-    assert archived is not None and archived["fieldVoicesTotal"] == {"quotes": 0, "images": 0}
-    assert archived["voices"] == [] and archived["fieldPhotos"] == []
 
 
 async def stored_bodies(session: AsyncSession, craft: Craft) -> dict[str, Any]:

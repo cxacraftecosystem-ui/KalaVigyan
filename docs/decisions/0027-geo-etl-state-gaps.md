@@ -8,6 +8,7 @@ Date: 2026-11-17. Status: accepted.
 
 | For | Read |
 |---|---|
+| What amended it | [0153 Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md): coverage: reviewed districts without cells, silent districts, the probe and the CHIRPS period |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

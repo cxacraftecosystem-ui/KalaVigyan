@@ -22,12 +22,12 @@ export function explainerStateOf(document: ExplainerVersionDocument): ExplainerS
     sections: explainer.sections.map((section) => ({ ...section, blocks: [...section.blocks] })),
     sources: [...explainer.sources],
     openQuestions: [],
-    reactions: [],
     followUps: [...explainer.followUps],
     error: null,
     notice: null,
     mark,
     basedOn: null,
+    reload: false,
     quizAvailable: null
   };
 }
@@ -52,6 +52,7 @@ export function followingExplainer(base: ExplainerState, ref: ExplainerRef, ques
     error: null,
     notice: null,
     basedOn: ref,
+    reload: false,
     quizAvailable: null
   };
 }
@@ -120,8 +121,15 @@ function reduceFollowing(state: ExplainerState, ref: ExplainerRef, event: Explai
   }
 }
 
+export function lostRace(followed: ExplainerRef | null, mark: VersionMark): boolean {
+  return followed !== null && mark.basedOn !== followed.version;
+}
+
 export function reduceAnswerEvent(state: ExplainerState, event: ExplainerEvent): ExplainerState {
-  if (event.type === "version") return { ...state, mark: event.data, basedOn: null, sections: storedSections(state.sections) };
+  if (event.type === "version") {
+    const reload = lostRace(state.basedOn, event.data);
+    return { ...state, mark: event.data, basedOn: null, sections: storedSections(state.sections), reload };
+  }
   if (state.basedOn) return reduceFollowing(state, state.basedOn, event);
   return reduceExplainer(state, event);
 }

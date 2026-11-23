@@ -18,6 +18,7 @@ from app.research.lessons import LESSON_FORMATS, LessonRequest
 from app.services.explainer_history import UNKNOWN_EXPLAINER_DETAIL, UnknownExplainer
 from app.services.export_files import ExportTools
 from app.services.lesson_packs import build_lesson, delete_lesson, lesson_list, lesson_of
+from app.services.object_store import media_bucket
 from app.services.share_links import (
     NOTHING_PUBLIC_DETAIL,
     NothingPublic,
@@ -79,7 +80,7 @@ async def remove_lesson(
     user: User = Depends(require(Capability.BUILD_LESSONS)),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
-    if not await delete_lesson(session, user.id, lesson_id):
+    if not await delete_lesson(session, user.id, lesson_id, objects=media_bucket()):
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_LESSON_DETAIL)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -139,6 +140,6 @@ async def delete_lesson_share(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
-    if not await unshare_lesson(session, user.id, lesson_id):
+    if not await unshare_lesson(session, user.id, lesson_id, objects=media_bucket()):
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_LESSON_DETAIL)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

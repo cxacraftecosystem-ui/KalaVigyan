@@ -1,15 +1,15 @@
 import { UUID } from "@/lib/answerShapes";
 import { envelope, explainerSentenceShape, TERM_KEY, WIKIDATA_ID, type BlockEnvelope, type ExplainerSentence } from "@/lib/explainerBlockBase";
 import { datasetShape, type RegionDataset } from "@/lib/regionContract";
-import { integer, list, matching, nullable, number, object, oneOf, ShapeError, text, type Shape } from "@/lib/shape";
+import { integer, list, matching, nullable, number, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
 
-export const SEASONS = ["MONSOON", "WINTER", "SUMMER"] as const;
+export const SEASONS = ["MONSOON", "WINTER", "SUMMER", "SPRING", "AUTUMN", "PRE_MONSOON", "POST_MONSOON"] as const;
 export const HYDRORIVERS_DATASET_CODE = "HYDRORIVERS_1_0";
 export const RIVER_BASIN_PATH = (mainRiv: number) => `/rivers/${mainRiv}`;
 export const RIVER_REACHES_OBJECT = "reaches";
 
 export type Season = (typeof SEASONS)[number];
-export type DistrictRef = { districtLgd: number; name: string; stateName: string };
+export type DistrictRef = { districtLgd: number; name: string; stateName: string; otherNames?: string[] };
 export type RiverPath = { datasetCode: typeof HYDRORIVERS_DATASET_CODE; mainRiv: number; reachIds: number[]; districtLgds: number[]; name: string | null };
 export type StoryStep = { districtLgd: number | null; sentence: ExplainerSentence };
 export type RegionStoryBlock = BlockEnvelope<"region_story"> & {
@@ -39,9 +39,10 @@ export type SupplyLink = {
   wikidataId: string | null;
   latitude: number | null;
   longitude: number | null;
+  districtLgd?: number | null;
   sentence: ExplainerSentence;
 };
-export type SupplyMapBlock = BlockEnvelope<"supply_map"> & { links: SupplyLink[] };
+export type SupplyMapBlock = BlockEnvelope<"supply_map"> & { links: SupplyLink[]; datasets?: RegionDataset[] };
 
 const LAYER_ID = matching(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "a layer id");
 const month = oneOf([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const);
@@ -54,7 +55,7 @@ const riverShape: Shape<RiverPath> = object<RiverPath>({
   name: nullable(text)
 });
 
-export const districtShape: Shape<DistrictRef> = object<DistrictRef>({ districtLgd: integer, name: text, stateName: text });
+export const districtShape: Shape<DistrictRef> = object<DistrictRef>({ districtLgd: integer, name: text, stateName: text, otherNames: optional(list(text)) });
 
 export const regionStoryBlockShape: Shape<RegionStoryBlock> = object<RegionStoryBlock>({
   ...envelope("region_story"),
@@ -103,8 +104,10 @@ export const supplyMapBlockShape: Shape<SupplyMapBlock> = object<SupplyMapBlock>
       wikidataId: nullable(WIKIDATA_ID),
       latitude: nullable(number),
       longitude: nullable(number),
+      districtLgd: optional(nullable(integer)),
       sentence: explainerSentenceShape
     }),
     1
-  )
+  ),
+  datasets: optional(list(datasetShape))
 });

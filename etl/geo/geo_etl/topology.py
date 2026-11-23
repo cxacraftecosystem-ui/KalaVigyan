@@ -1,4 +1,5 @@
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import pairwise
 
@@ -46,7 +47,7 @@ def quantized_arc(line: shapely.LineString, grid: Quantizer) -> list[list[int]]:
     return deltas
 
 
-def basin_topology(reaches: gpd.GeoDataFrame) -> dict:
+def basin_topology(reaches: gpd.GeoDataFrame, districts_of: Mapping[int, list[list]]) -> dict:
     ordered = reaches.sort_values("hyrivId", kind="stable")
     lines = shapely.simplify(ordered.geometry.to_numpy(), SIMPLIFY_DEGREES, preserve_topology=True)
     bounds = tuple(float(v) for v in shapely.total_bounds(lines))
@@ -57,7 +58,11 @@ def basin_topology(reaches: gpd.GeoDataFrame) -> dict:
             "type": "LineString",
             "id": int(hyriv_id),
             "arcs": [index],
-            "properties": {"nextDown": int(next_down), "ordStra": int(ord_stra)},
+            "properties": {
+                "nextDown": int(next_down),
+                "ordStra": int(ord_stra),
+                "districts": districts_of.get(int(hyriv_id), []),
+            },
         }
         for index, (hyriv_id, next_down, ord_stra) in enumerate(
             zip(ordered["hyrivId"], ordered["nextDown"], ordered["ordStra"], strict=True)

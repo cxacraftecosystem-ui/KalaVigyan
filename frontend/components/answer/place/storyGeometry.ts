@@ -12,6 +12,7 @@ import {
   stretchOf,
   STORY_FRAMING,
   type Course,
+  type CourseReach,
   type Rings,
   type StepBadge
 } from "@/lib/regionStory";
@@ -59,10 +60,10 @@ function storyDistricts(block: RegionStoryBlock, shapes: readonly DistrictShape[
   return drawn;
 }
 
-function basinLine(basin: RiverBasin, id: number): Point[] {
+function basinReach(basin: RiverBasin, id: number): CourseReach {
   const reach = basin.reaches.get(id);
   if (!reach) throw new Error(`reach ${id} is not in basin ${basin.mainRiv}`);
-  return projected(reach.line);
+  return { line: projected(reach.line), districts: reach.districts };
 }
 
 function tributaries(basin: RiverBasin, path: ReadonlySet<number>, view: View): Tributaries[] {
@@ -76,18 +77,17 @@ function tributaries(basin: RiverBasin, path: ReadonlySet<number>, view: View): 
 }
 
 function storyRiver(course: Course, basin: RiverBasin, path: ReadonlySet<number>, story: { view: View; districts: Map<number, StoryDistrict> }): StoryRiver {
-  const stretches = new Map([...story.districts].map(([lgd, district]) => [lgd, pathData(stretchOf(course, district.rings))]));
+  const stretches = new Map([...story.districts.keys()].map((lgd) => [lgd, pathData(stretchOf(course, lgd))]));
   return { course, d: pathData([course.points]), tributaries: tributaries(basin, path, story.view), stretches };
 }
 
 export function storyGeometry(block: RegionStoryBlock, shapes: readonly DistrictShape[], basin: RiverBasin | null): StoryGeometry | null {
   const districts = storyDistricts(block, shapes);
-  const course = block.river && basin ? riverCourse(block.river.reachIds, (id) => basinLine(basin, id)) : null;
+  const course = block.river && basin ? riverCourse(block.river.reachIds, (id) => basinReach(basin, id)) : null;
   const bounds = boundsOf([...(course ? [course.points] : []), ...[...districts.values()].flatMap((district) => district.rings)]);
   if (!bounds) return null;
   const view = framedView(bounds, STORY_FRAMING);
-  const ringsOf = new Map([...districts].map(([lgd, district]) => [lgd, district.rings]));
-  const entries = course && block.river ? districtEntries(course, block.river.districtLgds, ringsOf) : new Map<number, number>();
+  const entries = course && block.river ? districtEntries(course, block.river.districtLgds) : new Map<number, number>();
   const fractions = stepFractions(block.steps, entries);
   const river = course && basin && block.river ? storyRiver(course, basin, new Set(block.river.reachIds), { view, districts }) : null;
   const context = shapes.filter((shape) => districts.has(shape.lgd) || withinView(projected([shape.centroid])[0], view, CONTEXT_MARGIN));

@@ -177,7 +177,7 @@ test("a tapped district shows its cited crafts, the stored land story, its value
   expect(basis).not.toMatch(/purple|ink-[579]00|font-display|font-bold|text-xs/);
   expect(attribute(html, "explainer-block", "data-kind")).toEqual(["region_story"]);
   expect(html).toContain('data-testid="reuse-marker"');
-  for (const facet of ["SOIL", "CLIMATE", "TERRAIN"]) expect(html).toContain(`data-testid="region-facet-${facet}"`);
+  for (const facet of ["SOIL", "CLIMATE", "WATER", "TERRAIN"]) expect(html).toContain(`data-testid="region-facet-${facet}"`);
   expect(attribute(html, "dataset-credit", "data-testid").length).toBeGreaterThanOrEqual(DISTRICT.datasets.length);
   expect(text(html)).toContain(DISTRICT.boundaryCaption);
   expect(html).not.toContain("Compare these crafts");

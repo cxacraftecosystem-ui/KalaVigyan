@@ -10,6 +10,7 @@ Date: 2026-11-18. Status: accepted.
 |---|---|
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
 | The review that fixed it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md) |
+| What amended it | [0153 Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md): groundwater from the India data portal |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

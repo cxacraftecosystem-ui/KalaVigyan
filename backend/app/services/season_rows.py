@@ -10,7 +10,13 @@ from pydantic import ValidationError
 from app.geo.rainfall import DistrictRainfall
 from app.research.blocks import ExplainerSentence
 from app.research.blocks_place import SeasonRow, SeasonsBlock
-from app.research.calendar import only_season, season_months, year_months
+from app.research.calendar import (
+    only_season,
+    regional_month,
+    regional_month_months,
+    season_months,
+    year_months,
+)
 from app.research.citations import Citation
 from app.research.vocabulary import FACT_LEVELS, weakest_level
 from app.science.records import KnownClaim, ProcessRecords
@@ -51,6 +57,7 @@ class SeasonOffer:
     stages: tuple[StageClaims, ...]
     facts: tuple[SeasonFact, ...]
     rainfall: DistrictRainfall | None
+    calendars: tuple[KnownClaim, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -67,10 +74,15 @@ class _Planned:
     claim: KnownClaim
     months: frozenset[int] = frozenset()
     season: str | None = None
+    regional: str | None = None
 
     @property
     def timed(self) -> bool:
-        return bool(self.months) or self.season is not None
+        return bool(self.months) or self.season is not None or self.regional is not None
+
+    @property
+    def calendar_name(self) -> str | None:
+        return self.season if self.season is not None else self.regional
 
 
 def seasons_block(offer: SeasonOffer, *, block_id: str) -> SeasonsBlock | None:
@@ -103,8 +115,9 @@ def season_mappings(claims: Iterable[KnownClaim]) -> dict[str, SeasonMapping]:
     stated: dict[str, list[SeasonMapping]] = {}
     for claim in claims:
         for citation in claim.citations:
-            for season, months in season_months(citation.quote or "").items():
-                stated.setdefault(season, []).append(SeasonMapping(months, citation, claim.level))
+            quote = citation.quote or ""
+            for name, months in [*season_months(quote).items(), *regional_month_months(quote).items()]:
+                stated.setdefault(name, []).append(SeasonMapping(months, citation, claim.level))
     return {
         season: found[0]
         for season, found in stated.items()
@@ -128,9 +141,9 @@ def _planned_rows(offer: SeasonOffer) -> list[_Planned]:
 
 def _stage_row(stage: StageClaims, cited: set[uuid.UUID]) -> _Planned | None:
     for claim in stage.claims:
-        months, season = _timing(claim)
-        if months or season is not None:
-            return _Planned(stage.stage_id, stage.name, claim, months, season)
+        months, season, regional = _timing(claim)
+        if months or season is not None or regional is not None:
+            return _Planned(stage.stage_id, stage.name, claim, months, season, regional)
     listed = next((claim for claim in stage.claims if claim.id in cited), None)
     return None if listed is None else _Planned(stage.stage_id, stage.name, listed)
 
@@ -139,9 +152,9 @@ def _fact_rows(facts: Sequence[SeasonFact], staged: set[uuid.UUID]) -> Iterator[
     for fact in facts:
         if fact.claim.id in staged or not fact.subject:
             continue
-        months, season = _timing(fact.claim)
-        if months or season is not None:
-            yield _Planned(None, fact.subject, fact.claim, months, season)
+        months, season, regional = _timing(fact.claim)
+        if months or season is not None or regional is not None:
+            yield _Planned(None, fact.subject, fact.claim, months, season, regional)
 
 
 def _stored_facts(records: ProcessRecords, claim_ids: Iterable[uuid.UUID]) -> Iterator[KnownClaim]:
@@ -151,8 +164,8 @@ def _stored_facts(records: ProcessRecords, claim_ids: Iterable[uuid.UUID]) -> It
             yield claim
 
 
-def _timing(claim: KnownClaim) -> tuple[frozenset[int], str | None]:
-    return year_months([claim.text]), only_season(claim.text)
+def _timing(claim: KnownClaim) -> tuple[frozenset[int], str | None, str | None]:
+    return year_months([claim.text]), only_season(claim.text), regional_month(claim.text)
 
 
 def _within_max(planned: list[_Planned]) -> list[_Planned]:
@@ -166,6 +179,7 @@ def _within_max(planned: list[_Planned]) -> list[_Planned]:
 
 def _offered_claims(offer: SeasonOffer) -> list[KnownClaim]:
     claims = [fact.claim for fact in offer.facts] + [c for stage in offer.stages for c in stage.claims]
+    claims += list(offer.calendars)
     return list({claim.id: claim for claim in claims}.values())
 
 
@@ -182,7 +196,8 @@ def _rows(
 
 def _season_row(plan: _Planned, mappings: Mapping[str, SeasonMapping], sentence_id: str) -> SeasonRow | None:
     citations, levels, months = list(plan.claim.citations), [plan.claim.level], plan.months
-    mapping = mappings.get(plan.season) if plan.season is not None and not months else None
+    name = plan.calendar_name
+    mapping = mappings.get(name) if name is not None and not months else None
     if mapping is not None:
         months = mapping.months
         if all(citation.id != mapping.citation.id for citation in citations):

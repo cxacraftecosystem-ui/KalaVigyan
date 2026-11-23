@@ -4,7 +4,15 @@ import { formatNumber } from "@/lib/measure";
 
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const;
 export const MONTHS = MONTH_NAMES.map((_, index) => index + 1);
-export const SEASON_LABEL: Record<Season, string> = { MONSOON: "Monsoon", WINTER: "Winter", SUMMER: "Summer" };
+export const SEASON_LABEL: Record<Season, string> = {
+  MONSOON: "Monsoon",
+  WINTER: "Winter",
+  SUMMER: "Summer",
+  SPRING: "Spring",
+  AUTUMN: "Autumn",
+  PRE_MONSOON: "Pre-monsoon",
+  POST_MONSOON: "Post-monsoon"
+};
 
 const WHOLE_FROM = 10;
 

@@ -6,7 +6,6 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import Refused
 from app.models import Craft, KnowledgePiece as PieceRow, MediaAsset, MediaJob, User
 
 from . import audit
@@ -15,6 +14,7 @@ from .page_revalidation import craft_owners, refresh_pages
 __all__ = [
     "MEDIA_HIDDEN_ACTION",
     "MEDIA_SHOWN_ACTION",
+    "MEDIA_SIGNED_ACTION",
     "PIECE_HIDDEN_ACTION",
     "PIECE_SHOWN_ACTION",
     "SIMULATION",
@@ -31,8 +31,7 @@ MEDIA_TARGET = "MediaAsset"
 PRIVATE = "PRIVATE"
 SHARED = "CRAFT_SHARED"
 SIMULATION = "simulation"
-NAMED_CLUSTER_REASON = "named_cluster_sign_off"
-NAMED_CLUSTER_REFUSAL = "A picture of a named cluster is shown again only after both professors sign it off."
+MEDIA_SIGNED_ACTION = "CRAFT_PAGE_MEDIA_SIGNED"
 
 
 async def set_page_piece_hidden(
@@ -79,7 +78,12 @@ async def set_page_media_hidden(
     if row is None:
         return None
     if not hidden and row.depictsNamedCluster and row.secondApprovedById is None:
-        raise Refused(NAMED_CLUSTER_REASON, NAMED_CLUSTER_REFUSAL)
+        if row.approvedById is not None and row.approvedById != user.id:
+            row.secondApprovedById = user.id
+        else:
+            return await _first_sign_off(session, craft, row, user)
+    if hidden:
+        row.approvedById = row.secondApprovedById = None
     wanted = PRIVATE if hidden else SHARED
     changed = row.visibility != wanted
     if changed:
@@ -96,3 +100,18 @@ async def set_page_media_hidden(
     if changed:
         await refresh_pages(await craft_owners(session, [craft.id]))
     return hidden
+
+
+async def _first_sign_off(session: AsyncSession, craft: Craft, row: MediaAsset, user: User) -> bool:
+    if row.approvedById is None:
+        row.approvedById = user.id
+        await audit.record(
+            session,
+            action=MEDIA_SIGNED_ACTION,
+            actor=user,
+            target_type=MEDIA_TARGET,
+            target_id=row.id,
+            detail={"craft": craft.slug},
+        )
+    await session.commit()
+    return True

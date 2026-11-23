@@ -21,7 +21,7 @@ import {
   trailCounts,
   workingLabel
 } from "@/lib/explainerView";
-import { activeWordIndex, checkedScript, elapsedOf, listenLanguagesOf, listenMark, nextRate, scriptDuration, wordRanges } from "@/lib/listen";
+import { activeIndex, checkedScript, elapsedOf, listenLanguagesOf, listenMark, nextRate, scriptDuration, wordRanges } from "@/lib/listen";
 import { parseShape, ShapeError } from "@/lib/shape";
 import { termPath } from "@/lib/termSummary";
 
@@ -255,7 +255,7 @@ test("the Listen golden reads the document's sentences word by word, in reading 
 
 test("a word is found from where the last one ended, and Listen is offered only in listed languages", () => {
   expect(wordRanges("alum and alum again", [{ text: "alum" }, { text: "alum" }, { text: "iron" }])).toEqual([{ from: 0, to: 4 }, { from: 9, to: 13 }, null]);
-  expect(activeWordIndex([{ sentenceId: "a", text: "x", start: 0.2, end: 0.4 }], 0.1)).toBe(-1);
+  expect(activeIndex([{ sentenceId: "a", text: "x", start: 0.2, end: 0.4 }], 0.1)).toBe(-1);
   expect(listenLanguagesOf(undefined)).toEqual([]);
   expect(listenLanguagesOf({ languages: ["en", "hi"] })).toEqual(["en", "hi"]);
   const refused = quietly(() => listenLanguagesOf({ languages: "en" }));
@@ -272,7 +272,7 @@ test("the lede stream reduces to the lede document: the lede first, then section
   expect(state.lede).toEqual(expected.lede);
   expect(state.sections).toEqual(expected.sections);
   expect(state.followUps).toEqual(expected.followUps);
-  expect([...explainerSourceNumbers(state.sections, [], [], state.lede).keys()]).toEqual(expected.sources.map((source) => source.id));
+  expect([...explainerSourceNumbers(state.sections, [], state.lede).keys()]).toEqual(expected.sources.map((source) => source.id));
   const opened = reduced(upTo(events, (event) => event.type === "lede"), askingExplainer(expected.question, "en"));
   expect(opened.lede?.headline).toBe(expected.question);
   expect(opened.sections.map((section) => [section.id, section.title, section.blocks.length])).toEqual([

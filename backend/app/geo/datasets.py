@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import datetime
+from collections.abc import Mapping
+from typing import Any
+
 from app.core.errors import InvalidInput
 from app.geo.records import DatasetRecord
 from app.research.datasets import DatasetRef
 
-__all__ = ["region_dataset", "value_grid"]
+__all__ = ["region_dataset", "registry_row_ref", "value_grid"]
 
 
 def region_dataset(dataset: DatasetRecord) -> DatasetRef:
@@ -27,6 +31,32 @@ def region_dataset(dataset: DatasetRecord) -> DatasetRef:
         landing_url=dataset.landing_url,
         read_on=dataset.read_on,
         sha256=dataset.sha256,
+    )
+
+
+def registry_row_ref(row: Mapping[str, Any]) -> DatasetRef:
+    retrieved = row.get("retrievedAt")
+    return region_dataset(
+        DatasetRecord(
+            code=row["code"],
+            title=row["title"],
+            publisher=row.get("publisher"),
+            edition=row.get("edition"),
+            period=row.get("period"),
+            native_resolution=row.get("nativeResolution"),
+            licence=row.get("licence"),
+            licence_url=row.get("licenceUrl"),
+            attribution=row.get("attribution"),
+            citation=row.get("citation"),
+            url=row.get("url"),
+            version=row.get("version"),
+            crs=row.get("crs"),
+            redistributable=row.get("redistributable"),
+            doi=row.get("doi"),
+            landing_url=row.get("landingUrl"),
+            read_on=datetime.date.fromisoformat(str(retrieved)[:10]) if retrieved else None,
+            sha256=row.get("sha256"),
+        )
     )
 
 

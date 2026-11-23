@@ -79,7 +79,11 @@ function useStoredExplainer({ load, follow, setQuestion }: Omit<LearningStream, 
     [open]
   );
   const retry = useCallback(() => setRound((value) => value + 1), []);
-  return { failure, retry, open, adopt, opening: explainerId !== null && failure === null };
+  const reload = useCallback(() => {
+    shown.current = null;
+    setRound((value) => value + 1);
+  }, []);
+  return { failure, retry, reload, open, adopt, opening: explainerId !== null && failure === null };
 }
 
 function useHistory(explainerId: string | null) {
@@ -87,9 +91,17 @@ function useHistory(explainerId: string | null) {
   return useRemote(load).data;
 }
 
+function useRaceReload(state: ExplainerState, reload: () => void) {
+  const waiting = state.reload && state.phase === "done";
+  useEffect(() => {
+    if (waiting) reload();
+  }, [waiting, reload]);
+}
+
 export function useExplainerLearning(stream: LearningStream) {
   const { state, follow } = stream;
   const stored = useStoredExplainer(stream);
+  useRaceReload(state, stored.reload);
   const ref = explainerRef(state);
   const history = useHistory(state.mark?.explainerId ?? null);
   const versions = knownVersions(history?.versions ?? [], state.mark);

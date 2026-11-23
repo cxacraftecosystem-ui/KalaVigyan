@@ -158,9 +158,9 @@ async def test_hybrid_mode_fuses_the_text_and_vector_rankings_of_the_crafts_clai
         (IRON, None, 2, None),
     ]
     assert [h.score for h in found.claims] == [
-        pytest.approx(3 / 61, abs=1e-9),
-        pytest.approx(1 / 62 + 1 / 63 + 1 / 62, abs=1e-9),
-        pytest.approx(1 / 62, abs=1e-9),
+        pytest.approx(0.5 / 21 + 5 / 21 + 0.25 / 21, abs=1e-9),
+        pytest.approx(0.5 / 22 + 5 / 23 + 0.25 / 22, abs=1e-9),
+        pytest.approx(5 / 22, abs=1e-9),
     ]
     assert [h.level for h in found.claims] == ["PROVISIONAL", "HYPOTHESIS", "REVIEWED"]
     assert found.chunks == ()
@@ -172,7 +172,7 @@ async def test_verified_mode_reads_reviewed_claims_and_no_chunks(session: AsyncS
         KnowledgeQuery(craft_slug="Zelvar-Print", text=QUESTION, mode="VERIFIED")
     )
     assert [(h.claim_id, h.lexical_rank, h.vector_rank) for h in found.claims] == [(IRON, None, 1)]
-    assert found.claims[0].score == pytest.approx(0.016393443, abs=1e-9)
+    assert found.claims[0].score == pytest.approx(5 / 21, abs=1e-9)
     assert found.chunks == ()
 
 

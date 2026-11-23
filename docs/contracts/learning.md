@@ -97,7 +97,10 @@ the next version; earlier versions are never changed.
   its claims are written back either way. Both events are in `research/stream.STREAM_EVENTS`
   (`explainer_versions.VERSION_EVENTS`); the client reads them (`lib/explainerVersions`, decision
   0069): it keeps the base's sections, adds a deepened section's blocks before its pictures and
-  shows a deepened section that ended `EMPTY` as the base does.
+  shows a deepened section that ended `EMPTY` as the base does. A `version` whose `basedOn` is not
+  the version the follow-up built on (`lib/explainerVersions.lostRace`) marks the state `reload`,
+  and once the stream is `done` the client opens the stored version in place of what it streamed,
+  so the merged blocks show under their stored numbers (decision 0160).
 - **The stored version.** The follow-up's `Answer.payload.explainer` holds the whole merged
   explainer (`answerId` the follow-up's, `question` the follow-up's), so Listen and every reader
   keep working on one document; `payload.version` holds its `VersionMark`. `Answer.explainerId`
@@ -406,8 +409,13 @@ answer); its question is the asker's own words, which the asker sees before shar
 its explainer with the stored pack's title, sections (those still `READY`) and quiz choice, its id
 and `createdAt` kept (`share_links.public_lesson`), so it never shows more than the shared answer
 would. Files of a share are filed under the neutral owner id `00000000-0000-0000-0000-000000000000`
-(`share_links.SHARED_EXPORT_OWNER`), so no signed link names the asker; they expire with the
-`exports/` rule like every other file.
+(`shared_files.SHARED_EXPORT_OWNER`), so no signed link names the asker. Each key a reader is given
+a link to is recorded against the share's token (`SharedExportFile`, migration
+`0079_shared_export_files`); whenever a share stops (its owner stops it, deletes the lesson, or the
+account is suspended, refused, deleted or loses `BUILD_LESSONS`), the files no live share holds are
+deleted from the bucket in the same transaction, a file the bucket refuses to delete is kept for the
+next sweep, and a file recorded after its share stopped is deleted at once
+(`services/shared_files`, decision 0155). The `exports/` rule still removes any file after it.
 
 ## Shared-science explorer (decision 0064 builds it)
 
@@ -421,18 +429,28 @@ craft's own entry first in each node, the others by name. 404 for an
 unknown slug; a `MERGED` slug answers for its target. `GET /api/shared-science/{termKey}`
 (public) answers `SharedConcept {schemaVersion 1, node, sources}` for one term across every craft,
 the crafts by name, or with `?craft=<slug>` that craft first (404 when it does not share the
-term); 404 for an unknown term or one fewer than two crafts share. Sentence ids are
-`<termKey>.<n>`. Both routes quote only chunks the reader may read (decision 0079) and answer
+term); 404 for an unknown term or one fewer than two crafts share. Each node carries `craftCount`,
+how many crafts' own claims name the term, and lists the first 100 of them; `GET
+/api/shared-science/{termKey}/crafts?craft=&offset=` (public, decision 0161) pages on in the same
+order: `ConceptCraftsPage {schemaVersion 1, termKey, label, craftCount, offset, crafts[ConceptCraft]
+(1-100), sources}` from `offset` (0 or more), its sentences numbered on from the node's; 404 for an
+unknown term, one fewer than two crafts share, a focus craft that does not share it or an offset at
+or past `craftCount`, 422 for a negative offset. Sentence ids are `<termKey>.<n>`. The routes quote
+only chunks the reader may read (decision 0079) and answer
 `Cache-Control: private, no-cache` with a token and `public, max-age=300` without, with
 `Vary: Authorization` and an `ETag` of the body that a matching `If-None-Match` turns into a 304.
 Fixture:
 `shared/learning.shared-science.golden.json` (`craft` for Kutch Ajrakh, `concept` for alum seen
-from Kutch Ajrakh), the nodes of the phase D concept graph.
+from Kutch Ajrakh, `crafts` the page of alum's crafts from offset 2), the nodes of the phase D
+concept graph.
 
 The craft page drew the craft route as its Shared science tab (decision 0070) until the tabbed
 craft screen and `components/craft/CraftSharedScience.tsx` were retired (round 6); the atlas's
-search reads the concept route (`lib/atlasSearch.ts`). The craft route's nodes already list every
-sharing craft the term route lists, so a view of them needs no second read.
+search reads the concept route (`lib/atlasSearch.ts`) and says how many crafts name the term from
+its `craftCount`. A concept graph's Show all N (`components/answer/learning/useConceptCrafts.ts`,
+`lib/conceptGraph.restOfCrafts`) counts N from `craftCount`, reads every later page of the crafts
+route in order when the node lists fewer, refuses a page that does not move on, and numbers the
+pages' sources after the answer's own.
 
 **As built (decision 0064, `services/shared_concepts.py`, `research/shared_science.py`).** Read
 on the request's one session, no model call. Both routes read the stored per-term summary
@@ -449,9 +467,10 @@ through `knowledge_view.claims_by_id` with the reader's chunks. A craft's senten
 those claims that still name the label in what the reader may read (`blocks.named_in`): the
 strongest level, then the most reliable source, then the most distinct sources, then the text
 (`offered_facts.fact_rank`). Limits: the craft route looks at the first `SHARED_TERMS_SCANNED`
-(48) of its stored shared terms by label and keeps at most 24 nodes; a node shows at most
+(48) of its stored shared terms by label and keeps at most 24 nodes; a node lists at most
 `CONCEPT_CRAFTS_MAX` (100) crafts (the focus craft first, then by name), chosen among every
-stored craft. A craft with no such claim has no edge; a term left with fewer than two crafts is
+stored craft, and counts them all; a page of the crafts route holds at most 100
+(`research/shared_science.concept_crafts_page`). A craft with no such claim has no edge; a term left with fewer than two crafts is
 no node.
 
 ## Quiz of an explainer (decision 0064)
@@ -520,7 +539,8 @@ boundaryCaption}`, read with no model call:
   by name. A state of practice alone does not place a craft in a district.
 - **Land** (why the land suits them): `LandStory {blocks[Block] (0-4), facets[RegionFacet]}`.
   Blocks are stored pieces placed with their reuse mark, never built on the tap: the current
-  cross-craft region story of the district (`water:lgd-<code>` or a basin crossing it) and the
+  cross-craft region story of the district (one told over districts that include it, or a basin
+  crossing it) and the
   `GEOGRAPHY`, `GEOLOGY` and `CLIMATE` prose pieces of the crafts listed whose topic names the
   district, at most four, each passing the reuse rule. Facets are the district's own values of
   the land facets (`LAND_FACETS`: `SOIL`, `CLIMATE`, `WATER`, `TERRAIN`), exactly as the region route
@@ -536,7 +556,8 @@ boundaryCaption}`, read with no model call:
 
 Fixture: `shared/map.district-crafts.golden.json`: Kachchh (449), Kutch Ajrakh placed by the GI
 journal, the phase B region story placed from its basin piece, and the region golden's soil,
-climate and terrain values.
+climate, water and terrain values (real Geo ETL rows, `backend/tests/geo/geo_district_env_extract.json`;
+`backend/tests/geo/test_district_view.py` rebuilds the file byte for byte).
 
 **As built (decision 0065, `api/routes/map_districts.py`, `services/district_crafts.py`,
 `geo/district_view.py`).** Read on the request's one session, no model, HTTP or bucket call. The
@@ -546,10 +567,11 @@ else 404 `{detail}`. Crafts: `ACTIVE`, not catch-all crafts with a `DISTRICT` or
 located_places`: a point by the polygon covering it, lowest LGD first, else its stored district)
 whose source is visible; curated places are such rows (decision 0053). Each craft once by name,
 its roles in `PLACE_ROLES` order, its basis the strongest location (level, then id). Land blocks,
-at most four: the newest current region story with no craft keyed `water:lgd-<code>` or a basin
-crossing the district (`region_pieces.district_story_pieces`, its river still stored), then for
-each listed craft and each of `GEOGRAPHY`, `GEOLOGY`, `CLIMATE` the newest English `prose` piece
-whose topic key's subjects include the district's name slug, by craft name then facet; every
+at most four: the newest current region story with no craft whose `districtLgds` include the
+district or keyed by a basin crossing it (`region_pieces.district_story_pieces`, its river still
+stored), then for each listed craft and each of `GEOGRAPHY`, `GEOLOGY`, `CLIMATE` the newest English
+`prose` piece whose topic key's subjects include the district's code (`lgd-<code>`, decision 0160),
+so a district named alike in two states never lends its pieces, by craft name then facet; every
 piece passes the reuse rule at any depth (`reuse_refusal` with `BASIC`) and cites only visible
 sources. Blocks are `land.b<n>` with sentences `land.b<n>.<m>` and their reuse marks. Facets are
 the district's stored values of `SOIL`, `CLIMATE`, `WATER` and `TERRAIN` built by

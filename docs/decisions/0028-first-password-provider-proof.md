@@ -8,6 +8,7 @@ Date: 2026-11-17. Status: accepted.
 
 | For | Read |
 |---|---|
+| A recovery code takes the two-step code's place, and a lock answers 429 (amends item 5) | [decision 0155](0155-accounts-and-sharing-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

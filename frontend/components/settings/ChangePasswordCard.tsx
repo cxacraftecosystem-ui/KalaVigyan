@@ -99,7 +99,7 @@ export function ChangePasswordCard() {
       return;
     }
     if (askCode && (codeKind === "totp" ? !isCompleteCode(code) : !code.trim())) {
-      setError("Enter the code from your authenticator app to set a password.");
+      setError(codeKind === "totp" ? "Enter the code from your authenticator app to set a password." : "Enter one of your recovery codes to set a password.");
       return;
     }
     setSaving(true);

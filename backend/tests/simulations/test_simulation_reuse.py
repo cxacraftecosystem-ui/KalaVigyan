@@ -94,7 +94,7 @@ def test_the_simulation_builder_joins_mechanism_fields_and_may_place_a_stored_pi
         False,
     )
     assert entry.make is SimulationBuilder
-    assert [other.kind for other in BLOCK_BUILDERS if other.places_pieces] == ["simulation"]
+    assert [other.kind for other in BLOCK_BUILDERS if other.places_pieces] == ["region_story", "simulation"]
 
 
 async def test_only_an_entry_that_places_pieces_may_return_a_reuse_marked_block() -> None:

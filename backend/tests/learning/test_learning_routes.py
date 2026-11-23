@@ -14,7 +14,7 @@ from app.models.enums import DISCIPLINES
 from app.research.craft_compare import CraftComparison
 from app.research.explainer import Explainer
 from app.research.quiz import ExplainerQuiz, explainer_quiz
-from app.research.shared_science import SharedConcept, SharedScience
+from app.research.shared_science import ConceptCraftsPage, SharedConcept, SharedScience
 from app.services import answer_quiz, knowledge_view
 
 from ..contracts.explainer_golden import DOCUMENT, golden_json
@@ -190,3 +190,23 @@ def test_the_explorer_answers_a_known_craft_and_a_shared_term(monkeypatch: pytes
     assert http.get("/api/shared-science/alum", params={"craft": "No-Such-Craft"}).status_code == 404
     assert http.get("/api/shared-science/Alum!").status_code == 422
     assert kept.asked == ["Kutch-Ajrakh", ("alum", "Kutch-Ajrakh"), ("indigo", None)]
+
+
+def test_the_explorer_pages_the_crafts_that_share_a_term(monkeypatch: pytest.MonkeyPatch) -> None:
+    http, kept = client(monkeypatch)
+    page = learning(SHARED_SCIENCE)["crafts"]
+
+    async def crafts(
+        session: Any, term_key: str, focus: Craft | None, *, offset: int, **_: Any
+    ) -> ConceptCraftsPage | None:
+        kept.asked.append((term_key, focus.slug if focus else None, offset))
+        return ConceptCraftsPage.model_validate(page) if (term_key, offset) == ("alum", 2) else None
+
+    monkeypatch.setattr(learning_views, "shared_concept_crafts", crafts)
+    reply = http.get("/api/shared-science/alum/crafts", params={"craft": "Kutch-Ajrakh", "offset": 2})
+    assert reply.status_code == 200 and reply.json() == page
+    assert http.get("/api/shared-science/alum/crafts", params={"offset": 9}).status_code == 404
+    assert http.get("/api/shared-science/alum/crafts", params={"craft": "No-Such-Craft"}).status_code == 404
+    assert http.get("/api/shared-science/alum/crafts", params={"offset": -1}).status_code == 422
+    assert http.get("/api/shared-science/Alum!/crafts").status_code == 422
+    assert kept.asked == [("alum", "Kutch-Ajrakh", 2), ("alum", None, 9)]

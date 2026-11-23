@@ -1,20 +1,28 @@
 import { sourceRefShape } from "@/lib/answerShapes";
-import { pageBlockShape, type PageBlock } from "@/lib/craftChapters";
-import { BUILT_FIGURE_KINDS } from "@/lib/explainerContract";
+import { BLOCK_SHAPES, BUILT_BLOCK_KINDS, BUILT_FIGURE_KINDS, type BlockByKind, type TypedBlockKind } from "@/lib/explainerContract";
 import type { MonographSources } from "@/lib/monographRender";
-import { integer, list, matching, nullable, object, oneOf, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { integer, list, matching, nullable, object, oneOf, parseShape, ShapeError, tagged, text, type Shape } from "@/lib/shape";
 import type { SourceRef } from "@/lib/types";
 
 export const ANSWER_BLOCK_KIND = "answer_block";
+export const NOT_ON_THE_PAGE = ["quiz", "compare", "map_layer"] as const;
+export const PAGE_BLOCK_KINDS = [...BUILT_BLOCK_KINDS.filter((kind) => !(NOT_ON_THE_PAGE as readonly string[]).includes(kind)), ...BUILT_FIGURE_KINDS, "artisan_voice"] as const;
 export const BLOCK_FIGURE_KINDS = ["FIGURE", "TABLE"] as const;
 export const SELF_TITLED_KINDS = ["region_story", "seasons"] as const;
 export const WIDE_KINDS = ["region_story", "timeline_map", "zoom_story", "supply_map", "climate_risk", "seasons", "concept_graph"] as const;
 
+export type PageBlockKind = (typeof PAGE_BLOCK_KINDS)[number] & TypedBlockKind;
+export type PageBlock = BlockByKind[PageBlockKind];
 export type BlockFigure = { kind: (typeof BLOCK_FIGURE_KINDS)[number]; number: number; title: string };
 export type BlockSource = { key: string; ref: SourceRef };
 export type AnswerBlockSpec = { block: PageBlock; figure: BlockFigure | null; sources: BlockSource[] };
 export type BlockFrame = "signature" | "titled" | "numbered" | "bare";
 export type BlockColumn = "main" | "wide";
+
+export const pageBlockShape: Shape<PageBlock> = tagged<PageBlock>(
+  "kind",
+  Object.fromEntries(PAGE_BLOCK_KINDS.map((kind) => [kind, BLOCK_SHAPES[kind as PageBlockKind]])) as Record<string, Shape<PageBlock>>
+);
 
 export const answerBlockSpecShape: Shape<AnswerBlockSpec> = object<AnswerBlockSpec>({
   block: pageBlockShape,

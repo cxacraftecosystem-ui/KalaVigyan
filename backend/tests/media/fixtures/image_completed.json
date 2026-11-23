@@ -1,48 +1,45 @@
 {
-  "id": "v1_ChdpbWFnZS1pbnRlcmFjdGlvbi0wMDAx",
   "status": "completed",
-  "model": "gemini-3.1-flash-image",
-  "created": "2026-11-16T09:00:12Z",
-  "updated": "2026-11-16T09:00:31Z",
-  "steps": [
-    {
-      "type": "thought",
-      "content": [
-        {
-          "type": "text",
-          "text": "Planning the composition."
-        }
-      ]
-    },
-    {
-      "type": "model_output",
-      "content": [
-        {
-          "type": "text",
-          "text": "Here is the illustration."
-        },
-        {
-          "type": "image",
-          "mime_type": "image/png",
-          "data": "iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAYAAAB/HSuDAAAAAElFTkSuQmCC"
-        }
-      ]
-    }
-  ],
   "usage": {
-    "total_input_tokens": 312,
-    "total_output_tokens": 1180,
-    "total_thought_tokens": 60,
-    "total_tokens": 1492,
+    "total_tokens": 1446,
+    "total_input_tokens": 57,
+    "input_tokens_by_modality": [
+      {
+        "modality": "text",
+        "tokens": 57
+      }
+    ],
+    "total_cached_tokens": 0,
+    "total_output_tokens": 1389,
     "output_tokens_by_modality": [
       {
         "modality": "image",
         "tokens": 1120
-      },
-      {
-        "modality": "text",
-        "tokens": 60
       }
-    ]
-  }
+    ],
+    "total_tool_use_tokens": 0,
+    "total_thought_tokens": 0,
+    "initial_input_tokens": 57
+  },
+  "created": "2026-11-23T04:29:45Z",
+  "updated": "2026-11-23T04:29:45Z",
+  "service_tier": "standard",
+  "steps": [
+    {
+      "signature": "EpLJRwqOyUcBaRR9",
+      "type": "thought"
+    },
+    {
+      "content": [
+        {
+          "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAgACADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDLooor50+zCiiigAooooAKKKKAP//Z",
+          "mime_type": "image/jpeg",
+          "type": "image"
+        }
+      ],
+      "type": "model_output"
+    }
+  ],
+  "object": "interaction",
+  "model": "gemini-3.1-flash-image"
 }

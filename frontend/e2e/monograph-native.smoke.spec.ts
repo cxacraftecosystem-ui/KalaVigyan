@@ -16,7 +16,7 @@ const NATIVE = "/crafts/Kutch-Ajrakh/monograph";
 const FRAGMENTS = `/crafts/Kutch-Ajrakh/v${FRAGMENT_VERSION}`;
 const PIXEL_TOLERANCE = 0.02;
 const SHOT_TIMEOUT_MS = 10_000;
-const RUN_TIMEOUT_MS = 15 * 60_000;
+const RUN_TIMEOUT_MS = 6 * 60_000;
 const WIDTHS: readonly Width[] = [SMALL_PHONE, TABLET, DESKTOP];
 const SMOKE_PROJECT = "desktop";
 const REACT_FAILURE = /Minified React error|hydrat/i;
@@ -101,12 +101,12 @@ async function checkRun(browser: Browser, run: Run): Promise<void> {
   expect.soft(Object.keys(shots).filter((key) => differs(shots[key])), `${run.key}: native views that differ from their fragments`).toEqual([]);
 }
 
-test("Kutch Ajrakh's native views read and answer as the approved page and look as their fragments at 360, 834 and 1440 in light and dark", async ({ browser }) => {
-  test.setTimeout(RUN_TIMEOUT_MS);
-  for (const width of WIDTHS) {
-    for (const scheme of SCHEMES) {
-      const run = { key: `${width.key}-${scheme}`, width, scheme };
-      await test.step(run.key, () => checkRun(browser, run));
-    }
+for (const width of WIDTHS) {
+  for (const scheme of SCHEMES) {
+    const run = { key: `${width.key}-${scheme}`, width, scheme };
+    test(`Kutch Ajrakh's native views read and answer as the approved page and look as their fragments at ${run.key}`, async ({ browser }) => {
+      test.setTimeout(RUN_TIMEOUT_MS);
+      await checkRun(browser, run);
+    });
   }
-});
+}

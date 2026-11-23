@@ -14,7 +14,7 @@ import {
 } from "@/lib/learningContract";
 import { CITATIONS_FILE_PATH, citationExportShape, LESSON_FILE_PATH, lessonListShape, lessonPackShape, lessonRequestShape } from "@/lib/lessonContract";
 import { canBuildLessons } from "@/lib/permissions";
-import { CRAFT_SHARED_SCIENCE_PATH, sharedConceptShape, sharedScienceShape } from "@/lib/sharedScienceContract";
+import { conceptCraftsPageShape, CRAFT_SHARED_SCIENCE_PATH, SHARED_CONCEPT_CRAFTS_PATH, sharedConceptShape, sharedScienceShape } from "@/lib/sharedScienceContract";
 import { parseShape, ShapeError, type Shape } from "@/lib/shape";
 import type { User, UserRole } from "@/lib/types";
 
@@ -65,6 +65,7 @@ test("citations, shared science and a tapped district parse exactly", () => {
   const shared = golden("learning.shared-science.golden.json");
   exactly(sharedScienceShape, shared.craft);
   exactly(sharedConceptShape, shared.concept);
+  exactly(conceptCraftsPageShape, shared.crafts);
   exactly(districtCraftsShape, golden("map.district-crafts.golden.json"));
 });
 
@@ -74,6 +75,8 @@ test("routes are named once and escaped", () => {
   expect(LESSON_FILE_PATH("l1", "pptx")).toBe("/lessons/l1/files/pptx");
   expect(CITATIONS_FILE_PATH("e1", 1, "ris")).toBe("/explainers/e1/versions/1/citations/ris");
   expect(CRAFT_SHARED_SCIENCE_PATH("Kutch-Ajrakh")).toBe("/crafts/Kutch-Ajrakh/shared-science");
+  expect(SHARED_CONCEPT_CRAFTS_PATH("alum", "Kutch-Ajrakh", 100)).toBe("/shared-science/alum/crafts?craft=Kutch-Ajrakh&offset=100");
+  expect(SHARED_CONCEPT_CRAFTS_PATH("alum", null, 0)).toBe("/shared-science/alum/crafts?offset=0");
   expect(DISTRICT_CRAFTS_PATH(449)).toBe("/map/districts/449");
 });
 

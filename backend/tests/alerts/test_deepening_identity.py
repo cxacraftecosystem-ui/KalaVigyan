@@ -44,7 +44,7 @@ def geology_ask() -> BuildAsk:
 
 def test_each_identified_kind_is_known_by_what_it_shows() -> None:
     assert block_keys(golden("s2.b1")) == {SOIL}
-    assert block_keys(golden("s1.b1")) == {"region_story:river:3"}
+    assert block_keys(golden("s1.b1")) == {"region_story:river:41063203"}
     assert block_keys(golden("s4.b1")) == {
         "reaction:d2e727af-a1bd-55a8-a151-f1aff8414e61",
         "reaction:c33b87a8-1dc1-5040-a4dc-07a182f52911",

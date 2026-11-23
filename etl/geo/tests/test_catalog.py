@@ -56,8 +56,11 @@ def test_the_etl_reads_only_the_registry_s_district_datasets() -> None:
             "GLIM_1_0_05DEG",
             "HANSEN_GFC_2025_V1_13",
             "HYDRORIVERS_1_0",
+            "OGD_GW_RESOURCES_RAJASTHAN_2023",
+            "OSM_RIVER_NAMES",
             "SOILGRIDS_2_0",
             "USGS_MRDS",
+            "WIKIDATA_RIVER_NAMES",
         ]
     )
 

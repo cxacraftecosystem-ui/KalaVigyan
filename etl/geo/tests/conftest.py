@@ -10,8 +10,8 @@ if str(ROOT) not in sys.path:
 
 @pytest.fixture
 def sleeps(monkeypatch) -> list[float]:
-    from geo_etl import layers
+    from geo_etl import remote
 
     waited: list[float] = []
-    monkeypatch.setattr(layers.time, "sleep", waited.append)
+    monkeypatch.setattr(remote.time, "sleep", waited.append)
     return waited

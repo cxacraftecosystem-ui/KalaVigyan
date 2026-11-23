@@ -31,7 +31,17 @@ ignore = ["E501", "RUF001", "RUF002", "RUF003", "PLW0603", "PLW2901"]
 [tool.ruff.lint.isort]
 combine-as-imports = true
 known-first-party = ["app"]
-known-local-folder = ["traditions", "aliases", "seed_claims", "wikidata_link"]
+known-local-folder = [
+    "traditions",
+    "aliases",
+    "seed_claims",
+    "wikidata_families",
+    "wikidata_link",
+    "wikidata_names",
+    "wikidata_scoring",
+    "wikidata_sparql",
+    "wikidata_vocabulary",
+]
 section-order = ["future", "standard-library", "third-party", "paths", "first-party", "local-folder"]
 
 [tool.ruff.lint.isort.sections]

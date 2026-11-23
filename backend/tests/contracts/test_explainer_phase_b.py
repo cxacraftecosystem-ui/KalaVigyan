@@ -35,6 +35,8 @@ from .phase_b_golden import PHASE_B, PhaseBFixture, catalog_dataset, phase_b, ph
 
 PUBCHEM_RECORDED = REPO / "backend" / "tests" / "sources" / "fixtures" / "pubchem_compound.json"
 AT = datetime(2026, 11, 17, 10, 30, tzinfo=UTC)
+KACHCHH_BASIN = "river.kachchh.golden.json"
+KHARI_HEADWATER, KHARI_OUTLET = 41054582, 41063203
 
 
 def fixture() -> PhaseBFixture:
@@ -121,19 +123,41 @@ def test_the_region_story_draws_registered_districts_and_real_dataset_rows() -> 
     )
     district = next(d for d in register["districts"] if d["lgd"] == 449)
     state = next(s for s in register["states"] if s["lgd"] == district["stateLgd"])
+    others = json.loads(
+        (REPO / "backend" / "app" / "data" / "district_other_names.json").read_text(encoding="utf-8")
+    )
+    other = next(row["otherNames"] for row in others["districts"] if row["lgd"] == 449)
     assert [d.model_dump(by_alias=True) for d in story.districts] == [
-        {"districtLgd": 449, "name": district["name"], "stateName": state["name"]}
+        {"districtLgd": 449, "name": district["name"], "stateName": state["name"], "otherNames": other}
     ]
     layer = golden_json("region.layer.golden.json")
-    assert [d.model_dump(mode="json", by_alias=True) for d in story.datasets] == [
+    assert [d.model_dump(mode="json", by_alias=True) for d in story.datasets][:2] == [
         layer["boundary"]["dataset"],
         catalog_dataset("HYDRORIVERS_1_0"),
     ]
+    assert [d.code for d in story.datasets][2:] == ["OSM_RIVER_NAMES"]
     assert story.boundary_caption == BOUNDARY_CAPTION == layer["boundary"]["caption"]
     assert set(story.layers) <= set(LAYERS_BY_ID)
-    placeholders = fixture().placeholders
-    assert (story.river.main_riv, story.river.reach_ids) == (placeholders.main_riv, placeholders.reach_ids)
-    assert story.river.district_lgds == [449] and story.river.name == "Saran"
+    assert story.river.district_lgds == [449] and story.river.name == "Khari"
+
+
+def test_the_story_s_river_is_the_loaded_khari_traced_from_its_headwater_to_its_outlet() -> None:
+    story = blocks()["s1.b1"]
+    basin = golden_json(KACHCHH_BASIN)["objects"]["reaches"]["geometries"]
+    next_down = {reach["id"]: reach["properties"]["nextDown"] for reach in basin}
+    path = [KHARI_HEADWATER]
+    while next_down[path[-1]] != 0:
+        path.append(next_down[path[-1]])
+    assert (story.river.main_riv, story.river.reach_ids) == (path[-1], path)
+    assert not any(down == KHARI_HEADWATER for down in next_down.values())
+    names = json.loads(
+        (REPO / "backend" / "app" / "data" / "rivers" / "river_names.osm.json").read_text("utf-8")
+    )
+    khari = next(
+        river for river in names["rivers"] if river["name"] == "Khari" and path[-1] in river["reachIds"]
+    )
+    assert set(khari["reachIds"]) <= set(path) and khari["mainRiv"] == path[-1]
+    assert all(reach["properties"]["districts"] == [[449, 0.0]] for reach in basin)
 
 
 def test_the_map_layer_is_the_layer_route_s_layer() -> None:
@@ -298,7 +322,7 @@ def test_the_experts_differ_pair_is_stated_by_both_seats_from_different_sources(
 
 def test_each_block_is_stored_as_the_fixture_says() -> None:
     craft_id = seed_uuid("c", "Kutch-Ajrakh")
-    subjects = TopicSubjects(craft_slug="Kutch-Ajrakh", districts=("Kachchh",))
+    subjects = TopicSubjects(craft_slug="Kutch-Ajrakh", districts=(449,))
     expected = []
     for section in fixture().sections:
         for block in section.blocks:
@@ -332,7 +356,7 @@ def test_phase_b_blocks_are_refused_until_their_lane_builds_them(block_id: str) 
 
 
 def test_a_phase_b_piece_is_refused_until_built() -> None:
-    slot = PieceSlot(None, "GEOGRAPHY", "water:basin-3", "EXPERT")
+    slot = PieceSlot(None, "GEOGRAPHY", f"water:basin-{KHARI_OUTLET}", "EXPERT")
     waiting = [
         block for block in blocks().values() if block.kind not in BUILT_BLOCK_KINDS and storable(block)
     ]
@@ -343,14 +367,14 @@ def test_a_phase_b_piece_is_refused_until_built() -> None:
 
 def test_a_built_region_story_is_stored_as_a_cross_craft_basin_piece() -> None:
     story = blocks()["s1.b1"]
-    section = PieceSlot(seed_uuid("c", "Kutch-Ajrakh"), "GEOGRAPHY", "water:kachchh", "EXPERT")
+    section = PieceSlot(seed_uuid("c", "Kutch-Ajrakh"), "GEOGRAPHY", "water:lgd-449", "EXPERT")
     piece = knowledge_piece(
         story, piece_slot(story, section), piece_id=seed_id("piece", "x"), answer_id=None, created_at=AT
     )
     assert (piece.craft_id, piece.facet, piece.topic_key, piece.kind) == (
         None,
         "GEOGRAPHY",
-        "water:basin-3",
+        f"water:basin-{KHARI_OUTLET}",
         "region_story",
     )
 

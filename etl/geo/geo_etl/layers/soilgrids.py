@@ -10,7 +10,8 @@ from rasterio.transform import from_origin
 
 from geo_etl import raster
 from geo_etl.catalog import SOILGRIDS
-from geo_etl.layers import USER_AGENT, Measured, Options, Result, by_state, failure, with_retries
+from geo_etl.layers import Measured, Options, Result, by_state, failure
+from geo_etl.remote import USER_AGENT, with_retries
 from geo_etl.rows import Rows, pick
 
 WCS = "https://maps.isric.org/mapserv"

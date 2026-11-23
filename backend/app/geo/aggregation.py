@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
 from app.core.errors import InvalidInput
-from app.geo.records import Coverage, SeriesTotals
+from app.geo.records import SeriesTotals
+from app.geo.region_rules import region_rules
 from app.schemas.region import STATE_AGGREGATIONS
 
 __all__ = [
@@ -19,7 +19,7 @@ __all__ = [
 
 AGGREGATE_DIGITS = 6
 AGGREGATED_STATS = tuple(STATE_AGGREGATIONS)
-ABSENT_MEANS_ZERO = MappingProxyType({"GLIM_1_0_05DEG": "lithology", "USGS_MRDS": "mineral_occurrences_"})
+ABSENT_MEANS_ZERO = MappingProxyType(dict(region_rules().absent_means_zero))
 
 
 @dataclass(frozen=True)
@@ -34,20 +34,19 @@ def absent_means_zero(dataset_code: str, variable: str) -> bool:
     return prefix is not None and variable.startswith(prefix)
 
 
-def state_aggregate(totals: SeriesTotals, coverage: Mapping[tuple[int, str], Coverage]) -> StateAggregate:
+def state_aggregate(totals: SeriesTotals) -> StateAggregate:
     aggregation = STATE_AGGREGATIONS.get(totals.stat)
     if aggregation is None:
         raise InvalidInput(f"{totals.stat} has no state aggregate ({totals.dataset_code}.{totals.variable})")
     districts, area, zeros = totals.districts, totals.area, False
     if absent_means_zero(totals.dataset_code, totals.variable):
-        covered = coverage.get((totals.state_lgd, totals.dataset_code))
-        if covered is None or covered.districts < totals.districts:
+        if totals.dataset_districts < totals.districts:
             raise InvalidInput(
                 f"state {totals.state_lgd}: {totals.dataset_code} covers fewer districts than hold "
                 f"{totals.variable}"
             )
-        zeros = covered.districts > totals.districts
-        districts, area = covered.districts, covered.area
+        zeros = totals.dataset_districts > totals.districts
+        districts, area = totals.dataset_districts, totals.dataset_area
     return StateAggregate(
         aggregation, round(_aggregate(aggregation, totals, area, zeros), AGGREGATE_DIGITS), districts
     )

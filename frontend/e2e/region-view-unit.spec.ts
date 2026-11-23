@@ -52,6 +52,14 @@ function layer(edit: (body: MapLayer) => void = () => undefined): MapLayer {
   return checkedLayer(parseShape(mapLayerShape, body));
 }
 
+const SHOWN_FACETS = ["SOIL", "CLIMATE", "WATER", "FOREST", "LAND_COVER", "TERRAIN", "GEOLOGY"];
+
+function facetOf(place: RegionPlace, name: string) {
+  const found = place.facets.find((facet) => facet.facet === name);
+  if (!found) throw new Error(`the golden place has no ${name} facet`);
+  return found;
+}
+
 function inherited(place: RegionPlace): RegionPlace {
   return {
     ...place,
@@ -66,24 +74,47 @@ function inherited(place: RegionPlace): RegionPlace {
   };
 }
 
-test("each Kachchh value reads with its unit", () => {
+test("each Kachchh headline value reads with its unit", () => {
   const values = region().places[0].facets.flatMap((facet) => facet.values);
   expect(values.map((value) => [valueLabel(value), valueReading(value)])).toEqual([
-    ["Clay, 0–5 cm", "27.4%"],
-    ["Soil pH (in water), 0–5 cm", "pH 8.1"],
-    ["Annual mean temperature", "26.6 °C"],
-    ["Annual precipitation", "372.4 mm/year"],
-    ["Bare or sparse vegetation", "31.2%"],
-    ["Cropland", "23.6%"],
-    ["Elevation", "52.3 m"],
-    ["Mineral sites", "41 sites"]
+    ["Cation exchange capacity, 0–5 cm", "22.32 cmol(c)/kg"],
+    ["Clay, 0–5 cm", "22.22%"],
+    ["Soil pH (in water), 0–5 cm", "pH 7.28"],
+    ["Sand, 0–5 cm", "49.95%"],
+    ["Soil organic carbon, 0–5 cm", "12.27 g/kg"],
+    ["Warmest-month maximum temperature", "38.19 °C"],
+    ["Coldest-month minimum temperature", "13.21 °C"],
+    ["Annual precipitation", "449.36 mm/year"],
+    ["Annual precipitation", "70.76 mm/year per decade"],
+    ["Annual precipitation", "p = 0.005"],
+    ["Monsoon share, June–September", "96.09% of annual"],
+    ["Annual mean temperature", "27.07 °C"],
+    ["Annual mean temperature", "0.3 °C per decade"],
+    ["Annual mean temperature", "p < 0.001"],
+    ["Distance to a major river", "56.76 km"],
+    ["River density", "0.24 km/km²"],
+    ["Share of the 2000 forest lost", "2.59% of 2000 forest"],
+    ["Tree cover in 2000", "0%"],
+    ["Bare or sparse vegetation", "25.46%"],
+    ["Built-up", "0.89%"],
+    ["Cropland", "30.14%"],
+    ["Tree cover", "1.65%"],
+    ["Elevation", "36.87 m"],
+    ["Slope", "0.74°"],
+    ["Rock type", "Basic volcanic rocks · 9.38%"],
+    ["Rock type", "Evaporites · 0.4%"],
+    ["Rock type", "Mixed sedimentary rocks · 5.92%"],
+    ["Rock type", "Siliciclastic sedimentary rocks · 14.67%"],
+    ["Rock type", "Unconsolidated sediments · 69.64%"],
+    ["Mineral sites", "0 sites"]
   ]);
 });
 
 test("every value names its statistic, dataset, grid and period", () => {
   const body = region();
   const index = datasetIndex(body.datasets);
-  const [soil, , , , cover] = body.places[0].facets.flatMap((facet) => facet.values);
+  const soil = facetOf(body.places[0], "SOIL").values[0];
+  const cover = facetOf(body.places[0], "LAND_COVER").values[0];
   expect(valueProvenance(soil, datasetOf(index, soil.datasetCode))).toBe("District mean · SoilGrids 2.0 · 250 m · modelled, 2020 release");
   expect(valueProvenance(cover, datasetOf(index, cover.datasetCode))).toBe(
     "Share of district area · ESA WorldCover 10 m 2021 v200 · 40 m (overview read, factor 4, nearest) · 2021"
@@ -96,7 +127,7 @@ test("a district place names its district and is highlighted alone", () => {
   expect(place.placeLabel).toBe("Kachchh");
   expect(placeSubtitle(place, [])).toBe("District, Gujarat");
   expect(inheritedNote(place)).toBeNull();
-  expect(shownFacets(place).map((facet) => facet.facet)).toEqual(["SOIL", "CLIMATE", "LAND_COVER", "TERRAIN", "GEOLOGY"]);
+  expect(shownFacets(place).map((facet) => facet.facet)).toEqual(SHOWN_FACETS);
   const highlight = regionHighlight(body);
   expect([...highlight.districts]).toEqual([449]);
   expect([...highlight.states]).toEqual([]);
@@ -104,7 +135,7 @@ test("a district place names its district and is highlighted alone", () => {
 
 test("facets arriving out of order are shown in the contract order", () => {
   const body = region((value) => value.places[0].facets.reverse());
-  expect(shownFacets(body.places[0]).map((facet) => facet.facet)).toEqual(["SOIL", "CLIMATE", "LAND_COVER", "TERRAIN", "GEOLOGY"]);
+  expect(shownFacets(body.places[0]).map((facet) => facet.facet)).toEqual(SHOWN_FACETS);
 });
 
 test("a district without an outline shows its state's values and says so", () => {
@@ -194,17 +225,31 @@ test("a craft with no places has nothing to highlight", () => {
 
 test("a geology share reads as its rock type and share", () => {
   const body = region((value) => {
-    value.places[0].facets[4].values = [{ ...value.places[0].facets[4].values[0], variable: "lithology", valueText: "Sandstone", value: 0.42, unit: "fraction", stat: "SHARE" }];
+    const geology = facetOf(value.places[0], "GEOLOGY");
+    geology.values = [{ ...geology.values[0], variable: "lithology", valueText: "Sandstone", value: 0.42, unit: "fraction", stat: "SHARE" }];
   });
-  expect(valueReading(body.places[0].facets[4].values[0])).toBe("Sandstone · 42%");
-  expect(valueLabel(body.places[0].facets[4].values[0])).toBe("Rock type");
+  const [rock] = facetOf(body.places[0], "GEOLOGY").values;
+  expect(valueReading(rock)).toBe("Sandstone · 42%");
+  expect(valueLabel(rock)).toBe("Rock type");
 });
 
 test("each dataset lists its distinct methods once", () => {
   const methods = datasetMethods(region());
   expect(methods.get("CHELSA_2_1_1981_2010")).toHaveLength(1);
   expect(methods.get("SOILGRIDS_2_0")).toHaveLength(1);
-  expect([...methods.keys()].sort()).toEqual(["CHELSA_2_1_1981_2010", "COPERNICUS_DEM_GLO90", "ESA_WORLDCOVER_2021_V200", "SOILGRIDS_2_0", "USGS_MRDS"]);
+  expect(methods.get("CHIRPS_3_0")).toHaveLength(2);
+  expect([...methods.keys()].sort()).toEqual([
+    "CHELSA_2_1_1981_2010",
+    "CHIRPS_3_0",
+    "COPERNICUS_DEM_GLO90",
+    "ESA_WORLDCOVER_2021_V200",
+    "GHCN_CAMS_T2M",
+    "GLIM_1_0_05DEG",
+    "HANSEN_GFC_2025_V1_13",
+    "HYDRORIVERS_1_0",
+    "SOILGRIDS_2_0",
+    "USGS_MRDS"
+  ]);
 });
 
 test("a location's source is numbered and linked even when no claim cites it", () => {
@@ -231,23 +276,23 @@ test("the client refuses a value whose dataset is not listed", () => {
 test("every district value falls in its quantile class", () => {
   const fills = layerFills(layer());
   expect(Object.fromEntries([...fills.entries()].map(([lgd, band]) => [String(lgd), band]))).toEqual({
-    "438": 2,
-    "441": 1,
+    "438": 3,
+    "441": 4,
     "444": 0,
-    "447": 3,
-    "449": 4,
-    "455": 3,
+    "447": 1,
+    "449": 3,
+    "455": 4,
     "459": 1,
-    "460": 4,
+    "460": 3,
     "462": 0
   });
 });
 
 test("the legend, caption and summary read from the layer", () => {
   const soil = layer();
-  expect(layerClassLabels(soil)).toEqual(["pH 6.40–7.08", "pH 7.08–7.64", "pH 7.64–7.88", "pH 7.88–8.04", "pH 8.04–8.30"]);
+  expect(layerClassLabels(soil)).toEqual(["pH 6.67–6.88", "pH 6.88–7.09", "pH 7.09–7.28", "pH 7.28–7.31", "pH 7.31–7.35"]);
   expect(layerCaption(soil)).toBe("District mean · SoilGrids 2.0 · 250 m · modelled, 2020 release");
-  expect(layerSummary(soil)).toBe("Soil pH, 0-5 cm: 9 districts, pH 6.4–8.3.");
+  expect(layerSummary(soil)).toBe("Soil pH, 0-5 cm: 9 districts, pH 6.67–7.35.");
 });
 
 test("an empty layer or a mismatched dataset is refused", () => {

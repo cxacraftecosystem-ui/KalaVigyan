@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 
 from app.core.errors import InvalidInput
-from app.providers.elevenlabs import NARRATION_MAX_CHARACTERS, NARRATION_MODEL, TimedSpeech, audio_seconds
+from app.providers.elevenlabs import NARRATION_MAX_CHARACTERS, TimedSpeech, audio_seconds
 from app.research.blocks import BlockBase
 from app.research.explainer import Explainer, explainer_blocks
 from app.research.knowledge_pieces import piece_content_hash
@@ -19,6 +19,7 @@ __all__ = [
     "NARRATION_VERSION",
     "PART_CHARACTERS",
     "SENTENCE_GAP",
+    "TIME_PLACES",
     "NarrationPart",
     "SpokenBlock",
     "SpokenSentence",
@@ -30,7 +31,7 @@ __all__ = [
     "spoken_blocks",
 ]
 
-NARRATION_VERSION = 2
+NARRATION_VERSION = 3
 PART_CHARACTERS = 2_000
 CHARACTERS_PER_MINUTE = 1_000
 SENTENCE_GAP = " "
@@ -104,11 +105,11 @@ def part_duration(speech: TimedSpeech) -> float:
     return round(max(audio_seconds(len(speech.audio)), *speech.ends), TIME_PLACES)
 
 
-def narration_cache_id(content_hash: str, *, language: str, voice_id: str) -> str:
+def narration_cache_id(content_hash: str, *, language: str, voice_id: str, model: str) -> str:
     parts = (
         "kalavigyan-narration",
         str(NARRATION_VERSION),
-        NARRATION_MODEL,
+        model,
         voice_id,
         language,
         content_hash,

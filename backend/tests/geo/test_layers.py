@@ -65,12 +65,23 @@ def test_the_layer_version_is_the_sha256_of_everything_else_it_sends() -> None:
 
 
 def test_quintile_breaks_interpolate_between_the_sorted_values() -> None:
+    assert sorted(SOIL_PH.values()) == [
+        6.673111,
+        6.780816,
+        6.947537,
+        7.04553,
+        7.281044,
+        7.281131,
+        7.281387,
+        7.343617,
+        7.350742,
+    ]
     assert bounds(list(SOIL_PH.values())) == [
-        (6.4, 7.08),
-        (7.08, 7.64),
-        (7.64, 7.88),
-        (7.88, 8.04),
-        (8.04, 8.3),
+        (6.673111, 6.88),
+        (6.88, 7.09),
+        (7.09, 7.28),
+        (7.28, 7.31),
+        (7.31, 7.350742),
     ]
 
 

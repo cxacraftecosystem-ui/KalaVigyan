@@ -3,9 +3,20 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { AI_MEDIA_KINDS, BORROWED_SCOPES, CHAPTER_KEYS, FIGURE_KINDS, GENERATED_KINDS, ORIGIN_BASES, SOURCE_GROUPS } from "@/lib/craftChapters";
 import { DEPTH_BASES, ENVIRONMENT_FACTORS, EVENT_KINDS, PICTURE_ROLES } from "@/lib/craftPageContext";
-import { COVERAGE_CLASSES, CRAFT_GI_STATUSES, GI_SHOWN, GROUP_KINDS, NATIVE_NAME_SOURCES, PLACE_KINDS, PROVENANCES, SECTION_BASES, SUBJECT_KINDS } from "@/lib/craftPageContract";
+import {
+  BORROWED_SCOPES,
+  COVERAGE_CLASSES,
+  CRAFT_GI_STATUSES,
+  GI_SHOWN,
+  GROUP_KINDS,
+  NATIVE_NAME_SOURCES,
+  PLACE_KINDS,
+  PROVENANCES,
+  SECTION_BASES,
+  SOURCE_GROUPS,
+  SUBJECT_KINDS
+} from "@/lib/craftPageContract";
 import { SPECIES_ROLES, TIMING_KINDS } from "@/lib/craftPageProcess";
 import { PLACE_ROLES } from "@/lib/districtCraftsContract";
 import { IMAGE_RELEVANCE, MEDIA_DISPLAYS } from "@/lib/explainerBlockBase";
@@ -72,7 +83,7 @@ const PAIRS: [string, string, readonly string[]][] = [
   ["models/enums.py", "IMAGE_RELEVANCE", IMAGE_RELEVANCE],
   ["models/enums.py", "TERM_BASES", TERM_BASES],
   ["research/blocks_people.py", "EXPERT_SEATS", EXPERT_SEATS],
-  ["research/calendar.py", "SEASONS", SEASONS],
+  ["research/calendar_words.py", "SEASONS", SEASONS],
   ["research/blocks_journey.py", "ZOOM_LEVELS", ZOOM_LEVELS],
   ["models/enums.py", "NOTIFICATION_KINDS", NOTIFICATION_KINDS],
   ["models/enums.py", "PLACE_ROLES", PLACE_ROLES],
@@ -94,12 +105,7 @@ const PAIRS: [string, string, readonly string[]][] = [
   ["research/craft_page_context.py", "DEPTH_BASES", DEPTH_BASES],
   ["research/craft_page_context.py", "EVENT_KINDS", EVENT_KINDS],
   ["research/craft_page_context.py", "PICTURE_ROLES", PICTURE_ROLES],
-  ["research/chapter_keys.py", "CHAPTER_KEYS", CHAPTER_KEYS],
-  ["research/craft_chapters.py", "FIGURE_KINDS", FIGURE_KINDS],
   ["research/craft_chapters.py", "BORROWED_SCOPES", BORROWED_SCOPES],
-  ["research/craft_origins.py", "ORIGIN_BASES", ORIGIN_BASES],
-  ["research/craft_origins.py", "GENERATED_KINDS", GENERATED_KINDS],
-  ["research/craft_origins.py", "AI_MEDIA_KINDS", AI_MEDIA_KINDS],
   ["research/craft_parts.py", "SOURCE_GROUPS", SOURCE_GROUPS],
   ["research/craft_masthead.py", "GI_SHOWN", GI_SHOWN],
   ["research/craft_masthead.py", "NATIVE_NAME_SOURCES", NATIVE_NAME_SOURCES],

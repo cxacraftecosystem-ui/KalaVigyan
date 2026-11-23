@@ -9,6 +9,7 @@ from app.api.routes import (
     contributed_pictures,
     contribution_streams,
     coverage,
+    craft_media,
     craft_monograph,
     crafts,
     dataset_uploads,
@@ -80,6 +81,7 @@ api_router.include_router(crafts.router)
 api_router.include_router(craft_monograph.router)
 api_router.include_router(coverage.router)
 api_router.include_router(contributed_pictures.router)
+api_router.include_router(craft_media.router)
 api_router.include_router(explainers.router)
 api_router.include_router(explainer_exports.router)
 api_router.include_router(field_voices.router)

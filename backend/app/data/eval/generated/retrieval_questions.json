@@ -1,7 +1,7 @@
 {
  "version": 1,
- "revision": 1,
- "generatedAt": "2026-11-22T06:23:53.797606Z",
+ "revision": 2,
+ "generatedAt": "2026-11-23T04:33:47.731226Z",
  "model": "claude-haiku-5-5",
  "seed": 20261122,
  "factsPerCraft": 20,
@@ -9,7 +9,7 @@
   {
    "key": "0837aa58-7d4f-5626-be19-d22deb5dc310-te",
    "craftSlug": "Adilabad-Dokra",
-   "question": "बांकुड़ा ज़िले के बिकना गाँव में डोकरा की पारंपरिक लॉस्ट-वैक्स तकनीक अब भी अपनाई जाती है, लेकिन क्या अध्ययन में उसके चरण बताए गए हैं?",
+   "question": "బిక్నా గ్రామంలో, బంకురా జిల్లాలో, ఇప్పటికీ ఆచరణలో ఉన్న సాంప్రదాయ లాస్ట్-వ్యాక్స్ పద్ధతిపై అధ్యయనం ఏమి చెబుతుంది?",
    "expected": [
     [
      "0837aa58-7d4f-5626-be19-d22deb5dc310"
@@ -19,6 +19,21 @@
    "fields": [],
    "fact": "0837aa58-7d4f-5626-be19-d22deb5dc310",
    "language": "te",
+   "rejected": []
+  },
+  {
+   "key": "cf669524-6a1e-5cba-a35d-b90a512829ac-en",
+   "craftSlug": "Adilabad-Dokra",
+   "question": "What category of art is Dokra, and which casting technique does it rely on?",
+   "expected": [
+    [
+     "cf669524-6a1e-5cba-a35d-b90a512829ac"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "cf669524-6a1e-5cba-a35d-b90a512829ac",
+   "language": "en",
    "rejected": []
   },
   {
@@ -33,6 +48,21 @@
    "field": "GEOGRAPHY",
    "fields": [],
    "fact": "e3c6e655-7d10-5133-9f05-a8ba71a8933d",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "4ef5399b-1958-5687-9176-1fbd6e8180ca-en",
+   "craftSlug": "Agates-Of-Cambay",
+   "question": "Why do some bands of agate take in dye easily while others resist it?",
+   "expected": [
+    [
+     "4ef5399b-1958-5687-9176-1fbd6e8180ca"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "4ef5399b-1958-5687-9176-1fbd6e8180ca",
    "language": "en",
    "rejected": []
   },
@@ -127,6 +157,21 @@
    "rejected": []
   },
   {
+   "key": "7d51dc03-bdec-515f-947c-a4e5750493be-en",
+   "craftSlug": "Agates-Of-Cambay",
+   "question": "What does the carnelian research by these scholars conclude about the age of Khambhat's stone bead tradition?",
+   "expected": [
+    [
+     "7d51dc03-bdec-515f-947c-a4e5750493be"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "7d51dc03-bdec-515f-947c-a4e5750493be",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "81f6440a-dd79-586c-9f77-9d05781fa7da-en",
    "craftSlug": "Agates-Of-Cambay",
    "question": "Where do most of Gujarat's beads get their stone from?",
@@ -142,6 +187,21 @@
    "rejected": []
   },
   {
+   "key": "d47a77fa-d368-58b2-9369-825633cb39bd-gu",
+   "craftSlug": "Agates-Of-Cambay",
+   "question": "કેનોયર, વિડાલે અને ભાને 1991માં લખ્યું છે કે ખંભાત દસ્તાવેજી ઇતિહાસના બે હજારથી વધુ વર્ષોથી પથ્થરના મણકા બનાવવાનું મહત્વનું કેન્દ્ર રહ્યું છે, તો તે કેટલા સમયથી આવું છે?",
+   "expected": [
+    [
+     "d47a77fa-d368-58b2-9369-825633cb39bd"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "d47a77fa-d368-58b2-9369-825633cb39bd",
+   "language": "gu",
+   "rejected": []
+  },
+  {
    "key": "dc551e6c-3eaf-5fb2-ab11-bc395ab827ad-en",
    "craftSlug": "Agates-Of-Cambay",
    "question": "Which gemstones besides agate were worked in the Cambay workshops?",
@@ -153,6 +213,21 @@
    "field": "MATERIALS",
    "fields": [],
    "fact": "dc551e6c-3eaf-5fb2-ab11-bc395ab827ad",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "e48b1081-99d1-5735-8cae-d705574a094d-en",
+   "craftSlug": "Agates-Of-Cambay",
+   "question": "How did the agate business in Cambay change over the 1800s?",
+   "expected": [
+    [
+     "e48b1081-99d1-5735-8cae-d705574a094d"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "e48b1081-99d1-5735-8cae-d705574a094d",
    "language": "en",
    "rejected": []
   },
@@ -187,6 +262,36 @@
    "rejected": []
   },
   {
+   "key": "12d9a03a-db39-5d4c-9332-4fc0a1692c55-en",
+   "craftSlug": "Agra-Marble-Inlay",
+   "question": "What form of extraction sites are the Makrana pits that furnished the mausoleum's stone, and how large do they get?",
+   "expected": [
+    [
+     "12d9a03a-db39-5d4c-9332-4fc0a1692c55"
+    ]
+   ],
+   "field": "GEOLOGY",
+   "fields": [],
+   "fact": "12d9a03a-db39-5d4c-9332-4fc0a1692c55",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "3f3c9f53-6a6e-5acb-82e9-633fa4021283-en",
+   "craftSlug": "Agra-Marble-Inlay",
+   "question": "Which stones could builders have picked for the mausoleum simply because they looked good?",
+   "expected": [
+    [
+     "3f3c9f53-6a6e-5acb-82e9-633fa4021283"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "3f3c9f53-6a6e-5acb-82e9-633fa4021283",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "4198b3f8-8d9b-5082-b4dc-a4d00151ab61-en",
    "craftSlug": "Agra-Marble-Inlay",
    "question": "What makes malachite an appealing stone for decorative inlay?",
@@ -198,6 +303,36 @@
    "field": "MATERIALS",
    "fields": [],
    "fact": "4198b3f8-8d9b-5082-b4dc-a4d00151ab61",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "7a7ac3b4-5e12-5677-a612-075a1eaef49b-en",
+   "craftSlug": "Agra-Marble-Inlay",
+   "question": "From how far away was the marble facing of the mausoleum transported to Agra?",
+   "expected": [
+    [
+     "7a7ac3b4-5e12-5677-a612-075a1eaef49b"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "7a7ac3b4-5e12-5677-a612-075a1eaef49b",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "92b9a9a6-b809-5371-926f-1bf60542ec4a-en",
+   "craftSlug": "Agra-Marble-Inlay",
+   "question": "Where was Makrana stone examined in research on removing grime from old structures with light beams?",
+   "expected": [
+    [
+     "92b9a9a6-b809-5371-926f-1bf60542ec4a"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "92b9a9a6-b809-5371-926f-1bf60542ec4a",
    "language": "en",
    "rejected": []
   },
@@ -217,6 +352,21 @@
    "rejected": []
   },
   {
+   "key": "9f2fbdcd-f2b6-59c8-b8a2-2ccfe3f6c328-en",
+   "craftSlug": "Agra-Marble-Inlay",
+   "question": "What official protected status does the marble from Makrana hold, and when was it granted?",
+   "expected": [
+    [
+     "9f2fbdcd-f2b6-59c8-b8a2-2ccfe3f6c328"
+    ]
+   ],
+   "field": "ECONOMICS",
+   "fields": [],
+   "fact": "9f2fbdcd-f2b6-59c8-b8a2-2ccfe3f6c328",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "bae7a480-0eb4-5e79-b47a-e11f8d10fba3-hi",
    "craftSlug": "Agra-Marble-Inlay",
    "question": "कारीगरों द्वारा प्रक्रिया के क्रम को कब परिष्कृत किया गया और तब से यह कितने समय से लगभग अपरिवर्तित है?",
@@ -229,6 +379,51 @@
    "fields": [],
    "fact": "bae7a480-0eb4-5e79-b47a-e11f8d10fba3",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "c9def5c9-98ae-5ba2-ac8d-f87f27ac11de-en",
+   "craftSlug": "Agra-Marble-Inlay",
+   "question": "Which ruler introduced the decorative stone-setting technique to the subcontinent, bringing specialists from Iran?",
+   "expected": [
+    [
+     "c9def5c9-98ae-5ba2-ac8d-f87f27ac11de"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "c9def5c9-98ae-5ba2-ac8d-f87f27ac11de",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "fbe2f6dc-2458-5bd5-b474-356e5fc299e5-en",
+   "craftSlug": "Agra-Marble-Inlay",
+   "question": "How are the stone inlays secured in place, and why are the seams so hard to spot?",
+   "expected": [
+    [
+     "fbe2f6dc-2458-5bd5-b474-356e5fc299e5"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "fbe2f6dc-2458-5bd5-b474-356e5fc299e5",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "0bc190c3-473e-51c8-8b10-57238d7e9ad2-en",
+   "craftSlug": "Ahmedabad-Sodagari-Block-Print",
+   "question": "How much of the resource demand in hand-stamped textile work in western India comes from the washing and treatment stages rather than the printing itself?",
+   "expected": [
+    [
+     "0bc190c3-473e-51c8-8b10-57238d7e9ad2"
+    ]
+   ],
+   "field": "GEOGRAPHY",
+   "fields": [],
+   "fact": "0bc190c3-473e-51c8-8b10-57238d7e9ad2",
+   "language": "en",
    "rejected": []
   },
   {
@@ -277,6 +472,36 @@
    "rejected": []
   },
   {
+   "key": "d31a0473-b233-5017-a741-ef7d014970f4-en",
+   "craftSlug": "Aligarh-Tala",
+   "question": "What surface treatments does one Aligarh firm offer on its metal goods?",
+   "expected": [
+    [
+     "d31a0473-b233-5017-a741-ef7d014970f4"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "d31a0473-b233-5017-a741-ef7d014970f4",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "03c72f69-3003-505a-b737-859f1f4e5943-en",
+   "craftSlug": "Allagadda-Stone-Carving",
+   "question": "How did the stone carving practice survive into the era after India gained freedom, and what did its geographical certification do for its standing?",
+   "expected": [
+    [
+     "03c72f69-3003-505a-b737-859f1f4e5943"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "03c72f69-3003-505a-b737-859f1f4e5943",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "0e1dfd64-9fe1-5eb7-a716-c7a7172db53a-te",
    "craftSlug": "Allagadda-Stone-Carving",
    "question": "శిల్పులు చెక్కడానికి ఏ రకాల రాళ్లను ఎంచుకుంటారు, మరియు ఏ నల్ల రాయిని ఇష్టపడతారు?",
@@ -307,6 +532,81 @@
    "rejected": []
   },
   {
+   "key": "536845fe-7e29-5ca5-9819-552a90d667f6-en",
+   "craftSlug": "Allagadda-Stone-Carving",
+   "question": "Which institution did a celebrated carver found in 1950, making Allagadda a center of the trade?",
+   "expected": [
+    [
+     "536845fe-7e29-5ca5-9819-552a90d667f6"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "536845fe-7e29-5ca5-9819-552a90d667f6",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "5be6e0a8-dc85-55fc-8c96-f6e01b7bc936-en",
+   "craftSlug": "Allagadda-Stone-Carving",
+   "question": "Roughly how many people currently work in this stone-working trade in the town?",
+   "expected": [
+    [
+     "5be6e0a8-dc85-55fc-8c96-f6e01b7bc936"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "5be6e0a8-dc85-55fc-8c96-f6e01b7bc936",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "68ee7fa5-7083-5c30-9d87-c892a816ac21-en",
+   "craftSlug": "Allagadda-Stone-Carving",
+   "question": "Which historical kingdom is the origin of the carving tradition in Allagadda, dating to the 1500s?",
+   "expected": [
+    [
+     "68ee7fa5-7083-5c30-9d87-c892a816ac21"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "68ee7fa5-7083-5c30-9d87-c892a816ac21",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "ed1c7cbe-1b36-5893-9811-8f67ae0f701c-en",
+   "craftSlug": "Allagadda-Stone-Carving",
+   "question": "Who hired the artisans in earlier centuries to adorn sacred buildings and royal residences?",
+   "expected": [
+    [
+     "ed1c7cbe-1b36-5893-9811-8f67ae0f701c"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "ed1c7cbe-1b36-5893-9811-8f67ae0f701c",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "0b1d9807-e752-573c-816a-2b02f99fb44c-en",
+   "craftSlug": "Alleppey-Coir",
+   "question": "What environmental harm results when the spongy waste left over from coir processing is discarded on coastlines?",
+   "expected": [
+    [
+     "0b1d9807-e752-573c-816a-2b02f99fb44c"
+    ]
+   ],
+   "field": "GEOGRAPHY",
+   "fields": [],
+   "fact": "0b1d9807-e752-573c-816a-2b02f99fb44c",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "323f12b9-b0c0-51b4-86e0-ae77b6004105-ml",
    "craftSlug": "Alleppey-Coir",
    "question": "ആലപ്പുഴ കയർ എന്ന പേരിൽ ഉൽപ്പന്നങ്ങൾ ഏത് പ്രദേശത്താണ് നിർമ്മിക്കുന്നത്?",
@@ -333,6 +633,36 @@
    "field": "MATERIALS",
    "fields": [],
    "fact": "42999536-41be-5663-8211-e65fae6aaa1f",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "4e0fe549-0a89-52b9-af33-497788da8504-en",
+   "craftSlug": "Alleppey-Coir",
+   "question": "What is the basic input that coir makers rely on, and what happens to the surplus of it after factories finish their work?",
+   "expected": [
+    [
+     "4e0fe549-0a89-52b9-af33-497788da8504"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "4e0fe549-0a89-52b9-af33-497788da8504",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "4e484c74-4c2a-5c77-bd76-12b4ed87a72c-en",
+   "craftSlug": "Alleppey-Coir",
+   "question": "What happened to the foreign firms that dominated coir manufacturing, and how did production become spread out across many small units?",
+   "expected": [
+    [
+     "4e484c74-4c2a-5c77-bd76-12b4ed87a72c"
+    ]
+   ],
+   "field": "OVERVIEW",
+   "fields": [],
+   "fact": "4e484c74-4c2a-5c77-bd76-12b4ed87a72c",
    "language": "en",
    "rejected": []
   },
@@ -427,6 +757,81 @@
    "rejected": []
   },
   {
+   "key": "f5d146a8-c32e-5f3f-a2e8-1248b444ac9b-en",
+   "craftSlug": "Alleppey-Coir",
+   "question": "What material is left over when coir is made, and where does it come from?",
+   "expected": [
+    [
+     "f5d146a8-c32e-5f3f-a2e8-1248b444ac9b"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "f5d146a8-c32e-5f3f-a2e8-1248b444ac9b",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "fdb43c0f-d3e0-5573-af3a-73d1ae0f0235-en",
+   "craftSlug": "Alleppey-Coir",
+   "question": "How has Alappuzha's coir sector changed from hand weaving to machine-based manufacturing?",
+   "expected": [
+    [
+     "fdb43c0f-d3e0-5573-af3a-73d1ae0f0235"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "fdb43c0f-d3e0-5573-af3a-73d1ae0f0235",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "5a8e5b36-9918-50f5-a209-30c99e4f4070-en",
+   "craftSlug": "Amroha-Dholak",
+   "question": "What metal is used for the fasteners on some Amroha drums sold online?",
+   "expected": [
+    [
+     "5a8e5b36-9918-50f5-a209-30c99e4f4070"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "5a8e5b36-9918-50f5-a209-30c99e4f4070",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "9720f0dc-1b6e-5aed-b1d4-1f820115cabb-en",
+   "craftSlug": "Amroha-Dholak",
+   "question": "Which Indonesian district has small timber-processing businesses studied for how much raw wood they can obtain?",
+   "expected": [
+    [
+     "9720f0dc-1b6e-5aed-b1d4-1f820115cabb"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "9720f0dc-1b6e-5aed-b1d4-1f820115cabb",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "c3ab52f1-f8e2-5ad6-8227-7cccf955b2aa-hi",
+   "craftSlug": "Amroha-Dholak",
+   "question": "क्या स्रोत अमरोहा के पानी, मिट्टी या जलवायु को ढोलक बनाने से जोड़ते हैं?",
+   "expected": [
+    [
+     "c3ab52f1-f8e2-5ad6-8227-7cccf955b2aa"
+    ]
+   ],
+   "field": "GEOGRAPHY",
+   "fields": [],
+   "fact": "c3ab52f1-f8e2-5ad6-8227-7cccf955b2aa",
+   "language": "hi",
+   "rejected": []
+  },
+  {
    "key": "29f8e780-5829-547c-b20c-c73ed9e680b4-en",
    "craftSlug": "Andhra-Pradesh-Leather-Puppetry",
    "question": "What effect does tanning have on the heat threshold at which the protein collagen breaks down?",
@@ -438,6 +843,21 @@
    "field": "PROCESS",
    "fields": [],
    "fact": "29f8e780-5829-547c-b20c-c73ed9e680b4",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "50bed48c-d89d-502f-ab1e-ee3651cd3f4e-en",
+   "craftSlug": "Andhra-Pradesh-Leather-Puppetry",
+   "question": "How are the figures made from start to finish, from the animal hide onward?",
+   "expected": [
+    [
+     "50bed48c-d89d-502f-ab1e-ee3651cd3f4e"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "50bed48c-d89d-502f-ab1e-ee3651cd3f4e",
    "language": "en",
    "rejected": []
   },
@@ -454,6 +874,21 @@
    "fields": [],
    "fact": "57a02fa7-15db-5839-83b3-ddd54ca1982a",
    "language": "te",
+   "rejected": []
+  },
+  {
+   "key": "8b34e1a4-d718-5506-96b0-999b5892a98b-en",
+   "craftSlug": "Andhra-Pradesh-Leather-Puppetry",
+   "question": "When did this art enjoy its greatest flourishing, under which kingdom?",
+   "expected": [
+    [
+     "8b34e1a4-d718-5506-96b0-999b5892a98b"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "8b34e1a4-d718-5506-96b0-999b5892a98b",
+   "language": "en",
    "rejected": []
   },
   {
@@ -652,6 +1087,36 @@
    "rejected": []
   },
   {
+   "key": "4393b8e7-be7b-577d-a484-96cd63a4b1f5-en",
+   "craftSlug": "Aranmula-Kannadi",
+   "question": "What compositional difference is found at the rim of the freshly cast mirror compared with the bulk alloy?",
+   "expected": [
+    [
+     "4393b8e7-be7b-577d-a484-96cd63a4b1f5"
+    ]
+   ],
+   "field": "CHEMISTRY",
+   "fields": [],
+   "fact": "4393b8e7-be7b-577d-a484-96cd63a4b1f5",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "6f8c7c08-bc56-5575-9e0f-a254ad76ddd6-ml",
+   "craftSlug": "Aranmula-Kannadi",
+   "question": "1909-ൽ തഴ്സ്റ്റണും രംഗാചാരിയും നമ്പൂതിരി, നായർ വധുക്കളുടെ സ്ത്രീധനത്തിൽ ഉൾപ്പെട്ട ലോഹ കണ്ണാടിയെ എങ്ങനെ വിവരിച്ചു?",
+   "expected": [
+    [
+     "6f8c7c08-bc56-5575-9e0f-a254ad76ddd6"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "6f8c7c08-bc56-5575-9e0f-a254ad76ddd6",
+   "language": "ml",
+   "rejected": []
+  },
+  {
    "key": "74d90022-77fe-5fab-b92f-1b2c2d10b8fc-ml",
    "craftSlug": "Aranmula-Kannadi",
    "question": "ആദ്യത്തെ മിനുക്കുപൊടി എന്തായിരുന്നു എന്ന് പറയപ്പെടുന്നു?",
@@ -712,6 +1177,21 @@
    "rejected": []
   },
   {
+   "key": "bdb88c3a-e9ca-5287-bad2-4a69aba15ab7-en",
+   "craftSlug": "Aranmula-Kannadi",
+   "question": "How can a layperson distinguish a real Aranmula mirror from a tin imitation?",
+   "expected": [
+    [
+     "bdb88c3a-e9ca-5287-bad2-4a69aba15ab7"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "bdb88c3a-e9ca-5287-bad2-4a69aba15ab7",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "c0be7199-0bcc-56e7-b43b-7e84e497be63-ml",
    "craftSlug": "Aranmula-Kannadi",
    "question": "ഒരു നിർമ്മാതാവ് മൂശമണ്ണ് അടുത്തുള്ള കുന്നിൽനിന്ന് എങ്ങനെ എടുത്ത് വർക്ഷോപ്പിലേക്ക് കൊണ്ടുപോകുന്നു?",
@@ -742,18 +1222,33 @@
    "rejected": []
   },
   {
-   "key": "095677e7-4fd6-556d-ba0d-763d47bc18e4-hi",
-   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
-   "question": "छपाई के बाद किन प्राकृतिक वनस्पति रंगों से रंगाई होती थी, और नीला, गेरुआ तथा सैल्मन पिंक रंग कब प्रचलन में आए?",
+   "key": "eace1d03-ac86-5eb2-b368-4c8be43f4d62-en",
+   "craftSlug": "Aranmula-Kannadi",
+   "question": "What makes the production of these mirrors environmentally friendly, in Atlas Obscura's view?",
    "expected": [
     [
-     "095677e7-4fd6-556d-ba0d-763d47bc18e4"
+     "eace1d03-ac86-5eb2-b368-4c8be43f4d62"
+    ]
+   ],
+   "field": "ECOLOGY",
+   "fields": [],
+   "fact": "eace1d03-ac86-5eb2-b368-4c8be43f4d62",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "3471aa91-9029-5724-bc89-ed3efc072ba4-en",
+   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
+   "question": "What unusual surfaces have younger Bagh printers tried decorating beyond cloth?",
+   "expected": [
+    [
+     "3471aa91-9029-5724-bc89-ed3efc072ba4"
     ]
    ],
    "field": "DESIGN",
    "fields": [],
-   "fact": "095677e7-4fd6-556d-ba0d-763d47bc18e4",
-   "language": "hi",
+   "fact": "3471aa91-9029-5724-bc89-ed3efc072ba4",
+   "language": "en",
    "rejected": []
   },
   {
@@ -772,17 +1267,47 @@
    "rejected": []
   },
   {
-   "key": "a1fdc461-7394-5e09-9426-b4b53b4aef50-hi",
+   "key": "bab77d05-1c4d-5fec-a5a7-4dfbf0616a7a-en",
    "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
-   "question": "कौन-से वर्ष में खत्री परिवार ने बाघ में बसावट की, जैसा कि स्रोत बताते हैं?",
+   "question": "Why do Bagh printers avoid bahera when they need a substitute for harara?",
    "expected": [
     [
-     "a1fdc461-7394-5e09-9426-b4b53b4aef50"
+     "bab77d05-1c4d-5fec-a5a7-4dfbf0616a7a"
     ]
    ],
-   "field": null,
+   "field": "MATERIALS",
    "fields": [],
-   "fact": "a1fdc461-7394-5e09-9426-b4b53b4aef50",
+   "fact": "bab77d05-1c4d-5fec-a5a7-4dfbf0616a7a",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "c45731fc-abd9-5304-a38a-c4c51ec52567-en",
+   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
+   "question": "What makes the stage-by-stage printing method of Bagh considered special to the region?",
+   "expected": [
+    [
+     "c45731fc-abd9-5304-a38a-c4c51ec52567"
+    ]
+   ],
+   "field": "OVERVIEW",
+   "fields": [],
+   "fact": "c45731fc-abd9-5304-a38a-c4c51ec52567",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "cf98cc32-9799-5aac-90cd-61efbd872848-hi",
+   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
+   "question": "धावड़ी के फूल या अनार के छिलके पीला रंग कैसे देते हैं, जिससे एक बार में तीन रंग छापे जा सकते हैं?",
+   "expected": [
+    [
+     "cf98cc32-9799-5aac-90cd-61efbd872848"
+    ]
+   ],
+   "field": "CHEMISTRY",
+   "fields": [],
+   "fact": "cf98cc32-9799-5aac-90cd-61efbd872848",
    "language": "hi",
    "rejected": []
   },
@@ -802,79 +1327,108 @@
    "rejected": []
   },
   {
-   "key": "e620a22a-7fb7-5776-ba54-a27427a9f069-hi",
-   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
-   "question": "बाघ प्रिंट में पारंपरिक रूप से नील कैसे बनाया जाता था, और अब इंडिगो पाउडर को कॉस्टिक और हाइड्रो में घोलने का तरीका कैसे बदल गया है?",
+   "key": "0527d07d-196a-5a47-8fca-d838d5047d4f-en",
+   "craftSlug": "Bagru-Hand-Block-Print",
+   "question": "Which organisation submitted the 2009 registration request for the Bagru print, and what is the number of that request?",
    "expected": [
     [
-     "e620a22a-7fb7-5776-ba54-a27427a9f069"
+     "0527d07d-196a-5a47-8fca-d838d5047d4f"
     ]
    ],
-   "field": "MATERIALS",
+   "field": "ECONOMICS",
    "fields": [],
-   "fact": "e620a22a-7fb7-5776-ba54-a27427a9f069",
-   "language": "hi",
+   "fact": "0527d07d-196a-5a47-8fca-d838d5047d4f",
+   "language": "en",
    "rejected": []
   },
   {
-   "key": "224c45e4-7fb2-5849-a2a8-b3ec50955cb1-hi",
+   "key": "284cbae1-e59e-5d90-8306-1148e78df9a8-en",
    "craftSlug": "Bagru-Hand-Block-Print",
-   "question": "छीपा कारीगर नदी के किनारे कहाँ रहते और काम करते हैं?",
+   "question": "What is the sequence of processing stages a Bagru cloth goes through from raw fabric to finished print?",
    "expected": [
     [
-     "224c45e4-7fb2-5849-a2a8-b3ec50955cb1"
+     "284cbae1-e59e-5d90-8306-1148e78df9a8"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "284cbae1-e59e-5d90-8306-1148e78df9a8",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "3af57cdf-dbb6-55e3-8848-556f4518aacd-hi",
+   "craftSlug": "Bagru-Hand-Block-Print",
+   "question": "पेन संग्रहालय में रखे 19वीं सदी के उत्तरार्ध के बागरू सूती कपड़े, जो एक महिला के कागरा के लिए बना था, में कौन-कौन सी छपाई और रंगाई तकनीकें दिखती हैं?",
+   "expected": [
+    [
+     "3af57cdf-dbb6-55e3-8848-556f4518aacd"
     ]
    ],
    "field": "HISTORY",
    "fields": [],
-   "fact": "224c45e4-7fb2-5849-a2a8-b3ec50955cb1",
+   "fact": "3af57cdf-dbb6-55e3-8848-556f4518aacd",
    "language": "hi",
    "rejected": []
   },
   {
-   "key": "2a36dbc0-49dd-5fca-b6a3-4aba48b5241f-en",
+   "key": "8461eb35-27a5-52c2-af23-c3b342ad5fbc-en",
    "craftSlug": "Bagru-Hand-Block-Print",
-   "question": "What ingredients are combined to prepare the black syahi used in this craft?",
+   "question": "What happens to the cloth between the dabu printing step and its immersion in the blue dye?",
    "expected": [
     [
-     "2a36dbc0-49dd-5fca-b6a3-4aba48b5241f",
-     "c552eda4-6687-52d7-b1d8-15897904733e"
+     "8461eb35-27a5-52c2-af23-c3b342ad5fbc"
     ]
    ],
-   "field": "MATERIALS",
+   "field": "PROCESS",
    "fields": [],
-   "fact": "2a36dbc0-49dd-5fca-b6a3-4aba48b5241f",
+   "fact": "8461eb35-27a5-52c2-af23-c3b342ad5fbc",
    "language": "en",
    "rejected": []
   },
   {
-   "key": "35328bc8-50a5-50df-b281-47c90ef22347-en",
+   "key": "9fe651b2-39d8-501e-9ab0-f13a1da2b975-en",
    "craftSlug": "Bagru-Hand-Block-Print",
-   "question": "What determines how many carved blocks a designer needs for a multicolour pattern?",
+   "question": "Why does the mud paste stop dye from reaching certain parts of the cloth, and which colour is the process limited to?",
    "expected": [
     [
-     "35328bc8-50a5-50df-b281-47c90ef22347"
+     "9fe651b2-39d8-501e-9ab0-f13a1da2b975"
     ]
    ],
-   "field": "DESIGN",
+   "field": "PHYSICS",
    "fields": [],
-   "fact": "35328bc8-50a5-50df-b281-47c90ef22347",
+   "fact": "9fe651b2-39d8-501e-9ab0-f13a1da2b975",
    "language": "en",
    "rejected": []
   },
   {
-   "key": "35328bc8-50a5-50df-b281-47c90ef22347-hi",
+   "key": "a75a97b8-3598-5afd-9e3a-d40a80ecbf2f-hi",
    "craftSlug": "Bagru-Hand-Block-Print",
-   "question": "अधिक रंगों के लिए कितने दत्ता ब्लॉकों की आवश्यकता होती है?",
+   "question": "पूरी तरह सूखने के बाद कपड़े को मोड़कर अंधेरी जगह पर कितने दिनों तक रखा जाता है ताकि पीला रंग पक्का हो जाए?",
    "expected": [
     [
-     "35328bc8-50a5-50df-b281-47c90ef22347"
+     "a75a97b8-3598-5afd-9e3a-d40a80ecbf2f"
     ]
    ],
-   "field": "DESIGN",
+   "field": "PROCESS",
    "fields": [],
-   "fact": "35328bc8-50a5-50df-b281-47c90ef22347",
+   "fact": "a75a97b8-3598-5afd-9e3a-d40a80ecbf2f",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "ad845e49-1576-5931-ad2f-03620e8ab8f8-en",
+   "craftSlug": "Bagru-Hand-Block-Print",
+   "question": "How long has the dabu technique been practised in Bagru, and how did its reach change over time?",
+   "expected": [
+    [
+     "ad845e49-1576-5931-ad2f-03620e8ab8f8"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "ad845e49-1576-5931-ad2f-03620e8ab8f8",
+   "language": "en",
    "rejected": []
   },
   {
@@ -890,6 +1444,51 @@
    "fields": [],
    "fact": "bacfbdf2-f6fc-56ec-a293-44391e9a1400",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "eb2e77f8-91d2-52d8-a96a-d9f33dc344c9-en",
+   "craftSlug": "Bagru-Hand-Block-Print",
+   "question": "What do the patterns and hues on a Bagru block print reveal about the wearer's social group?",
+   "expected": [
+    [
+     "eb2e77f8-91d2-52d8-a96a-d9f33dc344c9"
+    ]
+   ],
+   "field": "DESIGN",
+   "fields": [],
+   "fact": "eb2e77f8-91d2-52d8-a96a-d9f33dc344c9",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "1f9b08aa-818e-5adb-a70c-36a539deea47-en",
+   "craftSlug": "Bareilly-Cane-Bamboo-Craft",
+   "question": "How did a colonial-era commentator assess the quality of timber furniture produced in this town?",
+   "expected": [
+    [
+     "1f9b08aa-818e-5adb-a70c-36a539deea47"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "1f9b08aa-818e-5adb-a70c-36a539deea47",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "2bba60b1-94a0-536c-bffd-0ea11eb228a0-en",
+   "craftSlug": "Bareilly-Cane-Bamboo-Craft",
+   "question": "How do craftspeople get pliable cane ready before weaving it?",
+   "expected": [
+    [
+     "2bba60b1-94a0-536c-bffd-0ea11eb228a0"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "2bba60b1-94a0-536c-bffd-0ea11eb228a0",
+   "language": "en",
    "rejected": []
   },
   {
@@ -919,6 +1518,36 @@
    "field": "MATERIALS",
    "fields": [],
    "fact": "53780dc9-8bf1-5f03-8810-3881e01adf98",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "774563d9-5944-56ba-9d9b-3dec0f2eaf7d-en",
+   "craftSlug": "Bareilly-Cane-Bamboo-Craft",
+   "question": "What qualities are claimed for this town's cane and bamboo goods in terms of sturdiness and environmental impact?",
+   "expected": [
+    [
+     "774563d9-5944-56ba-9d9b-3dec0f2eaf7d"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "774563d9-5944-56ba-9d9b-3dec0f2eaf7d",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "7d49775b-03fe-5293-aa9c-e037bcaf8fb8-en",
+   "craftSlug": "Bareilly-Cane-Bamboo-Craft",
+   "question": "Has the furniture from this town stayed uniform in look over the years?",
+   "expected": [
+    [
+     "7d49775b-03fe-5293-aa9c-e037bcaf8fb8"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "7d49775b-03fe-5293-aa9c-e037bcaf8fb8",
    "language": "en",
    "rejected": []
   },
@@ -1058,6 +1687,21 @@
    "rejected": []
   },
   {
+   "key": "69d2b0c7-3d5f-5454-98cd-0d40d98b9159-en",
+   "craftSlug": "Bastar-Dhokra",
+   "question": "What everyday and decorative objects do contemporary Bastar metal artisans produce for the market?",
+   "expected": [
+    [
+     "69d2b0c7-3d5f-5454-98cd-0d40d98b9159"
+    ]
+   ],
+   "field": "DESIGN",
+   "fields": [],
+   "fact": "69d2b0c7-3d5f-5454-98cd-0d40d98b9159",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "a85abd1e-313a-5817-8eda-fb62adeee75d-hi",
    "craftSlug": "Bastar-Dhokra",
    "question": "शुरुआती बस्तर ढोकरा में मोम के धागे किस चीज़ से बनते थे, और उनमें पैराफिन कब मिलाया जाने लगा?",
@@ -1148,6 +1792,21 @@
    "rejected": []
   },
   {
+   "key": "20f5969c-4458-54e8-8aff-ee92424c0599-en",
+   "craftSlug": "Block-Printing-Of-Akola",
+   "question": "Are the resist formulas shared openly among printers, or are they kept private within each household?",
+   "expected": [
+    [
+     "20f5969c-4458-54e8-8aff-ee92424c0599"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "20f5969c-4458-54e8-8aff-ee92424c0599",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "38e72663-ace6-5ac7-85d6-ab2ab73d743d-en",
    "craftSlug": "Block-Printing-Of-Akola",
    "question": "What material is scattered over the paste to help it dry and stay put?",
@@ -1208,6 +1867,21 @@
    "rejected": []
   },
   {
+   "key": "7b3d6031-fe1e-5606-ae1a-658b077891a7-en",
+   "craftSlug": "Block-Printing-Of-Akola",
+   "question": "How many times must a piece go through printing and dyeing to build up a multi-colour design?",
+   "expected": [
+    [
+     "7b3d6031-fe1e-5606-ae1a-658b077891a7"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "7b3d6031-fe1e-5606-ae1a-658b077891a7",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "93b23bde-4754-5716-9d86-eb8394addf68-en",
    "craftSlug": "Block-Printing-Of-Akola",
    "question": "How is the cloth dried before the next step in dabu printing?",
@@ -1224,6 +1898,67 @@
    "rejected": []
   },
   {
+   "key": "a43447cc-6990-509b-9357-d2b5818106c8-en",
+   "craftSlug": "Block-Printing-Of-Akola",
+   "question": "Which parts of the pattern are left light because resist is pressed onto them?",
+   "expected": [
+    [
+     "a43447cc-6990-509b-9357-d2b5818106c8"
+    ]
+   ],
+   "field": "DESIGN",
+   "fields": [],
+   "fact": "a43447cc-6990-509b-9357-d2b5818106c8",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "cd5b7e12-1724-526b-82c9-6343289b1db2-en",
+   "craftSlug": "Block-Printing-Of-Akola",
+   "question": "Which social group traditionally carries out the block printing in Akola?",
+   "expected": [
+    [
+     "cd5b7e12-1724-526b-82c9-6343289b1db2"
+    ]
+   ],
+   "field": null,
+   "fields": [],
+   "fact": "cd5b7e12-1724-526b-82c9-6343289b1db2",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "d24f45d6-c81a-5558-bc89-8ad4fe9b4cd6-en",
+   "craftSlug": "Block-Printing-Of-Akola",
+   "question": "Where is hand block dabu printing mostly carried out today?",
+   "expected": [
+    [
+     "d24f45d6-c81a-5558-bc89-8ad4fe9b4cd6"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "d24f45d6-c81a-5558-bc89-8ad4fe9b4cd6",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "d5664b07-0381-55b7-9dd1-93e214c3b724-en",
+   "craftSlug": "Block-Printing-Of-Akola",
+   "question": "How can dye seep into the cloth through the resist in dabu printing?",
+   "expected": [
+    [
+     "d5664b07-0381-55b7-9dd1-93e214c3b724",
+     "a4c5a1ae-6e5d-5933-90fd-8f96d63f794e"
+    ]
+   ],
+   "field": "CHEMISTRY",
+   "fields": [],
+   "fact": "d5664b07-0381-55b7-9dd1-93e214c3b724",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "d97dfcc6-2418-5377-bb27-7f31ea0d09a1-en",
    "craftSlug": "Block-Printing-Of-Akola",
    "question": "What ingredients make up the Deesa resist paste?",
@@ -1236,6 +1971,21 @@
    "fields": [],
    "fact": "d97dfcc6-2418-5377-bb27-7f31ea0d09a1",
    "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "58c49cfa-ce54-5ba3-8331-b618ac7e586b-hi",
+   "craftSlug": "Blue-Pottery-Of-Jaipur",
+   "question": "जयपुर नीली मिट्टी के बर्तन किस तापमान पर और कितने घंटे तक भट्ठी में पकाए जाते हैं, और उसमें कौन-सा ईंधन इस्तेमाल होता है?",
+   "expected": [
+    [
+     "58c49cfa-ce54-5ba3-8331-b618ac7e586b"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "58c49cfa-ce54-5ba3-8331-b618ac7e586b",
+   "language": "hi",
    "rejected": []
   },
   {
@@ -1359,6 +2109,36 @@
    "rejected": []
   },
   {
+   "key": "292566cb-f8f7-5c98-8ed7-159f87009a4c-en",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "What powder is dusted over freshly printed cloth at Balotra to prevent smearing and speed up drying?",
+   "expected": [
+    [
+     "292566cb-f8f7-5c98-8ed7-159f87009a4c"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "292566cb-f8f7-5c98-8ed7-159f87009a4c",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "29ae2fee-9a12-566e-878e-ffd1d71e9cb2-en",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "Why does scattering fine wood particles over wet resist help keep dye from seeping into the marked areas?",
+   "expected": [
+    [
+     "29ae2fee-9a12-566e-878e-ffd1d71e9cb2"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "29ae2fee-9a12-566e-878e-ffd1d71e9cb2",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "30883f06-94d0-58a6-ac80-99632b5dacdc-hi",
    "craftSlug": "Dabu-Hand-Block-Printing",
    "question": "राजस्थान के आदिवासी क्षेत्रों में मिट्टी से प्रतिरोध बनाने वाली कौन-सी प्राचीन छपाई तकनीक प्रचलित थी?",
@@ -1389,6 +2169,81 @@
    "rejected": []
   },
   {
+   "key": "628e3d13-fb7e-5ed2-b4c6-edf283c23f9a-en",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "How many times can one piece of fabric be put through the resist-printing and colouring steps in the town of Balotra?",
+   "expected": [
+    [
+     "628e3d13-fb7e-5ed2-b4c6-edf283c23f9a"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "628e3d13-fb7e-5ed2-b4c6-edf283c23f9a",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "63d2716d-9f19-58a4-b281-b475f0a84b7c-hi",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "राजस्थान के गाँवों में ब्लॉक प्रिंटिंग से जुड़े कारीगर कौन-कौन हैं?",
+   "expected": [
+    [
+     "63d2716d-9f19-58a4-b281-b475f0a84b7c"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "63d2716d-9f19-58a4-b281-b475f0a84b7c",
+   "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "7c8e62a9-4fed-5169-ad27-72aa0d51aab6-en",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "What ingredients make up the thick mud-like resist mixture that is kneaded underfoot?",
+   "expected": [
+    [
+     "7c8e62a9-4fed-5169-ad27-72aa0d51aab6"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "7c8e62a9-4fed-5169-ad27-72aa0d51aab6",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "7c8e62a9-4fed-5169-ad27-72aa0d51aab6-hi",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "डाबू के मिट्टी के लेप में कौन-कौन सी सामग्री मिलाई जाती है और उसे कैसे गूंधा जाता है?",
+   "expected": [
+    [
+     "7c8e62a9-4fed-5169-ad27-72aa0d51aab6"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "7c8e62a9-4fed-5169-ad27-72aa0d51aab6",
+   "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "89075d2c-5e80-57d1-9e68-edf5f6f526d4-en",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "Why has it become simpler for machine-made fabric to imitate hand-printed patterns from this tradition?",
+   "expected": [
+    [
+     "89075d2c-5e80-57d1-9e68-edf5f6f526d4"
+    ]
+   ],
+   "field": "ECONOMICS",
+   "fields": [],
+   "fact": "89075d2c-5e80-57d1-9e68-edf5f6f526d4",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "9172be6a-8018-5a8d-92c9-2e050a4bbf24-hi",
    "craftSlug": "Dabu-Hand-Block-Printing",
    "question": "डाबू की छपाई के ब्लॉकों पर कौन-से रूपांकन उकेरे जाते हैं?",
@@ -1401,6 +2256,36 @@
    "fields": [],
    "fact": "9172be6a-8018-5a8d-92c9-2e050a4bbf24",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "c02b26a6-05b2-53a7-8aa2-c8ab0f3fec01-en",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "Does the order of steps in this hand-printing craft change depending on the look the maker is after?",
+   "expected": [
+    [
+     "c02b26a6-05b2-53a7-8aa2-c8ab0f3fec01"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "c02b26a6-05b2-53a7-8aa2-c8ab0f3fec01",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "c820440d-d539-58d2-bb62-41beccc2c312-en",
+   "craftSlug": "Dabu-Hand-Block-Printing",
+   "question": "What materials make up the resist mud used in dabu?",
+   "expected": [
+    [
+     "c820440d-d539-58d2-bb62-41beccc2c312"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "c820440d-d539-58d2-bb62-41beccc2c312",
+   "language": "en",
    "rejected": []
   },
   {
@@ -1494,9 +2379,24 @@
    "rejected": []
   },
   {
+   "key": "2dfaad2f-dfd2-5bc2-a2aa-aed4a3f9fc84-en",
+   "craftSlug": "Ghurni-Clay-Doll-Craft",
+   "question": "In which settings are the lifelike clay figures and models from Ghurni put on display?",
+   "expected": [
+    [
+     "2dfaad2f-dfd2-5bc2-a2aa-aed4a3f9fc84"
+    ]
+   ],
+   "field": "DESIGN",
+   "fields": [],
+   "fact": "2dfaad2f-dfd2-5bc2-a2aa-aed4a3f9fc84",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "540adacd-e931-561c-b789-d0ffe173da9a-bn",
    "craftSlug": "Ghurni-Clay-Doll-Craft",
-   "question": "घुर्णी",
+   "question": "ঘুর্ণির অনেক শিল্পী বিদেশে গিয়ে কী ধরনের কাজ করেছেন?",
    "expected": [
     [
      "540adacd-e931-561c-b789-d0ffe173da9a"
@@ -1506,6 +2406,111 @@
    "fields": [],
    "fact": "540adacd-e931-561c-b789-d0ffe173da9a",
    "language": "bn",
+   "rejected": []
+  },
+  {
+   "key": "540adacd-e931-561c-b789-d0ffe173da9a-en",
+   "craftSlug": "Ghurni-Clay-Doll-Craft",
+   "question": "Have Ghurni craftsmen gone overseas to carve or model religious and historic structures?",
+   "expected": [
+    [
+     "540adacd-e931-561c-b789-d0ffe173da9a"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "540adacd-e931-561c-b789-d0ffe173da9a",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "5d503139-705e-558d-be5e-f267d50e7b61-en",
+   "craftSlug": "Ghurni-Clay-Doll-Craft",
+   "question": "How do Ghurni makers typically dry their clay models once they are shaped?",
+   "expected": [
+    [
+     "5d503139-705e-558d-be5e-f267d50e7b61"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "5d503139-705e-558d-be5e-f267d50e7b61",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "952d3166-83e2-5056-92a4-fe67c376f4ca-en",
+   "craftSlug": "Ghurni-Clay-Doll-Craft",
+   "question": "What is the first step in producing these figures, and how long should the material rest before shaping?",
+   "expected": [
+    [
+     "952d3166-83e2-5056-92a4-fe67c376f4ca"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "952d3166-83e2-5056-92a4-fe67c376f4ca",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "e1ca9b59-465c-5997-8d92-2498d52a5781-bn",
+   "craftSlug": "Ghurni-Clay-Doll-Craft",
+   "question": "গ্রামীণ শিল্প ও সাংস্কৃতিক কেন্দ্রের পুস্তিকা অনুযায়ী ঘুর্ণির শিল্পীরা প্রজন্ম ধরে কীভাবে এই শিল্প চর্চা করে আসছেন?",
+   "expected": [
+    [
+     "e1ca9b59-465c-5997-8d92-2498d52a5781"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "e1ca9b59-465c-5997-8d92-2498d52a5781",
+   "language": "bn",
+   "rejected": []
+  },
+  {
+   "key": "fba27b12-3b44-5c46-bda6-d3c31af5b605-bn",
+   "craftSlug": "Ghurni-Clay-Doll-Craft",
+   "question": "ঘুরণির কারিগরদের বৃষ্টি ও শীতের সময় সাহায্য করতে কোন ধরনের শুকানোর বা গরম ঘর ব্যবহারের পরামর্শ দেওয়া হয়েছে?",
+   "expected": [
+    [
+     "fba27b12-3b44-5c46-bda6-d3c31af5b605"
+    ]
+   ],
+   "field": "CLIMATE",
+   "fields": [],
+   "fact": "fba27b12-3b44-5c46-bda6-d3c31af5b605",
+   "language": "bn",
+   "rejected": []
+  },
+  {
+   "key": "25024a08-727d-5c50-9e5e-28b741d648a0-hi",
+   "craftSlug": "Khurja-Pottery",
+   "question": "पोर्सिलेन को भट्टी में किस तापमान पर पकाया जाता है और इससे वह कैसे बनता है?",
+   "expected": [
+    [
+     "25024a08-727d-5c50-9e5e-28b741d648a0"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "25024a08-727d-5c50-9e5e-28b741d648a0",
+   "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "da7743be-029a-5539-9836-9e81e9dae338-en",
+   "craftSlug": "Khurja-Pottery",
+   "question": "What advantages do man-made clays have over natural clay for potters working in ceramics?",
+   "expected": [
+    [
+     "da7743be-029a-5539-9836-9e81e9dae338"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "da7743be-029a-5539-9836-9e81e9dae338",
+   "language": "en",
    "rejected": []
   },
   {
@@ -1569,6 +2574,96 @@
    "rejected": []
   },
   {
+   "key": "2a49b807-c84c-5975-a28b-02dba3bc1233-en",
+   "craftSlug": "Krishnanagar-Terracotta",
+   "question": "What kind of earth surrounds Ghurni, making it a strong location for clay work?",
+   "expected": [
+    [
+     "2a49b807-c84c-5975-a28b-02dba3bc1233"
+    ]
+   ],
+   "field": "GEOLOGY",
+   "fields": [],
+   "fact": "2a49b807-c84c-5975-a28b-02dba3bc1233",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "38e33bf3-b065-5ff7-bf85-7e64623b297a-bn",
+   "craftSlug": "Krishnanagar-Terracotta",
+   "question": "ঘূর্ণি ও কৃষ্ণনগরের মাটির পুতুল ও টেরাকোটা শিল্প এবং তাদের সমস্যা নিয়ে কারা আগে গবেষণা করেছেন?",
+   "expected": [
+    [
+     "38e33bf3-b065-5ff7-bf85-7e64623b297a"
+    ]
+   ],
+   "field": "OVERVIEW",
+   "fields": [],
+   "fact": "38e33bf3-b065-5ff7-bf85-7e64623b297a",
+   "language": "bn",
+   "rejected": []
+  },
+  {
+   "key": "3fe4b545-c855-58d5-a24d-1ec73dc56672-en",
+   "craftSlug": "Krishnanagar-Terracotta",
+   "question": "What is applied to the surface of these dolls after the colour is laid on to make them shine more?",
+   "expected": [
+    [
+     "3fe4b545-c855-58d5-a24d-1ec73dc56672"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "3fe4b545-c855-58d5-a24d-1ec73dc56672",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "62b493ca-ea10-5e64-9870-9803a606e92e-en",
+   "craftSlug": "Krishnanagar-Terracotta",
+   "question": "At what temperature and for how long are the finished clay figures fired in a kiln?",
+   "expected": [
+    [
+     "62b493ca-ea10-5e64-9870-9803a606e92e"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "62b493ca-ea10-5e64-9870-9803a606e92e",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "6c0fbc50-e2d4-5048-8b25-91370fc6b61d-bn",
+   "craftSlug": "Krishnanagar-Terracotta",
+   "question": "জলঙ্গী নদীর কোন তীরে নদিয়া জেলার সদর শহর অবস্থিত?",
+   "expected": [
+    [
+     "6c0fbc50-e2d4-5048-8b25-91370fc6b61d"
+    ]
+   ],
+   "field": "GEOGRAPHY",
+   "fields": [],
+   "fact": "6c0fbc50-e2d4-5048-8b25-91370fc6b61d",
+   "language": "bn",
+   "rejected": []
+  },
+  {
+   "key": "767c4d25-4be3-566f-b056-269a37dda5b9-bn",
+   "craftSlug": "Krishnanagar-Terracotta",
+   "question": "কৃষ্ণনগরের পুতুল আঁকার সময় সবচেয়ে গুরুত্বপূর্ণ কাজ কোনটি?",
+   "expected": [
+    [
+     "767c4d25-4be3-566f-b056-269a37dda5b9"
+    ]
+   ],
+   "field": "DESIGN",
+   "fields": [],
+   "fact": "767c4d25-4be3-566f-b056-269a37dda5b9",
+   "language": "bn",
+   "rejected": []
+  },
+  {
    "key": "bd3786b4-8470-5632-bdcc-80b55f224bf3-bn",
    "craftSlug": "Krishnanagar-Terracotta",
    "question": "ঘূর্ণীর মাটির পণ্য কারা কিনে বিদেশে রপ্তানি করেন?",
@@ -1626,6 +2721,21 @@
    "fields": [],
    "fact": "3cd48c17-76f7-516f-81a2-8e905bd82799",
    "language": "gu",
+   "rejected": []
+  },
+  {
+   "key": "76c28e36-98a9-52a3-b09f-80250bab237c-en",
+   "craftSlug": "Kutch-Ajrakh",
+   "question": "What colour does kut produce on harde-treated cloth, and why does it become so durable?",
+   "expected": [
+    [
+     "76c28e36-98a9-52a3-b09f-80250bab237c"
+    ]
+   ],
+   "field": "CHEMISTRY",
+   "fields": [],
+   "fact": "76c28e36-98a9-52a3-b09f-80250bab237c",
+   "language": "en",
    "rejected": []
   },
   {
@@ -1715,82 +2825,6 @@
    "field": "OVERVIEW",
    "fields": [],
    "fact": "ce4a14c8-d156-5c7b-945a-1efbc31efdab",
-   "language": "en",
-   "rejected": []
-  },
-  {
-   "key": "4605cd61-efa3-5bc9-bc52-db463091d734-en",
-   "craftSlug": "Machilipatnam-Kalamkari",
-   "question": "How is the cloth prepared with myrobalan before the dyeing continues, and how long does this take?",
-   "expected": [
-    [
-     "4605cd61-efa3-5bc9-bc52-db463091d734"
-    ]
-   ],
-   "field": "MATERIALS",
-   "fields": [],
-   "fact": "4605cd61-efa3-5bc9-bc52-db463091d734",
-   "language": "en",
-   "rejected": []
-  },
-  {
-   "key": "4605cd61-efa3-5bc9-bc52-db463091d734-te",
-   "craftSlug": "Machilipatnam-Kalamkari",
-   "question": "మయిరోబాలన్ (కరకాయ) ద్రావణంతో వస్త్రాన్ని ఎలా సిద్ధం చేస్తారు, ఎంతసేపు?",
-   "expected": [
-    [
-     "4605cd61-efa3-5bc9-bc52-db463091d734"
-    ]
-   ],
-   "field": "MATERIALS",
-   "fields": [],
-   "fact": "4605cd61-efa3-5bc9-bc52-db463091d734",
-   "language": "te",
-   "rejected": []
-  },
-  {
-   "key": "503e39ad-909a-5148-9f56-fcadb00ab176-en",
-   "craftSlug": "Machilipatnam-Kalamkari",
-   "question": "Where does the alizarin dye used in this craft come from?",
-   "expected": [
-    [
-     "503e39ad-909a-5148-9f56-fcadb00ab176"
-    ]
-   ],
-   "field": null,
-   "fields": [],
-   "fact": "503e39ad-909a-5148-9f56-fcadb00ab176",
-   "language": "en",
-   "rejected": []
-  },
-  {
-   "key": "6154b822-3f4b-5637-9d49-31721366d0cc-te",
-   "craftSlug": "Machilipatnam-Kalamkari",
-   "question": "ఎరుపు రంగు అవసరమైన చోట మచిలీపట్నం బ్లాక్ ప్రింటింగ్‌లో ఏ పేస్ట్‌ను ఉపయోగిస్తారు?",
-   "expected": [
-    [
-     "6154b822-3f4b-5637-9d49-31721366d0cc",
-     "d973c2ff-d893-5885-ad25-1722f604c0ad"
-    ]
-   ],
-   "field": null,
-   "fields": [],
-   "fact": "6154b822-3f4b-5637-9d49-31721366d0cc",
-   "language": "te",
-   "rejected": []
-  },
-  {
-   "key": "939a03cb-ec9a-550e-89e4-97825a155473-en",
-   "craftSlug": "Machilipatnam-Kalamkari",
-   "question": "What kind of wood is typically used to carve the printing blocks?",
-   "expected": [
-    [
-     "939a03cb-ec9a-550e-89e4-97825a155473"
-    ]
-   ],
-   "field": "MATERIALS",
-   "fields": [],
-   "fact": "939a03cb-ec9a-550e-89e4-97825a155473",
    "language": "en",
    "rejected": []
   },
@@ -2005,6 +3039,66 @@
    "rejected": []
   },
   {
+   "key": "7ed47af7-c3c6-53f3-aab6-cdc90d32f0e1-en",
+   "craftSlug": "Mud-Mirror-Work-Lippon-Painting",
+   "question": "When did the government formally recognise lippan art with a geographical indication designation?",
+   "expected": [
+    [
+     "7ed47af7-c3c6-53f3-aab6-cdc90d32f0e1"
+    ]
+   ],
+   "field": "ECONOMICS",
+   "fields": [],
+   "fact": "7ed47af7-c3c6-53f3-aab6-cdc90d32f0e1",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "bdb1d632-50a6-5f46-b515-40bc0f810218-en",
+   "craftSlug": "Mud-Mirror-Work-Lippon-Painting",
+   "question": "Who has been setting up lippan training sessions, and who is the main audience for them?",
+   "expected": [
+    [
+     "bdb1d632-50a6-5f46-b515-40bc0f810218"
+    ]
+   ],
+   "field": "ECONOMICS",
+   "fields": [],
+   "fact": "bdb1d632-50a6-5f46-b515-40bc0f810218",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "d3e8fd5c-3228-5fa9-90c6-10d1194c57af-en",
+   "craftSlug": "Mud-Mirror-Work-Lippon-Painting",
+   "question": "Where in a home is lippan applied, and to which kinds of dwellings?",
+   "expected": [
+    [
+     "d3e8fd5c-3228-5fa9-90c6-10d1194c57af"
+    ]
+   ],
+   "field": "OVERVIEW",
+   "fields": [],
+   "fact": "d3e8fd5c-3228-5fa9-90c6-10d1194c57af",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "d4ba092c-d8aa-5155-8a55-ac29a0666984-en",
+   "craftSlug": "Mud-Mirror-Work-Lippon-Painting",
+   "question": "What makes the decorative mud and mirror craft of Kutch's villages so admired by visitors?",
+   "expected": [
+    [
+     "d4ba092c-d8aa-5155-8a55-ac29a0666984"
+    ]
+   ],
+   "field": "OVERVIEW",
+   "fields": [],
+   "fact": "d4ba092c-d8aa-5155-8a55-ac29a0666984",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "e6e832c7-bb35-5a0f-94b5-f08ff35b7d86-hi",
    "craftSlug": "Mud-Mirror-Work-Lippon-Painting",
    "question": "भुंगा घर आमतौर पर किन सामग्रियों और किस ढाँचे से बने होते हैं?",
@@ -2017,6 +3111,21 @@
    "fields": [],
    "fact": "e6e832c7-bb35-5a0f-94b5-f08ff35b7d86",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "1570a595-4265-5f54-a4e1-70bd8204bf2f-en",
+   "craftSlug": "Mysuru-Stone-Carving",
+   "question": "Which material was used for the narrative carvings running along the lower perimeter of a famous Chola-era temple in Somnathpur?",
+   "expected": [
+    [
+     "1570a595-4265-5f54-a4e1-70bd8204bf2f"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "1570a595-4265-5f54-a4e1-70bd8204bf2f",
+   "language": "en",
    "rejected": []
   },
   {
@@ -2047,6 +3156,21 @@
    "fields": [],
    "fact": "4b783d51-5e9c-5d8c-a9e9-b96aa4ce8bb8",
    "language": "kn",
+   "rejected": []
+  },
+  {
+   "key": "5a369086-ef7e-5fe3-9d6b-3ca2307e1b0a-en",
+   "craftSlug": "Mysuru-Stone-Carving",
+   "question": "What archival material from the 1970s does Arun Yogiraj consult when designing his sculptures?",
+   "expected": [
+    [
+     "5a369086-ef7e-5fe3-9d6b-3ca2307e1b0a"
+    ]
+   ],
+   "field": "DESIGN",
+   "fields": [],
+   "fact": "5a369086-ef7e-5fe3-9d6b-3ca2307e1b0a",
+   "language": "en",
    "rejected": []
   },
   {
@@ -2125,6 +3249,51 @@
    "rejected": []
   },
   {
+   "key": "01c848d3-1529-59cf-a5bd-642367b262f4-en",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "question": "What firing process is used for the dinnerware and tea services made here?",
+   "expected": [
+    [
+     "01c848d3-1529-59cf-a5bd-642367b262f4"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "01c848d3-1529-59cf-a5bd-642367b262f4",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "0dc70fd0-89a7-5693-9d01-324f0db52126-en",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "question": "Under which imperial dynasty is it thought that the potters' art first arrived in Nizamabad?",
+   "expected": [
+    [
+     "0dc70fd0-89a7-5693-9d01-324f0db52126"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "0dc70fd0-89a7-5693-9d01-324f0db52126",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "19e247ed-563a-54bd-91f9-08dbf9192920-en",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "question": "Which community historically held the exclusive right to work as potters here, and how was the craft handed down?",
+   "expected": [
+    [
+     "19e247ed-563a-54bd-91f9-08dbf9192920"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "19e247ed-563a-54bd-91f9-08dbf9192920",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "3d543291-c049-5af3-828a-5e79362c2728-hi",
    "craftSlug": "Nizamabad-Black-Pottery",
    "question": "उसके अनुसार इस मिट्टी के बर्तन का काला रंग किस प्रक्रिया से आता है?",
@@ -2137,6 +3306,66 @@
    "fields": [],
    "fact": "3d543291-c049-5af3-828a-5e79362c2728",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "3f5a7d50-9465-5228-bcbd-0f41152bdd44-en",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "question": "Where do the carved decorative patterns on this pottery draw their inspiration from, according to Handmade in India?",
+   "expected": [
+    [
+     "3f5a7d50-9465-5228-bcbd-0f41152bdd44"
+    ]
+   ],
+   "field": "DESIGN",
+   "fields": [],
+   "fact": "3f5a7d50-9465-5228-bcbd-0f41152bdd44",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "50a5fa07-eeba-5c73-a0b3-36fe0e629e13-en",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "question": "What metal is worked into the carved grooves to produce the shimmering ornamentation?",
+   "expected": [
+    [
+     "50a5fa07-eeba-5c73-a0b3-36fe0e629e13"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "50a5fa07-eeba-5c73-a0b3-36fe0e629e13",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "513ddee5-38ef-5924-a5c0-bb02c51cd5df-en",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "question": "Where exactly is Nizamabad located, and how far is it from the holy city on the Ganges?",
+   "expected": [
+    [
+     "513ddee5-38ef-5924-a5c0-bb02c51cd5df"
+    ]
+   ],
+   "field": "GEOGRAPHY",
+   "fields": [],
+   "fact": "513ddee5-38ef-5924-a5c0-bb02c51cd5df",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "79011864-450e-5cc1-957a-0e2d06fdccdc-en",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "question": "Until what date does the protected status of Nizamabad black clay pottery remain in force?",
+   "expected": [
+    [
+     "79011864-450e-5cc1-957a-0e2d06fdccdc"
+    ]
+   ],
+   "field": "ECONOMICS",
+   "fields": [],
+   "fact": "79011864-450e-5cc1-957a-0e2d06fdccdc",
+   "language": "en",
    "rejected": []
   },
   {
@@ -2260,6 +3489,21 @@
    "rejected": []
   },
   {
+   "key": "87fa8557-3208-5be9-8510-045431d86bed-en",
+   "craftSlug": "Orissa-Pattachitra",
+   "question": "Why do some believe that pattachitra painting began a very long time ago?",
+   "expected": [
+    [
+     "87fa8557-3208-5be9-8510-045431d86bed"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "87fa8557-3208-5be9-8510-045431d86bed",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "8d1262d4-9829-56ac-84c5-a7e0be786dcd-or",
    "craftSlug": "Orissa-Pattachitra",
    "question": "ମନ୍ଦିରର ଇତିହାସ ଅନୁସାରେ, କିଏ ଚିତ୍ରକରମାନଙ୍କୁ ପୁରୀକୁ ଆଣିଥିଲେ ଏବଂ ସେମାନେ ପାରିଶ୍ରମିକ ସ୍ୱରୂପ କ'ଣ ପାଇଥିଲେ?",
@@ -2305,18 +3549,78 @@
    "rejected": []
   },
   {
-   "key": "64ca03f1-2c46-5379-b6e7-fa907a15aa8e-hi",
+   "key": "1779f4b9-b7e9-4786-ab00-fa87b6b15735-en",
    "craftSlug": "Sanganeri-Hand-Block-Printing",
-   "question": "प्राकृतिक प्रक्रिया में गोबर का क्षार और सूर्य की ताप ऊर्जा मिलकर कपड़े की सफ़ेद ज़मीन को कैसे वापस लाती है?",
+   "question": "What goes wrong with a print when it stays wet in humid conditions, causing hues to run into each other?",
    "expected": [
     [
-     "64ca03f1-2c46-5379-b6e7-fa907a15aa8e"
+     "1779f4b9-b7e9-4786-ab00-fa87b6b15735"
     ]
    ],
-   "field": "CHEMISTRY",
+   "field": "CLIMATE",
    "fields": [],
-   "fact": "64ca03f1-2c46-5379-b6e7-fa907a15aa8e",
+   "fact": "1779f4b9-b7e9-4786-ab00-fa87b6b15735",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "2b3a1000-b64b-5d81-bdf0-3023843b9b40-en",
+   "craftSlug": "Sanganeri-Hand-Block-Printing",
+   "question": "What are the successive stages in cutting a printing block, from planing the surface to fitting the grip?",
+   "expected": [
+    [
+     "2b3a1000-b64b-5d81-bdf0-3023843b9b40"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "2b3a1000-b64b-5d81-bdf0-3023843b9b40",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "4ca4088b-5fc5-550f-94bb-5d6ef95c69e0-hi",
+   "craftSlug": "Sanganeri-Hand-Block-Printing",
+   "question": "प्रिंट को व्यापार में 'नेचुरल' या 'केमिकल' क्यों कहा जाता है, और प्रत्येक मामले में प्रिंटिंग पेस्ट को कौन गाढ़ा करता है?",
+   "expected": [
+    [
+     "4ca4088b-5fc5-550f-94bb-5d6ef95c69e0"
+    ]
+   ],
+   "field": "ECONOMICS",
+   "fields": [],
+   "fact": "4ca4088b-5fc5-550f-94bb-5d6ef95c69e0",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "6d513a7e-b04a-5a7f-b6c8-0fc70465fb38-en",
+   "craftSlug": "Sanganeri-Hand-Block-Printing",
+   "question": "Which ground shade and fine blossom-like ornaments are prescribed for the printed goods under the protected name?",
+   "expected": [
+    [
+     "6d513a7e-b04a-5a7f-b6c8-0fc70465fb38"
+    ]
+   ],
+   "field": "OVERVIEW",
+   "fields": [],
+   "fact": "6d513a7e-b04a-5a7f-b6c8-0fc70465fb38",
+   "language": "en",
+   "rejected": []
+  },
+  {
+   "key": "791528fb-1baa-597e-95c8-e108b86b25c4-en",
+   "craftSlug": "Sanganeri-Hand-Block-Printing",
+   "question": "What instruments do craftsmen rely on to impress patterns onto fabric, according to the official registration document?",
+   "expected": [
+    [
+     "791528fb-1baa-597e-95c8-e108b86b25c4"
+    ]
+   ],
+   "field": "OVERVIEW",
+   "fields": [],
+   "fact": "791528fb-1baa-597e-95c8-e108b86b25c4",
+   "language": "en",
    "rejected": []
   },
   {
@@ -2395,6 +3699,21 @@
    "rejected": []
   },
   {
+   "key": "edfd7fe9-6ab9-53b6-9b02-358eec8c3424-en",
+   "craftSlug": "Sanganeri-Hand-Block-Printing",
+   "question": "What finishing treatment gives Sanganer printed cloth its distinctive look?",
+   "expected": [
+    [
+     "edfd7fe9-6ab9-53b6-9b02-358eec8c3424"
+    ]
+   ],
+   "field": "GEOGRAPHY",
+   "fields": [],
+   "fact": "edfd7fe9-6ab9-53b6-9b02-358eec8c3424",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "004cbaa0-61a8-5ac0-87e4-a98e599c3bce-hi",
    "craftSlug": "Uttarakhand-Ringal-Craft",
    "question": "2000 मीटर से ऊँचाई वाले क्षेत्रों में कौन-सा रिंगाल सबसे अधिक उपयोग होता है?",
@@ -2440,6 +3759,21 @@
    "rejected": []
   },
   {
+   "key": "8bfc4e80-43f6-5980-b71e-662ceb86fd90-hi",
+   "craftSlug": "Uttarakhand-Ringal-Craft",
+   "question": "उत्तराखंड के 13 जिलों में से कौन-से तीन जिले केवल रिंगाल प्रजातियों से भरे हुए हैं, ऐसा सुंदरियाल और जोशी ने बताया है?",
+   "expected": [
+    [
+     "8bfc4e80-43f6-5980-b71e-662ceb86fd90"
+    ]
+   ],
+   "field": "GEOGRAPHY",
+   "fields": [],
+   "fact": "8bfc4e80-43f6-5980-b71e-662ceb86fd90",
+   "language": "hi",
+   "rejected": []
+  },
+  {
    "key": "cad7977f-213d-5ec2-9c16-f4a4431e150a-hi",
    "craftSlug": "Uttarakhand-Ringal-Craft",
    "question": "रिंगाल के तने आम तौर पर कितने लंबे और कितने मोटे होते हैं, और उनकी गांठें कितनी दूरी पर होती हैं?",
@@ -2470,6 +3804,21 @@
    "rejected": []
   },
   {
+   "key": "edc9a6fe-d60e-5f56-8ead-cd620e118855-en",
+   "craftSlug": "Uttarakhand-Ringal-Craft",
+   "question": "What can be made from the stalks of ringal, and what do villagers feed their livestock with its foliage?",
+   "expected": [
+    [
+     "edc9a6fe-d60e-5f56-8ead-cd620e118855"
+    ]
+   ],
+   "field": "MATERIALS",
+   "fields": [],
+   "fact": "edc9a6fe-d60e-5f56-8ead-cd620e118855",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "0a073bb3-5a49-54e9-8751-bbfdd0563d21-hi",
    "craftSlug": "Varanasi-Soft-Stone-Jali-Work",
    "question": "उत्तर प्रदेश के कौन से जिले पीढ़ियों से कोमल पत्थर की जाली के काम के लिए प्रसिद्ध रहे हैं?",
@@ -2482,6 +3831,21 @@
    "fields": [],
    "fact": "0a073bb3-5a49-54e9-8751-bbfdd0563d21",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "248ec537-2c8e-5714-b7f4-1a7f721eabbb-en",
+   "craftSlug": "Varanasi-Soft-Stone-Jali-Work",
+   "question": "What decorative additions, such as color and mirrors, are sometimes applied to finished carved stone items?",
+   "expected": [
+    [
+     "248ec537-2c8e-5714-b7f4-1a7f721eabbb"
+    ]
+   ],
+   "field": "PROCESS",
+   "fields": [],
+   "fact": "248ec537-2c8e-5714-b7f4-1a7f721eabbb",
+   "language": "en",
    "rejected": []
   },
   {
@@ -2530,6 +3894,21 @@
    "rejected": []
   },
   {
+   "key": "c0e2fee1-4bc1-52bd-9c14-45552f991daa-en",
+   "craftSlug": "Varanasi-Soft-Stone-Jali-Work",
+   "question": "What materials did jali work in the United Provinces use, and what was its main purpose?",
+   "expected": [
+    [
+     "c0e2fee1-4bc1-52bd-9c14-45552f991daa"
+    ]
+   ],
+   "field": "HISTORY",
+   "fields": [],
+   "fact": "c0e2fee1-4bc1-52bd-9c14-45552f991daa",
+   "language": "en",
+   "rejected": []
+  },
+  {
    "key": "ef47f443-99c9-53d5-a205-e41988ed10a1-hi",
    "craftSlug": "Varanasi-Soft-Stone-Jali-Work",
    "question": "556 नंबर आवेदन के लिए पंजीकरण प्रमाणपत्र किस तारीख को जारी किया गया था?",
@@ -2542,6 +3921,21 @@
    "fields": [],
    "fact": "ef47f443-99c9-53d5-a205-e41988ed10a1",
    "language": "hi",
+   "rejected": []
+  },
+  {
+   "key": "fc41b8a2-f87c-51b5-b601-124236328515-en",
+   "craftSlug": "Varanasi-Soft-Stone-Jali-Work",
+   "question": "What legal awareness gap for artisans allows counterfeit stone goods to flood the market, according to a government agricultural credit bank report?",
+   "expected": [
+    [
+     "fc41b8a2-f87c-51b5-b601-124236328515"
+    ]
+   ],
+   "field": "ECONOMICS",
+   "fields": [],
+   "fact": "fc41b8a2-f87c-51b5-b601-124236328515",
+   "language": "en",
    "rejected": []
   }
  ]

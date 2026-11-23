@@ -14,6 +14,7 @@ from app.research.structure_proposals import CONFLICT, GI_RECORD, GLOSSARY_TERM,
 
 from .curated_index import CuratedPage, stored_curated_page
 from .curation_keys import DISCIPLINE_CONCEPT_TYPES, ENTITY_CONCEPT_TYPES, craft_concept_key, curated_id
+from .curation_terms import write_curated_term_summaries
 from .structure_proposals_claims import ClaimPlan, write_curated_claim
 from .structure_proposals_page import (
     PlacedEntry,
@@ -24,6 +25,7 @@ from .structure_proposals_page import (
     subject_concept,
     target_problem,
 )
+from .structure_proposals_rows import stored_rows
 
 __all__ = ["NO_PAGE", "STALE_STRUCTURE", "write_structure"]
 
@@ -56,13 +58,16 @@ async def write_structure(session: AsyncSession, row: StructureProposal, reviewe
     prefix = entry_prefix(item.kind)
     key = next_key(prefix, entry_keys(page, item.kind)) if prefix is not None else None
     written = await _claimed(session, craft, page, (row, item, key), reviewer)
-    placed = placed_page(written.page, item, PlacedEntry(written.claim_id, key, written.concept_id))
+    entry = PlacedEntry(written.claim_id, key, written.concept_id)
+    rows = await stored_rows(session, craft, placed_page(written.page, item, entry), (item, entry))
     await session.execute(
         update(CuratedCraft)
         .where(CuratedCraft.craftId == craft.id)
-        .values(page=placed.model_dump(mode="json", by_alias=True), updatedAt=func.now())
+        .values(page=rows.page.model_dump(mode="json", by_alias=True), updatedAt=func.now())
     )
     await _records(session, craft.id, item, written.claim_id)
+    if rows.term_keys:
+        await write_curated_term_summaries(session, keys=rows.term_keys)
     await session.flush()
     return written.claim_id
 

@@ -14,6 +14,7 @@ repeats, a follow-up that loses a race merged onto the newer version, news by st
 | What amended it later | [0143](0143-lessons-exports-and-follow-ups-kept-true.md): the digest's language, deepening by identity, the version race, news by stored field |
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
 | The contracts it names | [learning.md](../contracts/learning.md) |
+| A follow-up that lost a race opens the stored version | [decision 0160](0160-place-builders-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

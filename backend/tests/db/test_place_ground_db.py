@@ -1,6 +1,8 @@
 import dataclasses
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from geoalchemy2 import WKTElement
@@ -8,20 +10,30 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
+from app.data.river_names import NamedRiver
 from app.geo.ground_layers import Deposit
 from app.geo.place_ground import direct_measures
 from app.models import (
     AdminDistrict,
     AdminState,
+    Claim,
+    ClaimSource,
+    Concept,
     Craft,
     CraftLocation,
+    CuratedCraft,
+    EnvDataset,
     Material,
     Process,
     ProcessStage,
+    RiverBasin,
     Source,
     StageMaterial,
+    WikidataPoint,
 )
-from app.services import place_ground as service
+from app.research.datasets import DatasetRef
+from app.research.rivers import HYDRORIVERS_DATASET_CODE
+from app.services import knowledge_view, place_ground as service
 
 from ..geo.ground_fixtures import fixture_layers
 
@@ -35,6 +47,22 @@ OPEN_SOURCE = uuid.UUID("9e0d0000-0000-4000-8000-000000000002")
 HIDDEN_SOURCE = uuid.UUID("9e0d0000-0000-4000-8000-000000000003")
 PROCESS = uuid.UUID("9e0d0000-0000-4000-8000-000000000004")
 STAGE = uuid.UUID("9e0d0000-0000-4000-8000-000000000005")
+NAMED_CLAIM = uuid.UUID("9e0d0000-0000-4000-8000-000000000021")
+WITHDRAWN_CLAIM = uuid.UUID("9e0d0000-0000-4000-8000-000000000022")
+NAMED_CONCEPT = uuid.UUID("9e0d0000-0000-4000-8000-000000000023")
+NOW = datetime(2026, 11, 23, tzinfo=UTC)
+ABROAD, FAR_AWAY, WITHDRAWN = "Q9900001", "Q9900002", "Q9900003"
+ABROAD_AT = (61.4, 12.0)
+OSM_NAMES = "OSM_RIVER_NAMES"
+OSM_CREDIT = "© OpenStreetMap contributors"
+NAMED_RIVER = NamedRiver(
+    name="Test River",
+    dataset_code=OSM_NAMES,
+    refs=("way/1",),
+    main_riv=91000004,
+    reach_ids=(91000001, 91000002, 91000004),
+    district_lgds=(DISTRICT,),
+)
 MATERIALS = (
     (uuid.UUID("9e0d0000-0000-4000-8000-000000000011"), "Ground test iron filings", "METAL", "INPUT"),
     (uuid.UUID("9e0d0000-0000-4000-8000-000000000012"), "Ground test river clay", "CLAY", "INPUT"),
@@ -160,3 +188,155 @@ async def test_a_craft_without_an_open_place_has_no_ground(session: AsyncSession
     await session.execute(delete(CraftLocation).where(CraftLocation.sourceId == OPEN_SOURCE))
     assert await service.craft_ground_of(session, craft) is None
     assert await service.subject_ground(session, CRAFT) is None
+
+
+def dossier_place(
+    key: str, name: str, kind: str, *, role: str, country: str, wikidata: str | None
+) -> dict[str, Any]:
+    claim = WITHDRAWN_CLAIM if wikidata == WITHDRAWN else NAMED_CLAIM
+    at_home = country == "India"
+    return {
+        "key": key,
+        "name": name,
+        "kind": kind,
+        "role": role,
+        "district": "Ground Test District" if at_home else None,
+        "district_lgd": DISTRICT if at_home else None,
+        "state": None,
+        "state_lgd": None,
+        "country": country,
+        "wikidata_id": wikidata,
+        "location_id": None,
+        "concept_id": str(NAMED_CONCEPT),
+        "claim_ids": [str(claim)],
+    }
+
+
+def dossier() -> CuratedCraft:
+    places = [
+        dossier_place("L01", "Abroad region", "REGION", role="ORIGIN", country="Pakistan", wikidata=ABROAD),
+        dossier_place(
+            "L02", "Abroad region", "REGION", role="PRACTISED", country="Pakistan", wikidata=ABROAD
+        ),
+        dossier_place(
+            "L03", "Far market", "TOWN", role="MARKET", country="United Kingdom", wikidata=FAR_AWAY
+        ),
+        dossier_place("L04", "Withdrawn town", "TOWN", role="ORIGIN", country="Pakistan", wikidata=WITHDRAWN),
+        dossier_place("L05", "Test River", "RIVER", role="MATERIAL_SOURCE", country="India", wikidata=None),
+    ]
+    empty: dict[str, Any] = {key: [] for key in ("searched", "conflicts", "open_questions", "communities")}
+    empty |= {
+        key: []
+        for key in ("stages", "materials", "tools", "reactions", "glossary", "pictures", "environment")
+    }
+    page = {
+        "craft_slug": "Ground-Test-Iron-Craft",
+        "version": 1,
+        "curated_at": NOW.isoformat(),
+        "coverage": "THIN",
+    }
+    page |= {"process_id": None, "craft_concepts": {}, "overview": {}, "places": places, **empty}
+    return CuratedCraft(craftId=CRAFT, version=1, curatedAt=NOW, coverage="THIN", digest="c" * 64, page=page)
+
+
+def dataset_row(code: str, title: str, attribution: str) -> EnvDataset:
+    return EnvDataset(
+        id=uuid.uuid4(),
+        code=code,
+        title=title,
+        edition="1",
+        period="static",
+        nativeResolution="vector",
+        licence="Open",
+        attribution=attribution,
+    )
+
+
+async def seed_beyond(session: AsyncSession) -> Craft:
+    craft = await seed(session)
+    await session.execute(delete(RiverBasin))
+    await session.execute(delete(EnvDataset))
+    session.add(dossier())
+    points = {ABROAD: ABROAD_AT, FAR_AWAY: (-4.25, 55.86), WITHDRAWN: (61.0, 11.5)}
+    session.add_all(
+        WikidataPoint(wikidataId=k, longitude=x, latitude=y, keptAt=NOW) for k, (x, y) in points.items()
+    )
+    session.add(dataset_row(HYDRORIVERS_DATASET_CODE, "HydroRIVERS", "WWF"))
+    session.add(
+        Concept(id=NAMED_CONCEPT, craftId=CRAFT, type="ENVIRONMENTAL_CONDITION", name="Abroad region")
+    )
+    await session.flush()
+    for claim_id, status in ((NAMED_CLAIM, "APPROVED"), (WITHDRAWN_CLAIM, "RETRACTED")):
+        session.add(
+            Claim(
+                id=claim_id,
+                subjectType="CONCEPT",
+                subjectId=NAMED_CONCEPT,
+                predicate="states",
+                text="The craft came from the region abroad and takes water from the river.",
+                evidenceLevel="PROVISIONAL",
+                origin="IMPORT",
+                field="GEOGRAPHY",
+                status=status,
+            )
+        )
+        await session.flush()
+        session.add(ClaimSource(claimId=claim_id, sourceId=OPEN_SOURCE, quoteCheck="NA", relation="DIRECT"))
+    await session.flush()
+    return craft
+
+
+def names_row() -> DatasetRef:
+    return DatasetRef(
+        code=OSM_NAMES,
+        title="Names",
+        publisher=None,
+        edition="1",
+        period="static",
+        native_resolution="vector",
+        licence="ODbL 1.0",
+        licence_url=None,
+        attribution=OSM_CREDIT,
+        citation=None,
+        url=None,
+    )
+
+
+async def test_a_place_abroad_within_reach_is_pinned_and_a_named_river_is_cited_from_both_its_rows(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    named = {("Test River", DISTRICT): NAMED_RIVER}
+    monkeypatch.setattr(service, "place_river", lambda name, lgd: named.get((name, lgd)))
+    monkeypatch.setattr(service, "name_dataset", {OSM_NAMES: names_row()}.get)
+    craft = await seed_beyond(session)
+    shown, _ = await knowledge_view.claims_by_id(session, [NAMED_CLAIM, WITHDRAWN_CLAIM])
+    assert list(shown) == [NAMED_CLAIM]
+    ground = await service.craft_ground_of(session, craft)
+    assert ground is not None
+    assert [(p.key, p.name, p.roles, p.country, p.longitude, p.latitude) for p in ground.abroad] == [
+        ("abroad-Q9900001", "Abroad region", ["PRACTISED", "ORIGIN"], "Pakistan", 61.4, 12.0)
+    ]
+    assert ground.frame.holds(*ABROAD_AT)
+    [river] = ground.rivers
+    assert (river.key, river.name, river.main_riv, river.reach_ids) == (
+        "river-91000004-91000001-91000004",
+        "Test River",
+        91000004,
+        [91000001, 91000002, 91000004],
+    )
+    assert (river.hydrorivers.code, river.names.code, river.names.attribution) == (
+        HYDRORIVERS_DATASET_CODE,
+        OSM_NAMES,
+        OSM_CREDIT,
+    )
+
+
+async def test_a_river_without_its_name_s_dataset_row_is_not_drawn(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(service, "place_river", lambda name, lgd: NAMED_RIVER)
+    monkeypatch.setattr(service, "name_dataset", {}.get)
+    craft = await seed_beyond(session)
+    ground = await service.craft_ground_of(session, craft)
+    assert ground is not None
+    assert (len(ground.abroad), ground.rivers) == (1, [])

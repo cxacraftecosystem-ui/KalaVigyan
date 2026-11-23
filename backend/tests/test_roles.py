@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from fastapi import HTTPException
 
-from app.api.routes.auth import role_for_email
+from app.api.auth_session import role_for_email
 from app.core.config import get_settings
 from app.core.daily_allowances import daily_allowance
 from app.core.deps import MANAGE_TARGET_REFUSAL, refuse_unless_assignable, refuse_unless_manageable

@@ -61,6 +61,17 @@ also writes the kit to `frontend/public/monographs/kit/`. After a change to the 
 rewrite the golden document with
 `python -m app.scripts.build_monograph --document Kutch-Ajrakh --out ../shared/monograph.document.golden.json`.
 
+The approved page carries the ground figure the API places in Kutch Ajrakh's why chapter
+(decision 0151) as a fragment captured from the React page. To capture it again, run **Capture
+screens** with `figure` on (production, or a preview as `base_url`): it takes the drawn
+`.kv-why-here` at 1440 in light with the app's rules that draw it, scoped to the figure, fails if
+the committed spec is not the served document's, rebuilds the page and the golden document with
+`build_monograph` and the component homes and kit defs with `write_component_homes`, checks the
+rebuilt page against the React page at 360, 834 and 1440 in light and dark (every text line, every
+laid-out id's place, every figure element's computed style) and keeps every file it changed under
+`files/` in its artifact, to commit. After the deploy, `load_monograph` on the box stores the
+document with the figure, which the page then draws from its fragment, sized for 1440.
+
 Each backend deploy rebuilds the stale craft page snapshots after the import (`app.scripts.rebuild_stale_pages`,
 at most `PAGES_SECONDS`, 480 by default), because a curated craft's document reads its snapshot and a
 stale one is rebuilt on every read (about 9 s), which times the web build out. The nightly upkeep
@@ -81,27 +92,49 @@ with the approved static page at 360, 834 and 1440 in light and dark, text, chap
 citation and figure, then every component borrowed from Kutch Ajrakh on the pages that place it
 (decision 0151: the run after a deploy compares all of it, so a change to the approved page fails
 the release), and keeps `text.json`, `pixels.json`, `interactions.json` and the differing chapters'
-screenshots as its artifact.
+screenshots as its artifact. Each capture of a chapter, figure or borrowed component scrolls the
+page to the whole pixel at its top and back until the sticky and fixed bars over its top edge (the
+chapter rail, the menu bar) clear it, on both pages alike, so both pages draw it at the same
+fraction of a pixel, then takes its region from the screen (or from the page beyond it when it is
+taller than the screen), so a rail
+that lies over a figure at one width is not counted as the figure; `overlays.json` names what each
+capture cleared and what still lay over it.
 
 ## Connection budget
 
 Every process on the box reaches Postgres through the Supabase session pooler, which holds at most
 30 server connections for our user (the dashboard's Database → Settings → Connection pooling;
 read with `supabase config pull --remote=inqbqiqspgvhfamupwuc`, and only the dashboard can
-change it). Each process's SQLAlchemy pool opens connections as it needs them, up to
-`DATABASE_CONNECTION_LIMIT`, and keeps them.
+change it). Each process has its own budget (`backend/app/core/connection_budget.py`, decision
+0163): a main pool that keeps a few connections and opens the rest only for a burst, closing them
+when they are returned, and one small counting pool shared by the allowances and the source paces.
+The unit names the process in `KV_PROCESS`; a process on the box that names none, such as anything
+run over SSM or by the deploy, is a script. `DATABASE_CONNECTION_LIMIT` and
+`DATABASE_MAX_OVERFLOW` no longer size any pool on the box; they size an unnamed process off it.
 
-- **Holders:** the serving API slot (up to the limit), the worker (its peak, a few), and a script
-  run over SSM (one or two). A deploy stops the worker before the swap, so the old and new slots
-  briefly share the budget.
-- **The limit is 12** (2026-11-19: 5, then 8, then 12 once the owner raised the pooler from 15 to
-  30). During a deploy the old and new slots can hold 24 between them, plus the worker and a
-  script, which stays under 30.
-- **To go further,** raise the pool size in the dashboard first (Small compute has 90 connections
-  in all, and Supabase's own services use some), then `DATABASE_CONNECTION_LIMIT` at
-  `/kalavigyan/env/`, then `sudo kv-render-env && sudo kv-blue-green restart`. Never raise the
-  limit past what the pooler holds: a slot that cannot connect fails its health check and the
-  deploy rolls back.
+| Process (`KV_PROCESS`) | Main pool, kept + burst | Counting pool | At most |
+|---|---|---|---|
+| `kv-api@` (`api`), two slots during a deploy | 2 + 3 | 1 + 1 | 7 each |
+| `kv-contributions` (`contributions`), 2 gate runs at once | 1 + 3 | 1 + 0 | 5 |
+| `kv-worker` (`worker`) | 1 + 1 | 1 + 0 | 3 |
+| one script over SSM or from the deploy (`script`) | 1 + 2 | 1 + 0 | 4 |
+| `kv-fetcher` (`fetcher`) | no database | | 0 |
+
+- **The sum is 26** with both API slots, the queue, the worker and one script, leaving 4 of the 30
+  for a person's `psql` or the dashboard. `backend/tests/test_connection_budget.py` reads
+  `infra/deploy/units` and fails when a unit or a limit would pass it. The research gate of an API
+  slot holds 3 of its 5 main connections (decision 0146).
+- **A refused connect.** When the pooler answers `EMAXCONNSESSION` (max clients reached), the
+  allowance and pace counts open their session again after 0.2, 0.5 and 1 s
+  (`core/pooler.connected_session`) and refuse only if it is still full, so a reader sees a 429
+  only when the pooler stays full.
+- **Two scripts at once** may pass the sum by one script's 4; run long scripts one after another,
+  or after the owner raises the pooler.
+- **To go further,** the owner raises the pool size in the dashboard first (Small compute has 90
+  connections in all, and Supabase's own services use some), then one change raises
+  `POOLER_SESSIONS` and the budgets in `core/connection_budget.py` together, and the next release
+  carries them; `kv-render-env` writes no limit. Never raise a budget past what the pooler holds: a
+  slot that cannot connect fails its health check and the deploy rolls back.
 
 ## Shell on the box
 
@@ -126,7 +159,7 @@ the box.
 | Group | What it holds |
 |---|---|
 | `/kalavigyan/kv-api` | both API colours: every log record, and one `request` line per request with `method`, `path`, `status`, `durationMs` and `requestId` |
-| `/kalavigyan/kv-worker` | the media queue and the daily voice upkeep |
+| `/kalavigyan/kv-worker` | the media queue, the daily voice upkeep, the daily score sweep and the heartbeat |
 | `/kalavigyan/kv-fetcher` | the fetcher sandbox |
 | `/kalavigyan/kv-contributions` | the contribution queue's gates |
 | `/kalavigyan/nginx-access` | one line per request at the origin: `time`, `method`, `path`, `status`, `bytes`, `seconds`, `upstreamSeconds`, `requestId`, `agent` |
@@ -189,7 +222,7 @@ own log is `/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log`; 
 
 Every secret and every repository variable is in GitHub and in Parameter Store (owner, 2026-11-21: "store all the variables in AWS too"). What the box reads is in three places: a GitHub Actions secret, `/kalavigyan/env/<NAME>` in Parameter Store, and `/opt/kalavigyan/.env` on the box. What only CI reads stays outside `/kalavigyan/env/`, so it never reaches the box `.env`: the E2E accounts under `/kalavigyan/e2e/` (the Researcher's `E2E_EMAIL` and `E2E_PASSWORD`, the Professor's and Admin's emails, passwords and two-step secrets; E2E production run, below), `VERCEL_AUTOMATION_BYPASS_SECRET` under `/kalavigyan/ci/`, and every GitHub variable as a plain String under `/kalavigyan/config/<NAME>`. Deploy backend keeps them in step on every run: its step "Mirror the CI secrets and the repository variables into Parameter Store" writes what changed (the deploy role may write only `/kalavigyan/env/*`, `/kalavigyan/e2e/*`, `/kalavigyan/ci/*` and `/kalavigyan/config/*`), and a name not set in GitHub keeps what Parameter Store has.
 
-- GitHub secrets: `DATABASE_URL`, `JWT_SECRET`, `SECRETS_ENCRYPTION_KEY`, `TWO_FACTOR_ENCRYPTION_KEY`, `ORIGIN_VERIFY_SECRET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, `GOOGLE_CLIENT_ID`, `MASTER_ADMIN_EMAIL`, `MASTER_ADMIN_NAME`.
+- GitHub secrets: `DATABASE_URL`, `JWT_SECRET`, `SECRETS_ENCRYPTION_KEY`, `TWO_FACTOR_ENCRYPTION_KEY`, `ORIGIN_VERIFY_SECRET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, `DATA_GOV_IN_API_KEY`, `GOOGLE_CLIENT_ID`, `MASTER_ADMIN_EMAIL`, `MASTER_ADMIN_NAME`.
 - GitHub variables: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_RIVER_LOAD_ROLE_ARN` (decision 0050), `EC2_INSTANCE_ID`, `MEDIA_BUCKET`, `API_BASE_URL`, `CLOUDFRONT_DISTRIBUTION_ID`, `WEB_ORIGIN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
 - Parameter Store also holds non-secret config (`APP_ENV`, `BACKEND_CORS_ORIGINS`, `FORWARDED_CLIENT_HOPS`, `REDIS_URL`, `SEARXNG_URL`, …). See `infra/.env.example` for every name.
 - Copied from the DR box without printing them: `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, `GOOGLE_CLIENT_ID`, `MASTER_ADMIN_EMAIL`, `MASTER_ADMIN_NAME`.
@@ -204,6 +237,7 @@ Every secret and every repository variable is in GitHub and in Parameter Store (
 | `TURNSTILE_SECRET_KEY`, `TURNSTILE_SITE_KEY` | Create a Cloudflare Turnstile widget for `kalavigyan.vercel.app`. The secret is a GitHub secret and the site key a GitHub variable; each deploy copies both into Parameter Store. Until both exist, production email sign-up is closed and the page offers Google only. |
 | `WEB_PROXY_SECRET` | Re-run `seed_secrets.py` once: it generates the value and writes Parameter Store, the GitHub secret and the Vercel env (Sensitive). It also deletes the retired names `AWS_S3_BUCKET`, `BRAVE_API_KEY`, `NEXT_PUBLIC_APP_URL`, `DATABASE_USE_TRANSACTION_POOLER`, `TWO_FACTOR_KEY_REQUIRED` and `MEDIA_PRESIGNED_READS` from Parameter Store. |
 | `WEB_REVALIDATE_SECRET` | Set on 2026-11-20 (Parameter Store and the Vercel env, production and preview). To set it from scratch, re-run `seed_secrets.py` once: it generates the value and writes Parameter Store (the box `.env` gets it at the next render; the API sends it as `x-revalidate-secret`) and the Vercel env (Sensitive), where `frontend/app/api/revalidate/route.ts` compares it in constant time. It is not a GitHub secret. Until both sides hold it, hiding a piece or picture, retracting or rejecting a live fact, rejecting testimony and approving structure leave signed-out pages to their daily rebuild, and the API logs that the secret is not set. To rotate it, delete `/kalavigyan/env/WEB_REVALIDATE_SECRET`, re-run the script and redeploy both sides. |
+| `DATA_GOV_IN_API_KEY` | Set on 2026-11-22 (the India data portal, read by the Geo ETL `groundwater` layer, decision 0153): a GitHub secret and `/kalavigyan/env/DATA_GOV_IN_API_KEY`; Deploy backend copies a changed GitHub secret into Parameter Store, and `seed_secrets.py` copies the Parameter Store value to the GitHub secret. To rotate it, make a new key in the data.gov.in account and `gh secret set DATA_GOV_IN_API_KEY`, then run Deploy backend. Without it the `groundwater` part fails, naming the variable. |
 | `VOICE_LLM_BEARER`, `VOICE_SESSION_HMAC_KEY`, `TRANSCRIPT_ENCRYPTION_KEY` | Re-run `seed_secrets.py` once: it generates all three like the other generated keys and writes Parameter Store and the GitHub secrets; Deploy backend keeps them in sync. Voice stays hidden until `TRANSCRIPT_ENCRYPTION_KEY` and `ELEVENLABS_API_KEY` exist. |
 | `MEDIA_BUNDLE_HMAC_KEY` | Re-run `seed_secrets.py` once: it generates it like the voice keys and writes Parameter Store and the GitHub secret; Deploy backend keeps it in sync. Media stays hidden and `kv-worker` waits until it exists. |
 | `ELEVENLABS_AGENT_ID` | Only for the `AGENT` transport: after the voice agent is provisioned (Voice, below), store the printed agent id as a GitHub secret and deploy. |
@@ -286,6 +320,10 @@ Decision 0017; contract `docs/contracts/voice.md`.
   `PUBLIC_API_URL`, `VOICE_LLM_BEARER` and `ELEVENLABS_API_KEY`.
 - Rotating `VOICE_LLM_BEARER` (quarterly): `gh secret set VOICE_LLM_BEARER`, deploy, then run the
   provisioning script again so the workspace secret matches; calls in progress end with a 401.
+- Worker health: `kv-worker` writes `AppSetting` `worker.heartbeat` every 60 s and pings systemd's
+  watchdog (`WatchdogSec=300` restarts a worker silent for 5 minutes); media options offer nothing
+  while the last beat is older than 5 minutes. Its daily score sweep marks clips no score names and
+  deletes them 90 days later (decision 0154).
 - Upkeep: `kv-worker` runs `voice/daily_upkeep.daily_voice_upkeep` when it starts and every 24 hours
   after (decision 0140); its log line `daily voice upkeep` carries the JSON report of closed, purged,
   reconciled and refunded seconds, at error level when a call could not be settled.
@@ -411,7 +449,8 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
 - **The contribution worker** `kv-contributions` (a systemd unit beside `kv-worker` and `kv-fetcher`,
   restarted by every deploy) takes queued proposals and runs their gates off the request
   (`docs/contracts/knowledge-writes.md`). Read it with `journalctl -u kv-contributions`. Its
-  concurrency is `CONTRIBUTION_WORKERS` in `/opt/kalavigyan/.env` (optional). To drain the queue by
+  concurrency is `CONTRIBUTION_WORKERS` (2 in the unit; a larger number runs only as many as its
+  connection budget carries, decision 0163). To drain the queue by
   hand: `python -m app.scripts.contribution_worker --once` (Shell on the box).
 - **Picture screens** need an enabled CAPTION route (a vision model, Settings, Routing). Without
   one, every picture waits for a person as `UNSCREENED`. After the deploy that adds them, run
@@ -425,6 +464,12 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
   against where it is, plus the facts with no gate checks. It never writes. A reviewer acts on it in
   the review queue: approve (optionally with `craft` to file a held fact under another craft) or
   reject. Held facts are `DRAFT`, which no reader or search sees.
+- **After each round of live research** (decision 0163): run the filing report with `--since` the
+  round's first day and read the facts it lists as held or refused. The places that hold or refuse
+  a fact are word lists, so extend them from what it shows: a region or culture abroad that let a
+  fact through, another sense of a place word that held one, or a name left out, each in
+  `backend/app/data/places_abroad.json` (`regions`, `cultures`, `otherSenses`, `leftOut`; its
+  countries stay Natural Earth's sovereign states, which a test holds), in a change of its own.
 
 ## Nightly upkeep and page builds
 
@@ -486,7 +531,7 @@ not write the AI budget rows back (an earlier release then uses its own capped d
 
 ## Geo ETL
 
-**Geo ETL** (`.github/workflows/geo-etl.yml`, dispatch only) first lints and tests `etl/geo`, then extracts the district statistics on a matrix and, for `riverlines`, the river lines and one TopoJSON per basin in a single job. With `load` it upserts the district tables, and uploads the topologies under `media/rivers/<edition>/<mainRiv>/<sha256>/` (content-addressed, decision 0050) then replaces `RiverBasin` and `RiverReach` in one transaction. The load jobs read `DATABASE_URL`; the river load assumes `kalavigyan-river-load` through GitHub OIDC (the variable `AWS_RIVER_LOAD_ROLE_ARN`; the role may only put and read objects under `media/rivers/` and list that prefix) and reads `AWS_REGION` and `MEDIA_BUCKET`. It holds no long-lived AWS key. Contracts: `docs/contracts/geo.md`; datasets and licences: `docs/DATA_SOURCES.md`.
+**Geo ETL** (`.github/workflows/geo-etl.yml`, dispatched; on a pull request that touches `etl/geo` it runs only the lint and tests) first lints and tests `etl/geo`, then extracts the district statistics on a matrix and, for `riverlines`, the river lines and one TopoJSON per basin in a single job. With `load` it upserts the district tables, and uploads the topologies under `media/rivers/<edition>/<mainRiv>/<sha256>/` (content-addressed, decision 0050) then replaces `RiverBasin`, `RiverReach` and `RiverReachDistrict` in one transaction. The load jobs read `DATABASE_URL`; the river load assumes `kalavigyan-river-load` through GitHub OIDC (the variable `AWS_RIVER_LOAD_ROLE_ARN`; the role may only put, read and delete objects under `media/rivers/` and list that prefix) and reads `AWS_REGION` and `MEDIA_BUCKET`. It holds no long-lived AWS key. Contracts: `docs/contracts/geo.md`; datasets and licences: `docs/DATA_SOURCES.md`.
 
 Before the first river load, once: the owner applies `infra/terraform` (it adds the role `kalavigyan-river-load`, its policy and the output `river_load_role_arn`) and sets the repository variable, by re-running `infra/scripts/seed_secrets.py` or directly:
 
@@ -502,12 +547,19 @@ After the backend deploy that carries migration `0016_river_reaches` (decision 0
    ```bash
    gh workflow run geo-etl.yml --repo cxacraftecosystem-ui/KalaVigyan -f datasets=riverlines -f load=true
    ```
-   The `rivers` job's summary gives the reaches, basins and the largest file; `load-rivers` prints the topologies uploaded and the rows written. Check: `GET /api/rivers/<mainRiv>` for a basin of `RiverBasin` answers 200 with an `ETag`. Re-running is safe: a file already stored under its digest is not uploaded again, and a changed file goes to a new key beside the old one.
+   The `rivers` job's summary gives the reaches, basins and the largest file; `load-rivers` prints the topologies uploaded and the rows written. Check: `GET /api/rivers/<mainRiv>` for a basin of `RiverBasin` answers 200 with an `ETag`. Re-running is safe: a file already stored under its digest is not uploaded again, and a changed file goes to a new key; once the rows are committed, every file under `media/rivers/` that no basin of the load names is deleted (`load_rivers.delete_superseded`, decision 0160), and a delete the bucket refuses fails the job after the rows are in. The delete needs the role's `s3:DeleteObject`: the owner applies `infra/terraform` once before the first river load after that change.
 2. Rainfall and temperature, 1981 to last year, with their trends (decision 0065): after the backend deploy that carries migration `0021_climate_trend_stats` (the load writes the stats `TREND_PER_DECADE` and `TREND_P_VALUE`, which the database refuses before it). Datasets `chirps,ghcncams`, states `all`, shards `24`, load on, prune on.
    ```bash
    gh workflow run geo-etl.yml --repo cxacraftecosystem-ui/KalaVigyan -f datasets=chirps,ghcncams -f states=all -f shards=24 -f load=true -f prune=true
    ```
    `chirps` runs on 24 shards (45 annual and 540 monthly files a shard, about four times the old ten-year run, so each shard stays well inside the 350-minute limit) and writes the CHIRPS dataset row over `1981-<last year>`: the yearly series, the annual and twelve monthly normals and the trend of every district with all years. `ghcncams` is one job whatever the shards: it downloads the GHCN CAMS file (about 190 MB) once and writes each district's yearly mean temperature, normal and trend over the same years. `prune` deletes each loaded district's older rows of the two datasets, so the ten-year normals of the last CHIRPS load (`2016-2025`) do not linger beside the new ones. Then the seasons blocks credit the rainfall as a monthly normal over `1981-<last year>`, and the climate builder finds trends once `climate_risk` is built. Checks, read-only on the box: `select count(distinct v."districtLgd") from "DistrictEnvValue" v join "EnvDataset" d on d.id = v."datasetId" where d.code = 'CHIRPS_3_0' and v.variable = 'monthly_precipitation' and v."depthOrPeriod" like d.period || '-%'` should be 752, and `select d.code, count(distinct v."districtLgd") from "DistrictEnvValue" v join "EnvDataset" d on d.id = v."datasetId" where d.code in ('CHIRPS_3_0', 'GHCN_CAMS_T2M') and v.stat = 'TREND_PER_DECADE' and v."depthOrPeriod" = d.period group by d.code` should give 752 for CHIRPS and, for GHCN CAMS, 752 less the districts the run summary lists under `districtsWithoutCells` (a district with no 0.5 degree land cell, such as an island). Then replace the placeholder Kachchh trend in `shared/explainer.phase-d.golden.json` with the loaded row (`docs/TECH_DEBT.md`, decision 0062).
+3. The districts each reach crosses, and groundwater (decision 0153): after the backend deploy that carries migration `0077_state_and_reach_districts`, which adds `RiverReachDistrict`. Until this load the table is empty and `rivers_loaded` is false, so no new region story is built and a stored one lights its districts at the source with no stretch. Datasets `riverlines,groundwater`, load on.
+   ```bash
+   gh workflow run geo-etl.yml --repo cxacraftecosystem-ui/KalaVigyan -f datasets=riverlines,groundwater -f load=true
+   ```
+   The `rivers` job writes each basin file with each reach's districts, the river names (`river-names`, which installs `osmium-tool` and reads the Geofabrik India extract into the runner's temporary folder, never the cache) and the reach districts; `load-rivers` uploads the changed topologies and replaces `RiverBasin`, `RiverReach` and `RiverReachDistrict`. The groundwater extract reads `DATA_GOV_IN_API_KEY` (GitHub secret; Parameter Store `/kalavigyan/env/DATA_GOV_IN_API_KEY`). GitHub's runners could not connect to `api.data.gov.in` on 2026-11-23 (run 45088759547, `ConnectionError`; the address answers from India), so until the portal answers them the `groundwater` part fails and only `riverlines` loads: dispatch `-f datasets=riverlines -f load=true` for the river load alone. Check, read-only on the box: `select count(*), count(distinct "hyrivId") from "RiverReachDistrict"` matches the job summary's reach districts and is non-zero. The river names are not loaded: the two `river_names.*.json` files of the run's `geo-river-lines` artifact are copied unchanged into `backend/app/data/rivers/` in a reviewed change (`docs/DATA_SOURCES.md`, River names).
+
+The plan job resolves the CHIRPS last year once and passes it to every shard (`--chirps-last-year`). A part fails when a district is silent, or has no valid cells and is not in `etl/geo/geo_etl/coverage.EXPECTED_WITHOUT_CELLS`: check the grid, then add the district there with its evidence, or fix the read. A remote file is probed first (only 404 or 410 means absent) and every read finishes within 600 s (`geo_etl/remote.py`).
 
 ## How to curate a craft
 
@@ -661,6 +713,14 @@ fixture or the category page (`docs/contracts/category-page.md`).
   lowering the hand-written ones. Commit `/tmp/fusion.json` over `backend/app/data/eval/fusion.json`
   when `changed` is true, and raise the fused floors in `floors.json` to the picked row's numbers
   less 0.05 in the same change.
+- **Paid voice and media checks** (`paid-checks.yml`, decision 0154): by hand only, from main, once
+  the owner has approved the spend (US$5 on 2026-11-22):
+  `gh workflow run paid-checks.yml -R cxacraftecosystem-ui/KalaVigyan --ref main -f cap=5`. On the box
+  it makes one English and one Hindi narration, a 10 s music bed, a Gemini image and one agent turn
+  (a Master Admin voice session bound to the conversation it opens, ended and deleted after one
+  question), each estimated first and skipped when the total would pass the cap. The
+  `paid-checks-<run id>` artifact holds every reply and `paid_checks_report.json` (the spend and
+  each finding); commit the replies as the fixtures `docs/TECH_DEBT.md` names.
 - **Re-embed knowledge** (`embed-knowledge.yml`): by hand only, from main, once after a release that
   changes the embedding stamp's recipe (decision 0129):
   `gh workflow run embed-knowledge.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f seconds=`,
@@ -719,7 +779,7 @@ As provisioned on 2026-11-16, each layer was checked:
 
 ## E2E production run
 
-Decisions 0029 and 0076. **E2E production** (`.github/workflows/e2e-production.yml`, dispatch only, deploy repository only) drives `https://kalavigyan.vercel.app`, or a preview given as `base_url` (below), with Playwright at 1920x1080, 1440x900, 834x1194, 390x844 and 360x800, each in light and dark (projects `production-<width>-<scheme>`), plus a WebKit iPhone on a preview. It visits landing, sign up, forgot password, privacy, session ended and login, signs in through the login form, then visits Ask, Crafts, Kutch Ajrakh (Overview, Process, Region, Shared science, Sources, All evidence), Agra Marble Inlay, Cane Bamboo Craft, Sanganeri Hand Block Printing, an unknown craft, Compare idle and with Kutch Ajrakh and Bagru, Saved, the map with a layer chosen, Settings and the 404 page. Before each capture it scrolls to the end, waits for quiet network, fonts, 3D molecules and finished animations, and returns to the top. A screen fails on console errors, failed requests, sideways scroll, overflowing text, error alerts, gap copy, a menu that does not match the role, a page not in the run's theme, a headline word or the largest element below full opacity, a screen-high tile of one flat colour (judged from captures of at most eight screens, because Chromium stops painting a very tall full-page screenshot and fills the rest with background; where that happens the screen gets a note, not a failure), a citation cluster that repeats a source number, a picture that never loaded, a 3D molecule that never reported ready, Loading, Searching or Checking text left on screen, or a Region tab longer than three screens before "All measurements". With `questions=true` it also asks the four known-answer questions, up to 10 minutes each: at Detailed depth the mordant in English and Hindi (alum) and the water of Kachchh for Kutch Ajrakh, which passes only on a `region_story` with a traced river and every step cited; at Expert depth how indigo turns blue on Kutch Ajrakh cloth (decision 0061), which passes when every generated explainer the stream sends is drawn in a `sandbox="allow-scripts"` frame whose document opens with the sandbox policy, draws something, offers no peer connection, and attempts no network request (each one is aborted and recorded) and no load its policy refuses; when the builder chose no concept the report notes it and does not fail. Until the river lines are loaded, dispatch without `rivers_loaded` and a missing story is written to the report's notes, not failed; from the first run after the Geo ETL `riverlines` load add `-f rivers_loaded=true` (decision 0050). After the questions it opens the English answer's stored explainer (`/ask?explainer=<id>`) and downloads, through its Export menu, the report PDF and the APA, BibTeX, RIS and CSL-JSON citations: each must open (a PDF with pages, a parseable CSL-JSON list) and carry every source the answer streamed (its DOI or URL link in the PDF, APA and BibTeX, its title in RIS and CSL-JSON). Then the Professor account signs in on a fresh desktop page, answering two-step sign-in with a code made from `E2E_PROFESSOR_TOTP_SECRET`, asks the English question once more (an explainer is its asker's own), builds a lesson pack from that explainer through Make a lesson, and downloads its HTML deck, PPTX and PDF: the pack must cite at least one source and none the answer did not stream, and each file must open (an HTML file with slides, a zip of slides, a PDF with pages) and carry every source of the pack by its DOI or URL link. A failure at any of these steps, or a Professor secret missing on production, fails the run; a preview run gets no Professor secret and only notes the step (`e2e/production/lessonProof.ts`). Each answer also fails on a repeated sentence or picture and on the screen gates above, and after the exports every stored answer is opened again at 834 and 390, light and dark (`<width> <scheme> answers` in the summary).
+Decisions 0029 and 0076. **E2E production** (`.github/workflows/e2e-production.yml`, dispatch only, deploy repository only) drives `https://kalavigyan.vercel.app`, or a preview given as `base_url` (below), with Playwright at 1920x1080, 1440x900, 834x1194, 390x844 and 360x800, each in light and dark (projects `production-<width>-<scheme>`), plus a WebKit iPhone on a preview. It visits landing, sign up, forgot password, privacy, session ended and login, signs in through the login form, then visits Ask, Crafts, Kutch Ajrakh (Overview, Process, Region, Shared science, Sources, All evidence), Agra Marble Inlay, Cane Bamboo Craft, Sanganeri Hand Block Printing, an unknown craft, Compare idle and with Kutch Ajrakh and Bagru, Saved, the map with a layer chosen, Settings and the 404 page. Before each capture it scrolls to the end, waits for quiet network, fonts, 3D molecules and finished animations, and returns to the top. A screen fails on console errors, failed requests, sideways scroll, overflowing text, error alerts, gap copy, a menu that does not match the role, a page not in the run's theme, a headline word or the largest element below full opacity, a screen-high tile of one flat colour (judged from captures of at most eight screens, because Chromium stops painting a very tall full-page screenshot and fills the rest with background; where that happens the screen gets a note, not a failure), a citation cluster that repeats a source number, a picture that never loaded, a 3D molecule that never reported ready, Loading, Searching or Checking text left on screen, or a Region tab longer than three screens before "All measurements". With `questions=true` it also asks the known-answer questions, up to 10 minutes each: at Detailed depth the mordant in English and Hindi (alum) and the water of Kachchh for Kutch Ajrakh, which passes only on a `region_story` with a traced river and every step cited; at Expert depth how indigo turns blue on Kutch Ajrakh cloth (decision 0061), which passes when every generated explainer the stream sends is drawn in a `sandbox="allow-scripts"` frame whose document opens with the sandbox policy, draws something, offers no peer connection, and attempts no network request (each one is aborted and recorded) and no load its policy refuses; when the builder chose no concept the report notes it and does not fail. The run tells for itself whether the river lines are loaded: it reads `GET /api/rivers/41063203` (the Khari, the phase B fixture's river) and counts them loaded when every reach of that basin file carries its districts, as the decision 0153 load writes them (`e2e/production/riversLoaded.ts`, decision 0160); until then a missing story is written to the report's notes, not failed. It also asks at Detailed depth how the seasons and rainfall of Kachchh shape the printing, which passes only on a `seasons` block, and how the Ganga at Varanasi shapes Varanasi soft stone jali work, whose region story is timed and only noted when absent; every region story, seasons block and supply map of an answer is noted with the seconds it arrived after its section's first block and what it shows (rows and how many are timed, links and how many origins are pinned, the river and its reaches; `e2e/production/builtBlocks.ts`). After the questions it opens the English answer's stored explainer (`/ask?explainer=<id>`) and downloads, through its Export menu, the report PDF and the APA, BibTeX, RIS and CSL-JSON citations: each must open (a PDF with pages, a parseable CSL-JSON list) and carry every source the answer streamed (its DOI or URL link in the PDF, APA and BibTeX, its title in RIS and CSL-JSON). Then the Professor account signs in on a fresh desktop page, answering two-step sign-in with a code made from `E2E_PROFESSOR_TOTP_SECRET`, asks the English question once more (an explainer is its asker's own), builds a lesson pack from that explainer through Make a lesson, and downloads its HTML deck, PPTX and PDF: the pack must cite at least one source and none the answer did not stream, and each file must open (an HTML file with slides, a zip of slides, a PDF with pages) and carry every source of the pack by its DOI or URL link. A failure at any of these steps, or a Professor secret missing on production, fails the run; a preview run gets no Professor secret and only notes the step (`e2e/production/lessonProof.ts`). Each answer also fails on a repeated sentence or picture and on the screen gates above, and after the exports every stored answer is opened again at 834 and 390, light and dark (`<width> <scheme> answers` in the summary).
 
 The account is `e2e-researcher@kalavigyan.example`: Researcher (Deep allowed, no two-step), active on the roster, email verified, voice consent unset.
 
@@ -737,7 +797,6 @@ The account is `e2e-researcher@kalavigyan.example`: Researcher (Deep allowed, no
    ```bash
    gh workflow run e2e-production.yml --repo cxacraftecosystem-ui/KalaVigyan
    gh workflow run e2e-production.yml --repo cxacraftecosystem-ui/KalaVigyan -f questions=true
-   gh workflow run e2e-production.yml --repo cxacraftecosystem-ui/KalaVigyan -f questions=true -f rivers_loaded=true
    ```
 
 ### Professor and Admin E2E accounts
@@ -806,6 +865,13 @@ terraform plan      # must read "No changes" before any edit
   = 30) and the box role's `kalavigyan-box-logs` policy (create streams, put events, describe
   streams, on those groups only). Apply it before the first release that ships the agent's files,
   or the agent logs `ResourceNotFoundException` until it is applied; nothing else waits on it.
+- `iam.tf`'s `AppStoppedShareFiles` lets the media user delete objects under
+  `exports/00000000-0000-0000-0000-000000000000/` only, the files a share link's readers are given
+  (decision 0155); the owner's own exports stay put-and-read. Apply it with
+  `terraform plan -target=aws_iam_user_policy.media` (the plan must change only that policy, in
+  place) and `terraform apply -target=aws_iam_user_policy.media`. Until it is applied, stopping a
+  share logs that its files are kept for the next sweep, and the `exports/` lifecycle rule removes
+  them as before.
 
 Rebuilding the box:
 

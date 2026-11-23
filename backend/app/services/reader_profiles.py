@@ -23,6 +23,7 @@ from app.models import (
 from app.research.testimony import RECORDING_NOTICE_VERSION, held_back_terms
 
 from .share_owners import withdraw_lesson_shares
+from .shared_files import FileDeleter
 
 __all__ = [
     "ARTISAN_RECORDING",
@@ -145,7 +146,9 @@ async def profile_required(session: AsyncSession, user: Any) -> bool:
     return False
 
 
-async def apply_role_change(session: AsyncSession, user: Any, new_role: str) -> None:
+async def apply_role_change(
+    session: AsyncSession, user: Any, new_role: str, *, objects: FileDeleter | None
+) -> None:
     old_role = role_value(user)
     if old_role == new_role:
         return
@@ -155,7 +158,7 @@ async def apply_role_change(session: AsyncSession, user: Any, new_role: str) -> 
         await session.execute(delete(ArtisanCraft).where(ArtisanCraft.userId == user.id))
         await session.execute(delete(ArtisanProfile).where(ArtisanProfile.userId == user.id))
     if can(old_role, Capability.BUILD_LESSONS) and not can(new_role, Capability.BUILD_LESSONS):
-        await withdraw_lesson_shares(session, user.id, actor=None, cause=ROLE_CHANGED)
+        await withdraw_lesson_shares(session, user.id, actor=None, cause=ROLE_CHANGED, objects=objects)
 
 
 async def _words_shown_or_waiting(session: AsyncSession, user_id: uuid.UUID) -> bool:

@@ -20,8 +20,9 @@ from app.research.datasets import BOUNDARY_DATASET_CODE
 from app.research.explainer import Block, with_payload_sentences
 from app.research.knowledge_pieces import KnowledgePiece, ReuseAsk, placed_block, reuse_refusal
 from app.research.piece_reuse import ClaimState, visible_as_cited
+from app.research.piece_topics import district_subject
 from app.research.retrieval import OPEN_CHUNK_ACLS, RESTRICTED_SENSITIVITY
-from app.research.subject_keys import SUBJECT_JOINER, subject_slug
+from app.research.subject_keys import SUBJECT_JOINER
 from app.research.vocabulary import CANONICAL_LANGUAGE
 
 from .knowledge_view import craft_ref, source_ref
@@ -116,7 +117,7 @@ async def _craft_prose(
 ) -> list[KnowledgePiece]:
     if not craft_names:
         return []
-    subject = subject_slug(district.name)
+    subject = district_subject(district.district_lgd)
     rows = await session.scalars(
         select(PieceRow)
         .where(

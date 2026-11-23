@@ -21,7 +21,7 @@ NEW_PASSWORD = "a-second-long-passphrase"
 
 async def provision(email: str, password: str = PASSWORD) -> str:
     async with session_scope() as session:
-        account = await provision_e2e_account(session, password, email=email)
+        account = await provision_e2e_account(session, password, objects=None, email=email)
         return account.outcome
 
 
@@ -137,12 +137,24 @@ async def test_the_shared_upsert_keeps_the_master_admin_path() -> None:
     now = datetime.now(UTC)
     async with session_scope() as session:
         created = await upsert_password_account(
-            session, email=email.upper(), name="Owner", role=MASTER_ADMIN, password=PASSWORD, now=now
+            session,
+            email=email.upper(),
+            name="Owner",
+            role=MASTER_ADMIN,
+            password=PASSWORD,
+            now=now,
+            objects=None,
         )
         assert created.outcome == CREATED
     async with session_scope() as session:
         updated = await upsert_password_account(
-            session, email=email, name="Ignored", role=MASTER_ADMIN, password=NEW_PASSWORD, now=now
+            session,
+            email=email,
+            name="Ignored",
+            role=MASTER_ADMIN,
+            password=NEW_PASSWORD,
+            now=now,
+            objects=None,
         )
         assert updated.outcome == UPDATED
     user = await account(email)

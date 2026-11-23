@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Literal, Protocol
+from typing import Literal, Protocol, Self
 
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 
-from app.research.base import ContractModel
+from app.research.base import ContractModel, empty
 from app.research.vocabulary import AnswerLanguage
-from app.schemas.listen import ListenWord
+from app.schemas.listen import ListenSentence, ListenWord
 from app.services.naming import narration_key
 from app.services.object_store import PresignedGet
 
@@ -41,7 +41,14 @@ class NarratedPart(ContractModel):
     key: str = Field(min_length=1)
     language: AnswerLanguage
     duration_seconds: float = Field(gt=0)
-    words: list[ListenWord] = Field(min_length=1)
+    words: list[ListenWord] = Field(default_factory=list)
+    sentences: list[ListenSentence] = Field(default_factory=list, exclude_if=empty)
+
+    @model_validator(mode="after")
+    def _timed_by_words_or_by_sentences(self) -> Self:
+        if bool(self.words) == bool(self.sentences):
+            raise ValueError(f"narrated part {self.key} is timed by its words or by its sentences")
+        return self
 
 
 class NarrationManifest(ContractModel):

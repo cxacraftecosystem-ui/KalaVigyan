@@ -11,26 +11,18 @@ from app.models import AdminDistrict, CuratedCraft, WikidataPoint
 
 from . import knowledge_view
 from .curated_index import stored_curated_page
+from .place_points import OriginPlace, RegisterPoint
 from .stated_names import register_places
-from .supply_links import OriginPlace
 
 __all__ = [
     "KnownPoints",
     "KnownPointsLoader",
-    "RegisterPoint",
     "curated_points",
     "known_points",
     "register_district",
     "register_points",
     "stored_known_points",
 ]
-
-
-@dataclass(frozen=True)
-class RegisterPoint:
-    district_lgd: int
-    latitude: float
-    longitude: float
 
 
 @dataclass(frozen=True)

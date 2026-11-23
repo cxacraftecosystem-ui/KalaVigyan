@@ -1,0 +1,81 @@
+{
+  "ok": false,
+  "capUsd": "5",
+  "spentUsd": "1.690373333333333333333333333",
+  "spend": [
+    {
+      "check": "narration_en",
+      "estimateUsd": "0.0303",
+      "countedUsd": "0.0303"
+    },
+    {
+      "check": "narration_hi",
+      "estimateUsd": "0.0309",
+      "countedUsd": "0.0309"
+    },
+    {
+      "check": "music_bed",
+      "estimateUsd": "0.046",
+      "countedUsd": "0.04583333333333333333333333333"
+    },
+    {
+      "check": "gemini_image",
+      "estimateUsd": "0.067",
+      "countedUsd": "0.08334"
+    },
+    {
+      "check": "agent_turn",
+      "estimateUsd": "1.50",
+      "countedUsd": "1.50"
+    }
+  ],
+  "checks": {
+    "narration_en": {
+      "model": "eleven_v4",
+      "characters": 101,
+      "audioSeconds": 6.873,
+      "charactersPerMinute": 882,
+      "alignmentSpellsTheText": true,
+      "lastCharacterEndsAt": 6.88,
+      "fixtures": [
+        "narration_en.json"
+      ]
+    },
+    "narration_hi": {
+      "model": "eleven_v4",
+      "characters": 103,
+      "audioSeconds": 8.075,
+      "charactersPerMinute": 765,
+      "alignmentSpellsTheText": true,
+      "lastCharacterEndsAt": 8.08,
+      "fixtures": [
+        "narration_hi.json"
+      ]
+    },
+    "music_bed": {
+      "model": "music_v2_5",
+      "askedSeconds": 10.0,
+      "heardSeconds": 10.034,
+      "bytes": 160540,
+      "fixtures": [
+        "music_bed.mp3"
+      ]
+    },
+    "gemini_image": {
+      "model": "gemini-3.1-flash-image",
+      "servedModel": "gemini-3.1-flash-image",
+      "mime": "image/jpeg",
+      "bytes": 860225,
+      "inputTokens": 57,
+      "outputTokens": 1389,
+      "imageTokens": 1120,
+      "fixtures": [
+        "image_completed_recorded.json"
+      ]
+    },
+    "agent_turn": {
+      "refused": "the agent, its key, the session key or the Master Admin is missing",
+      "fixtures": []
+    }
+  }
+}

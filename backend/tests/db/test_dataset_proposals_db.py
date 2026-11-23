@@ -170,3 +170,14 @@ async def test_the_registry_sync_gives_a_site_dataset_its_whole_record(session: 
         True,
         "https://www.envidat.ch/dataset/chelsa-climatologies",
     )
+
+
+async def test_the_registry_sync_keeps_the_period_the_load_stored(session: AsyncSession) -> None:
+    row = await session.scalar(select(EnvDataset).where(EnvDataset.code == "CHIRPS_3_0"))
+    if row is None:
+        row = EnvDataset(code="CHIRPS_3_0", title="CHIRPS", licence="CC BY 4.0")
+        session.add(row)
+    row.period, row.edition = "1981-2025", "old"
+    await session.flush()
+    assert "CHIRPS_3_0" in await sync_registry(session)
+    assert (row.period, row.edition) == ("1981-2025", "3.0")

@@ -88,16 +88,6 @@ test("the idempotency key fits the pattern the backend enforces", () => {
   expect(new RegExp(backend!).test("media:3f2b9c1e-8d4a-4f6b-9e21-7c5d0a1b2c3d")).toBe(true);
 });
 
-test("an asset's sharing lists only the steps that can apply", () => {
-  expect(asset().sharing).toBeUndefined();
-  expect(asset({ sharing: { actions: ["SHARE"], awaitingSecondProfessor: false } }).sharing?.actions).toEqual(["SHARE"]);
-  expect(asset({ visibility: "CRAFT_SHARED", sharing: { actions: ["UNSHARE"], awaitingSecondProfessor: false } }).visibility).toBe("CRAFT_SHARED");
-  expect(() => asset({ visibility: "CRAFT_SHARED", sharing: { actions: ["SHARE"], awaitingSecondProfessor: false } })).toThrow(/SHARE only/);
-  expect(() => asset({ sharing: { actions: ["UNSHARE"], awaitingSecondProfessor: false } })).toThrow(/UNSHARE only/);
-  expect(() => asset({ visibility: "CRAFT_SHARED", sharing: { actions: [], awaitingSecondProfessor: true } })).toThrow(/awaiting nobody/);
-  expect(() => asset({ sharing: { actions: ["PUBLISH"], awaitingSecondProfessor: false } })).toThrow(ShapeError);
-});
-
 test("only the roles holding SHARE_MEDIA in the backend see sharing", () => {
   const minimum = /Capability\.SHARE_MEDIA: (\w+),/.exec(read("backend", "app", "core", "roles.py"))?.[1];
   expect(minimum).toBe("PROFESSOR");

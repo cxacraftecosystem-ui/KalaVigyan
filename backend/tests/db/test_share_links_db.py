@@ -1,13 +1,26 @@
 import json
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
 from typing import Any
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Answer, AuditLog, Chunk, Claim, ClaimSource, Concept, Craft, Source, User
+from app.core.errors import ExternalFailure, InvalidInput
+from app.models import (
+    Answer,
+    AuditLog,
+    Chunk,
+    Claim,
+    ClaimSource,
+    Concept,
+    Craft,
+    SharedExportFile,
+    Source,
+    User,
+)
 from app.research.explainer import Explainer, explainer_blocks
 from app.research.lessons import LessonRequest
 from app.research.share_links import ShareLink
@@ -28,6 +41,7 @@ from app.services.share_links import (
     unshare_lesson,
 )
 from app.services.share_owners import SHARES_WITHDRAWN, WithdrawnShares, withdraw_shares
+from app.services.shared_files import DroppedFiles, drop_stopped_share_files, record_shared_files
 
 from ..contracts.explainer_golden import DOCUMENT, citations_in, golden_json
 from ..contracts.golden import golden_text
@@ -161,8 +175,8 @@ async def test_a_shared_version_is_read_by_its_link_without_closed_quotes_until_
     stranger = await reader(db.session)
     with pytest.raises(UnknownExplainer):
         await share_answer(db.session, stranger.id, explainer.answer_id, FIRST, now=NOW)
-    assert not await unshare_answer(db.session, stranger.id, explainer.answer_id, FIRST)
-    assert await unshare_answer(db.session, asker.id, explainer.answer_id, FIRST)
+    assert not await unshare_answer(db.session, stranger.id, explainer.answer_id, FIRST, objects=None)
+    assert await unshare_answer(db.session, asker.id, explainer.answer_id, FIRST, objects=None)
     assert await shared_answer(db.session, token) is None
     assert (await answer_share(db.session, asker.id, explainer.answer_id, FIRST)).shared is False
 
@@ -197,7 +211,7 @@ async def test_a_shared_lesson_is_rebuilt_from_the_public_reading_of_its_explain
         for citation in sentence.citations
     }
     assert cited and closed not in cited
-    assert await unshare_lesson(db.session, professor.id, pack.id)
+    assert await unshare_lesson(db.session, professor.id, pack.id, objects=None)
     assert await shared_lesson(db.session, link.path.rsplit("/", 1)[1]) is None
     shared = await lesson_share(db.session, professor.id, pack.id)
     assert shared is not None and shared.shared is False
@@ -230,7 +244,7 @@ async def test_withdrawing_an_owner_s_links_ends_answers_and_lessons_and_is_audi
     asker, explainer, token = await shared_version(db)
     pack = await build_lesson(db.session, asker.id, lesson_request_for(explainer), now=NOW)
     lesson = token_of(await share_lesson(db.session, asker.id, pack.id, now=NOW))
-    withdrawn = await withdraw_shares(db.session, asker.id, actor=None, cause="users.deleted")
+    withdrawn = await withdraw_shares(db.session, asker.id, actor=None, cause="users.deleted", objects=None)
     await db.session.commit()
     assert withdrawn == WithdrawnShares(answers=1, lessons=1)
     assert await shared_answer(db.session, token) is None
@@ -254,8 +268,85 @@ async def test_a_builder_who_may_no_longer_build_lessons_stops_sharing_them_and_
     await db.session.commit()
     pack = await build_lesson(db.session, professor.id, lesson_request_for(explainer), now=NOW)
     lesson = token_of(await share_lesson(db.session, professor.id, pack.id, now=NOW))
-    await apply_role_change(db.session, professor, "RESEARCHER")
+    await apply_role_change(db.session, professor, "RESEARCHER", objects=None)
     professor.role = "RESEARCHER"
     await db.session.commit()
     assert await shared_lesson(db.session, lesson) is None
     assert await shared_answer(db.session, token) is not None
+
+
+SHARED_FILES = "exports/00000000-0000-0000-0000-000000000000"
+
+
+@dataclass
+class Bucket:
+    deleted: list[str] = field(default_factory=list)
+    refusing: bool = False
+
+    async def delete(self, key: str) -> None:
+        if self.refusing:
+            raise ExternalFailure("Could not delete the media object (AccessDenied)", kind="auth", status=403)
+        self.deleted.append(key)
+
+
+def shared_key(name: str) -> str:
+    return f"{SHARED_FILES}/{uuid.uuid4().hex}{uuid.uuid4().hex}/{name}"
+
+
+async def recorded_keys(db: Seeded, keys: list[str]) -> set[str]:
+    found = await db.session.execute(select(SharedExportFile.key).where(SharedExportFile.key.in_(keys)))
+    return set(found.scalars().all())
+
+
+async def test_stopping_a_share_deletes_the_files_its_readers_were_given(db: Seeded) -> None:
+    asker, explainer, token = await shared_version(db)
+    report, handout = shared_key("Report_v1.pdf"), shared_key("Handout.pdf")
+    bucket = Bucket()
+    kept = await record_shared_files(db.session, token, [report, handout, report], objects=bucket)
+    assert (kept, bucket.deleted) == (DroppedFiles(dropped=0, kept=0), [])
+    assert await recorded_keys(db, [report, handout]) == {report, handout}
+    assert await unshare_answer(db.session, asker.id, explainer.answer_id, FIRST, objects=bucket)
+    assert sorted(bucket.deleted) == sorted([report, handout])
+    assert await recorded_keys(db, [report, handout]) == set()
+
+
+async def test_a_file_recorded_after_its_share_stopped_is_deleted_at_once(db: Seeded) -> None:
+    asker, explainer, token = await shared_version(db)
+    assert await unshare_answer(db.session, asker.id, explainer.answer_id, FIRST, objects=None)
+    late = shared_key("Report_v1.pdf")
+    bucket = Bucket()
+    dropped = await record_shared_files(db.session, token, [late], objects=bucket)
+    assert (dropped, bucket.deleted) == (DroppedFiles(dropped=1, kept=0), [late])
+    assert await recorded_keys(db, [late]) == set()
+
+
+async def test_a_file_the_bucket_will_not_delete_is_kept_for_the_next_sweep(db: Seeded) -> None:
+    asker, _explainer, token = await shared_version(db)
+    report = shared_key("Report_v1.pdf")
+    await record_shared_files(db.session, token, [report], objects=Bucket())
+    refusing = Bucket(refusing=True)
+    await withdraw_shares(db.session, asker.id, actor=None, cause="users.suspended", objects=refusing)
+    await db.session.commit()
+    assert await recorded_keys(db, [report]) == {report}
+    bucket = Bucket()
+    swept = await drop_stopped_share_files(db.session, bucket)
+    await db.session.commit()
+    assert report in bucket.deleted and swept.kept == 0
+    assert await recorded_keys(db, [report]) == set()
+
+
+async def test_a_reshared_file_follows_the_new_link_and_a_key_outside_the_shared_files_is_refused(
+    db: Seeded,
+) -> None:
+    asker, explainer, token = await shared_version(db)
+    report = shared_key("Report_v1.pdf")
+    await record_shared_files(db.session, token, [report], objects=Bucket())
+    assert await unshare_answer(db.session, asker.id, explainer.answer_id, FIRST, objects=None)
+    again = token_of(await share_answer(db.session, asker.id, explainer.answer_id, FIRST, now=NOW))
+    bucket = Bucket()
+    await record_shared_files(db.session, again, [report], objects=bucket)
+    assert bucket.deleted == []
+    owner = await db.session.get(SharedExportFile, report)
+    assert owner is not None and owner.shareToken == again
+    with pytest.raises(InvalidInput):
+        await record_shared_files(db.session, again, [f"exports/{asker.id}/x/Report.pdf"], objects=bucket)

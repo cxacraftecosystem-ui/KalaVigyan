@@ -1,7 +1,7 @@
 import { FINAL_SECTION_STATES, type ExplainerBlock, type FinalSectionState, type LedeBlock, type Understood, type WorkingSectionState } from "@/lib/explainerContract";
 import { TRAIL_STAGES, type ExplainerEvent, type SectionStarted, type TrailEntry } from "@/lib/explainerStream";
 import type { VersionMark } from "@/lib/learningContract";
-import type { AnswerReaction, AnswerSection, AnswerSentence, AnswerStatus, SourceRef } from "@/lib/types";
+import type { AnswerSection, AnswerSentence, AnswerStatus, SourceRef } from "@/lib/types";
 
 export type ExplainerPhase = "idle" | "asking" | "streaming" | "done" | "empty" | "failed";
 
@@ -23,12 +23,12 @@ export type ExplainerState = {
   sections: SectionView[];
   sources: SourceRef[];
   openQuestions: AnswerSection[];
-  reactions: AnswerReaction[];
   followUps: string[];
   error: string | null;
   notice: string | null;
   mark: VersionMark | null;
   basedOn: ExplainerRef | null;
+  reload: boolean;
   quizAvailable: boolean | null;
 };
 
@@ -48,12 +48,12 @@ export function emptyExplainer(question = "", language = "en"): ExplainerState {
     sections: [],
     sources: [],
     openQuestions: [],
-    reactions: [],
     followUps: [],
     error: null,
     notice: null,
     mark: null,
     basedOn: null,
+    reload: false,
     quizAvailable: null
   };
 }
@@ -158,8 +158,6 @@ export function reduceExplainer(state: ExplainerState, event: ExplainerEvent): E
       return { ...state, sources: withoutDuplicate(state.sources, event.data) };
     case "open_question":
       return { ...state, openQuestions: appendOpenQuestion(state.openQuestions, event.data.sectionId, event.data.sentence, event.data.heading ?? "") };
-    case "reaction":
-      return { ...state, reactions: withoutDuplicate(state.reactions, event.data) };
     case "follow_ups":
       return { ...state, followUps: event.data.items };
     case "lede":

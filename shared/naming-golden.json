@@ -65,7 +65,8 @@
   ],
   "narrationFiles": [
     {"generatedAt": "2026-11-17T09:00:00Z", "part": 1, "fileName": "KalaVigyan_Explainer_2026-11-17_1430_Narration_Part-01.mp3"},
-    {"generatedAt": "2026-11-17T20:15:00Z", "part": 12, "fileName": "KalaVigyan_Explainer_2026-11-18_0145_Narration_Part-12.mp3"}
+    {"generatedAt": "2026-11-17T20:15:00Z", "part": 12, "fileName": "KalaVigyan_Explainer_2026-11-18_0145_Narration_Part-12.mp3"},
+    {"generatedAt": "2026-11-23T04:30:00Z", "part": 2, "ext": "wav", "fileName": "KalaVigyan_Explainer_2026-11-23_1000_Narration_Part-02.wav"}
   ],
   "scoreFiles": [
     {"generatedAt": "2026-11-18T05:00:00Z", "scene": null, "fileName": "KalaVigyan_Explainer_2026-11-18_1030_Music.mp3"},

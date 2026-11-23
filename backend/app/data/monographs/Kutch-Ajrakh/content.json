@@ -32364,6 +32364,24 @@
    ]
   },
   {
+   "label": "kutch-ajrakh/geography/why-here",
+   "chapter": "why-kachchh",
+   "anchor": "[class=\"kv-page kv-why-here\"]",
+   "kind": "why_here",
+   "title": "The ground under Kutch Ajrakh",
+   "description": "A map of where Kutch Ajrakh is practised over relief, rivers and recorded mineral deposits, with each place's measured ground beside it.",
+   "field": "GEOGRAPHY",
+   "fields": [
+    "GEOGRAPHY",
+    "GEOLOGY",
+    "CLIMATE",
+    "ECOLOGY"
+   ],
+   "subjects": [
+    "craft:Kutch-Ajrakh"
+   ]
+  },
+  {
    "label": "shared/history/mohenjo-daro-priest-king-trefoil",
    "chapter": "history",
    "anchor": "[class=\"plate kv-pk\"]",
@@ -37674,6 +37692,12 @@
    "kind": "unit",
    "ref": "u1113",
    "within": "shared/geography/banni-grasslands-photo"
+  },
+  {
+   "chapter": "why-kachchh",
+   "kind": "component",
+   "ref": "kutch-ajrakh/geography/why-here",
+   "within": null
   },
   {
    "chapter": "history",

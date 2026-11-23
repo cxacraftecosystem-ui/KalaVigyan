@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.public_deps import cached_read, public_reader, read_headers, unchanged_read
@@ -16,7 +16,6 @@ from app.models import Craft, User
 from app.schemas.craft_page import PageHiding
 from app.services import craft_catalogue, knowledge_view
 from app.services.answering import NOT_FOUND_DETAIL
-from app.services.craft_page_archive import archived_page, curation_version
 from app.services.craft_page_cache import PageCache, ServedPage
 from app.services.craft_page_hiding import SIMULATION, set_page_media_hidden, set_page_piece_hidden
 from app.services.craft_page_snapshots import OPEN, RESEARCHER, served_page
@@ -25,7 +24,6 @@ from app.services.region_records import region_records
 router = APIRouter(prefix="/crafts", tags=["crafts"])
 
 INACTIVE_REFUSAL = "The full craft list, with retired crafts, is for professors and above."
-NO_VERSION_DETAIL = "This craft has no such curated version."
 NOT_ON_PAGE_DETAIL = "That piece is not on this craft's page."
 JSON_TYPE = "application/json"
 
@@ -60,20 +58,12 @@ async def get_craft_catalogue(
 async def get_craft_page(
     slug: str,
     request: Request,
-    response: Response,
-    version: int | None = Query(default=None, ge=1),
     *,
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     craft = await _known_craft(session, slug)
-    variant = page_variant(reader)
-    if version is not None and version != await curation_version(session, craft):
-        archived = await archived_page(session, craft, variant, version)
-        if archived is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, NO_VERSION_DETAIL)
-        return cached_read(request, response, reader, archived)
-    served = await served_page(session, craft, variant, cache=page_cache(request))
+    served = await served_page(session, craft, page_variant(reader), cache=page_cache(request))
     return page_response(request, reader, served)
 
 

@@ -12,10 +12,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_engine, get_session
 from app.core.deps import get_current_user, get_optional_user
 from app.main import app
-from app.models import AdminDistrict, AdminState, DistrictEnvValue, EnvDataset, RiverBasin, RiverReach, User
+from app.models import (
+    AdminDistrict,
+    AdminState,
+    DistrictEnvValue,
+    EnvDataset,
+    RiverBasin,
+    RiverReach,
+    RiverReachDistrict,
+    User,
+)
 from app.research.blocks_place import DistrictRef
 from app.services.monthly_rain import district_rainfall
-from app.services.river_store import BasinFile, RiverCrossing, basin_file, rivers_crossing, trace_river
+from app.services.river_store import (
+    BasinFile,
+    RiverCrossing,
+    basin_file,
+    named_crossing,
+    rivers_crossing,
+    rivers_loaded,
+    trace_river,
+)
 
 from ..readers import sign_in_as
 
@@ -25,6 +42,16 @@ STATE = 99901
 WEST, MIDDLE, EAST = 99911, 99912, 99913
 SOURCE_A, SOURCE_B, JUNCTION, OUTLET, COAST = 90000001, 90000002, 90000003, 90000004, 90000010
 SHA = "a" * 64
+HITS = (
+    (SOURCE_A, WEST, 0.0),
+    (SOURCE_B, MIDDLE, 0.0),
+    (SOURCE_B, WEST, 0.7143),
+    (JUNCTION, WEST, 0.0),
+    (JUNCTION, MIDDLE, 0.2857),
+    (OUTLET, MIDDLE, 0.0),
+    (OUTLET, EAST, 0.5),
+    (COAST, EAST, 0.0),
+)
 MONTHLY_MM = [0.4, 0.9, 0.3, 0.2, 2.1, 38.5, 141.2, 112.6, 61.3, 9.8, 2.4, 0.6]
 
 
@@ -109,6 +136,8 @@ async def store_network(session: AsyncSession) -> None:
         ]
     )
     await session.flush()
+    session.add_all(RiverReachDistrict(hyrivId=rid, districtLgd=lgd, entry=entry) for rid, lgd, entry in HITS)
+    await session.flush()
 
 
 async def test_the_main_stem_is_traced_from_the_outlet_with_districts_in_path_order(
@@ -138,6 +167,22 @@ async def test_rivers_crossing_districts_offer_each_basin_by_its_largest_reach(s
     assert await rivers_crossing(session, []) == []
 
 
+async def test_a_named_river_is_traced_up_its_own_reaches_and_crossed_where_it_is_largest(
+    session: AsyncSession,
+) -> None:
+    trace = await trace_river(session, OUTLET, named=[SOURCE_A, JUNCTION, OUTLET])
+    assert trace is not None and trace.reach_ids == [SOURCE_A, JUNCTION, OUTLET]
+    assert await named_crossing(session, [WEST], [SOURCE_A, JUNCTION]) == crossing(OUTLET, JUNCTION, 400.0)
+    assert await named_crossing(session, [EAST], [SOURCE_A, JUNCTION]) is None
+    assert await named_crossing(session, [WEST], []) is None
+
+
+async def test_rivers_are_loaded_only_with_the_districts_each_reach_crosses(session: AsyncSession) -> None:
+    assert await rivers_loaded(session) is True
+    await session.execute(delete(RiverReachDistrict))
+    assert await rivers_loaded(session) is False
+
+
 async def test_a_basin_file_names_its_edition_and_hash(session: AsyncSession) -> None:
     assert await basin_file(session, OUTLET) == BasinFile(main_riv=OUTLET, edition="v10", sha256=SHA)
     assert await basin_file(session, SOURCE_A) is None
@@ -160,7 +205,9 @@ async def test_the_basin_route_revalidates_from_the_stored_hash(session: AsyncSe
     try:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            same = await client.get(f"/api/rivers/{OUTLET}", headers={"If-None-Match": f'"{SHA}"'})
+            same = await client.get(
+                f"/api/rivers/{OUTLET}", headers={"If-None-Match": f'"{SHA}"', "Accept-Encoding": "identity"}
+            )
             unknown = await client.get(f"/api/rivers/{SOURCE_A}")
     finally:
         app.dependency_overrides.pop(get_session, None)

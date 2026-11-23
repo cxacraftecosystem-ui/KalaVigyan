@@ -9,6 +9,7 @@ from app.services.craft_page_preview import register_page
 from app.services.curation_keys import curated_id
 
 from ..curation.import_support import AJRAKH, AJRAKH_GOLDEN, raw
+from ..geo.golden_region import KACHCHH, env_rows
 from .golden import SHARED, golden_json, golden_text, reproduces
 
 REGISTER_GOLDEN = "craft.page.register.golden.json"
@@ -29,6 +30,25 @@ def test_the_craft_page_golden_parses_and_matches_the_response_models() -> None:
 
 def test_the_craft_page_golden_is_the_kutch_ajrakh_dossier_as_served() -> None:
     assert craft_page_text(ajrakh_preview()) == golden_text(AJRAKH_GOLDEN)
+
+
+def test_the_climate_series_are_kachchh_s_yearly_district_means_as_the_geo_etl_wrote_them() -> None:
+    stored = {
+        (row.dataset_code, row.variable, int(row.depth_or_period)): row.value
+        for row in env_rows(KACHCHH)
+        if row.stat == "DISTRICT_MEAN" and row.depth_or_period.isdigit()
+    }
+    series = golden_json(INPUTS)["series"]
+    assert [
+        (item["datasetCode"], item["variable"], item["firstYear"], len(item["values"])) for item in series
+    ] == [
+        ("CHIRPS_3_0", "annual_precipitation", 1981, 45),
+        ("GHCN_CAMS_T2M", "annual_mean_temperature", 1981, 45),
+    ]
+    for item in series:
+        years = range(item["firstYear"], item["firstYear"] + len(item["values"]))
+        assert item["values"] == [stored[item["datasetCode"], item["variable"], year] for year in years]
+    assert series[0]["values"][:2] == [518.454025, 330.546987]
 
 
 def test_the_golden_holds_to_its_gzipped_budget() -> None:

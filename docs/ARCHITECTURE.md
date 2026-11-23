@@ -106,7 +106,7 @@ The diagram is the stack from the top down; the edges that may really be importe
 | Layer | Package | What it holds |
 |---|---|---|
 | entry points | `main.py`, `api/` (`router.py`, `routes/<area>.py`), `scripts/` | the app, the HTTP routes, and the scripts (seeds, sync, coverage job) |
-| voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058) |
+| voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035), read by the Gemini voice by sentence when ElevenLabs cannot (0161); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058) |
 | media | `media/` | stage illustrations and clips: claim set, prompt, bundle, MP4 and PNG checks, the job routes' steps, the kv-worker queue and its SQL; `worker.py` runs it as kv-worker (decision 0018) |
 | adapters | `providers/` | model adapters and their key checks, the model catalogue, AI router, spend rules and settings, the quota ledger, ElevenLabs |
 | domain | `services/` | crafts, knowledge view, access roster, credentials, keys, routing, live-research write-back and the coverage job (decision 0011) |
@@ -147,7 +147,10 @@ decision 0081). The page (schema version 3, decisions 0095 and 0098) is read onc
 (`craft_page_records`, `chapter_records.chapter_rows`), built purely by one module per chapter
 (`services/chapter_<key>.py`) that reuses the answer builders' pure halves with fixed rules for
 the model's choices, passed through one page ledger (`chapter_ledger`), and cached per craft and
-variant under a stamp read in one statement (`craft_page_stamp`, `craft_page_snapshots`).
+variant under a stamp read in one statement (`craft_page_stamp`, `craft_page_snapshots`). No screen
+draws the chapters: a curated craft's monograph document takes them as its structure
+(`document_components.document_structure`), and the web reads the page's masthead, lede, record and
+lists (decision 0162).
 
 ## Students and artisans (decision 0083)
 
@@ -165,7 +168,7 @@ is shown only as the artisan's own words. Contract: `docs/contracts/roles-and-co
 ## API surface
 
 All routes are under `/api` except `/health` and `/health/ready`. Route groups (`api/routes/`):
-`auth`, `password_change` (change-password and the first-password nonce, decision 0028), `two_factor`, `me`, `access`, `users`, `crafts`, `film` (film mode's music and sound score, decision 0058), `knowledge`, `lessons` (lesson packs and their files, decision 0067), `explainer_exports` (an explainer version's PDF and citations, decision 0067), `listen` (an explainer read aloud, decision 0035), `map_districts` (ask the map, decision 0065), `map_layers`, `media`, `profile` (a student's and an artisan's first-entry profile, the artisan recording notice and its consent, and the public district list, decision 0083), `artisan_conversations` (an artisan's conversation with KalaVigyan, 404 while `ARTISAN_CONVERSATION_ENABLED` is off), `artisan_contributions` (an artisan's own conversations and contributions, and withdrawal), `testimony_review` (the review queue for artisan testimony), `public` (the landing's summary, decision 0079), `rivers` (a basin's river lines as TopoJSON, decision 0043), `secrets`,
+`auth` (signing in, the session and the account's own Google link; it includes `auth_signup` and `password_links`, and reads `api/sign_in.py` for proving who signs in and `api/auth_session.py` for the session and access rules every auth route shares), `password_change` (change-password and the first-password nonce, decision 0028), `two_factor`, `me`, `access`, `users`, `crafts`, `film` (film mode's music and sound score, decision 0058), `knowledge`, `lessons` (lesson packs and their files, decision 0067), `explainer_exports` (an explainer version's PDF and citations, decision 0067), `listen` (an explainer read aloud, decision 0035), `map_districts` (ask the map, decision 0065), `map_layers`, `media`, `profile` (a student's and an artisan's first-entry profile, the artisan recording notice and its consent, and the public district list, decision 0083), `artisan_conversations` (an artisan's conversation with KalaVigyan, 404 while `ARTISAN_CONVERSATION_ENABLED` is off), `artisan_contributions` (an artisan's own conversations and contributions, and withdrawal), `testimony_review` (the review queue for artisan testimony), `public` (the landing's summary, decision 0079), `rivers` (a basin's river lines as TopoJSON, decision 0043), `secrets`,
 `settings`, `terms` (a glossary term's cited summary, decision 0034), `usage`, `voice` (404 throughout while `VOICE_CALL_ENABLED` is off, decision 0035). Every route module and its operation count, these and the ones added since, is generated in `docs/REPO_FACTS.md`. Shapes, headers and error forms are in `docs/contracts/backend.md`; the web client's
 side is `docs/contracts/frontend.md`. `GET /api/crafts/{slug}/page` (in `crafts`) answers the whole craft page from stored rows: the
 curated overview and facts and All evidence (`docs/contracts/craft-page.md`, decision 0053);
@@ -410,12 +413,17 @@ sequenceDiagram
    language, and the cache id per block (piece content hash, model, voice, language).
    `voice/narration_cache.py` reads each block's manifest from `media/narration/<cacheId>/`.
 3. For the misses only, `voice/listen.py` takes each block's lease in the bucket
-   (`voice/narration_lease.py`; a block another request is making is waited for, not paid again),
+   (`voice/object_lease.py`, shared with the film score; a block another request is making is waited for, not paid again),
    holds the estimated `VOICE_SECONDS` under the reader's `User` row lock (429 when too few are left), asks `ElevenLabs.narration`
    (`/with-timestamps`, `eleven_v4`) for each part of at most 2,000 characters, stores the audio
    and then the manifest, and settles the hold to the audio's seconds.
 4. The answer is one track per part: a one-hour presigned link and the words with their times,
    which the explainer UI highlights (`frontend/lib/listen.ts`).
+5. When ElevenLabs is not offered (no key, or its probe fails) or fails while making the audio,
+   the same steps run with the Gemini voice (`voice/listen_voices.py`, `providers/gemini_media.py`
+   `read_aloud`): a sentence per request, the WAVs joined per part and timed by sentence, its own
+   cache, lease and hold; the script names the voice and the UI highlights the sentence being read
+   (decision 0161).
 
 ## How a film gets its score (decision 0058)
 
@@ -544,7 +552,8 @@ sequenceDiagram
    database connection before the bucket and PubChem (decision 0050). The place builders
    (`services/place_builders`, decision 0044) read a craft's cited districts in one short session
    (`services/place_offers`): a geography section's region story offers the rivers crossing them
-   (by stream order and discharge, traced through the stored network), the districts and the
+   (those its statements name first, then by stream order and discharge, traced through the stored
+   network and named from the vendored river names, decision 0153), the districts and the
    layers with values there, and one plan-model call chooses a river, the stored claims for its
    steps and their order by ref, a step keeping its district only when its sentence names it; it
    is kept as a cross-craft piece by basin or districts and reused with its geography section
@@ -644,17 +653,23 @@ at once: its chunks, the claims that rest on it alone (`retrieval/field_scope`),
 of stored explainers that cite it (`services/field_voices_readback`).
 Then `app/scripts/embed_craft_descriptors` fills missing craft name-and-alias vectors for the
 resolver; the daily Coverage enrichment run fills them first too (decision 0016). The region
-routes read the geo ETL's per-district statistics and compute state aggregates in Postgres per
-request; nothing environmental is queried live (decision 0016). River lines (decision 0043) are
-HydroRIVERS reaches the geo ETL loads into `RiverReach` and `RiverBasin` and writes as one
-TopoJSON per basin to the media bucket (`riverlines` in the Geo ETL run); `services/river_store`
-traces a river through a reach (`geo/river_trace`: the largest upstream branch to the source,
-`NEXT_DOWN` to the mouth) and orders the districts it crosses with PostGIS, and
-`GET /api/rivers/{mainRiv}` serves the basin's file. A district's CHIRPS monthly normals reach a
+routes read the geo ETL's per-district statistics and the state series every geo load and
+district seed stores in `StateEnvValue`, and send each place's headline values; nothing
+environmental is queried live (decisions 0016 and 0153). River lines (decision 0043) are
+HydroRIVERS reaches the geo ETL loads into `RiverReach`, `RiverBasin` and `RiverReachDistrict`
+(the districts each reach crosses and where it enters them, computed once in the ETL) and writes
+as one TopoJSON per basin, each reach carrying its districts, to the media bucket (`riverlines` in
+the Geo ETL run); `services/river_store` traces a river through a reach (`geo/river_trace`: a named
+river's own reaches, else the largest upstream branch, to the source, `NEXT_DOWN` to the mouth) and
+orders the districts it crosses from `RiverReachDistrict`, and `GET /api/rivers/{mainRiv}` serves
+the basin's file, gzip-compressed to a reader that accepts it. River names come from Wikidata, then
+OpenStreetMap, matched to the reaches by the geo ETL's `river-names` step and vendored in
+`backend/app/data/rivers/` (`app/data/river_names`, decision 0153). A district's CHIRPS monthly normals reach a
 `seasons` block through `services/monthly_rain`. The CHIRPS and GHCN CAMS layers write each
 district's yearly series from 1981 with its normal and its Theil-Sen and Mann-Kendall trend
 (`etl/geo/geo_etl/trend.py`); `services/climate_store` reads a craft's district trends through
-`geo/climate` for a `climate_risk` block (decision 0065).
+`geo/climate`, and the craft's Rajasthan districts' groundwater through `geo/groundwater`, for a
+`climate_risk` block (decisions 0065 and 0153).
 
 ## Frontend
 
@@ -788,7 +803,7 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 | Craft data | master-list sha1, lint and tests of `etl/crafts`; weekly regeneration |
 | Geo ETL | `etl/geo` tests and the district statistics build |
 | Deploy backend | after Backend checks succeed on a push to `main` of `cxacraftecosystem-ui/KalaVigyan` |
-| E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` seven known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English, Hindi and Urdu, Kachchh's water, which needs a region story with a traced river once `rivers_loaded` is set, what the cloth is made of and its history, and at Expert depth indigo's generated explainer; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark; the Hindi and Urdu answers must also carry a translated sentence and paragraphs in their script, and the Urdu one must read right to left with its prose in a loaded Noto Nastaliq Urdu face (decisions 0029, 0050, 0061, 0077 and 0157) |
+| E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` nine known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English, Hindi and Urdu, Kachchh's water, which needs a region story with a traced river once the run reads the river lines as loaded from the Khari's basin file, what the cloth is made of, its history, its seasons (a seasons block) and the Ganga for a Varanasi craft (its region story timed), and at Expert depth indigo's generated explainer, every region story, seasons block and supply map noted with its time and what it shows; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark; the Hindi and Urdu answers must also carry a translated sentence and paragraphs in their script, and the Urdu one must read right to left with its prose in a loaded Noto Nastaliq Urdu face (decisions 0029, 0050, 0061, 0077, 0157 and 0160) |
 
 Scheduled and dispatched runs (craft sync, field voices, coverage enrichment, nightly upkeep, the
 alert digest, the release gate, captures, Monograph parity, open data and the Geo ETL) are in

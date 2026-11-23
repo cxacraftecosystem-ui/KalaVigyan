@@ -40,13 +40,6 @@ def client_for(monkeypatch: pytest.MonkeyPatch, role: str | None, served: list[s
         body = golden()
         return ServedPage(served_content(body), body_version(body), variant)
 
-    async def current(_session: Any, _craft: Any) -> int:
-        version: int = golden()["curation"]["version"]
-        return version
-
-    async def archived(_session: Any, _craft: Any, variant: str, version: int) -> dict[str, Any] | None:
-        return {**golden(), "archivedAs": variant} if version == OLDER else None
-
     async def hidden(
         _session: Any, _craft: Any, piece_id: uuid.UUID, *, hidden: bool, **_kwargs: Any
     ) -> bool | None:
@@ -54,8 +47,6 @@ def client_for(monkeypatch: pytest.MonkeyPatch, role: str | None, served: list[s
 
     monkeypatch.setattr(knowledge_view, "resolve_craft", resolve)
     monkeypatch.setattr(crafts, "served_page", page)
-    monkeypatch.setattr(crafts, "archived_page", archived)
-    monkeypatch.setattr(crafts, "curation_version", current)
     monkeypatch.setattr(crafts, "set_page_piece_hidden", hidden)
     app = create_app()
     if role is not None:
@@ -88,14 +79,14 @@ def test_a_researcher_and_above_get_the_researcher_variant(
     assert response.headers["cache-control"] == "private, no-cache"
 
 
-def test_the_current_version_answers_the_live_page_and_an_older_one_its_archive(
+def test_the_page_keeps_no_archived_versions_since_an_edition_is_a_monograph_document(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    client = client_for(monkeypatch, None, [])
-    current = golden()["curation"]["version"]
-    assert client.get(PATH, params={"version": current}).json() == golden()
-    assert client.get(PATH, params={"version": OLDER}).json()["archivedAs"] == "OPEN"
-    assert client.get(PATH, params={"version": current + 5}).status_code == 404
+    served: list[str] = []
+    client = client_for(monkeypatch, None, served)
+    assert client.get(PATH, params={"version": OLDER}).json() == golden()
+    assert served == ["OPEN"]
+    assert not hasattr(crafts, "archived_page")
 
 
 def test_only_a_professor_hides_a_piece_on_the_page(monkeypatch: pytest.MonkeyPatch) -> None:

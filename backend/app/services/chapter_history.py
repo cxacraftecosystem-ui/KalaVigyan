@@ -21,7 +21,7 @@ from .chapter_context import ChapterContext
 from .chapter_draft import ChapterDraft, Drafted
 from .chapter_plates import PicturePlan, placed_records
 from .chapter_prose import prose_blocks
-from .supply_links import OriginPlace
+from .place_points import OriginPlace
 from .timeline_story import DatedStatement, TimelineOffer, timeline_block, timeline_entries
 
 __all__ = ["history_chapter", "span_label"]

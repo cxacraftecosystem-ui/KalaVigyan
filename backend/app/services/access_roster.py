@@ -10,6 +10,7 @@ from app.core.config import get_settings
 from app.models import AccessRoster, User
 
 from .share_owners import withdraw_shares
+from .shared_files import FileDeleter
 
 logger = logging.getLogger(__name__)
 
@@ -157,11 +158,13 @@ async def end_sessions_for_email(session: AsyncSession, email: Any) -> int:
     return int(result.rowcount or 0)
 
 
-async def bar_account(session: AsyncSession, email: Any, *, actor: Any, cause: str) -> None:
+async def bar_account(
+    session: AsyncSession, email: Any, *, actor: Any, cause: str, objects: FileDeleter | None
+) -> None:
     await end_sessions_for_email(session, email)
     owners = await session.execute(select(User.id).where(func.lower(User.email) == normalise_email(email)))
     for owner_id in owners.scalars().all():
-        await withdraw_shares(session, owner_id, actor=actor, cause=cause)
+        await withdraw_shares(session, owner_id, actor=actor, cause=cause, objects=objects)
 
 
 def account_in_good_standing(user_id: ColumnElement[Any]) -> ColumnElement[bool]:

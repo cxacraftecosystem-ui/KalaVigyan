@@ -8,7 +8,7 @@ from rasterio.io import MemoryFile
 from rasterio.transform import from_origin
 from shapely.geometry import box
 
-from geo_etl import raster
+from geo_etl import raster, remote
 from geo_etl.coverage import Coverage, coverage_of, covered_districts
 from geo_etl.layers import (
     Measured,
@@ -16,49 +16,12 @@ from geo_etl.layers import (
     chelsa,
     chirps,
     copdem,
+    each_district,
     geology,
     hansen,
     soilgrids,
-    with_retries,
     worldcover,
 )
-
-
-def outcomes(*steps):
-    queue = list(steps)
-    calls: list[int] = []
-
-    def call():
-        calls.append(len(calls) + 1)
-        step = queue.pop(0)
-        if isinstance(step, Exception):
-            raise step
-        return step
-
-    return call, calls
-
-
-def test_with_retries_returns_once_a_transient_error_clears(sleeps):
-    call, calls = outcomes(ValueError("a"), ValueError("b"), 42)
-    assert with_retries(call, retry_on=(ValueError,)) == 42
-    assert calls == [1, 2, 3]
-    assert sleeps == [5.0, 10.0]
-
-
-def test_with_retries_raises_the_fourth_error(sleeps):
-    call, calls = outcomes(*(ValueError(f"attempt {n}") for n in range(1, 6)))
-    with pytest.raises(ValueError, match="attempt 4"):
-        with_retries(call, retry_on=(ValueError,))
-    assert calls == [1, 2, 3, 4]
-    assert sleeps == [5.0, 10.0, 15.0]
-
-
-def test_with_retries_lets_other_errors_through_at_once(sleeps):
-    call, calls = outcomes(KeyError("not retried"), 42)
-    with pytest.raises(KeyError):
-        with_retries(call, retry_on=(ValueError,))
-    assert calls == [1]
-    assert sleeps == []
 
 
 def geotiff(rows: int, cols: int, value: int) -> bytes:
@@ -135,8 +98,62 @@ def test_every_raster_layer_lists_districts_measured_without_valid_cells(key, of
     assert covered_districts(result) == {11}
     assert result.districts_without_cells == [12, 21]
     assert coverage_of(districts, result) == Coverage(
-        districts_without_values=[12, 21], districts_without_cells=[12, 21], lost_states=[]
+        districts_without_values=[12, 21],
+        districts_without_cells=[12, 21],
+        unexpected_without_cells=[12, 21],
+        silent_districts=[],
+        lost_states=[],
     )
+
+
+TILED_LAYERS = {"worldcover": worldcover.run, "hansen": hansen.run, "copdem": copdem.run}
+
+
+def unreachable_east_of_72(urls, bounds, **kwargs) -> raster.Grid:
+    if bounds[0] > 72.0:
+        raise remote.Unreachable("tiles.test is unreachable: 503")
+    return half_valid_grid()
+
+
+@pytest.mark.parametrize("key", list(TILED_LAYERS))
+def test_an_unreachable_tile_fails_its_district_and_every_later_one(key, monkeypatch, tmp_path):
+    monkeypatch.setattr(raster, "read", unreachable_east_of_72)
+    result = TILED_LAYERS[key](districts_beside_nodata(), Options(cache=tmp_path))
+    assert covered_districts(result) == {11}
+    assert result.failures == [
+        {"step": key, "districtLgds": [12, 21], "error": "Unreachable: tiles.test is unreachable: 503"}
+    ]
+    assert result.districts_without_cells == []
+
+
+def test_any_other_error_fails_only_its_own_district():
+    measured: list[int] = []
+
+    def measure(group):
+        measured.append(int(group.iloc[0]["districtLgd"]))
+        if measured[-1] == 12:
+            raise ValueError("Mixed-type geometries not supported.")
+
+    failures = each_district(districts_beside_nodata(), "copdem", measure)
+    assert measured == [11, 12, 21]
+    assert failures == [
+        {"step": "copdem", "districtLgds": [12], "error": "ValueError: Mixed-type geometries not supported."}
+    ]
+
+
+def test_an_unreachable_chelsa_file_ends_the_shards_reads(monkeypatch, tmp_path):
+    read: list[str] = []
+
+    def stalled(urls, bounds, **kwargs):
+        read.append(urls[0])
+        raise remote.Unreachable(f"{urls[0]} is unreachable: read timed out")
+
+    monkeypatch.setattr(raster, "read", stalled)
+    options = Options(cache=tmp_path, chelsa_bio=("bio1", "bio12"), chelsa_months=True)
+    result = chelsa.run(districts_beside_nodata(), options)
+    assert read == [chelsa.bio_url("bio1")]
+    assert [item["step"] for item in result.failures] == ["chelsa annual_mean_temperature 1981-2010"]
+    assert result.failures[0]["districtLgds"] == [11, 12, 21]
 
 
 def test_glim_writes_geology_only_for_the_district_with_cells(offline_reads, tmp_path):

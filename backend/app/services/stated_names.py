@@ -7,7 +7,9 @@ from functools import lru_cache
 from types import MappingProxyType
 
 from app.data.district_register import load_district_codes, load_district_other_names, load_district_register
-from app.research.calendar import MONTH_NAMES, months_named, seasons_named
+from app.data.river_names import load_river_names
+from app.research.calendar import MONTH_NAMES, months_named, regional_months_named, seasons_named
+from app.research.calendar_words import REGIONAL_MONTHS
 from app.research.quotes import quote_occurs
 
 __all__ = [
@@ -16,6 +18,7 @@ __all__ = [
     "place_spellings",
     "register_places",
     "register_places_named",
+    "river_names_named",
     "unstated_names",
 ]
 
@@ -31,16 +34,34 @@ class RegisterPlace:
 def unstated_names(text: str, supports: Sequence[str]) -> list[str]:
     months = sorted(months_named([text]) - months_named(supports))
     seasons = sorted(seasons_named([text]) - seasons_named(supports))
+    regional = [
+        month
+        for month in sorted(regional_months_named([text]))
+        if not any(_quoted(name, supports) for name in REGIONAL_MONTHS[month])
+    ]
+    found = register_places(text)
     places = [
         place.written
-        for place in register_places(text)
+        for place in found
         if place.written == place.register and not _stated(place.register, supports)
     ]
-    return [*(MONTH_NAMES[month - 1] for month in months), *(season.lower() for season in seasons), *places]
+    written = {place.written for place in found}
+    rivers = [name for name in river_names_named(text) if name not in written and not _quoted(name, supports)]
+    return [
+        *(MONTH_NAMES[month - 1] for month in months),
+        *(season.lower() for season in seasons),
+        *regional,
+        *places,
+        *rivers,
+    ]
 
 
 def register_places_named(text: str) -> list[str]:
     return list(dict.fromkeys(place.register for place in register_places(text)))
+
+
+def river_names_named(text: str) -> list[str]:
+    return load_river_names().named_in(text)
 
 
 def register_places(text: str) -> list[RegisterPlace]:
@@ -56,11 +77,11 @@ def place_spellings(register_name: str) -> tuple[str, ...]:
 
 
 def _stated(register_name: str, supports: Sequence[str]) -> bool:
-    return any(
-        quote_occurs(name.casefold(), support.casefold())
-        for name in place_spellings(register_name)
-        for support in supports
-    )
+    return any(_quoted(name, supports) for name in place_spellings(register_name))
+
+
+def _quoted(name: str, supports: Sequence[str]) -> bool:
+    return any(quote_occurs(name.casefold(), support.casefold()) for support in supports)
 
 
 @lru_cache(maxsize=1)

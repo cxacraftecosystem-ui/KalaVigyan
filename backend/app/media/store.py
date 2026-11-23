@@ -13,6 +13,7 @@ from app.providers.quota import record_units, used_today
 from app.schemas.media import JOB_RETRIES, MEDIA_PROMPT_VERSION
 from app.services.knowledge_view import resolve_craft
 
+from .heartbeat import worker_listening_at
 from .records import (
     JOB_KIND,
     MEDIA_QUEUES,
@@ -69,6 +70,10 @@ class SqlMediaStore:
     async def units_used(self, user_id: uuid.UUID, kind: str, now: datetime) -> int:
         async with self._sessions() as session:
             return await used_today(session, user_id=user_id, resource=kind, now=now)
+
+    async def worker_listening(self, now: datetime) -> bool:
+        async with self._sessions() as session:
+            return await worker_listening_at(session, now)
 
     async def active_jobs(self, user_id: uuid.UUID) -> int:
         async with self._sessions() as session:

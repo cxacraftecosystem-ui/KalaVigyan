@@ -5,7 +5,7 @@ import numpy as np
 
 from geo_etl import raster
 from geo_etl.catalog import COPDEM
-from geo_etl.layers import Measured, Options, Result, by_district, failure
+from geo_etl.layers import Measured, Options, Result, each_district
 from geo_etl.rows import Rows, pick
 
 BASE = "https://copernicus-dem-90m.s3.amazonaws.com"
@@ -46,32 +46,31 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
         f"exactextract coverage weight area_spherical_km2 at {effective}; slope from central differences with "
         "latitude-dependent metres per degree; missing ocean tiles are no data",
     )
-    failures: list[dict] = []
     measured = Measured()
-    for group in by_district(districts):
+
+    def measure(group: gpd.GeoDataFrame) -> None:
         district = group.iloc[0]
-        try:
-            bounds = raster.bounds_in(group, "EPSG:4326", 0.01)
-            grid = raster.read(tiles(bounds), bounds, factor=factor, dtype="float32")
-            if grid is None:
-                raise RuntimeError("no Copernicus DEM tile reachable")
-            ops = [*raster.continuous_ops(grid), "low=min", "high=max"]
-            record = measured.add(raster.zonal(grid, group, ops)).iloc[0]
-            if not raster.has_cells(record["pixels"]):
-                continue
-            pixels = float(record["pixels"])
-            for stat, key in (
-                ("DISTRICT_MEAN", "mean"),
-                ("DISTRICT_P10", "p10"),
-                ("DISTRICT_P90", "p90"),
-                ("DISTRICT_MIN", "low"),
-                ("DISTRICT_MAX", "high"),
-            ):
-                rows.add(district, "elevation", "", stat, pick(record, key), "m", pixels=pixels, resolution=effective)
-            slope = raster.Grid(slope_degrees(grid.values, grid.transform), grid.transform, grid.crs)
-            record = raster.zonal(slope, group, raster.continuous_ops(slope)).iloc[0]
-            for stat, key in (("DISTRICT_MEAN", "mean"), ("DISTRICT_P10", "p10"), ("DISTRICT_P90", "p90")):
-                rows.add(district, "slope", "", stat, pick(record, key), "degree", pixels=pixels, resolution=effective)
-        except Exception as error:
-            failures.append(failure(group, "copdem", error))
+        bounds = raster.bounds_in(group, "EPSG:4326", 0.01)
+        grid = raster.read(tiles(bounds), bounds, factor=factor, dtype="float32")
+        if grid is None:
+            raise RuntimeError(f"no Copernicus DEM tile exists under {bounds}")
+        ops = [*raster.continuous_ops(grid), "low=min", "high=max"]
+        record = measured.add(raster.zonal(grid, group, ops)).iloc[0]
+        if not raster.has_cells(record["pixels"]):
+            return
+        pixels = float(record["pixels"])
+        for stat, key in (
+            ("DISTRICT_MEAN", "mean"),
+            ("DISTRICT_P10", "p10"),
+            ("DISTRICT_P90", "p90"),
+            ("DISTRICT_MIN", "low"),
+            ("DISTRICT_MAX", "high"),
+        ):
+            rows.add(district, "elevation", "", stat, pick(record, key), "m", pixels=pixels, resolution=effective)
+        slope = raster.Grid(slope_degrees(grid.values, grid.transform), grid.transform, grid.crs)
+        record = raster.zonal(slope, group, raster.continuous_ops(slope)).iloc[0]
+        for stat, key in (("DISTRICT_MEAN", "mean"), ("DISTRICT_P10", "p10"), ("DISTRICT_P90", "p90")):
+            rows.add(district, "slope", "", stat, pick(record, key), "degree", pixels=pixels, resolution=effective)
+
+    failures = each_district(districts, "copdem", measure)
     return Result(COPDEM, rows.frame(), failures=failures, districts_without_cells=measured.without_cells())

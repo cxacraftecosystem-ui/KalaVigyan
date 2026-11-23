@@ -33,6 +33,7 @@ from app.science.records import ProcessRecords
 from . import knowledge_view
 from .claim_holds import unheld_views
 from .contributed_pictures import ContributedRecord, approved_pictures
+from .craft_ai_media import AiMediaRecord, shared_ai_media
 from .craft_page_family import family_place, family_relatives, reader_name
 from .craft_page_market import MarketFacts, market_facts
 from .craft_page_offers import PageOffers, page_offers
@@ -99,6 +100,7 @@ class CraftPageRecords:
     catch_all: bool = False
     field_voices: FieldVoicesPart = field(default_factory=FieldVoicesPart)
     contributed: tuple[ContributedRecord, ...] = ()
+    ai_media: tuple[AiMediaRecord, ...] = ()
 
 
 def page_craft(craft: Craft, names: tuple[str | None, str | None]) -> PageCraft:
@@ -145,6 +147,7 @@ async def craft_page_records(
             session, craft.id, voices=FIELD_VOICES_SHOWN, photos=FIELD_PHOTOS_SHOWN
         ),
         contributed=await approved_pictures(session, craft.id),
+        ai_media=await shared_ai_media(session, craft.id),
     )
     if curated is None:
         return await _stored_extras(session, craft, records)

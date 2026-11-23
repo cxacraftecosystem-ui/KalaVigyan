@@ -7,7 +7,7 @@ import type { SectionState, SectionView } from "@/lib/explainerState";
 import { TRAIL_GROUPS, TRAIL_STAGES, type TrailEntry } from "@/lib/explainerStream";
 import { byCount, formatDate } from "@/lib/format";
 import { onceSaid } from "@/lib/sentenceGroups";
-import type { AnswerReaction, AnswerSection, Citation } from "@/lib/types";
+import type { AnswerSection, Citation } from "@/lib/types";
 
 export type UnderstoodPart = "craft" | "depth" | "language";
 export type TrailGroup = (typeof TRAIL_GROUPS)[number];
@@ -100,7 +100,6 @@ export function ledeSourceIds(lede: LedeBlock): string[] {
 export function explainerSourceNumbers(
   sections: readonly SectionView[],
   openQuestions: readonly AnswerSection[] = [],
-  reactions: readonly AnswerReaction[] = [],
   lede: LedeBlock | null = null
 ): Map<string, number> {
   const numbers = new Map<string, number>();
@@ -111,7 +110,6 @@ export function explainerSourceNumbers(
   if (lede) number(ledeSourceIds(lede));
   for (const section of sections) for (const block of section.blocks) number(blockSourceIds(block));
   for (const section of openQuestions) for (const sentence of section.sentences) take(sentence.citations);
-  for (const reaction of reactions) take(reaction.citations);
   return numbers;
 }
 

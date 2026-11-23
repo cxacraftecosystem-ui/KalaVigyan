@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "about": "How the first stage fuses the claim rankings (decision 0151): each ranking's reciprocal ranks 1 / (k + rank) are summed times its weight, items each ranking places in its first 30 voting first. The full-text (lexical), vector and named-concept (entity) rankings weigh the same here, as they did before decision 0151. python -m app.scripts.eval_retrieval --fusion measures every weighting of its grid on the hand-written and generated questions in the fused order, read-only, and --out writes the weighting it picks; the lead commits that file with the fused floors it supports.",
-  "k": 60,
+  "about": "Picked on 2026-11-23 by python -m app.scripts.eval_retrieval --fusion (decision 0151) from 60 weightings, as the one that scores the generated English questions best in the fused order without lowering the hand-written ones: handWritten recall at 5 1.0 and mean reciprocal rank 0.932; generatedEnglish recall at 5 0.963 and mean reciprocal rank 0.7522; generatedOther recall at 5 0.9806 and mean reciprocal rank 0.931; releaseSample recall at 5 0.9737 and mean reciprocal rank 0.7844. The weighting before it, k 60; lexical 1, vector 1, entity 1, scored handWritten recall at 5 0.9211 and mean reciprocal rank 0.6787; generatedEnglish recall at 5 0.4259 and mean reciprocal rank 0.3098; generatedOther recall at 5 0.9806 and mean reciprocal rank 0.9213; releaseSample recall at 5 0.4474 and mean reciprocal rank 0.3097.",
+  "k": 20,
   "claims": {
-    "lexical": 1.0,
-    "vector": 1.0,
-    "entity": 1.0
+    "lexical": 0.5,
+    "vector": 5.0,
+    "entity": 0.25
   }
 }

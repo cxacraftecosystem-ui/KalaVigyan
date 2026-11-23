@@ -6,6 +6,7 @@ from app.core.config import get_settings
 from app.core.db import dispose_engine, session_scope
 from app.core.roles import MASTER_ADMIN
 from app.scripts.operator_input import read_password
+from app.services.object_store import media_bucket
 from app.services.password_accounts import operator_password_refusal, upsert_password_account
 
 
@@ -20,6 +21,7 @@ async def seed(password: str) -> str:
                 role=MASTER_ADMIN,
                 password=password,
                 now=datetime.now(UTC),
+                objects=media_bucket(),
             )
     finally:
         await dispose_engine()

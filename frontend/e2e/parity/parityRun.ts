@@ -3,6 +3,7 @@ import type { BrowserContext, ElementHandle, Page } from "@playwright/test";
 import { AUTHORED_PATH, pageKind, type BorrowedCase, type SubjectPage } from "./parityBorrowed";
 import { authoredRoot, drawing, gatedDifferences, generatedRoot, sanityProblems, widthAs, type SanityProblem } from "./parityComponent";
 import { pixelDifference } from "./parityMeasure";
+import { clearedShot } from "./parityOverlays";
 import { fullSizePictures } from "./parityPictures";
 import { playersAtRest } from "./parityRest";
 import type { StyleDifference } from "./parityStyles";
@@ -53,14 +54,15 @@ function fileName(label: string): string {
   return label.replace(/[^A-Za-z0-9-]+/g, "_");
 }
 
-async function shot(root: ElementHandle<Element>, type: "png" | "jpeg" = "png"): Promise<Buffer | null> {
-  await root.scrollIntoViewIfNeeded().catch(() => undefined);
+async function shot(page: Page, root: ElementHandle<Element>, type: "png" | "jpeg" = "png"): Promise<Buffer | null> {
   const quality = type === "jpeg" ? CHAPTER_QUALITY : undefined;
-  return root.screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS, scale: "css", type, quality }).catch(() => null);
+  return (await clearedShot(page, root, { timeout: SHOT_TIMEOUT_MS, scale: "css", type, quality })).image;
 }
 
-async function pixels(approved: ElementHandle<Element>, rendered: ElementHandle<Element>, name: string, save: Shots): Promise<number | null> {
-  const [before, after] = [await shot(approved), await shot(rendered)];
+type Drawn = { page: Page; root: ElementHandle<Element> };
+
+async function pixels(approved: Drawn, rendered: Drawn, name: string, save: Shots): Promise<number | null> {
+  const [before, after] = [await shot(approved.page, approved.root), await shot(rendered.page, rendered.root)];
   if (before) save(`${name}.authored.png`, before);
   if (after) save(`${name}.page.png`, after);
   return before && after ? (await pixelDifference(before, after)).ratio : null;
@@ -84,7 +86,7 @@ export async function compareCase(authored: Page, rendered: Page, found: Borrowe
   await inView(rendered, mine);
   const shown = await drawing(mine);
   const differences = gatedDifferences(approved.styles, shown.styles);
-  const ratio = await pixels(theirs, mine, `${fileName(found.page.slug)}--${fileName(found.label)}`, save);
+  const ratio = await pixels({ page: authored, root: theirs }, { page: rendered, root: mine }, `${fileName(found.page.slug)}--${fileName(found.label)}`, save);
   return { label: found.label, kind: found.kind, page: found.page.path, pageKind: pageKind(found.page), found: true, widths: [approved.width, before], differences: differences.slice(0, SHOWN_DIFFERENCES), count: differences.length, pixels: ratio };
 }
 
@@ -102,7 +104,7 @@ export async function pageSanity(page: Page, subject: SubjectPage): Promise<Sani
 export async function chapterShot(page: Page, subject: SubjectPage, save: Shots): Promise<boolean> {
   const chapter = await page.$(CHAPTER);
   if (!chapter) return false;
-  const image = await shot(chapter, "jpeg");
+  const image = await shot(page, chapter, "jpeg");
   if (image) save(`${fileName(subject.slug)}--chemistry.jpg`, image);
   return image !== null;
 }

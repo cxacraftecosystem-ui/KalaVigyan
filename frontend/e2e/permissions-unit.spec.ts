@@ -159,16 +159,10 @@ test("every nav destination is a page that exists", () => {
   }
 });
 
-test("roster actions follow the entry's role and the viewer's rank", () => {
-  const admin = person("ADMIN");
-  const professor = person("PROFESSOR");
+test("roster actions are exactly the ones the server offers on each row", () => {
   const none = { update: false, suspend: false, admit: false, refuse: false };
-  expect(accessEntryOffers(admin, rosterEntry("ADMIN", "ACTIVE"))).toEqual(none);
-  expect(accessEntryOffers(admin, rosterEntry("MASTER_ADMIN", "ACTIVE"))).toEqual(none);
-  expect(accessEntryOffers(admin, rosterEntry("PROFESSOR", "ACTIVE"))).toEqual({ update: true, suspend: true, admit: false, refuse: false });
-  expect(accessEntryOffers(admin, rosterEntry("PROFESSOR", "SUSPENDED"))).toEqual({ update: true, suspend: false, admit: true, refuse: false });
-  expect(accessEntryOffers(admin, rosterEntry(null, "PENDING"))).toEqual({ update: true, suspend: false, admit: true, refuse: true });
-  expect(accessEntryOffers(professor, rosterEntry("STUDENT", "SUSPENDED"))).toEqual({ update: true, suspend: false, admit: false, refuse: false });
-  expect(accessEntryOffers(professor, rosterEntry("PROFESSOR", "ACTIVE"))).toEqual(none);
-  expect(accessEntryOffers(person("MASTER_ADMIN"), rosterEntry("ADMIN", "ACTIVE"))).toEqual({ update: true, suspend: true, admit: false, refuse: false });
+  const offered = { update: true, suspend: false, admit: true, refuse: true };
+  expect(accessEntryOffers({ ...rosterEntry(null, "PENDING"), offers: offered })).toEqual(offered);
+  expect(accessEntryOffers({ ...rosterEntry("PROFESSOR", "ACTIVE"), offers: none })).toEqual(none);
+  expect(accessEntryOffers(rosterEntry("STUDENT", "ACTIVE"))).toEqual(none);
 });

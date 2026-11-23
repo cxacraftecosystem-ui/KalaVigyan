@@ -1,6 +1,7 @@
 import type { RegionStoryBlock, StoryStep } from "@/lib/explainerPlace";
 import { listText, numberRuns } from "@/lib/format";
-import { cumulativeLengths, insideRings, joinLines, orientDownstream, type Framing, type Point } from "@/lib/riverGeometry";
+import { cumulativeLengths, joinLines, lineLength, orientDownstream, type Framing, type Point } from "@/lib/riverGeometry";
+import type { ReachDistrict } from "@/lib/riverTopology";
 
 export const FLOW_SECONDS = 5;
 export const FLOW_EASE = [0.45, 0, 0.2, 1] as const;
@@ -9,35 +10,60 @@ export const NOT_YET = -1;
 export const ALL_PASSED = 1;
 
 export type Rings = readonly (readonly Point[])[];
-export type Course = { lines: Point[][]; points: Point[]; lengths: number[] };
+export type CourseReach = { line: readonly Point[]; districts: readonly ReachDistrict[] | null };
+export type CourseSpan = { start: number; length: number; districts: readonly ReachDistrict[] | null };
+export type Course = { lines: Point[][]; points: Point[]; lengths: number[]; spans: CourseSpan[] };
 export type StepBadge = { districtLgd: number; label: string; first: number };
 
 export function missingReaches(reachIds: readonly number[], basin: ReadonlyMap<number, unknown>): number[] {
   return reachIds.filter((id) => !basin.has(id));
 }
 
-export function riverCourse(reachIds: readonly number[], lineOf: (id: number) => readonly Point[]): Course {
-  const lines = orientDownstream(reachIds.map(lineOf));
-  const points = joinLines(lines);
-  return { lines, points, lengths: cumulativeLengths(points) };
+function courseSpans(lines: readonly Point[][], reaches: readonly CourseReach[]): CourseSpan[] {
+  let start = 0;
+  return lines.map((line, index) => {
+    const previous = lines[index - 1];
+    if (previous) start += lineLength([previous[previous.length - 1], line[0]]);
+    const span = { start, length: lineLength(line), districts: reaches[index].districts };
+    start += span.length;
+    return span;
+  });
 }
 
-export function districtEntries(course: Course, order: readonly number[], ringsOf: ReadonlyMap<number, Rings>): Map<number, number> {
+export function riverCourse(reachIds: readonly number[], reachOf: (id: number) => CourseReach): Course {
+  const reaches = reachIds.map(reachOf);
+  const lines = orientDownstream(reaches.map((reach) => reach.line));
+  const points = joinLines(lines);
+  return { lines, points, lengths: cumulativeLengths(points), spans: courseSpans(lines, reaches) };
+}
+
+function listing(span: CourseSpan, lgd: number): ReachDistrict | undefined {
+  return span.districts?.find((district) => district.lgd === lgd);
+}
+
+function entryAlong(course: Course, lgd: number): number | null {
+  for (const span of course.spans) {
+    const district = listing(span, lgd);
+    if (district) return span.start + district.entry * span.length;
+  }
+  return null;
+}
+
+export function districtEntries(course: Course, order: readonly number[]): Map<number, number> {
   const total = course.lengths[course.lengths.length - 1];
   const entries = new Map<number, number>();
   let floor = 0;
   for (const lgd of order) {
-    const rings = ringsOf.get(lgd);
-    const at = rings ? course.points.findIndex((point) => insideRings(point, rings)) : -1;
-    const fraction = at < 0 || total === 0 ? floor : Math.max(floor, course.lengths[at] / total);
+    const along = entryAlong(course, lgd);
+    const fraction = along === null || total === 0 ? floor : Math.max(floor, along / total);
     entries.set(lgd, fraction);
     floor = fraction;
   }
   return entries;
 }
 
-export function stretchOf(course: Course, rings: Rings): Point[][] {
-  return course.lines.filter((line) => line.some((point) => insideRings(point, rings)));
+export function stretchOf(course: Course, lgd: number): Point[][] {
+  return course.lines.filter((_, index) => listing(course.spans[index], lgd) !== undefined);
 }
 
 export function stepFractions(steps: readonly StoryStep[], entries: ReadonlyMap<number, number>): number[] {

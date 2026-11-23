@@ -1,9 +1,11 @@
 import uuid
 from dataclasses import replace
+from datetime import timedelta
 
 import pytest
 
 from app.media.bundle import opened_bundle
+from app.media.heartbeat import worker_listening
 from app.media.jobs import MediaDeps, MediaRefused, idempotency_hash, media_options, submit_job, visible_job
 from app.media.records import AssetRecord
 from app.models import User
@@ -91,6 +93,28 @@ async def test_options_offer_nothing_when_media_cannot_be_made() -> None:
     with pytest.raises(MediaRefused) as missing:
         await media_options(deps(store()), learner(), "No-Such-Craft")
     assert missing.value.reason == "not_found"
+
+
+async def test_a_worker_silent_for_over_five_minutes_offers_and_queues_nothing() -> None:
+    silent = store()
+    silent.worker_heard_at = NOW - timedelta(minutes=5, seconds=1)
+    assert (await media_options(deps(silent), learner(), "Kutch-Ajrakh")).kinds == []
+    with pytest.raises(MediaRefused) as refused:
+        await submit_job(deps(silent), learner(), ask())
+    assert refused.value.reason == "not_configured" and silent.jobs == {}
+    silent.worker_heard_at = NOW - timedelta(minutes=5)
+    assert [k.kind for k in (await media_options(deps(silent), learner(), "Kutch-Ajrakh")).kinds] == ["IMAGE"]
+    never = store()
+    never.worker_heard_at = None
+    assert (await media_options(deps(never), learner(), "Kutch-Ajrakh")).kinds == []
+
+
+def test_a_heartbeat_is_read_as_listening_for_five_minutes_and_never_when_unreadable() -> None:
+    beat = {"at": "2026-11-16T09:00:05Z", "worker": "box:41"}
+    assert worker_listening(beat, now=NOW + timedelta(minutes=5))
+    assert not worker_listening(beat, now=NOW + timedelta(minutes=5, seconds=1))
+    assert not worker_listening(None, now=NOW)
+    assert not worker_listening({"at": "yesterday"}, now=NOW)
 
 
 async def test_a_new_job_reserves_one_unit_holds_dollars_and_seals_its_bundle() -> None:

@@ -3,14 +3,19 @@ from pathlib import Path
 from typing import Any
 
 from app.geo.rainfall import RAINFALL_STAT, RAINFALL_UNIT, RAINFALL_VARIABLE, month_periods
-from app.models import RiverBasin, RiverReach
+from app.models import RiverBasin, RiverReach, RiverReachDistrict
 from app.models.rivers import STRAHLER_MAX
-from app.research.rivers import HYDRORIVERS_DATASET_CODE, MOUTH, RIVER_REACHES_OBJECT
+from app.research.rivers import (
+    HYDRORIVERS_DATASET_CODE,
+    MOUTH,
+    RIVER_NAME_DATASET_CODES,
+    RIVER_REACHES_OBJECT,
+)
 from app.services import naming
 from app.services.river_topology import TOPOLOGY_TYPE
 
 from .golden import REPO
-from .phase_b_golden import catalog_dataset
+from .phase_b_golden import catalog_dataset, geo_etl_datasets
 
 GEO_ETL = REPO / "etl" / "geo"
 STAMPS = {"createdAt", "updatedAt"}
@@ -38,6 +43,20 @@ def test_the_etl_writes_the_reach_columns_the_backend_stores() -> None:
         RiverBasin.__tablename__,
         RiverReach.__tablename__,
     )
+
+
+def test_the_etl_writes_the_reach_districts_the_backend_reads() -> None:
+    hits = constants(GEO_ETL / "geo_etl" / "river_districts.py")
+    loader = constants(GEO_ETL / "load_rivers.py")
+    assert hits["HIT_COLUMNS"] == [c.name for c in RiverReachDistrict.__table__.columns]
+    assert loader["REACH_DISTRICT_TABLE"] == RiverReachDistrict.__tablename__
+
+
+def test_the_river_names_datasets_are_the_registry_s_and_the_contract_s() -> None:
+    assert set(RIVER_NAME_DATASET_CODES) <= set(geo_etl_datasets())
+    assert catalog_dataset("OSM_RIVER_NAMES")["attribution"] == "© OpenStreetMap contributors"
+    assert catalog_dataset("OSM_RIVER_NAMES")["licence"] == "ODbL 1.0"
+    assert catalog_dataset("WIKIDATA_RIVER_NAMES")["licence"] == "CC0 1.0"
 
 
 def test_the_etl_keeps_the_contract_s_network_rules_and_files() -> None:

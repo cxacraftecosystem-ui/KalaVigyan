@@ -1,21 +1,26 @@
 "use client";
 
-import { useId, useMemo, useRef } from "react";
+import { useId, useMemo } from "react";
 
-import { fitStyle, useFitScale } from "@/components/charts/useFitScale";
+import { fitScale, fitStyle } from "@/components/charts/useFitScale";
 import { decodeRings } from "@/components/map/basemap";
 import { indiaRings } from "@/components/map/indiaGeometry";
 import { mineralColour, symbolPath } from "@/components/map/physical/MineralsLayer";
 import { RotatedLabel } from "@/components/map/physical/RotatedLabel";
-import { useNeighbourRings } from "@/components/map/place-context/useNeighbourRings";
+import { AbroadPins, NamedRivers } from "@/components/map/place-context/GroundBeyond";
+import type { DrawnRiver } from "@/components/map/place-context/useGroundRivers";
+import { NEIGHBOUR_RINGS } from "@/components/map/place-context/neighbourLand";
 import { RANN_RINGS } from "@/components/map/rannGeometry";
 import { frameView, kmUnits, linePath, placed, ringsIn, ringsPath, type FrameView } from "@/lib/groundFrame";
 import { riverWidth } from "@/lib/mapPhysical";
-import type { GroundDeposit, GroundFrame } from "@/lib/placeGround";
+import type { GroundDeposit, GroundFrame, GroundPin } from "@/lib/placeGround";
 import { elevationStep, km } from "@/lib/placeGroundView";
 
 export type MapPin = { key: string; label: string; longitude: number; latitude: number };
-export type GroundMapProps = { frame: GroundFrame; pins: readonly MapPin[]; deposits: readonly GroundDeposit[]; radiusKm: number; title: string; description: string };
+export type GroundMarks = { abroad: readonly GroundPin[]; rivers: readonly DrawnRiver[] };
+export type GroundMapProps = { frame: GroundFrame; pins: readonly MapPin[]; deposits: readonly GroundDeposit[]; radiusKm: number; title: string; description: string; marks?: GroundMarks };
+
+const NO_MARKS: GroundMarks = { abroad: [], rivers: [] };
 
 export const PIN_PX = 5.5;
 export const DEPOSIT_PX = 3.2;
@@ -23,9 +28,8 @@ export const MATCHED_PX = 5;
 const LABEL_GAP_PX = 6;
 
 function Land({ frame, view, saltId }: { frame: GroundFrame; view: FrameView; saltId: string }) {
-  const neighbours = useNeighbourRings();
   const india = useMemo(() => ringsPath(view, ringsIn(frame, indiaRings().flat())), [frame, view]);
-  const foreign = useMemo(() => ringsPath(view, ringsIn(frame, neighbours)), [frame, view, neighbours]);
+  const foreign = useMemo(() => ringsPath(view, ringsIn(frame, NEIGHBOUR_RINGS)), [frame, view]);
   const rann = useMemo(() => ringsPath(view, ringsIn(frame, decodeRings(RANN_RINGS))), [frame, view]);
   return (
     <g className="pointer-events-none">
@@ -153,14 +157,16 @@ function SaltPattern({ id }: { id: string }) {
   );
 }
 
-export function GroundMap({ frame, pins, deposits, radiusKm, title, description }: GroundMapProps) {
-  const ref = useRef<SVGSVGElement | null>(null);
+export function groundScale(view: FrameView): number {
+  return fitScale(view.width, 0);
+}
+
+export function GroundMap({ frame, pins, deposits, radiusKm, title, description, marks = NO_MARKS }: GroundMapProps) {
   const view = useMemo(() => frameView(frame), [frame]);
-  const k = useFitScale(ref, view.width);
+  const k = groundScale(view);
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
     <svg
-      ref={ref}
       viewBox={`0 0 ${view.width} ${view.height.toFixed(1)}`}
       role="img"
       aria-labelledby={`${id}-t ${id}-d`}
@@ -174,10 +180,12 @@ export function GroundMap({ frame, pins, deposits, radiusKm, title, description 
       <SaltPattern id={`${id}-salt`} />
       <Land frame={frame} view={view} saltId={`${id}-salt`} />
       <Water frame={frame} view={view} />
+      <NamedRivers rivers={marks.rivers} frame={frame} view={view} />
       <Reach pins={pins} view={view} radiusKm={radiusKm} k={k} />
       <Deposits deposits={deposits} view={view} k={k} />
       <Labels frame={frame} view={view} />
       <Pins pins={pins} view={view} k={k} />
+      <AbroadPins pins={marks.abroad} view={view} k={k} />
     </svg>
   );
 }

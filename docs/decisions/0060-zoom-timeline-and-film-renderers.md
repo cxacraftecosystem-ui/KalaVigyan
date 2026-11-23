@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted.
 |---|---|
 | The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
 | The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| The film's bed and cues through one Web Audio gain where the element volume is fixed | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

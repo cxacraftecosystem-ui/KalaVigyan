@@ -234,7 +234,12 @@ stored in `AppSetting` `upkeep.hiddenFacts` and read by an Admin at `GET /api/co
 | GET | `/api/coverage/hidden-facts` | Admin, Master Admin | `{report}`: the last night's `hiddenFacts` (step 5d), or null |
 
 The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
-`frontend/e2e/site-pages-unit.spec.ts`); the control is `components/admin/SiteBuildCard.tsx`.
+`frontend/e2e/site-pages-unit.spec.ts`); the control is `components/admin/SiteBuildCard.tsx`. The
+Settings hub's Facts readers cannot see card (`components/admin/HiddenFactsCard.tsx`, Admin and
+Master Admin) reads `GET /api/coverage/hidden-facts` through `frontend/lib/hiddenFacts.ts` and
+lists each craft's hidden facts by reason, the crafts with unexplained facts first and then the
+most hidden, under one line saying when the night counted, how many facts hide in how many crafts
+and how many are unexplained (spec `frontend/e2e/hidden-facts-unit.spec.ts`).
 
 ## The report
 
@@ -312,5 +317,6 @@ the build as not triggered, and the admin control says so.
 | The shared terms' summary | `backend/tests/learning/test_shared_term_crafts.py`, `backend/tests/db/test_learning_views_db.py` and `backend/tests/test_deploy_page_order.py` |
 | The whole run and its report on Postgres | `backend/tests/db/test_nightly_upkeep_db.py` |
 | The pages the build pre-renders | `frontend/e2e/site-pages-unit.spec.ts`, against `shared/site.pages.golden.json` |
+| The hidden facts' card: its shape, its order and its summary | `frontend/e2e/hidden-facts-unit.spec.ts` |
 
 Re-read it when a step is added, a bound changes, or the build pre-renders another route.

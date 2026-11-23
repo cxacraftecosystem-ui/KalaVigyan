@@ -14,6 +14,7 @@ from app.research.lesson_builder import lesson_pack
 from app.research.lessons import LESSON_SCHEMA_VERSION, LessonList, LessonPack, LessonRequest, LessonSummary
 
 from .explainer_history import explainer_version
+from .shared_files import FileDeleter, drop_stopped_share_files
 from .visible_claims import visible_claim_ids
 
 __all__ = ["build_lesson", "delete_lesson", "lesson_list", "lesson_of", "stored_pack"]
@@ -91,10 +92,14 @@ def stored_pack(pack_id: uuid.UUID, payload: dict[str, Any]) -> LessonPack:
         raise InvalidInput(f"lesson pack {pack_id} is stored off its contract") from error
 
 
-async def delete_lesson(session: AsyncSession, user_id: uuid.UUID, pack_id: uuid.UUID) -> bool:
+async def delete_lesson(
+    session: AsyncSession, user_id: uuid.UUID, pack_id: uuid.UUID, *, objects: FileDeleter | None
+) -> bool:
     deleted = await session.execute(
         delete(LessonRow).where(LessonRow.id == pack_id, LessonRow.userId == user_id).returning(LessonRow.id)
     )
     found = deleted.scalar_one_or_none() is not None
+    if found:
+        await drop_stopped_share_files(session, objects)
     await session.commit()
     return found

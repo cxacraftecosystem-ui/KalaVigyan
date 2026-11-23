@@ -5,7 +5,6 @@ from collections.abc import Sequence
 
 from app.composer.material_cards import CardChoice
 from app.data.craft_text import fold
-from app.research.blocks import ImagesBlock
 from app.research.blocks_matter import Molecule3dBlock, ReactionPlayerBlock, ReactionStep
 from app.research.craft_chapters import Borrowed
 from app.research.craft_page import OverviewSection
@@ -160,13 +159,6 @@ def _explainers(ctx: ChapterContext) -> list[Drafted]:
                 piece_id=stored.piece_id,
             )
         )
-    explained = {stored.term_key for stored in ctx.rows.explainers}
-    for term_key, pictures in ctx.rows.concept_pictures.items():
-        if term_key not in explained and pictures:
-            block = ImagesBlock(
-                id=f"chem.pictures-{term_key}", kind="images", version=1, reuse=None, items=list(pictures)
-            )
-            found.append(Drafted.of_block(block))
     return found
 
 

@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from app.core.errors import InvalidInput
 from app.core.roles import ROLE_RANK
+from app.providers import spend_settings
 from app.schemas.admin import AppSettingsUpdate
 from app.services import app_settings
 
@@ -110,3 +111,32 @@ def test_the_budget_update_body_takes_answer_caps_for_the_three_depths_only() ->
         AppSettingsUpdate(answerCapUsd={"DEEP": 0.1})
     with pytest.raises(ValidationError):
         AppSettingsUpdate(answerCapUsd={"EXPERT": -1})
+
+
+def test_a_role_left_out_of_a_stored_cap_map_reads_its_own_default() -> None:
+    saved_before_two_roles = {"STUDENT": 0.5, "RESEARCHER": 3.0}
+    assert spend_settings.stored_spend_value(app_settings.ROLE_DAILY_USD, saved_before_two_roles) == {
+        "MASTER_ADMIN": None,
+        "ADMIN": None,
+        "PROFESSOR": None,
+        "RESEARCHER": 3.0,
+        "ARTISAN": None,
+        "STUDENT": 0.5,
+    }
+    assert spend_settings.stored_spend_value(app_settings.MONTHLY_CEILING_USD, 800.0) == 800.0
+    capped = unlimited(**{app_settings.ROLE_DAILY_USD: saved_before_two_roles})
+    assert (capped.role_cap("STUDENT"), capped.role_cap("RESEARCHER")) == (Decimal("0.5"), Decimal("3"))
+    assert (capped.role_cap("ARTISAN"), capped.role_cap("ADMIN"), capped.role_cap("PROFESSOR")) == (
+        None,
+        None,
+        None,
+    )
+
+
+def test_a_partial_role_cap_update_over_an_old_stored_map_names_every_role() -> None:
+    stored = spend_settings.stored_spend_value(app_settings.ROLE_DAILY_USD, {"STUDENT": 0.5})
+    current = {**app_settings.DEFAULTS, app_settings.ROLE_DAILY_USD: stored}
+    changes = app_settings.budget_changes({"roleDailyUsd": {"PROFESSOR": 2.0}}, current)
+    assert changes == {
+        app_settings.ROLE_DAILY_USD: {**dict.fromkeys(ROLE_RANK), "STUDENT": 0.5, "PROFESSOR": 2.0}
+    }

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import String, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import guardian_hold
@@ -34,11 +34,12 @@ from app.services.users import serialize_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+ROLE_SORT = "role"
 USER_SORTS = {
     "created": "createdAt",
     "name": "name",
     "email": "email",
-    "role": "role",
+    ROLE_SORT: "role",
     "lastLogin": "lastLoginAt",
 }
 
@@ -92,6 +93,12 @@ async def _listed(session: AsyncSession, rows: Any) -> list[dict[str, Any]]:
     return await _guardian_marks(session, pairs)
 
 
+def _sort_column(sort: str) -> Any:
+    if sort == ROLE_SORT:
+        return case(ROLE_RANK, value=User.role.cast(String))
+    return getattr(User, USER_SORTS[sort])
+
+
 async def _with_access(session: AsyncSession, user: User) -> dict[str, Any]:
     row = await access_roster.access_row(session, user.email)
     access = "ACTIVE" if is_configured_master_admin(user) else (access_roster.status_of(row) or "NOT_LISTED")
@@ -133,7 +140,7 @@ async def list_users(
     elif access:
         joined = joined.where(AccessRoster.status == access)
     total = int((await session.execute(select(func.count()).select_from(joined.subquery()))).scalar_one())
-    column = getattr(User, USER_SORTS[sort])
+    column = _sort_column(sort)
     ordering = column.asc().nulls_last() if dir == "asc" else column.desc().nulls_last()
     rows = (await session.execute(joined.order_by(ordering, User.id).offset(skip).limit(clean_size))).all()
     return page_payload(await _listed(session, rows), total, clean_page, clean_size)
@@ -174,7 +181,7 @@ async def update_user(
             changed.append(field)
     if "role" in data and data["role"] != target.role:
         before = target.role
-        await reader_profiles.apply_role_change(session, target, data["role"])
+        await reader_profiles.apply_role_change(session, target, data["role"], objects=media_bucket())
         target.role = data["role"]
         target.tokenVersion += 1
         changed.append("role")
@@ -247,7 +254,9 @@ async def suspend_user(
     await _set_access(session, actor, target, access_roster.SUSPENDED, payload.reason if payload else None)
     target.tokenVersion += 1
     target.sessionsValidFrom = datetime.now(UTC)
-    await share_owners.withdraw_shares(session, target.id, actor=actor, cause="users.suspended")
+    await share_owners.withdraw_shares(
+        session, target.id, actor=actor, cause="users.suspended", objects=media_bucket()
+    )
     await audit.record(
         session, action="users.suspended", actor=actor, target_type="User", target_id=target.id
     )
@@ -330,7 +339,9 @@ async def delete_user(
     target.tokenVersion += 1
     await credential_links.revoke_outstanding(session, target.id)
     await testimony_writes.erase_artisan(session, media_bucket(), target, now=target.deletedAt)
-    await share_owners.withdraw_shares(session, target.id, actor=actor, cause="users.deleted")
+    await share_owners.withdraw_shares(
+        session, target.id, actor=actor, cause="users.deleted", objects=media_bucket()
+    )
     await audit.record(session, action="users.deleted", actor=actor, target_type="User", target_id=target.id)
     await session.commit()
 

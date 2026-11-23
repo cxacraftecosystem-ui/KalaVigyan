@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from functools import lru_cache
 from typing import Any
@@ -15,6 +15,8 @@ from sqlalchemy.orm import aliased
 
 from app.core.errors import InvalidInput
 from app.data.map_layers import LAYERS_DIR, MINERALS_FILE, RELIEF_FILE, RIVERS_FILE
+from app.data.river_names import NamedRiver, load_river_names, place_river
+from app.geo.datasets import region_dataset, registry_row_ref
 from app.geo.ground_frame import framed
 from app.geo.ground_layers import GroundLayers, ground_layers
 from app.geo.ground_materials import CraftMaterial
@@ -33,6 +35,7 @@ from app.models import (
     AdminState,
     Craft,
     CraftLocation,
+    CuratedCraft,
     Material,
     Process,
     ProcessStage,
@@ -42,15 +45,30 @@ from app.models import (
 from app.models.science import live_process
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
+from app.research.datasets import DatasetRef
 from app.research.place_ground import PLACE_PRECISIONS, MapPlaceGround
 from app.research.retrieval import RESTRICTED_SENSITIVITY
+from app.research.rivers import HYDRORIVERS_DATASET_CODE
 from app.research.vocabulary import PLACE_ROLES
-from app.research.why_here import CraftGround, GroundFrame
+from app.research.why_here import CraftGround, GroundFrame, GroundPin, GroundRiver
 
-from .knowledge_view import craft_ref, source_ref
+from .chapter_context import PlacePoint
+from .chapter_records import place_points
+from .curated_index import IndexPlace, stored_curated_page
+from .knowledge_view import claims_by_id, craft_ref, source_ref
 from .region_records import dataset_records, district_values, located_places
 
-__all__ = ["craft_ground_of", "ground_measures", "map_ground_at", "stored_layers", "subject_ground"]
+__all__ = [
+    "abroad_pins",
+    "craft_ground_of",
+    "ground_measures",
+    "ground_rivers",
+    "map_ground_at",
+    "name_dataset",
+    "named_rivers",
+    "stored_layers",
+    "subject_ground",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +78,10 @@ DEGREE_PLACES = 3
 TOOL_ROLE = "TOOL"
 SRID = 4326
 PLACE_TOLERANCE_DEGREES = 0.002
+INDIA = "India"
+RIVER_KIND = "RIVER"
+ABROAD_KEY = "abroad-{wikidata_id}"
+RIVER_KEY = "river-{main_riv}-{source}-{mouth}"
 
 Box = tuple[float, float, float, float]
 
@@ -110,6 +132,7 @@ async def craft_ground_of(session: AsyncSession, craft: Craft) -> CraftGround | 
     readings, datasets = cited_readings(
         await district_values(session, districts, codes=codes), await dataset_records(session, codes)
     )
+    named = await _dossier_places(session, craft)
     inputs = GroundInputs(
         craft=CraftRef.model_validate(craft_ref(craft)),
         places=places,
@@ -117,8 +140,99 @@ async def craft_ground_of(session: AsyncSession, craft: Craft) -> CraftGround | 
         readings=readings,
         datasets=tuple(datasets),
         sources=await _sources(session, [place.source_id for place in places]),
+        abroad=await _abroad(session, named),
+        rivers=await _rivers(session, named),
     )
     return craft_ground(inputs, ground_measures())
+
+
+def abroad_pins(places: Sequence[IndexPlace], points: Mapping[str, PlacePoint]) -> tuple[GroundPin, ...]:
+    held: dict[str, GroundPin] = {}
+    for place in places:
+        point = points.get(place.wikidata_id or "")
+        if point is None:
+            continue
+        found = held.get(point.wikidata_id)
+        roles = {*(found.roles if found else ()), place.role}
+        held[point.wikidata_id] = GroundPin(
+            key=ABROAD_KEY.format(wikidata_id=point.wikidata_id),
+            name=found.name if found else place.name,
+            roles=sorted(roles, key=PLACE_ROLES.index),
+            country=place.country,
+            wikidata_id=point.wikidata_id,
+            longitude=round(point.longitude, DEGREE_PLACES),
+            latitude=round(point.latitude, DEGREE_PLACES),
+        )
+    return tuple(sorted(held.values(), key=lambda pin: (pin.name.casefold(), pin.key)))
+
+
+def name_dataset(code: str) -> DatasetRef | None:
+    row = load_river_names().dataset(code)
+    return registry_row_ref(row) if row is not None else None
+
+
+def named_rivers(places: Sequence[IndexPlace]) -> tuple[NamedRiver, ...]:
+    found: dict[tuple[int, tuple[int, ...]], NamedRiver] = {}
+    for place in places:
+        river = place_river(place.name, place.district_lgd) if place.kind == RIVER_KIND else None
+        if river is not None:
+            found.setdefault((river.main_riv, tuple(river.reach_ids)), river)
+    return tuple(found.values())
+
+
+def ground_rivers(named: Sequence[NamedRiver], datasets: Mapping[str, DatasetRef]) -> tuple[GroundRiver, ...]:
+    lines = datasets.get(HYDRORIVERS_DATASET_CODE)
+    rivers = []
+    for river in named:
+        names = datasets.get(river.dataset_code)
+        if lines is None or names is None:
+            logger.warning(
+                "the river %s is not drawn: %s or %s has no dataset row",
+                river.name,
+                HYDRORIVERS_DATASET_CODE,
+                river.dataset_code,
+            )
+            continue
+        key = RIVER_KEY.format(main_riv=river.main_riv, source=river.reach_ids[0], mouth=river.reach_ids[-1])
+        rivers.append(
+            GroundRiver(
+                key=key,
+                name=river.name,
+                main_riv=river.main_riv,
+                reach_ids=list(river.reach_ids),
+                hydrorivers=lines,
+                names=names,
+            )
+        )
+    return tuple(rivers)
+
+
+async def _dossier_places(session: AsyncSession, craft: Craft) -> tuple[IndexPlace, ...]:
+    page = await session.scalar(select(CuratedCraft.page).where(CuratedCraft.craftId == craft.id))
+    curated = stored_curated_page(craft.id, page)
+    if curated is None:
+        return ()
+    marked = [place for place in curated.places if place.kind == RIVER_KIND or place.country != INDIA]
+    shown, _ = await claims_by_id(session, [claim for place in marked for claim in place.claim_ids])
+    return tuple(place for place in marked if any(claim in shown for claim in place.claim_ids))
+
+
+async def _abroad(session: AsyncSession, places: Sequence[IndexPlace]) -> tuple[GroundPin, ...]:
+    wanted = [place for place in places if place.country != INDIA and place.kind != RIVER_KIND]
+    points = await place_points(session, {place.wikidata_id for place in wanted if place.wikidata_id})
+    return abroad_pins(wanted, points)
+
+
+async def _rivers(session: AsyncSession, places: Sequence[IndexPlace]) -> tuple[GroundRiver, ...]:
+    named = named_rivers(places)
+    if not named:
+        return ()
+    lines = (await dataset_records(session, [HYDRORIVERS_DATASET_CODE])).get(HYDRORIVERS_DATASET_CODE)
+    codes = {river.dataset_code for river in named}
+    datasets = {code: found for code in codes if (found := name_dataset(code)) is not None}
+    if lines is not None:
+        datasets[HYDRORIVERS_DATASET_CODE] = region_dataset(lines)
+    return ground_rivers(named, datasets)
 
 
 async def map_ground_at(session: AsyncSession, point: tuple[float, float]) -> MapPlaceGround | None:

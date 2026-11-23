@@ -14,14 +14,13 @@ from app.science.reaction_colours import after_phrase
 from app.services.chapter_context import PlacePoint
 from app.services.chapter_preview import preview_rows
 from app.services.craft_page import craft_page
-from app.services.craft_page_archive import without_field_voices
 from app.services.craft_page_cache import PageCache, ServedPage
 from app.services.craft_page_preview import register_page
 from app.services.craft_page_stamp import stamp_text
 from app.services.curation_preview import dossier_records
 
-from ..contracts.golden import SHARED, golden_json
-from .import_support import AJRAKH, AJRAKH_GOLDEN
+from ..contracts.golden import SHARED
+from .import_support import AJRAKH
 
 FAMILY = "Textiles-Based-Craft-Category"
 SINDH = "Q37211"
@@ -92,29 +91,6 @@ def test_district_other_names_name_a_district_the_register_holds() -> None:
     wrong = {"schemaVersion": 1, "districts": [{"lgd": 449, "name": "Kutch", "otherNames": ["Kachh"]}]}
     with pytest.raises(ValueError, match="Kachchh"):
         parse_district_other_names(wrong, register)
-
-
-def test_an_archived_page_carries_no_field_voice_and_no_source_only_they_cite() -> None:
-    body = golden_json(AJRAKH_GOLDEN)
-    quote = {"sourceId": "voice-source", "quote": "We wash in the river."}
-    people = {
-        "key": "people",
-        "title": "People and voices",
-        "opener": None,
-        "items": [{"block": {"kind": "artisan_voice", "quotes": [quote]}, "part": None}],
-    }
-    voiced = {
-        **body,
-        "chapters": [*body["chapters"], people],
-        "voices": [quote],
-        "sources": [*body["sources"], {"id": "voice-source", "group": "FIELD"}],
-        "fieldVoicesTotal": {"quotes": 1, "images": 0},
-    }
-    frozen = without_field_voices(voiced)
-    assert frozen["chapters"] == body["chapters"]
-    assert frozen["sources"] == body["sources"]
-    assert (frozen["voices"], frozen["fieldVoicesTotal"]) == ([], {"quotes": 0, "images": 0})
-    CraftPage.model_validate(without_field_voices(body))
 
 
 def test_the_page_cache_keeps_the_newest_pages_under_their_stamp() -> None:

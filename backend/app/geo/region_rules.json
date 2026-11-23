@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "about": "How the geo ETL writes the rows two region rules depend on (docs/contracts/region.md, Values). GLiM writes each rock type's share of a district twice, as a DistrictGeology row and as the DistrictEnvValue lithology_<code>, so the region reads the geology row and never a value whose variable starts with lithologyTwinPrefix. GLiM rock-type shares and USGS MRDS per-commodity counts are written only where the rock type or commodity occurs, so a state aggregate of a variable starting with the prefix absentMeansZero names for its dataset counts every district of the state holding any value of that dataset, with zero where its row is absent. etl/geo/tests/test_region_rules.py runs the GLiM and MRDS row builders and checks both against this file.",
+  "lithologyTwinPrefix": "lithology_",
+  "absentMeansZero": {
+    "GLIM_1_0_05DEG": "lithology",
+    "USGS_MRDS": "mineral_occurrences_"
+  }
+}

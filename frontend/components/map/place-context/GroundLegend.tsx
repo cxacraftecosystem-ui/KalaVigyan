@@ -7,7 +7,12 @@ import { ringsIn } from "@/lib/groundFrame";
 import type { GroundDeposit, GroundFrame, MineralClass } from "@/lib/placeGround";
 import { bandText, elevationStep } from "@/lib/placeGroundView";
 
-export type GroundLegendProps = { frame: GroundFrame; deposits: readonly GroundDeposit[]; classes: readonly MineralClass[]; radiusKm: number; placed: string };
+export type NamedMarks = { abroad: boolean; rivers: boolean };
+export type GroundLegendProps = { frame: GroundFrame; deposits: readonly GroundDeposit[]; classes: readonly MineralClass[]; radiusKm: number; placed: string; named?: NamedMarks };
+
+export const ABROAD_LABEL = "A place outside India the sources name";
+export const NAMED_RIVER_LABEL = "A river the sources name";
+const NONE_NAMED: NamedMarks = { abroad: false, rivers: false };
 
 const SWATCH = "inline-block h-3.5 w-5 shrink-0 rounded-plate border border-ink-2 [forced-color-adjust:none]";
 const ELEVATION_FILLS = [
@@ -37,6 +42,23 @@ function PinMark() {
   );
 }
 
+function AbroadMark() {
+  return (
+    <svg width={20} height={14} viewBox="0 0 20 14" aria-hidden className="shrink-0 [forced-color-adjust:none]">
+      <circle cx={10} cy={7} r={4.5} fill="var(--map-label-halo)" stroke="var(--terracotta)" strokeWidth={2.5} />
+    </svg>
+  );
+}
+
+function NamedRiverMark() {
+  return (
+    <svg width={20} height={14} viewBox="0 0 20 14" aria-hidden className="shrink-0 [forced-color-adjust:none]">
+      <path d="M1 7 H19" stroke="var(--map-label-halo)" strokeWidth={5} strokeLinecap="round" />
+      <path d="M1 7 H19" stroke="var(--map-river)" strokeWidth={2.25} strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function SaltMark() {
   return (
     <svg width={20} height={14} viewBox="0 0 20 14" aria-hidden className="shrink-0 [forced-color-adjust:none]">
@@ -59,13 +81,15 @@ function Relief({ frame }: { frame: GroundFrame }) {
   );
 }
 
-function Marks({ frame, radiusKm, placed }: Pick<GroundLegendProps, "frame" | "radiusKm" | "placed">) {
+function Marks({ frame, radiusKm, placed, named }: Pick<GroundLegendProps, "frame" | "radiusKm" | "placed"> & { named: NamedMarks }) {
   const salt = ringsIn(frame, decodeRings(RANN_RINGS)).length > 0;
   return (
     <ul className="grid gap-1.5" aria-label="Marks">
       <Row mark={<PinMark />}>{placed}</Row>
+      {named.abroad ? <Row mark={<AbroadMark />}>{ABROAD_LABEL}</Row> : null}
       <Row mark={<span className="inline-block h-3.5 w-5 shrink-0 rounded-full border border-dashed border-[var(--chart-reference)]" aria-hidden />}>{`${radiusKm} km around each place`}</Row>
       <Row mark={<span className="inline-block h-0.5 w-5 shrink-0 bg-[var(--map-river)]" aria-hidden />}>River</Row>
+      {named.rivers ? <Row mark={<NamedRiverMark />}>{NAMED_RIVER_LABEL}</Row> : null}
       <Row mark={<span className={`${SWATCH} bg-[var(--map-water)]`} aria-hidden />}>Sea, lake or reservoir</Row>
       {salt ? <Row mark={<SaltMark />}>Salt flat</Row> : null}
     </ul>
@@ -88,11 +112,11 @@ function Minerals({ deposits, classes }: Pick<GroundLegendProps, "deposits" | "c
   );
 }
 
-export function GroundLegend({ frame, deposits, classes, radiusKm, placed }: GroundLegendProps) {
+export function GroundLegend({ frame, deposits, classes, radiusKm, placed, named = NONE_NAMED }: GroundLegendProps) {
   return (
     <div className="grid gap-x-8 gap-y-4 border-t border-rule pt-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="ground-legend">
       <Relief frame={frame} />
-      <Marks frame={frame} radiusKm={radiusKm} placed={placed} />
+      <Marks frame={frame} radiusKm={radiusKm} placed={placed} named={named} />
       <Minerals deposits={deposits} classes={classes} />
     </div>
   );

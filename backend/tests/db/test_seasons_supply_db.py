@@ -133,7 +133,7 @@ async def test_seasons_read_subjects_and_kachchh_rainfall_from_the_stored_rows(s
     assert rows == [("Monsoon humidity", None, "MONSOON", [])]
     assert [row.sentence.citations[0].claim_id for row in block.rows] == [str(HUMIDITY)]
     assert (block.rainfall.district, block.rainfall.period, block.rainfall.millimetres) == (
-        DistrictRef(district_lgd=KACHCHH, name="Kachchh", state_name="Gujarat"),
+        DistrictRef(district_lgd=KACHCHH, name="Kachchh", state_name="Gujarat", other_names=["Kutch"]),
         PERIOD,
         KACHCHH_MM,
     )

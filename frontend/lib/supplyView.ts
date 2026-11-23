@@ -5,10 +5,10 @@ import { joinedBy, namesText, onceEach, sentenceKey, sentenceWords } from "@/lib
 export type LongitudeLatitudeBox = { minLongitude: number; maxLongitude: number; minLatitude: number; maxLatitude: number };
 export type SupplyOrigin = { key: string; origin: string; wikidataId: string | null; pin: number | null };
 export type SupplyGroup = { key: string; names: string[]; heading: string; origins: SupplyOrigin[]; sentences: ExplainerSentence[] };
-export type SupplyPin = { key: string; origin: string; materials: string; latitude: number; longitude: number; pin: number };
+export type SupplyPin = { key: string; origin: string; materials: string; latitude: number; longitude: number; pin: number; byDistrict: boolean };
 export type SupplyLayout = { groups: SupplyGroup[]; pins: SupplyPin[] };
 
-type PlacedLink = SupplyLink & { latitude: number; longitude: number; wikidataId: string };
+type PlacedLink = SupplyLink & { latitude: number; longitude: number };
 
 export function wikidataUrl(id: string): string {
   return `https://www.wikidata.org/wiki/${encodeURIComponent(id)}`;
@@ -22,9 +22,13 @@ function originKey(link: SupplyLink): string {
   return link.origin.toLocaleLowerCase("en");
 }
 
+export function byDistrict(link: SupplyLink): boolean {
+  return link.districtLgd !== undefined && link.districtLgd !== null;
+}
+
 function inBox(link: SupplyLink, box: LongitudeLatitudeBox): link is PlacedLink {
   const { latitude, longitude, wikidataId } = link;
-  if (latitude === null || longitude === null || wikidataId === null) return false;
+  if (latitude === null || longitude === null || (wikidataId === null && !byDistrict(link))) return false;
   return longitude >= box.minLongitude && longitude <= box.maxLongitude && latitude >= box.minLatitude && latitude <= box.maxLatitude;
 }
 
@@ -46,7 +50,15 @@ function placedPins(links: readonly SupplyLink[], box: LongitudeLatitudeBox, wor
     pin.names.push(link.material);
     placed.set(originKey(link), pin);
   }
-  return [...placed.entries()].map(([key, { link, names }], index) => ({ key, origin: link.origin, materials: namesText(names, words), latitude: link.latitude, longitude: link.longitude, pin: index + 1 }));
+  return [...placed.entries()].map(([key, { link, names }], index) => ({
+    key,
+    origin: link.origin,
+    materials: namesText(names, words),
+    latitude: link.latitude,
+    longitude: link.longitude,
+    pin: index + 1,
+    byDistrict: byDistrict(link)
+  }));
 }
 
 function supplyGroup(links: readonly SupplyLink[], pins: ReadonlyMap<string, number>, words: ReadonlySet<string>): SupplyGroup {

@@ -14,6 +14,7 @@ from app.services import season_supply_builders
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.claim_ledger import ClaimLedger
 from app.services.piece_store import storable
+from app.services.place_claims import PlaceClaims
 from app.services.season_rows import SeasonFact, SeasonOffer, seasons_block
 from app.services.season_supply_builders import SeasonsBuilder
 
@@ -66,6 +67,13 @@ SHADED_DRYING = written_claim(
 )
 
 
+def returning(found: dict[str, Any], key: str) -> Any:
+    async def read(*_args: Any, **_kwargs: Any) -> Any:
+        return found[key]
+
+    return read
+
+
 @pytest.fixture
 def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     found: dict[str, Any] = {
@@ -73,6 +81,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "districts": (KACHCHH,),
         "rain": {KACHCHH: months(KACHCHH_MM)},
         "names": {KACHCHH: KACHCHH_REF, NEIGHBOUR: NEIGHBOUR_REF},
+        "calendars": PlaceClaims(),
     }
 
     async def resolve(session: Any, slug: str) -> Any:
@@ -101,6 +110,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         ("district_refs", refs),
         ("district_rainfall", rainfall),
         ("_concept_names", names),
+        ("place_calendar_claims", returning(found, "calendars")),
     ):
         monkeypatch.setattr(season_supply_builders, name, fake)
     return found
@@ -340,3 +350,34 @@ async def test_a_mapped_seasons_block_is_kept_as_a_piece_resting_on_both_claims(
     assert set(piece.claim_ids) == {humidity.id, SLOW_DRYING.id, MAPPING.id}
     assert [row.months for row in piece.payload.rows] == [JUNE_TO_SEPTEMBER] * 3
     assert piece_slot(block, slot) == slot
+
+
+async def test_a_season_takes_its_months_from_a_stored_place_claim_the_section_does_not_cite(
+    stored: dict[str, Any],
+) -> None:
+    (humidity,) = season_claims()
+    stored["calendars"] = PlaceClaims((MAPPING,), {GI_JOURNAL: {"id": GI_JOURNAL}})
+    built = await SeasonsBuilder(season_tools()).build(section_ask([humidity]))
+    (block,) = built.blocks
+    assert [(row.label, row.season, row.months) for row in block.rows] == [
+        (MONSOON_HUMIDITY, "MONSOON", JUNE_TO_SEPTEMBER)
+    ]
+    assert [c.claim_id for c in block.rows[0].sentence.citations] == [str(humidity.id), str(MAPPING.id)]
+    assert MAPPING.text not in [row.sentence.text for row in block.rows]
+
+
+async def test_a_regional_month_takes_its_months_only_from_a_quote_that_states_them(
+    stored: dict[str, Any],
+) -> None:
+    sanjhi = written_claim("sanjhi", "Sanjhi is made in the month of Ashwin.", "made in the month of Ashwin")
+    stated = written_claim(
+        "ashwin-months",
+        "Sanjhi belongs to the dark fortnight of Ashwin.",
+        "the dark fortnight of waning moon in the month of 'Ashwin', in September or October",
+    )
+    alone = await build([sanjhi])
+    assert alone is not None and alone.rows == []
+    stored["calendars"] = PlaceClaims((stated,), {})
+    (row, *_) = (await build([sanjhi])).rows
+    assert (row.season, row.months, row.sentence.text) == (None, [9, 10], sanjhi.text)
+    assert [c.claim_id for c in row.sentence.citations] == [str(sanjhi.id), str(stated.id)]

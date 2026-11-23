@@ -1,8 +1,17 @@
+import json
+from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
+from functools import cache
+from pathlib import Path
 from typing import Any
 
 from app.geo.layers import LAYERS_BY_ID
 from app.geo.places import region_places
 from app.geo.records import (
+    GEOLOGY_STAT,
+    GEOLOGY_UNIT,
+    GEOLOGY_VARIABLE,
+    LITHOLOGY_TWIN_PREFIX,
     DatasetRecord,
     LayerListing,
     LayerRow,
@@ -13,15 +22,19 @@ from app.geo.records import (
     StoredLayer,
     ValueRecord,
 )
+from app.models import DistrictEnvValue, DistrictGeology
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
+from app.research.datasets import BOUNDARY_DATASET_CODE
 from app.services.claim_seed import seed_id
 
 from ..contracts.golden import golden_json
+from ..contracts.phase_b_golden import catalog_dataset
 
 GOLDEN_CRAFT = "region.craft.golden.json"
 GOLDEN_LAYERS = "region.layers.golden.json"
 GOLDEN_LAYER = "region.layer.golden.json"
+EXTRACT = Path(__file__).with_name("geo_district_env_extract.json")
 
 AJRAKH = CraftRef(slug="Kutch-Ajrakh", name="Kutch Ajrakh", path="/crafts/Kutch-Ajrakh")
 GUJARAT = StateRecord(24, "Gujarat")
@@ -33,46 +46,109 @@ GI_JOURNAL_TITLE = (
     "(journal copy)"
 )
 WORLDCOVER_READ = "40 m (overview read, factor 4, nearest)"
-
-CROPLAND = (
-    "ESA_WORLDCOVER_2021_V200",
-    "landcover_cropland",
-    "2021",
-    "SHARE",
-    0.236,
-    "fraction",
-    WORLDCOVER_READ,
-)
-TEMPERATURE_NORMAL = (
-    "GHCN_CAMS_T2M",
-    "annual_mean_temperature",
-    "1981-2025",
-    "NORMAL",
-    27.07,
-    "degC",
-    "0.5 degree",
-)
-KACHCHH_ROWS = (
-    CROPLAND,
-    ("SOILGRIDS_2_0", "phh2o", "0-5cm", "DISTRICT_MEAN", 8.1, "pH", None),
-    ("USGS_MRDS", "mineral_occurrences", "", "COUNT", 41.0, "sites", None),
-    ("CHELSA_2_1_1981_2010", "annual_precipitation", "1981-2010", "NORMAL", 372.4, "mm/year", None),
-    ("SOILGRIDS_2_0", "clay", "0-5cm", "DISTRICT_MEAN", 27.4, "%", None),
-    ("COPERNICUS_DEM_GLO90", "elevation", "", "DISTRICT_MEAN", 52.3, "m", None),
-    ("CHELSA_2_1_1981_2010", "annual_mean_temperature", "1981-2010", "NORMAL", 26.6, "degC", None),
-    (
-        "ESA_WORLDCOVER_2021_V200",
-        "landcover_bare_sparse_vegetation",
-        "2021",
-        "SHARE",
-        0.312,
-        "fraction",
-        WORLDCOVER_READ,
-    ),
-)
-SOIL_PH = {438: 7.8, 441: 7.6, 444: 6.4, 447: 7.9, 449: 8.1, 455: 8.0, 459: 7.2, 460: 8.3, 462: 6.9}
+SOIL_PH_SERIES = ("SOILGRIDS_2_0", "phh2o", "0-5cm", "DISTRICT_MEAN")
 LISTED = (("soil-ph-0-5cm", "pH"), ("annual-mean-temperature", "degC"), ("cropland-share", "fraction"))
-LISTED_ROWS = (TEMPERATURE_NORMAL, CROPLAND)
+LISTED_SERIES = (
+    ("GHCN_CAMS_T2M", "annual_mean_temperature", "1981-2025", "NORMAL"),
+    ("ESA_WORLDCOVER_2021_V200", "landcover_cropland", "2021", "SHARE"),
+)
+
+
+def column_digits(column: Any) -> int:
+    return int(column.type.scale)
+
+
+STORED_DIGITS = column_digits(DistrictEnvValue.__table__.c.value)
+SHARE_DIGITS = column_digits(DistrictGeology.__table__.c.areaShare)
+
+
+@dataclass(frozen=True)
+class GeologyRow:
+    district_lgd: int
+    dataset_code: str
+    lithology: str
+    lithology_name: str | None
+    area_share: float | None
+    method: str
+    mineral_occurrences: list[Any] | None
+
+
+@cache
+def _extract_text() -> str:
+    return EXTRACT.read_text(encoding="utf-8")
+
+
+def extract() -> dict[str, Any]:
+    body: dict[str, Any] = json.loads(_extract_text())
+    return body
+
+
+def stored(value: float | None, digits: int = STORED_DIGITS) -> float | None:
+    if value is None:
+        return None
+    places = Decimal(1).scaleb(-digits)
+    return float(Decimal(repr(value)).quantize(places, rounding=ROUND_HALF_UP))
+
+
+def series_of(row: ValueRecord) -> tuple[str, str, str, str]:
+    return (row.dataset_code, row.variable, row.depth_or_period, row.stat)
+
+
+def env_rows(district: int | None = None) -> tuple[ValueRecord, ...]:
+    body = extract()
+    methods = body["methods"]
+    return tuple(
+        ValueRecord(lgd, code, variable, period, stat, stored(value), text, unit, grid, methods[method])
+        for lgd, code, variable, period, stat, value, text, unit, method, grid in body["values"]
+        if district is None or lgd == district
+    )
+
+
+def geology_rows(district: int) -> tuple[GeologyRow, ...]:
+    body = extract()
+    return tuple(
+        GeologyRow(lgd, code, lithology, name, stored(share, SHARE_DIGITS), body["methods"][method], found)
+        for lgd, code, lithology, name, share, method, found in body["geology"]
+        if lgd == district
+    )
+
+
+def region_rows(district: int) -> tuple[ValueRecord, ...]:
+    kept = [row for row in env_rows(district) if not row.variable.startswith(LITHOLOGY_TWIN_PREFIX)]
+    rocks = [
+        ValueRecord(
+            row.district_lgd,
+            row.dataset_code,
+            GEOLOGY_VARIABLE,
+            "",
+            GEOLOGY_STAT,
+            row.area_share,
+            row.lithology_name or row.lithology,
+            GEOLOGY_UNIT,
+            None,
+            row.method,
+        )
+        for row in geology_rows(district)
+        if row.area_share is not None
+    ]
+    return (*kept, *rocks)
+
+
+def stored_row(district: int, series: tuple[str, str, str, str]) -> ValueRecord:
+    [row] = [row for row in env_rows(district) if series_of(row) == series]
+    return row
+
+
+def kachchh_values() -> tuple[ValueRecord, ...]:
+    return region_rows(KACHCHH)
+
+
+def layer_rows() -> tuple[ValueRecord, ...]:
+    return tuple(row for row in env_rows() if series_of(row) == SOIL_PH_SERIES)
+
+
+SOIL_PH = {row.district_lgd: row.value for row in layer_rows() if row.value is not None}
+LISTED_ROWS = tuple(stored_row(KACHCHH, series) for series in LISTED_SERIES)
 
 
 def dataset_record(row: dict[str, Any]) -> DatasetRecord:
@@ -91,23 +167,15 @@ def dataset_record(row: dict[str, Any]) -> DatasetRecord:
     )
 
 
+def run_periods() -> dict[str, str]:
+    return {code: period for run in extract()["runs"] for code, period in run["periods"].items()}
+
+
 def golden_datasets() -> dict[str, DatasetRecord]:
-    rows = [*golden_json(GOLDEN_CRAFT)["datasets"], *golden_json(GOLDEN_LAYERS)["datasets"]]
-    rows.append(golden_json(GOLDEN_LAYERS)["boundary"]["dataset"])
-    return {row["code"]: dataset_record(row) for row in rows}
-
-
-def golden_methods() -> dict[str, str]:
-    facets = golden_json(GOLDEN_CRAFT)["places"][0]["facets"]
-    return {value["datasetCode"]: value["method"] for facet in facets for value in facet["values"]}
-
-
-def kachchh_values() -> tuple[ValueRecord, ...]:
-    methods = golden_methods()
-    return tuple(
-        ValueRecord(KACHCHH, code, variable, stored, stat, value, None, unit, grid, methods[code])
-        for code, variable, stored, stat, value, unit, grid in KACHCHH_ROWS
-    )
+    periods = run_periods()
+    rows = {code: catalog_dataset(code) | {"period": period} for code, period in periods.items()}
+    rows[BOUNDARY_DATASET_CODE] = catalog_dataset(BOUNDARY_DATASET_CODE)
+    return {code: dataset_record(row) for code, row in sorted(rows.items())}
 
 
 def location(**changes: Any) -> LocationRecord:
@@ -137,7 +205,6 @@ def golden_region_records() -> RegionRecords:
         places=region_places([location()], [GUJARAT]),
         district_values=kachchh_values(),
         state_totals=(),
-        coverage=(),
         district_totals={},
         datasets=golden_datasets(),
         sources={GI_JOURNAL: gi_journal_source()},
@@ -151,15 +218,18 @@ def golden_listing() -> LayerListing:
     return LayerListing(
         layers=layers,
         datasets={code: datasets[code] for code in codes},
-        boundary=datasets["DR_DISTRICT_SHAPES"],
+        boundary=datasets[BOUNDARY_DATASET_CODE],
     )
 
 
 def golden_layer_values() -> LayerValues:
     datasets = golden_datasets()
+    rows = sorted(layer_rows(), key=lambda row: row.district_lgd, reverse=True)
     return LayerValues(
         layer=StoredLayer(LAYERS_BY_ID["soil-ph-0-5cm"], "pH"),
         dataset=datasets["SOILGRIDS_2_0"],
-        rows=tuple(LayerRow(lgd, value, None) for lgd, value in reversed(SOIL_PH.items())),
-        boundary=datasets["DR_DISTRICT_SHAPES"],
+        rows=tuple(
+            LayerRow(row.district_lgd, row.value, row.resolution) for row in rows if row.value is not None
+        ),
+        boundary=datasets[BOUNDARY_DATASET_CODE],
     )

@@ -42,7 +42,7 @@ NOT_ON_THE_PAGE = frozenset({"quiz", "compare", "map_layer", "component"})
 PAGE_BLOCK_KINDS = (
     frozenset(BUILT_BLOCK_KINDS) - NOT_ON_THE_PAGE | frozenset(BUILT_FIGURE_KINDS) | {"artisan_voice"}
 )
-KIN_ITEM_KINDS = frozenset({"concept_graph", "relatives"})
+KIN_ITEM_KINDS = frozenset({"relatives"})
 FIGURE_TITLES: Mapping[str, str] = MappingProxyType(
     {
         "process_ladder": "How {craft} is made, in {stages} stages",
@@ -51,14 +51,8 @@ FIGURE_TITLES: Mapping[str, str] = MappingProxyType(
         "region_story": "Where {craft} is made: {places}",
         "climate_risk": "{finding}",
         "seasons": "The working year of {craft}",
-        "supply_map": "Where the materials of {craft} come from",
         "timeline_map": "{craft} in time and place, {first} to {last}",
         "market_gi": "The market and GI record of {craft}",
-        "what_if": "What if the {changed} changed",
-        "concept_graph": "Science {craft} shares with other crafts",
-        "zoom_story": "{craft} from {top} down to {bottom}",
-        "measure": "Stated measures in metric units",
-        "quantities": "Quantities the sources state",
         "key_facts": "Key facts",
         "indigo_vat": "The indigo vat",
         "mordant_bath": "The mordant bath",
@@ -66,7 +60,7 @@ FIGURE_TITLES: Mapping[str, str] = MappingProxyType(
         "firing": "The firing",
     }
 )
-TABLE_KINDS = frozenset({"market_gi", "measure", "quantities", "key_facts"})
+TABLE_KINDS = frozenset({"market_gi", "key_facts"})
 FIELD = re.compile(r"\{(\w+)\}")
 
 

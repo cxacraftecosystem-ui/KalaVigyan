@@ -5,8 +5,16 @@ export const AJRAKH_DIR = join(__dirname, "..", "..", "backend", "app", "data", 
 
 const COMPONENT_SLOT = /<kv-slot component="([^"]+)"><\/kv-slot>/g;
 
+function labelStem(label: string): string {
+  return label.replaceAll("/", "__");
+}
+
 export function fragmentFile(label: string): string {
-  return join(AJRAKH_DIR, "fragments", `${label.replaceAll("/", "__")}.html`);
+  return join(AJRAKH_DIR, "fragments", `${labelStem(label)}.html`);
+}
+
+export function specFile(label: string): string {
+  return join(AJRAKH_DIR, "specs", `${labelStem(label)}.json`);
 }
 
 export function assembledTemplate(shell: string = readFileSync(join(AJRAKH_DIR, "template.html"), "utf8")): string {

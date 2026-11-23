@@ -36,6 +36,7 @@ class LedgerEntry:
     key: str
     ref_type: str | None = None
     ref_id: str | None = None
+    counted_at: datetime | None = None
 
 
 async def used_today(session: AsyncSession, *, user_id: uuid.UUID, resource: str, now: datetime) -> int:
@@ -70,6 +71,7 @@ async def record_units(session: AsyncSession, entry: LedgerEntry) -> bool:
             refType=entry.ref_type,
             refId=entry.ref_id,
             idempotencyKey=entry.key,
+            **({} if entry.counted_at is None else {"createdAt": entry.counted_at}),
         )
         .on_conflict_do_nothing(index_elements=[QuotaLedger.idempotencyKey])
         .returning(QuotaLedger.id)

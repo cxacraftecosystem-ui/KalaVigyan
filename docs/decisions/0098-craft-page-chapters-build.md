@@ -11,6 +11,7 @@ page builders, the snapshot store and the routes; records what is not built yet.
 | For | Read |
 |---|---|
 | What superseded part of it | [0100 The Kutch Ajrakh craft page is the hand-built monograph, served as built](0100-ajrakh-monograph-served-as-built.md): its renderer, for Kutch Ajrakh only, until 2026-11-20 |
+| What amended it | [decision 0162](0162-unused-craft-page-chapters-retired.md): the pieces not built yet, the reader's pieces (item 8), the archive (items 6 and 13) and job steps 2 and 3 retired rather than built |
 | What it builds on | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): the page builders, the snapshot store and the routes |
 | The contracts it names | [craft-page.md](../contracts/craft-page.md) |
 | Every decision, by group | [README.md](README.md) |

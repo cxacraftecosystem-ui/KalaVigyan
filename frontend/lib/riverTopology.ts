@@ -1,13 +1,15 @@
 import { apiFetch } from "@/lib/api";
 import { RIVER_BASIN_PATH, RIVER_REACHES_OBJECT } from "@/lib/explainerPlace";
-import { integer, list, number, object, oneOf, optional, parseShape, ShapeError, type Shape } from "@/lib/shape";
+import { integer, list, number, object, oneOf, optional, parseShape, positive, ruled, ShapeError, type Shape } from "@/lib/shape";
 
 export type LonLat = [number, number];
-export type BasinReach = { id: number; nextDown: number; ordStra: number; line: LonLat[] };
+export type ReachDistrict = { lgd: number; entry: number };
+export type BasinReach = { id: number; nextDown: number; ordStra: number; line: LonLat[]; districts: ReachDistrict[] | null };
 export type RiverBasin = { mainRiv: number; reaches: Map<number, BasinReach> };
 
 type Pair = [number, number];
-type ReachGeometry = { type: "LineString"; id: number; arcs: number[]; properties: { nextDown: number; ordStra: number } };
+type ReachProperties = { nextDown: number; ordStra: number; districts?: Pair[] };
+type ReachGeometry = { type: "LineString"; id: number; arcs: number[]; properties: ReachProperties };
 type Transform = { scale: Pair; translate: Pair };
 type ReachCollection = { type: "GeometryCollection"; geometries: ReachGeometry[] };
 type RiverTopologyFile = {
@@ -50,11 +52,23 @@ const arcsShape: Shape<Pair[][]> = {
   }
 };
 
+const fraction = ruled(number, "a fraction from 0 to 1", (value) => value >= 0 && value <= 1);
+
+const districtEntry: Shape<Pair> = {
+  expected: "an LGD code and the fraction of the reach at which it enters",
+  parse(value, path) {
+    if (!Array.isArray(value) || value.length !== 2) throw new ShapeError(path, "an LGD code and an entry fraction");
+    return [positive.parse(value[0], `${path}[0]`), fraction.parse(value[1], `${path}[1]`)];
+  }
+};
+
+const reachDistricts: Shape<Pair[]> = ruled(list(districtEntry), "each district once", (entries) => new Set(entries.map(([lgd]) => lgd)).size === entries.length);
+
 const reachGeometryShape: Shape<ReachGeometry> = object<ReachGeometry>({
   type: oneOf(["LineString"] as const),
   id: integer,
   arcs: list(integer, 1),
-  properties: object<ReachGeometry["properties"]>({ nextDown: integer, ordStra: integer })
+  properties: object<ReachProperties>({ nextDown: integer, ordStra: integer, districts: optional(reachDistricts) })
 });
 
 const topologyShape: Shape<RiverTopologyFile> = object<RiverTopologyFile>({
@@ -93,6 +107,10 @@ function onEarth([longitude, latitude]: LonLat): boolean {
   return Math.abs(longitude) <= 180 && Math.abs(latitude) <= 90;
 }
 
+function districtsOf(properties: ReachProperties): ReachDistrict[] | null {
+  return properties.districts ? properties.districts.map(([lgd, entry]) => ({ lgd, entry })) : null;
+}
+
 function reachLine(geometry: ReachGeometry, arcs: readonly LonLat[][]): LonLat[] {
   const line = geometry.arcs.flatMap((index, at) => {
     const arc = arcAt(arcs, index, geometry.id);
@@ -108,7 +126,8 @@ export function riverBasinOf(value: unknown, mainRiv: number): RiverBasin {
   const reaches = new Map<number, BasinReach>();
   for (const geometry of file.objects[RIVER_REACHES_OBJECT].geometries) {
     if (reaches.has(geometry.id)) throw new ShapeError(`reach ${geometry.id}`, "one geometry per reach");
-    reaches.set(geometry.id, { id: geometry.id, nextDown: geometry.properties.nextDown, ordStra: geometry.properties.ordStra, line: reachLine(geometry, arcs) });
+    const { nextDown, ordStra } = geometry.properties;
+    reaches.set(geometry.id, { id: geometry.id, nextDown, ordStra, line: reachLine(geometry, arcs), districts: districtsOf(geometry.properties) });
   }
   if (reaches.get(mainRiv)?.nextDown !== OUTLET) throw new ShapeError(`basin ${mainRiv}`, `its outlet reach ${mainRiv}`);
   return { mainRiv, reaches };

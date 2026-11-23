@@ -23,6 +23,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import enums as e
 from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
+from app.models.time_zone import INDIA_TZ_NAME
 
 EMBEDDING_DIMENSIONS = 1536
 DATASET_ORIGINS = ("SITE", "CONTRIBUTED")
@@ -81,7 +82,7 @@ class Craft(Base):
     recordedAt: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
-    recordedTimezone: Mapped[str] = mapped_column(String(64), nullable=False, server_default="Asia/Kolkata")
+    recordedTimezone: Mapped[str] = mapped_column(String(64), nullable=False, server_default=INDIA_TZ_NAME)
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
     createdById: Mapped[uuid.UUID | None] = mapped_column(

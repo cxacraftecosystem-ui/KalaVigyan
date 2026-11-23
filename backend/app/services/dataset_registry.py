@@ -16,15 +16,18 @@ from app.research.datasets import DatasetEntry
 
 __all__ = [
     "CONTRIBUTED",
+    "SET_PER_RUN",
     "SITE",
     "dataset_record",
     "dataset_registry",
     "entry_columns",
     "registry_entries",
     "sync_registry",
+    "synced_columns",
 ]
 
 SITE = "SITE"
+SET_PER_RUN = "set per run"
 CONTRIBUTED = "CONTRIBUTED"
 
 
@@ -61,11 +64,19 @@ def entry_columns(entry: DatasetEntry) -> dict[str, Any]:
     }
 
 
+def synced_columns(entry: DatasetEntry) -> dict[str, Any]:
+    return {
+        column: value
+        for column, value in entry_columns(entry).items()
+        if not (isinstance(value, str) and value.startswith(SET_PER_RUN))
+    }
+
+
 async def sync_registry(session: AsyncSession) -> list[str]:
     registry = dataset_registry()
     rows = (await session.scalars(select(EnvDataset).where(EnvDataset.code.in_(list(registry))))).all()
     for row in rows:
-        for column, value in entry_columns(registry[row.code]).items():
+        for column, value in synced_columns(registry[row.code]).items():
             setattr(row, column, value)
     await session.flush()
     return sorted(row.code for row in rows)

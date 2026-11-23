@@ -42,7 +42,10 @@ def format_problem(spec: KeyFormat, value: str) -> str | None:
 
 _KEYS = (
     ManagedKey(
-        "GEMINI_API_KEY", "Google Gemini", "Planner, reader, voice turns, embeddings, images and video.", "AI"
+        "GEMINI_API_KEY",
+        "Google Gemini",
+        "Planner, reader, voice turns, embeddings, images, video and Listen's fallback voice.",
+        "AI",
     ),
     ManagedKey("ANTHROPIC_API_KEY", "Anthropic Claude", "Answer composer and evaluation judge.", "AI"),
     ManagedKey("OPENAI_API_KEY", "OpenAI", "Fallback route for planning, composing and voice turns.", "AI"),
