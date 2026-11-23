@@ -12,6 +12,7 @@ resolver's list, fields by what a claim is filed under, the stored shared-term s
 |---|---|
 | What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): a comparison with nothing cited answers 204, and the quiz reads hidden marks |
 | What amended it later | [0143](0143-lessons-exports-and-follow-ups-kept-true.md): compared crafts named outside the resolver's list, fields by what a claim is filed under, the stored shared-term summary |
+| What counted and paged a node's crafts | [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md): `craftCount` on every node and the crafts route |
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
 | The contracts it names | [learning.md](../contracts/learning.md) |
 | Every decision, by group | [README.md](README.md) |

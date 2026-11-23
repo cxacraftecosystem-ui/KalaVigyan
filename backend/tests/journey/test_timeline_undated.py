@@ -8,8 +8,8 @@ from app.composer.timeline_map import TimelineChoice
 from app.research.blocks_journey import TimelineMapBlock
 from app.services import journey_builders
 from app.services.journey_builders import TimelineMapBuilder
-from app.services.place_register import KnownPoints, RegisterPoint, register_district
-from app.services.supply_links import OriginPlace
+from app.services.place_points import OriginPlace, RegisterPoint
+from app.services.place_register import KnownPoints, register_district
 from app.services.timeline_story import timeline_block, timeline_entries, timeline_offer
 
 from ..contracts.blocks_golden import TIMELINE_UNDATED, BlocksFixture

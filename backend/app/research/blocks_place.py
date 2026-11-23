@@ -5,7 +5,7 @@ from typing import Annotated, ClassVar, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel
+from .base import ContractModel, absent, empty
 from .blocks import (
     SENTENCE,
     BlockBase,
@@ -15,7 +15,8 @@ from .blocks import (
     require_facts,
     stated_texts,
 )
-from .calendar import MONTHS, SEASONS, months_named, seasons_named
+from .calendar import MONTHS, months_named, seasons_named
+from .calendar_words import SEASONS
 from .datasets import (
     BOUNDARY_CAPTION,
     BOUNDARY_DATASET_CODE,
@@ -40,6 +41,7 @@ __all__ = [
     "StoryStep",
     "SupplyLink",
     "SupplyMapBlock",
+    "district_named",
 ]
 
 LAYER_KEY_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -55,6 +57,12 @@ class DistrictRef(ContractModel):
     district_lgd: DistrictLgd
     name: str = Field(min_length=1, max_length=200)
     state_name: str = Field(min_length=1, max_length=200)
+    other_names: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        default_factory=list, exclude_if=empty
+    )
+
+    def names(self) -> list[str]:
+        return [self.name, *self.other_names]
 
 
 class RiverPath(RiverTrace):
@@ -191,13 +199,21 @@ class SupplyLink(ContractModel):
     wikidata_id: str | None = Field(pattern=WIKIDATA_ID_PATTERN)
     latitude: float | None = Field(ge=-90, le=90)
     longitude: float | None = Field(ge=-180, le=180)
+    district_lgd: DistrictLgd | None = Field(default=None, exclude_if=absent)
     sentence: ExplainerSentence
 
     @model_validator(mode="after")
-    def _origin_as_stated_and_placed_from_wikidata(self) -> Self:
+    def _origin_as_stated_and_placed_from_wikidata_or_the_register(self) -> Self:
         placed = self.latitude is not None or self.longitude is not None
-        if placed and (self.latitude is None or self.longitude is None or self.wikidata_id is None):
-            raise ValueError(f"supply origin {self.origin!r} is placed only with Wikidata coordinates")
+        by_district = self.district_lgd is not None
+        if placed and (self.latitude is None or self.longitude is None):
+            raise ValueError(f"supply origin {self.origin!r} is placed with both coordinates")
+        if placed and by_district == (self.wikidata_id is not None):
+            raise ValueError(
+                f"supply origin {self.origin!r} is placed by Wikidata or by its register district"
+            )
+        if by_district and not placed:
+            raise ValueError(f"supply origin {self.origin!r} names its district only where it is placed")
         if not named_in(self.origin, self.sentence):
             raise ValueError(f"supply origin {self.origin!r} is not what its sentence states")
         stored = self.material_id is not None or self.term_key is not None
@@ -212,6 +228,7 @@ class SupplyMapBlock(BlockBase):
     kind: Literal["supply_map"]
     version: Literal[1]
     links: list[SupplyLink] = Field(min_length=1)
+    datasets: list[DatasetRef] = Field(default_factory=list, exclude_if=empty)
 
     @model_validator(mode="after")
     def _each_origin_of_each_material_once(self) -> Self:
@@ -219,10 +236,22 @@ class SupplyMapBlock(BlockBase):
         pairs = [(link.material.casefold(), link.origin.casefold()) for link in self.links]
         if len(set(pairs)) != len(pairs):
             raise ValueError(f"supply map {self.id} lists each origin of a material once")
+        districted = any(link.district_lgd is not None for link in self.links)
+        if [dataset.code for dataset in self.datasets] != ([BOUNDARY_DATASET_CODE] if districted else []):
+            raise ValueError(
+                f"supply map {self.id} cites {BOUNDARY_DATASET_CODE} exactly when it places by district"
+            )
         return self
+
+    def cites_datasets(self) -> bool:
+        return bool(self.datasets)
 
     def shown_labels(self) -> list[str]:
         return list(dict.fromkeys(text for link in self.links for text in (link.material, link.origin)))
+
+
+def district_named(district: DistrictRef, sentence: ExplainerSentence) -> bool:
+    return any(named_in(name, sentence) for name in district.names())
 
 
 def _require_caption(block_id: str, caption: str) -> None:
@@ -231,11 +260,11 @@ def _require_caption(block_id: str, caption: str) -> None:
 
 
 def _step_district_problems(block_id: str, districts: list[DistrictRef], steps: list[StoryStep]) -> list[str]:
-    names = {district.district_lgd: district.name for district in districts}
+    listed = {district.district_lgd: district for district in districts}
     placed = [step for step in steps if step.district_lgd is not None]
-    if any(step.district_lgd not in names for step in placed):
+    if any(step.district_lgd not in listed for step in placed):
         return [f"region story {block_id} narrates only districts it lists"]
-    if any(not named_in(names[step.district_lgd], step.sentence) for step in placed):
+    if any(not district_named(listed[step.district_lgd], step.sentence) for step in placed):
         return [f"region story {block_id} places a step only in a district its sentence or quotes name"]
     return []
 

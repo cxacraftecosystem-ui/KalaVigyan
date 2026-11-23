@@ -123,8 +123,9 @@ is drawn (`/api/molecules/{pubchemCid}/conformer`, `/api/map/layers/{layer}`,
 `/api/rivers/{mainRiv}`, `/api/field-voices/images/{imageId}`, `/api/crafts/{slug}/field-voices`,
 `/api/field-voices/recordings/{recordingId}` behind the `/voices/<id>` page a field quote links to,
 `/api/terms/{key}` for a stored summary, `/api/crafts/{slug}/shared-science`,
-`/api/shared-science/{termKey}`, `/api/categories/{slug}`, `/api/crafts/media/{assetId}`,
-`/api/crafts/contributed/{contributionId}`, `/api/crafts/{slug}/film-score`).
+`/api/shared-science/{termKey}`, `/api/shared-science/{termKey}/crafts`, `/api/categories/{slug}`,
+`/api/crafts/media/{assetId}`, `/api/crafts/contributed/{contributionId}`,
+`/api/crafts/{slug}/film-score`).
 
 The body depends on the reader in one way only, a licence term, never a role: a reader holding
 `READ_RESEARCHER_QUOTES` gets the `RESEARCHER` variant, which may quote closed-licence full text

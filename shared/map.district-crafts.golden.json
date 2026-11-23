@@ -35,16 +35,21 @@
         },
         "river": {
           "datasetCode": "HYDRORIVERS_1_0",
-          "mainRiv": 3,
+          "mainRiv": 41063203,
           "reachIds": [
-            1,
-            2,
-            3
+            41054582,
+            41055433,
+            41055657,
+            41057038,
+            41057488,
+            41057912,
+            41060716,
+            41063203
           ],
           "districtLgds": [
             449
           ],
-          "name": "Saran"
+          "name": "Khari"
         },
         "districts": [
           {
@@ -182,6 +187,25 @@
             "attribution": "This product KalaVigyan incorporates data from the HydroSHEDS version 1 database which is © World Wildlife Fund, Inc. (2006-2022) and has been used herein under license. WWF has not evaluated the data as altered and incorporated within KalaVigyan, and therefore gives no warranty regarding its accuracy, completeness, currency or suitability for any particular purpose. Portions of the HydroSHEDS v1 database incorporate data which are the intellectual property rights of © USGS (2006-2008), NASA (2000-2005), ESRI (1992-1998), CIAT (2004-2006), UNEP-WCMC (1993), WWF (2004), Commonwealth of Australia (2007), and Her Royal Majesty and the British Crown and are used under license. The HydroSHEDS v1 database and more information are available at https://www.hydrosheds.org.",
             "citation": "Lehner, B., Grill, G. (2013). Global river hydrography and network routing: baseline data and new approaches to study the world's large river systems. Hydrological Processes 27(15), 2171-2186. https://doi.org/10.1002/hyp.9740",
             "url": "https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_as_shp.zip"
+          },
+          {
+            "code": "OSM_RIVER_NAMES",
+            "title": "OpenStreetMap river names (waterway=river, India extract)",
+            "publisher": "OpenStreetMap contributors, India extract by Geofabrik",
+            "edition": "2026-11-23",
+            "period": "2026-11-23",
+            "nativeResolution": "way geometry, matched to HydroRIVERS reaches within 1 km",
+            "licence": "ODbL 1.0",
+            "licenceUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+            "attribution": "© OpenStreetMap contributors",
+            "citation": "OpenStreetMap contributors. OpenStreetMap, available under the Open Database License. https://www.openstreetmap.org/copyright",
+            "url": "https://download.geofabrik.de/asia/india-latest.osm.pbf",
+            "version": "live",
+            "crs": "EPSG:4326",
+            "redistributable": true,
+            "landingUrl": "https://www.openstreetmap.org/copyright",
+            "readOn": "2026-11-23",
+            "sha256": "c511eaaab9dd255360b1588f48a9c99d9fb8a186742a9a01a1f02908f79f6aac"
           }
         ],
         "boundaryCaption": "External boundaries of India as depicted by Survey of India. District boundaries are indicative."

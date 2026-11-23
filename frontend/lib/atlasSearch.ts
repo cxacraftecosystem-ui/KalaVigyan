@@ -51,8 +51,8 @@ export function conceptRows(crafts: readonly CatalogueCraft[], shared: SharedCon
     .sort((a, b) => Number(b.cited !== null) - Number(a.cited !== null));
 }
 
-export function conceptDek(rows: readonly ConceptRow[]): string {
-  const cited = rows.filter((row) => row.cited !== null).length;
+export function conceptDek(rows: readonly ConceptRow[], named = 0): string {
+  const cited = Math.max(named, rows.filter((row) => row.cited !== null).length);
   if (cited > 0) return `Named in the cited sentences of ${cited} ${cited === 1 ? "craft" : "crafts"}.`;
   return `Linked to ${rows.length} ${rows.length === 1 ? "craft" : "crafts"} on the craft list.`;
 }

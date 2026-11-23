@@ -8,6 +8,8 @@ import { MapPlaceholder } from "@/components/answer/place/MapPlaceholder";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import { INDIA_BOUNDS } from "@/components/map/indiaBounds";
 import type { SupplyMapBlock } from "@/lib/explainerPlace";
+import { datasetRow } from "@/lib/placeView";
+import { BOUNDARY_DATASET_CODE } from "@/lib/regionContract";
 import { supplyLayout, wikidataUrl, type SupplyGroup, type SupplyOrigin } from "@/lib/supplyView";
 
 const SupplyPins = lazyBlock(() => import("@/components/answer/place/SupplyPins").then((module) => module.SupplyPins), <MapPlaceholder />);
@@ -59,7 +61,7 @@ export function SupplyMapView({ block }: { block: SupplyMapBlock }) {
           <MaterialRow key={group.key} group={group} />
         ))}
       </ul>
-      {pins.length > 0 ? <SupplyPins pins={pins} /> : null}
+      {pins.length > 0 ? <SupplyPins pins={pins} boundary={datasetRow(block.datasets ?? [], BOUNDARY_DATASET_CODE)} /> : null}
     </div>
   );
 }

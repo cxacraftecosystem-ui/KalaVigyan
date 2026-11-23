@@ -5,7 +5,7 @@ from types import MappingProxyType
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -68,6 +68,9 @@ class KnowledgePiece(Base):
     fields: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("ARRAY[]::text[]")
     )
+    districtLgds: Mapped[list[int]] = mapped_column(
+        ARRAY(Integer), nullable=False, server_default=text("ARRAY[]::integer[]")
+    )
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
 
@@ -82,6 +85,7 @@ class KnowledgePiece(Base):
         CheckConstraint('"hiddenById" IS NULL OR "hiddenAt" IS NOT NULL', name="hidden_by"),
         Index(None, "craftId", "facet", "topicKey"),
         Index("KnowledgePiece_claimIds_gin_idx", "claimIds", postgresql_using="gin"),
+        Index("KnowledgePiece_districtLgds_gin_idx", "districtLgds", postgresql_using="gin"),
         Index(None, "createdFromAnswerId"),
         Index(None, "supersededById"),
         Index(None, "hiddenById"),

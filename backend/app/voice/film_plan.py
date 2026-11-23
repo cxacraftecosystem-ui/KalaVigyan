@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
+from app.providers.elevenlabs import NARRATION_MODEL
 from app.research.explainer import Explainer
 
 from .film_scenes import FilmScene, bed_seconds, film_scenes, scenes_hash
@@ -35,7 +36,10 @@ async def score_plan(explainer: Explainer, objects: NarrationObjects, voice_id: 
 async def heard_seconds(explainer: Explainer, objects: NarrationObjects, voice_id: str) -> dict[str, float]:
     language = explainer.understood.language
     blocks = spoken_blocks(explainer, None)
-    ids = [narration_cache_id(block.content_hash, language=language, voice_id=voice_id) for block in blocks]
+    ids = [
+        narration_cache_id(block.content_hash, language=language, voice_id=voice_id, model=NARRATION_MODEL)
+        for block in blocks
+    ]
     found = await asyncio.gather(*(stored_manifest(objects, cache_id) for cache_id in ids))
     heard: dict[str, float] = {}
     for block, manifest in zip(blocks, found, strict=True):

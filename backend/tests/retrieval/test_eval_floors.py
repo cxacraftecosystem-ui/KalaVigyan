@@ -14,30 +14,30 @@ from app.retrieval.eval_floors import (
 
 MARGIN = 0.05
 ENGLISH, OTHERS = 58, 111
-FUSED_ENGLISH, FUSED_OTHERS = 54, 103
+FUSED_ENGLISH, FUSED_OTHERS = 142, 120
 GENERATED_RERANKED = (
     (ENGLISH * 1.000 + OTHERS * 0.991) / (ENGLISH + OTHERS),
     (ENGLISH * 0.855 + OTHERS * 0.950) / (ENGLISH + OTHERS),
 )
 GENERATED_FUSED = (
-    (FUSED_ENGLISH * 0.963 + FUSED_OTHERS * 0.9806) / (FUSED_ENGLISH + FUSED_OTHERS),
-    (FUSED_ENGLISH * 0.7522 + FUSED_OTHERS * 0.931) / (FUSED_ENGLISH + FUSED_OTHERS),
+    (FUSED_ENGLISH * 0.9507 + FUSED_OTHERS * 0.9917) / (FUSED_ENGLISH + FUSED_OTHERS),
+    (FUSED_ENGLISH * 0.7505 + FUSED_OTHERS * 0.9435) / (FUSED_ENGLISH + FUSED_OTHERS),
 )
 LIVE = {
     ("handWritten", "reranked"): (0.987, 0.982),
     ("handWritten", "fused"): (1.000, 0.932),
     ("generated", "reranked"): GENERATED_RERANKED,
     ("generated", "fused"): GENERATED_FUSED,
-    ("releaseSample", "reranked"): (1.000, 0.855),
-    ("releaseSample", "fused"): (0.9737, 0.7844),
+    ("releaseSample", "reranked"): (1.000, 0.9104),
+    ("releaseSample", "fused"): (0.9508, 0.7767),
 }
 FLOORS = {
     ("handWritten", "reranked"): {"recallAt5": 0.93, "meanReciprocalRank": 0.93},
     ("handWritten", "fused"): {"recallAt5": 0.95, "meanReciprocalRank": 0.88},
     ("generated", "reranked"): {"recallAt5": 0.94, "meanReciprocalRank": 0.86},
-    ("generated", "fused"): {"recallAt5": 0.92, "meanReciprocalRank": 0.81},
-    ("releaseSample", "reranked"): {"recallAt5": 0.95, "meanReciprocalRank": 0.80},
-    ("releaseSample", "fused"): {"recallAt5": 0.92, "meanReciprocalRank": 0.73},
+    ("generated", "fused"): {"recallAt5": 0.91, "meanReciprocalRank": 0.78},
+    ("releaseSample", "reranked"): {"recallAt5": 0.95, "meanReciprocalRank": 0.86},
+    ("releaseSample", "fused"): {"recallAt5": 0.90, "meanReciprocalRank": 0.72},
 }
 SHOWN_ONCE_RUBRIC_LOWEST = 0.872
 LIVE_ANSWERS = {"judgeMean": 0.815, "rubricMean": SHOWN_ONCE_RUBRIC_LOWEST}

@@ -18,14 +18,23 @@ from app.research.knowledge_pieces import (
     knowledge_piece,
     piece_text,
     placed_block,
+    region_topic,
 )
 from app.research.piece_reuse import ClaimState, reusable_groups, visible_as_cited
-from app.research.piece_topics import FACET_NAMESPACES, TopicSubjects, facet_topic, facet_topics
+from app.research.piece_topics import (
+    FACET_NAMESPACES,
+    TopicSubjects,
+    district_topic,
+    facet_topic,
+    facet_topics,
+)
 from app.research.retrieval import HIDDEN_CLAIM_STATUSES
 from app.research.subject_keys import TOPIC_NAMESPACES
+from app.services.curation_overview import piece_id_topic, piece_topic
 from app.services.piece_store import piece_id, storable
 
 from ..contracts.explainer_golden import DOCUMENT, PIECE, golden_json
+from ..migration_scripts import migration
 
 BLOCKS = TypeAdapter(Block)
 CRAFT_ID = uuid.UUID("54081f83-8396-5a46-a3bc-a467984eebc2")
@@ -82,16 +91,53 @@ def test_every_facet_has_one_known_topic_namespace() -> None:
     [
         ("CHEMISTRY", TopicSubjects("Kutch-Ajrakh"), "reaction:kutch-ajrakh"),
         ("CHEMISTRY", TopicSubjects("Kutch-Ajrakh", ("alum", "alizarin")), "reaction:alizarin+alum"),
-        ("GEOGRAPHY", TopicSubjects("Kutch-Ajrakh", districts=("Kachchh",)), "water:kachchh"),
-        ("GEOGRAPHY", TopicSubjects("Kutch-Ajrakh", ("alum",), ("Kachchh",)), "water:alum"),
-        ("PROCESS", TopicSubjects("Kutch-Ajrakh", districts=("Kachchh",)), "process:kutch-ajrakh"),
-        ("CLIMATE", TopicSubjects("Kutch-Ajrakh", districts=("Bhuj", "Kachchh")), "climate:bhuj+kachchh"),
+        ("GEOGRAPHY", TopicSubjects("Kutch-Ajrakh", districts=(449,)), "water:lgd-449"),
+        ("GEOGRAPHY", TopicSubjects("Kutch-Ajrakh", ("alum",), (449,)), "water:alum"),
+        ("PROCESS", TopicSubjects("Kutch-Ajrakh", districts=(449,)), "process:kutch-ajrakh"),
+        ("CLIMATE", TopicSubjects("Kutch-Ajrakh", districts=(449, 90)), "climate:lgd-449+lgd-90"),
     ],
 )
 def test_a_facet_topic_is_the_question_terms_else_the_place_else_the_craft(
     facet: str, subjects: TopicSubjects, expected: str
 ) -> None:
     assert facet_topic(facet, subjects) == expected
+
+
+def test_a_place_topic_keys_districts_by_lgd_code_and_a_long_set_by_its_digest() -> None:
+    many = tuple(range(30, 0, -1))
+    digest = hashlib.sha256(",".join(str(n) for n in range(1, 31)).encode("ascii")).hexdigest()[:16]
+    assert (
+        facet_topic("CLIMATE", TopicSubjects("Kutch-Ajrakh", districts=many)) == f"climate:lgd-set-{digest}"
+    )
+    assert district_topic("water", (3, 1, 2)) == "water:lgd-1+lgd-2+lgd-3"
+    assert region_topic("GEOGRAPHY", main_riv=None, district_lgds=many) == f"water:lgd-set-{digest}"
+    assert region_topic("GEOGRAPHY", main_riv=41063203, district_lgds=many) == "water:basin-41063203"
+
+
+def test_the_migration_rekeys_a_place_piece_named_by_districts_to_the_key_the_store_now_writes() -> None:
+    rekeyed = migration("0083_piece_districts_and_places").rekeyed
+    kachchh = [{"lgd": 449, "name": "Kachchh"}]
+    both = [
+        {"lgd": 449, "name": "Kachchh"},
+        {"lgd": 467, "name": "Bilaspur"},
+        {"lgd": 320, "name": "Bilaspur"},
+    ]
+    assert rekeyed("water:kachchh", kachchh) == facet_topic("GEOGRAPHY", TopicSubjects("x", districts=(449,)))
+    assert rekeyed("soil:bilaspur+kachchh", both) == "soil:lgd-320+lgd-449+lgd-467"
+    assert rekeyed("water:alum", kachchh) is None
+    assert rekeyed("water:kachchh", []) is None
+    named = [{"lgd": n, "name": f"District {n}"} for n in range(1, 31)]
+    subjects = "+".join(sorted(f"district-{n}" for n in range(1, 31)))
+    assert rekeyed(f"climate:{subjects}", named) == facet_topic(
+        "CLIMATE", TopicSubjects("x", districts=tuple(range(1, 31)))
+    )
+
+
+def test_a_curated_place_piece_keeps_the_id_its_district_name_gave_it_while_its_key_moves_to_codes() -> None:
+    assert piece_topic("GEOGRAPHY", "Kutch-Ajrakh", [449]) == "water:lgd-449"
+    assert piece_id_topic("GEOGRAPHY", "Kutch-Ajrakh", [449]) == "water:kachchh"
+    assert piece_id_topic("CLIMATE", "Kutch-Ajrakh", []) == "climate:kutch-ajrakh"
+    assert piece_id_topic("PROCESS", "Kutch-Ajrakh", [449]) == "process:kutch-ajrakh"
 
 
 def test_a_topic_longer_than_a_key_is_not_kept() -> None:

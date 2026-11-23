@@ -31,6 +31,7 @@ from app.research.knowledge_pieces import (
     ReuseAsk,
     concept_slot,
     knowledge_piece,
+    piece_district_lgds,
     piece_slot,
 )
 from app.research.piece_reuse import (
@@ -310,6 +311,7 @@ def piece_values(piece: KnowledgePiece) -> dict[str, Any]:
         "createdFromAnswerId": piece.created_from_answer_id,
         "createdAt": piece.created_at,
         "readingStyle": piece.reading_style,
+        "districtLgds": piece_district_lgds(piece),
     }
 
 

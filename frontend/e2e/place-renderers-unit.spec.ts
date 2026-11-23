@@ -22,7 +22,7 @@ import { project } from "@/components/map/projection";
 import { decodeShapes, type DistrictShape, type ShapesFile } from "@/components/map/shapeGeometry";
 import { ApiError } from "@/lib/api";
 import { BLOCK_SHAPES } from "@/lib/explainerContract";
-import type { MapLayerBlock, RegionStoryBlock, SeasonsBlock, SupplyMapBlock } from "@/lib/explainerPlace";
+import { HYDRORIVERS_DATASET_CODE, type MapLayerBlock, type RegionStoryBlock, type RiverPath, type SeasonsBlock, type SupplyMapBlock } from "@/lib/explainerPlace";
 import { blockCitations, blockSentences } from "@/lib/explainerView";
 import { isGone } from "@/lib/placeView";
 import type { RegionDataset } from "@/lib/regionContract";
@@ -38,7 +38,8 @@ import { eagerModules } from "./moduleGraph";
 
 const ROOT = join(__dirname, "..", "..");
 const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), "utf8");
-const FIXTURE = JSON.parse(read("shared", "explainer.phase-b.golden.json")) as { placeholders: { mainRiv: number }; sections: { blocks: { id: string }[] }[] };
+const FIXTURE = JSON.parse(read("shared", "explainer.phase-b.golden.json")) as { sections: { blocks: { id: string }[] }[] };
+const PLACEHOLDER_RIVER: RiverPath = { datasetCode: HYDRORIVERS_DATASET_CODE, mainRiv: 3, reachIds: [1, 2, 3], districtLgds: [449], name: "Saran" };
 const KACHCHH = 449;
 const INDIA_BOX = { minLongitude: 68.206, maxLongitude: 97.394, minLatitude: 6.756, maxLatitude: 37.082 };
 
@@ -48,7 +49,7 @@ function fixtureBlock(id: string): unknown {
   return structuredClone(found);
 }
 
-const story = (): RegionStoryBlock => parseShape(BLOCK_SHAPES.region_story, fixtureBlock("s1.b1"));
+const story = (): RegionStoryBlock => ({ ...parseShape(BLOCK_SHAPES.region_story, fixtureBlock("s1.b1")), river: { ...PLACEHOLDER_RIVER, reachIds: [...PLACEHOLDER_RIVER.reachIds] } });
 const placedStory = (): RegionStoryBlock => {
   const block = story();
   return { ...block, steps: block.steps.map((step) => ({ districtLgd: KACHCHH, sentence: { ...step.sentence, text: `In Kachchh, ${step.sentence.text}` } })) };
@@ -59,12 +60,12 @@ const supply = (): SupplyMapBlock => parseShape(BLOCK_SHAPES.supply_map, fixture
 
 type GoldenTopology = { objects: { reaches: { geometries: { properties: { districts?: unknown } }[] } } };
 const goldenTopology = (): GoldenTopology => JSON.parse(read("shared", "river.topology.golden.json")) as GoldenTopology;
-const basin = (): RiverBasin => riverBasinOf(goldenTopology(), FIXTURE.placeholders.mainRiv);
+const basin = (): RiverBasin => riverBasinOf(goldenTopology(), PLACEHOLDER_RIVER.mainRiv);
 
 function basinWithoutDistricts(): RiverBasin {
   const topology = goldenTopology();
   for (const geometry of topology.objects.reaches.geometries) delete geometry.properties.districts;
-  return riverBasinOf(topology, FIXTURE.placeholders.mainRiv);
+  return riverBasinOf(topology, PLACEHOLDER_RIVER.mainRiv);
 }
 
 let shapesCache: DistrictShape[] | null = null;

@@ -754,7 +754,8 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], 
     `PERSONAL_DATA` for an email address or a phone-like or Aadhaar-like number
     (`evidence.personal_data_in`). A comparison sign or a reaction arrow is not markup.
 - After the post-checks the sectioned flow drops, alone, a sentence that names a month, a
-  season, or a state or district of the LGD register that none of its stored claims' texts or
+  season, a regional month in month context (in any of its spellings in the supports; decision
+  0160), or a state or district of the LGD register that none of its stored claims' texts or
   quotes states (`services/stated_names.unstated_names`, decision 0050). A claim written back by
   this answer for the sentence (`KeptSentence.written`) states nothing for it: its text is the
   sentence itself, so only its quotes and the sentence's verified spans count (decision 0120).
@@ -1011,7 +1012,6 @@ fields that were set.
 | `status` | `{step, message}` | new; progress while research runs. `step` one of `PLANNING`, `SEARCHING_STORED`, `RESEARCHING`, `READING`, `COMPOSING`, `WRITING_BACK`, `TRANSLATING`; `message` a short user-facing sentence. A step's count is the sum over the sections that reached it, sent again as it grows while that step is the latest shown; a step already passed adds to its sum silently (decision 0138) |
 | `source` | `SourceRef {id, kind, title, authors[], year, doi, url, publisher, licence, attribution, reliability, containerTitle?}` | before the first citation naming it; `url` https or null; `containerTitle` (the journal) only when stored (decision 0143) |
 | `open_question` | `{sectionId, heading?, sentence}` | hypothesis-level sentences |
-| `reaction` | `{id, label, equation, balanced, level, conditions, citations (at least one)}` | |
 | `follow_ups` | `{items[]}` | |
 | `not_enough_evidence` | `{message}` | new; nothing cited could be shown. `message` is `not_enough_evidence_message` (what was searched); followed only by `done` |
 | `done` | `{answerId}` | last |
@@ -1020,7 +1020,8 @@ fields that were set.
 
 The `RESOLVING` step and the `match`, `section` and `sentence` events left the vocabulary in
 decision 0146: the flow sends `understood`, `section_started` and blocks instead, and the wire
-refuses the old names as unknown.
+refuses the old names as unknown. The `reaction` event left it in decision 0160: reactions arrive
+as `reaction_player` blocks.
 
 `SourceRef`, `Citation` and `AnswerSentence` live in `research/citations.py` (with
 `cited_source_ids`, the first-citation walk) and are imported from there only.

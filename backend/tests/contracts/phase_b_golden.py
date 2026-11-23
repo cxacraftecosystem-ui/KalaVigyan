@@ -19,7 +19,6 @@ __all__ = [
     "FixturePiece",
     "FixtureSection",
     "PhaseBFixture",
-    "Placeholders",
     "catalog_dataset",
     "geo_etl_datasets",
     "phase_b",
@@ -44,11 +43,6 @@ DATASET_FIELDS = (
 )
 
 
-class Placeholders(ContractModel):
-    main_riv: int = Field(ge=1)
-    reach_ids: list[int] = Field(min_length=1)
-
-
 class FixtureSection(ContractModel):
     id: str = Field(pattern=SECTION_ID_PATTERN)
     discipline: Discipline
@@ -65,7 +59,6 @@ class FixturePiece(ContractModel):
 class PhaseBFixture(ContractModel):
     schema_version: Literal[1]
     craft: CraftRef
-    placeholders: Placeholders
     sections: list[FixtureSection] = Field(min_length=1)
     pieces: list[FixturePiece]
     sources: list[SourceRef]

@@ -9,7 +9,7 @@ import pytest
 
 from app.research.blocks_place import RegionStoryBlock
 from app.research.knowledge_pieces import KnowledgePiece, PieceSlot, knowledge_piece, piece_slot
-from app.research.piece_reuse import ClaimState, with_region_story
+from app.research.piece_reuse import with_region_story
 from app.research.piece_topics import TopicSubjects
 from app.services import piece_store, place_builders
 from app.services.answer_events import CitedClaims
@@ -33,13 +33,23 @@ from ..answering.test_answer_flow import REPLY, events
 from ..answering.test_piece_reuse_flow import asked
 from ..composer.fixtures import replacements
 from ..research.fixtures import AJRAKH
-from .fixtures import KACHCHH, golden_story, kachchh_offer, no_session, place_tools, story_model, water_prose
+from .fixtures import (
+    KACHCHH,
+    golden_story,
+    kachchh_offer,
+    no_session,
+    patch_story_reads,
+    place_tools,
+    story_model,
+    visible,
+    water_prose,
+)
 
 KEPT_AT = datetime(2026, 11, 17, 9, 0, tzinfo=UTC)
 FIRST_ANSWER = uuid.UUID(int=10)
 OTHER_ANSWER = uuid.UUID(int=11)
 WATER = "water:kachchh"
-BASIN = "water:basin-3"
+BASIN = "water:basin-41063203"
 STORY_REPLY = {
     "river": "r1",
     "steps": [{"claim": "c1", "district": f"d{KACHCHH}"}],
@@ -60,16 +70,6 @@ def story_piece(*, answer: uuid.UUID = FIRST_ANSWER, depth: str = "EXPERT", at: 
 
 def prose_piece() -> KnowledgePiece:
     return stored(water_prose(), PieceSlot(CRAFT_ID, "GEOGRAPHY", WATER, "EXPERT"), answer=FIRST_ANSWER)
-
-
-def visible(*pieces: KnowledgePiece) -> dict[uuid.UUID, ClaimState]:
-    found: dict[uuid.UUID, ClaimState] = {}
-    for piece in pieces:
-        for citation in piece.payload.citations():
-            claim = uuid.UUID(citation.claim_id)
-            held = found.get(claim, ClaimState(citation.level, frozenset()))
-            found[claim] = ClaimState(citation.level, held.citation_ids | {citation.id})
-    return found
 
 
 def test_a_stored_region_story_joins_its_reused_section_after_the_prose() -> None:
@@ -132,6 +132,7 @@ def offered(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(place_builders, "rivers_loaded", loaded)
     monkeypatch.setattr(place_builders, "region_offer", offer)
+    patch_story_reads(monkeypatch)
 
 
 async def test_a_region_story_is_kept_across_crafts_and_reused_with_its_section(offered: None) -> None:

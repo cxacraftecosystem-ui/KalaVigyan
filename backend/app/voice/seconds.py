@@ -61,16 +61,16 @@ def settle_key(session_id: uuid.UUID) -> str:
     return f"voice-settle:{session_id}"
 
 
-def listen_hold_key(request_id: uuid.UUID) -> str:
-    return f"listen:{request_id}:hold"
+def listen_hold_key(request_id: uuid.UUID, voice: str) -> str:
+    return f"listen:{request_id}:{voice}:hold"
 
 
-def listen_refund_key(request_id: uuid.UUID) -> str:
-    return f"listen-refund:{request_id}"
+def listen_refund_key(request_id: uuid.UUID, voice: str) -> str:
+    return f"listen-refund:{request_id}:{voice}"
 
 
-def listen_settle_key(request_id: uuid.UUID) -> str:
-    return f"listen-settle:{request_id}"
+def listen_settle_key(request_id: uuid.UUID, voice: str) -> str:
+    return f"listen-settle:{request_id}:{voice}"
 
 
 def capped_seconds(charge: int, remaining: int | None) -> int:

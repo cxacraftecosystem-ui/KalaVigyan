@@ -41,7 +41,7 @@ CATEGORY_SCOPE = "CATEGORY"
 
 def stored_from_plan(plan: CurationPlan, *, scope: str = CRAFT_SCOPE) -> StoredCuration:
     districts = sorted(
-        {str(place.district) for place in plan.index.places if place.location_id and place.district}
+        {place.district_lgd for place in plan.index.places if place.location_id and place.district_lgd}
     )
     overview = _overview(plan, plan.craft.id, districts)
     page = indexed_overview(plan.index, overview)
@@ -72,7 +72,7 @@ def stored_from_category_plan(plan: CategoryPlan) -> StoredCuration:
 
 
 def _overview(
-    plan: CurationPlan | CategoryPlan, craft_id: uuid.UUID | None, districts: list[str]
+    plan: CurationPlan | CategoryPlan, craft_id: uuid.UUID | None, districts: list[int]
 ) -> OverviewPieces:
     views, sources = plan_views(plan)
     cited = cited_claims(list(views.values()), sources)

@@ -230,6 +230,7 @@ def media_cost(
         model,
         input_tokens=result.input_tokens,
         output_tokens=result.output_tokens,
+        media_tokens=result.media_tokens,
         overrides=dict(overrides),
     )
     if configured > 0 and abs(cost - configured) > configured * PRICE_DRIFT_LIMIT:

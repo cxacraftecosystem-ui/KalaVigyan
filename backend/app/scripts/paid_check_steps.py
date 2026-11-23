@@ -8,7 +8,9 @@ from typing import Any
 from app.core.errors import AppError
 from app.providers.base import MediaRequest
 from app.providers.elevenlabs import NARRATION_MODEL, ElevenLabs, audio_seconds
-from app.providers.gemini_media import GeminiMediaWire
+from app.providers.gemini_media import SPEECH_MODEL, GeminiMediaWire
+from app.voice.listen_voices import untagged
+from app.voice.read_aloud import wav_frames
 from app.voice.score_prompts import SCORE_MUSIC_PROMPT
 
 from .paid_check_ledger import Recorder
@@ -18,12 +20,14 @@ __all__ = [
     "MUSIC_MODEL",
     "MUSIC_SECONDS",
     "NARRATIONS",
+    "SPEECH_USD",
     "CheckResult",
     "PaidCheck",
     "image_check",
     "music_check",
     "narration_check",
     "narration_estimate",
+    "speech_check",
 ]
 
 NARRATION_USD_PER_THOUSAND_CHARACTERS = Decimal("0.30")
@@ -31,6 +35,8 @@ MUSIC_MODEL = "music_v2_5"
 MUSIC_SECONDS = 10.0
 MUSIC_USD_PER_SECOND = Decimal("0.275") / 60
 IMAGE_MODEL = "gemini-3.1-flash-image"
+SPEECH_USD = Decimal("0.01")
+SPEECH_TEXT = "Ajrakh cloth is printed with carved wooden blocks, and it is washed between them."
 IMAGE_USD = Decimal("0.067")
 IMAGE_OUTPUT_USD_PER_TOKEN = Decimal(60) / 1_000_000
 IMAGE_OUTPUT = {"aspect_ratio": "1:1", "image_size": "1K"}
@@ -66,7 +72,7 @@ def narration_estimate(language: str) -> Decimal:
 async def narration_check(
     eleven: ElevenLabs, recorder: Recorder, *, voice_id: str, language: str
 ) -> CheckResult:
-    text = NARRATIONS[language]
+    text = untagged(NARRATIONS[language])
     try:
         speech = await eleven.narration(text, voice_id=voice_id, language=language)
     except AppError as error:
@@ -79,6 +85,7 @@ async def narration_check(
         "charactersPerMinute": round(len(text) * 60 / seconds) if seconds else None,
         "alignmentSpellsTheText": len(speech.starts) == len(text),
         "lastCharacterEndsAt": speech.ends[-1] if speech.ends else None,
+        "parenthesisedSeconds": round(speech.ends[text.index(")")] - speech.starts[text.index("(")], 3),
     }
     return CheckResult(findings, _recorded(recorder, "/with-timestamps", f"narration_{language}.json"))
 
@@ -118,6 +125,23 @@ async def image_check(gemini: GeminiMediaWire, recorder: Recorder) -> CheckResul
     return CheckResult(
         findings, _recorded(recorder, "/interactions", "image_completed_recorded.json"), actual
     )
+
+
+async def speech_check(gemini: GeminiMediaWire, recorder: Recorder) -> CheckResult:
+    try:
+        audio = await gemini.read_aloud(SPEECH_TEXT)
+        read = wav_frames(audio)
+    except AppError as error:
+        return _refused(recorder, "/interactions", "speech_refused.json", error)
+    findings = {
+        "model": SPEECH_MODEL,
+        "characters": len(SPEECH_TEXT),
+        "sampleRate": read.rate,
+        "audioSeconds": round(read.count / read.rate, 3),
+        "bytes": len(audio),
+    }
+    files = {"gemini_speech.wav": audio, **_recorded(recorder, "/interactions", "speech_completed.json")}
+    return CheckResult(findings, files, None)
 
 
 def _recorded(recorder: Recorder, path_end: str, name: str) -> dict[str, bytes]:

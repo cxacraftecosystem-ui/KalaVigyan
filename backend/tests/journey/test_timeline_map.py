@@ -19,8 +19,8 @@ from app.services import journey_builders
 from app.services.block_builders import BLOCK_BUILDERS
 from app.services.builder_evidence import fact_sentence
 from app.services.journey_builders import TimelineMapBuilder
+from app.services.place_points import OriginPlace
 from app.services.place_register import KnownPoints
-from app.services.supply_links import OriginPlace
 from app.services.supply_places import named_places
 from app.services.timeline_story import timeline_block, timeline_entries, timeline_offer
 

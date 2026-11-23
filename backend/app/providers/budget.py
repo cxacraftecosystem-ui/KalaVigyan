@@ -226,6 +226,7 @@ def token_cost(
     input_tokens: int | None,
     output_tokens: int | None,
     cached_tokens: int | None = None,
+    media_tokens: int | None = None,
     day: date | None = None,
     overrides: dict[str, Any] | None = None,
 ) -> Decimal:
@@ -233,8 +234,22 @@ def token_cost(
     total_in = Decimal(max(0, input_tokens or 0))
     cached = min(Decimal(max(0, cached_tokens or 0)), total_in)
     billed_in = (total_in - cached) * price_in + cached * price_in * CACHED_INPUT_FRACTION
-    billed_out = Decimal(max(0, output_tokens or 0)) * price_out
+    total_out = Decimal(max(0, output_tokens or 0))
+    price_media = media_token_price(model, overrides)
+    if price_media is None:
+        return usd((billed_in + total_out * price_out) / MILLION)
+    media = total_out if media_tokens is None else min(Decimal(max(0, media_tokens)), total_out)
+    billed_out = media * price_media + (total_out - media) * price_out
     return usd((billed_in + billed_out) / MILLION)
+
+
+def media_token_price(model: AiModel | None, overrides: dict[str, Any] | None = None) -> Decimal | None:
+    override = (overrides or {}).get(model.id) if model else None
+    if isinstance(override, dict) and "media" in override:
+        return Decimal(str(override["media"]))
+    if model is None or model.media_price_per_mtok is None:
+        return None
+    return Decimal(str(model.media_price_per_mtok))
 
 
 def unit_cost(model: AiModel | None, units: float, overrides: dict[str, Any] | None = None) -> Decimal:

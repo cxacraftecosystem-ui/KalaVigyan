@@ -8,13 +8,18 @@ import { IndiaMap } from "@/components/map/IndiaMap";
 import { useOutlineCaption } from "@/components/map/useOutlineCaption";
 import type { MapPoint } from "@/components/map/layout";
 import { listText } from "@/lib/format";
+import type { BoundaryNote, RegionDataset } from "@/lib/regionContract";
 import type { SupplyPin } from "@/lib/supplyView";
 
 export function supplyTitle(pins: readonly SupplyPin[]): string {
   return listText(pins.map((pin) => pin.origin));
 }
 
-export function SupplyPins({ pins }: { pins: readonly SupplyPin[] }) {
+export function districtCredit(pins: readonly SupplyPin[], boundary: RegionDataset | null, caption: string | null): BoundaryNote | null {
+  return boundary !== null && pins.some((pin) => pin.byDistrict) ? { caption: caption ?? "", dataset: boundary } : null;
+}
+
+export function SupplyPins({ pins, boundary = null }: { pins: readonly SupplyPin[]; boundary?: RegionDataset | null }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const outline = useOutlineCaption();
   const [pinned, setPinned] = useState<string | null>(null);
@@ -32,7 +37,8 @@ export function SupplyPins({ pins }: { pins: readonly SupplyPin[] }) {
       })),
     [pins]
   );
-  const texts = { title: supplyTitle(pins), source: <AnswerMapSource boundary={null} caption={outline} coordinates /> };
+  const wikidata = pins.some((pin) => !pin.byDistrict);
+  const texts = { title: supplyTitle(pins), source: <AnswerMapSource boundary={districtCredit(pins, boundary, outline)} caption={outline} coordinates={wikidata} /> };
   return (
     <AnswerFigure texts={texts} data-testid="supply-pins">
       <IndiaMap points={points} hoveredKey={hovered} selectedKey={pinned} onHover={setHovered} onSelect={(key) => setPinned((current) => (current === key ? null : key))} />

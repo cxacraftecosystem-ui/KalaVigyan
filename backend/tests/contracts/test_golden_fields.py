@@ -17,7 +17,7 @@ from app.research.knowledge_pieces import KnowledgePiece
 from app.research.quiz import ExplainerQuiz
 from app.research.terms import Term
 
-from .blocks_golden import QUANTITIES, TIMELINE_UNDATED, BlocksFixture
+from .blocks_golden import QUANTITIES, SUPPLY_DISTRICT, TIMELINE_UNDATED, BlocksFixture
 from .golden import SHARED
 from .golden_fields import reachable_models, shown_fields, shown_in, unshown_fields
 from .learning_golden import AlertsFixture, LessonFixture, VersionsFixture
@@ -41,6 +41,7 @@ GOLDEN_MODELS: dict[str, Any] = {
     "explainer.phase-d.golden.json": PhaseDFixture,
     QUANTITIES: BlocksFixture,
     TIMELINE_UNDATED: BlocksFixture,
+    SUPPLY_DISTRICT: BlocksFixture,
     "explainer.signature.golden.json": list[SignatureBlock],
     "explainer.signature-lede.golden.json": LedeBlock,
     "explainer.piece.golden.json": KnowledgePiece,

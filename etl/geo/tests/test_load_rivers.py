@@ -13,11 +13,13 @@ from geo_etl.rivers import topology_key, write_rivers
 from load_rivers import (
     BASIN_COLUMNS,
     REACH_COLUMNS,
+    delete_superseded,
     output_problems,
     reach_rows,
     read_outputs,
     replace_rivers,
     stored_sha256,
+    superseded_keys,
     upload_topologies,
 )
 
@@ -134,6 +136,55 @@ def test_only_topologies_not_stored_under_their_digest_are_uploaded(outputs):
         "Metadata": {"sha256": hashlib.sha256(body).hexdigest()},
     }
     assert json.loads(body)["objects"]["reaches"]["geometries"][0]["id"] == COAST
+
+
+class ListedBucket:
+    def __init__(self, pages: list[list[str]], refused: tuple[str, ...] = ()):
+        self.pages = pages
+        self.refused = refused
+        self.listed: list[dict] = []
+        self.deletes: list[list[str]] = []
+
+    def get_paginator(self, name):
+        assert name == "list_objects_v2"
+        return self
+
+    def paginate(self, **kwargs):
+        self.listed.append(kwargs)
+        return [{"Contents": [{"Key": key} for key in page]} if page else {} for page in self.pages]
+
+    def delete_objects(self, Bucket, Delete):
+        keys = [item["Key"] for item in Delete["Objects"]]
+        assert Delete["Quiet"] is True
+        self.deletes.append(keys)
+        return {"Errors": [{"Key": key, "Code": "AccessDenied"} for key in keys if key in self.refused]}
+
+
+def test_every_river_file_no_basin_of_the_load_names_leaves_the_bucket(outputs):
+    first, second = outputs.manifest["basins"]
+    kept = [topology_key("v10", basin["mainRiv"], basin["sha256"]) for basin in (first, second)]
+    older = topology_key("v10", first["mainRiv"], hashlib.sha256(b"older").hexdigest())
+    dropped = topology_key("v10", 41999999, hashlib.sha256(b"gone").hexdigest())
+    earlier = topology_key("v9", second["mainRiv"], second["sha256"])
+    bucket = ListedBucket([[kept[0], older], [], [dropped, kept[1], earlier]])
+    found = superseded_keys(bucket, "kalavigyan-media", outputs)
+    assert bucket.listed == [{"Bucket": "kalavigyan-media", "Prefix": "media/rivers/"}]
+    assert found == sorted([older, dropped, earlier])
+    assert delete_superseded(bucket, "kalavigyan-media", found) == 3
+    assert bucket.deletes == [sorted([older, dropped, earlier])]
+
+
+def test_deletes_go_in_batches_of_a_thousand_and_a_refused_delete_fails_the_load():
+    keys = [f"media/rivers/v10/{n}/x/f.json" for n in range(2001)]
+    bucket = ListedBucket([])
+    assert delete_superseded(bucket, "b", keys) == 2001
+    assert [len(batch) for batch in bucket.deletes] == [1000, 1000, 1]
+    assert delete_superseded(bucket, "b", []) == 0
+    refusing = ListedBucket([], refused=(keys[3],))
+    with pytest.raises(
+        RuntimeError, match=r"1 superseded river topologies could not be deleted: .*/3/x/f.json \(AccessDenied\)"
+    ):
+        delete_superseded(refusing, "b", keys[:5])
 
 
 def test_a_head_error_other_than_missing_stops_the_upload():

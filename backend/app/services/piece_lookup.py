@@ -84,15 +84,15 @@ async def topic_subjects(session: AsyncSession, craft: Craft, question: str) -> 
     )
 
 
-async def craft_districts(session: AsyncSession, craft: Craft) -> tuple[str, ...]:
-    names = await session.scalars(
-        select(AdminDistrict.name)
+async def craft_districts(session: AsyncSession, craft: Craft) -> tuple[int, ...]:
+    lgds = await session.scalars(
+        select(AdminDistrict.lgd)
         .join(CraftLocation, CraftLocation.districtLgd == AdminDistrict.lgd)
         .where(CraftLocation.craftId == craft.id)
         .distinct()
-        .order_by(AdminDistrict.name)
+        .order_by(AdminDistrict.lgd)
     )
-    return tuple(names)
+    return tuple(lgds)
 
 
 async def candidate_pieces(

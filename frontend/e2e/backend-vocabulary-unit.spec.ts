@@ -83,7 +83,7 @@ const PAIRS: [string, string, readonly string[]][] = [
   ["models/enums.py", "IMAGE_RELEVANCE", IMAGE_RELEVANCE],
   ["models/enums.py", "TERM_BASES", TERM_BASES],
   ["research/blocks_people.py", "EXPERT_SEATS", EXPERT_SEATS],
-  ["research/calendar.py", "SEASONS", SEASONS],
+  ["research/calendar_words.py", "SEASONS", SEASONS],
   ["research/blocks_journey.py", "ZOOM_LEVELS", ZOOM_LEVELS],
   ["models/enums.py", "NOTIFICATION_KINDS", NOTIFICATION_KINDS],
   ["models/enums.py", "PLACE_ROLES", PLACE_ROLES],

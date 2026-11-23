@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.data.district_register import load_district_other_names
 from app.data.river_names import NamedRiver, RiverNames, load_river_names, name_forms
 from app.geo.datasets import region_dataset, registry_row_ref
 from app.geo.layers import LAYERS_BY_ID
@@ -147,7 +148,11 @@ async def district_refs(session: AsyncSession, district_lgds: Collection[int]) -
         .where(AdminDistrict.lgd.in_(list(district_lgds)))
     )
     rows = (await session.execute(statement)).all()
-    return {lgd: DistrictRef(district_lgd=lgd, name=name, state_name=state) for lgd, name, state in rows}
+    others = load_district_other_names()
+    return {
+        lgd: DistrictRef(district_lgd=lgd, name=name, state_name=state, other_names=list(others.get(lgd, ())))
+        for lgd, name, state in rows
+    }
 
 
 async def section_map_layer(

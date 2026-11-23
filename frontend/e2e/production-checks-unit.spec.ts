@@ -346,7 +346,7 @@ function indigoAnswer(...frames: string[]): string {
 
 const DRAWN_FRAME: FrameSeen = { sandbox: "allow-scripts", policyFirst: true, drawn: true, peerless: true };
 
-test("the seven known-answer questions ask the mordant in three languages, the water, materials and history at Detailed depth and indigo at Expert", () => {
+test("the nine known-answer questions ask the mordant in three languages, the water, materials, history, climate and the Ganga at Detailed depth and indigo at Expert", () => {
   expect(KNOWN_ANSWER_QUESTIONS.map((question) => [question.label, question.depth, question.check])).toEqual([
     ["English", "DETAILED", "MORDANT"],
     ["Hindi", "DETAILED", "MORDANT"],
@@ -354,8 +354,11 @@ test("the seven known-answer questions ask the mordant in three languages, the w
     ["Indigo", "EXPERT", "GENERATED_EXPLAINER"],
     ["Materials", "DETAILED", "ZOOM_STORY"],
     ["History", "DETAILED", "TIMELINE_MAP"],
+    ["Climate", "DETAILED", "SEASONS"],
+    ["Ganga", "DETAILED", "RIVER_TIME"],
     ["Urdu", "DETAILED", "MORDANT"]
   ]);
+  expect(KNOWN_ANSWER_QUESTIONS.filter((question) => question.craft).map((question) => question.craft)).toEqual(["Varanasi-Soft-Stone-Jali-Work"]);
   expect(INDIGO.question).toBe("How does indigo turn blue on Kutch Ajrakh cloth?");
   expect(FRAME_DOCUMENT_START).toContain("webrtc 'block'");
   const detailed = answerRecord({ question: INDIGO, stream: stream(indigoAnswer(), "en"), streamsOpened: 1, clickedAt: 1_000, waited: null });

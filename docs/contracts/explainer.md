@@ -296,20 +296,25 @@ construct, and the builder that made it adds nothing.
   sentence}] (1+), layers[layer id], datasets[DatasetRef] (1+), boundaryCaption}`.
   `RiverPath {datasetCode "HYDRORIVERS_1_0", mainRiv, reachIds[] (source to outlet, once each,
   the last is `mainRiv`), districtLgds[] (districts reached, path order, once each), name?}`;
-  `DistrictRef {districtLgd, name, stateName}`. Server: the trace (`docs/contracts/region.md`,
+  `DistrictRef {districtLgd, name, stateName, otherNames[]?}` (`otherNames` the names sources
+  also use for the district, from the cited table `data/district_other_names.json`, left out when
+  none; decision 0160). Server: the trace (`docs/contracts/region.md`,
   Rivers), the districts (the river's first, in path order, then the story's others) with names
-  from the LGD register, the dataset rows (`DR_DISTRICT_SHAPES`, and `HYDRORIVERS_1_0` with a
+  from the LGD register and its other names, the dataset rows (`DR_DISTRICT_SHAPES`, and `HYDRORIVERS_1_0` with a
   river), the caption. Model: which offered basin (by `mainRiv`) or none, which claims become
   steps, their order and district, which offered layers. Rules: the caption is
   `BOUNDARY_CAPTION`; each district, layer and dataset once; steps narrate listed districts, and
-  a step names its district only when its sentence or quotes name it (`blocks.named_in`, decision
-  0050); the
+  a step names its district only when its sentence or quotes name it or one of its `otherNames`
+  (`blocks_place.district_named`, decisions 0050 and 0160), so a step about Kutch is placed in
+  Kachchh; the
   river's districts lead `districts` in path order; a river `name` is stated by a step sentence or
   its quote, or by a river names dataset row the block cites (`rivers.RIVER_NAME_DATASET_CODES`,
   decision 0153); the builder checks the trace against the stored reaches (`rivers.trace_problems`).
   Cites the steps' claims and the dataset rows. **Piece:** cross-craft (`craftId` null), the
   section's facet, topic `<facet namespace>:basin-<mainRiv>`, else `<namespace>:lgd-<code>` for
-  each district (`knowledge_pieces.piece_slot`).
+  each district, or `<namespace>:lgd-set-<first 16 hex of the SHA-256 of the sorted codes>` when
+  that is longer than a key (`knowledge_pieces.piece_slot`, `piece_topics.district_topic`); a story
+  without a river also keeps its districts in `KnowledgePiece.districtLgds` (decision 0160).
 - **`map_layer`** `{layer, layerVersion, title, datasets[DatasetRef] (exactly 2), highlighted[]
   (district LGD codes, 1+), boundaryCaption}`. Server: everything, from `geo/layers.MAP_LAYERS`
   and the layer route (`GET /api/map/layers/{layer}`: id, the version it answered, title, its
@@ -342,8 +347,8 @@ construct, and the builder that made it adds nothing.
   step, and translation and term marking walk the notes. The builder re-checks steps and notes
   against the process rows, as ladders are (`reaction_player_problems`, decision 0045): a stage,
   condition or colour list or a `deltaH` a stored step holds must equal the rows', a note must be a stored claim
-  of its reaction. Replaces the stream's `reaction` event,
-  which no server path emits and which stays declared until removed (`docs/TECH_DEBT.md`). **Piece:** the section's slot; reuse re-checks against the process rows.
+  of its reaction. It replaced the stream's `reaction` event, which left both sides of the wire
+  with the client's reactions panel (decision 0160). **Piece:** the section's slot; reuse re-checks against the process rows.
 - **`material_card`** `{materialId?, compoundId?, termKey?, name, materialKind?, role?, formula?,
   pubchemCid?, wikidataId?, localNames[], facts[sentence] (1+), handling[sentence], sourceId?}`. Server: name,
   kind and role from the stored `Material` (and its stage role), formula and CID from its
@@ -390,19 +395,28 @@ construct, and the builder that made it adds nothing.
   MonthlyRain?, datasets[DatasetRef]}`, `MonthlyRain {district: DistrictRef, datasetCode, period,
   millimetres[12]}` (the district by its register name and state, decision 0050). Server: the label (the stored stage's name, else the claim's subject), the
   months and season read from the sentence and its quotes (`calendar.months_named`,
-  `seasons_named`: capitalised month names and ranges, `MONSOON`, `WINTER`, `SUMMER` from their
-  words), the rainfall from the CHIRPS monthly normals of the craft's district (decision 0043's
+  `seasons_named`: capitalised month names and ranges, `between` two months and two neighbouring
+  months joined by `and` or `or` included; `MONSOON`, `WINTER`, `SUMMER`, `SPRING`, `AUTUMN`,
+  `PRE_MONSOON` and `POST_MONSOON` from their words in `research/calendar_words.SEASON_WORDS`, the
+  longest first, a season followed by "of" and a year being a date and "spring" a season only after
+  a season's lead word, decision 0160), the rainfall from the CHIRPS monthly normals of the craft's district (decision 0043's
   rows, read by `services/monthly_rain.district_rainfall`) and its dataset row. Model: which
   claims become rows, their order. Rules: months 1-12 once each in order; a row has months or a
   season, each named by its sentence or quotes, unless it is a stored stage (`stageId`) listed
   without them (decision 0047); `datasets` is the rainfall's dataset row exactly when there is
   rainfall. **Piece:** the section's slot.
 - **`supply_map`** `{links[{material, materialId?, termKey?, origin, wikidataId?, latitude?,
-  longitude?, sentence}] (1+)}`. Server: `material` is the glossary term's label or the stored
-  material's name, else words the sentence states; coordinates are the Wikidata item's (P625) for
-  the origin. Model: which claims, which material and origin words. Rules: the origin is stated
-  by the sentence or its quotes; an unstored material too; an origin is placed only with a
-  Wikidata id and both coordinates; each origin of a material once. **Piece:** the section's slot.
+  longitude?, districtLgd?, sentence}] (1+), datasets[DatasetRef]?}`. Server: `material` is the
+  glossary term's label or the stored material's name, else words the sentence states;
+  coordinates are the register district's stored centroid when the origin is one LGD district by
+  its register or other name (`districtLgd`, the block then citing `DR_DISTRICT_SHAPES` in
+  `datasets`), else the Wikidata item's (P625). Model: which claims, which material and origin
+  words. Rules: the origin is stated by the sentence or its quotes; an unstored material too; an
+  origin is placed only with both coordinates and either a Wikidata id or its district, never both;
+  `datasets` is `DR_DISTRICT_SHAPES` exactly when a link is placed by district; each origin of a
+  material once. `districtLgd` and `datasets` are left out of the JSON when empty, so a map a
+  release behind reads lists a district origin without its pin (decision 0160). **Piece:** the
+  section's slot.
 
 Pieces of one answer never supersede each other: a section may store several pieces of one kind
 (material cards, expert views), and only pieces from earlier answers are superseded
@@ -573,7 +587,13 @@ Registered in `BLOCK_BUILDERS` from `services/place_builders.py`; an answer for 
 craft with no cited district that has a polygon (`place_offers.mapped_districts`, the region
 route's district places), gets neither.
 
-- **`region_story`** (`GEOGRAPHY`, 20 s). Nothing until the river lines are loaded
+- **`region_story`** (`GEOGRAPHY`, 20 s). A current stored story comes first: the session reads
+  the craft-less stories keyed by a basin crossing the craft's districts or told over exactly
+  those districts (`region_pieces.region_story_pieces`), and the newest that passes the reuse rule
+  as a craft-less piece at the asked depth (`piece_reuse.usable_region_stories`, its claims' states
+  read through `piece_lookup.claim_states`) is placed with its reuse mark
+  (`knowledge_pieces.placed_block`, the registry entry's `places_pieces`), with no model call and no
+  river read (decision 0160). Otherwise nothing until the river lines are loaded
   (`river_store.rivers_loaded`; logged once per answer). One short session reads the offer
   (`place_offers.region_offer`): the craft's districts; at most 3 rivers crossing them, first those
   of the river names datasets whose names the statements name (`stated_crossings`, decision 0153),
@@ -585,8 +605,12 @@ route's district places), gets neither.
   dataset rows. Then one plan-model call (`composer/region_story`, every river, district, layer
   and statement in its own untrusted block) answers refs: a river or `none`, at most 8 steps
   `{claim, district | none}` and at most 4 layers. The statements are the fact-level stored claims
-  the section's blocks cite, in order of first citation, at most 12, each a step as stored with
-  its visible citations; an unknown claim ref drops its step, a district the story does not list
+  the section's blocks cite, in order of first citation, at most 12, then at most 6
+  (`place_claims.PLACE_CLAIMS_MAX`) of the craft's stored claims under its place headings
+  (`ENVIRONMENTAL_CONDITION`, the `GEOGRAPHY` concept type), those naming a craft district (by its
+  register or other name, in the text or a quote) first, then by the question's lexical rank, none
+  the section already cites (`place_claims.district_place_claims`, decision 0160), each a step as
+  stored with its visible citations, the place claims' sources returned with the block; an unknown claim ref drops its step, a district the story does not list
   or the step's sentence and quotes do not name leaves the step unplaced (shown as "Step n" with no
   map focus, decision 0050), an unoffered layer or one whose dataset row is missing is left out.
   `datasets` is `DR_DISTRICT_SHAPES` (no row, no story), `HYDRORIVERS_1_0` with a river (no row,
@@ -595,13 +619,17 @@ route's district places), gets neither.
   or null for a river neither dataset names (decision 0153). No chosen step is no story.
 - **`map_layer`** (`GEOLOGY`, `CLIMATE`, 8 s, no model): the facet's registry layers
   (`geo/section_layers`: soil, geology and terrain for `GEOLOGY`, climate for `CLIMATE`) in
-  registry order, those whose subject words (`LAYER_SUBJECTS`, whole words) a section sentence
-  names first; the first with a value in a craft district becomes the block, built from
+  registry order, those whose glossary term a section sentence names first (`geo/layer_terms.json`:
+  one term per registry layer, its label, aliases and any sourced local names, marked by
+  `research/term_marking.TermMarker` as answer terms are, so a multi-word term and the longest
+  surface win and a surface two terms share chooses neither; decision 0160); the first with a value in a craft district becomes the block, built from
   `map_layer(layer_values(...))` exactly as the layer route answers it, highlighting the craft's
   districts with a value.
-- **Pieces.** A story is stored in `piece_slot`'s cross-craft slot (`region_topic`; a key past
-  `TOPIC_KEY_MAX_CHARS` is not stored). A reused facet section also gets the current story keyed
-  by a basin crossing the craft's districts or by those districts
+- **Pieces.** A story is stored in `piece_slot`'s cross-craft slot (`region_topic`; a district
+  set too long for a key is keyed by its digest, so every story is stored), and a story without a
+  river keeps its district codes in `districtLgds` (GIN, migration `0083_piece_districts_and_places`).
+  A reused facet section also gets the current story keyed by a basin crossing the craft's
+  districts or told over exactly those districts (`districtLgds` holding them and no other)
   (`services/region_pieces.region_story_pieces`, looked up only when a geography section is asked,
   `REGION_STORY_FACETS`) when it passes the reuse rule as a craft-less
   piece and its river still follows the stored reaches (`river_store.stored_trace_problems`);
@@ -620,12 +648,22 @@ gets neither.
   concept's name. Timing is read from the claim's own text: `calendar.year_months` (a month beside
   a day or a year is a date, not a month of the year) and `only_season` (a text naming two seasons
   gives none); a month, range or season whose clause holds a negating or excluding word within
-  five words before it (`EXCLUDING_WORDS`: not, never, except, until, ...) times nothing, and Jan,
-  Mar or Dec before a capitalised word is a name (decision 0050). At most `SEASON_ROWS_MAX` (12) rows, timed first; no timed row is no block, except in a climate
+  five words before it (`EXCLUDING_WORDS`: not, never, except, until, ..., and "rather than",
+  "other than", "instead of"; a parenthesis does not end the clause) times nothing, a season a
+  point word stands just before ("after the rainy season") is a reference, not the row's season,
+  and Jan, Mar or Dec before a capitalised word is a name (decisions 0050 and 0160). A regional
+  month (`calendar_words.REGIONAL_MONTHS`, the national calendar's twelve months and their common
+  spellings) times a row only in month context ("the month of Kartik", "Kartik month";
+  `calendar.regional_month`), so a person or a Saka date spelled alike times nothing, and the table
+  holds no Gregorian months: like a local unit (owner O5), a regional month gets months only from a
+  quote that states them beside it ("Baisakh, in April and May"; `regional_month_months`). At most `SEASON_ROWS_MAX` (12) rows, timed first; no timed row is no block, except in a climate
   section, which then shows its district's CHIRPS rainfall alone (`season_rows.rain_only_block`,
   decision 0138); the climate section builds the block when the answer has one. A row
-  with a season and no month takes the months of the one mapping every offered quote agrees on
-  (`calendar.season_months`: a season word joined to one month range in a source's quote, with no
+  with a season or a regional month and no month takes the months of the one mapping every offered
+  quote agrees on, the offered claims being the section's, its stages' and the craft's stored
+  claims under its place headings whose quotes state such a mapping (`place_claims.
+  place_calendar_claims`, a region's season calendar entering as an ordinary cited claim; decision
+  0160) (`calendar.season_months`: a season word joined to one month range in a source's quote, with no
   sentence break, clause word or other month or season between; `season_mappings`), and its
   sentence cites that quote after its own, at the weaker level. `rainfall` is the first of the
   craft's mapped districts with twelve CHIRPS normals, with its dataset row; none leaves it null.
@@ -637,12 +675,19 @@ gets neither.
   offered, whose origin or unstored material its sentence and quotes do not state, whose stored
   material's own use claims do not include the statement and whose sentence and quotes name none
   of the material's surfaces (decision 0050), or whose material is its own origin is dropped, each pair once, at most 12. A stored material is shown by
-  its glossary term's label, else its name. Origins are placed through the Wikidata adapter:
-  `place_candidates` (`wbsearchentities`, the hits whose matched label or alias is the origin) and
-  one `place_points` SPARQL query for P625 (Earth points, preferred over normal rank, none when one
-  rank holds two points). One matching item is used; of several, only the one whose description
+  its glossary term's label, else its name. An origin that is one LGD district by its register or
+  other name is placed at that district's stored centroid (`place_register.register_points`),
+  citing the `DR_DISTRICT_SHAPES` row (no row, no district placement). The other origins are
+  placed through the Wikidata adapter: `place_candidates` (`wbsearchentities`, the hits whose
+  matched label or alias is the origin) and one `place_points` SPARQL query for P625 (Earth
+  points, preferred over normal rank, none when one rank holds two points), both answered first
+  from the stored lookups (`services/place_lookups.StoredPlaces` over `PlaceLookup`, keyed
+  `name:<folded name>` and `item:<id>`, an answer and its absence kept, asked again after 30 days,
+  `PLACE_LOOKUP_REFRESH`; migration `0083_piece_districts_and_places`, decision 0160), so a repeat
+  map asks Wikidata nothing. One matching item is used; of several, only the one whose description
   names a capitalised word of the link's sentence or quotes. Otherwise, or when Wikidata fails, the
-  origin is listed without a place.
+  origin is listed without a place. The section's builders share one read of the craft's matter
+  (`BuildAsk.matter`, decision 0152).
 
 ### Expert panel as built (decisions 0046, 0099)
 
@@ -1353,7 +1398,9 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   (facet, term) once; no two cells of a row rest on one claim; facts only. A comparison answer has
   several crafts in `Understood.crafts`. **Piece:** never.
 - **`concept_graph`** `{focus: CraftRef?, nodes[ConceptNode] (1-8)}`, `ConceptNode {termKey,
-  label, crafts[ConceptCraft] (2-100)}`, `ConceptCraft {craft, conceptIds[] (1+), sentence}`. The
+  label, crafts[ConceptCraft] (2-100), craftCount?}`, `ConceptCraft {craft, conceptIds[] (1+),
+  sentence}`; `craftCount` (decision 0161) is how many crafts' own claims name the term, at least
+  the crafts listed, and is left out only by a node stored before it existed. The
   shared-science explorer's unit: a glossary term (`Term`) shared by at least two crafts
   (`TermCraft`), each craft with its own `Concept` rows of that term (`TermConcept`) and one cited
   fact-level claim on one of them that names the term (`named_in(label, sentence)`), linked to the
@@ -1739,7 +1786,7 @@ How today's events map:
 | `section` | `section_started` |
 | `sentence` | a sentence inside a `prose` or `process_ladder` block |
 | `open_question` | kept until `open_questions` is built (phase D) |
-| `reaction` | kept until `reaction_player` is built (phase B) |
+| `reaction` | retired: reactions arrive as `reaction_player` blocks, and the wire refuses the name as unknown (decision 0160) |
 | `follow_ups`, `not_enough_evidence`, `done`, `error` | kept |
 
 ## Depth by role (`research/depth.py`)
@@ -1792,7 +1839,7 @@ table also holds `embedding` (1536 dimensions, filled like claims, never sent) a
   `compound`, `water`, `soil`, `climate`, `region`, `history`, `design`, `economy`, `health`,
   `ecology`, `concept`); each subject NFKD-decomposed, marks dropped, case-folded, every run of
   anything but `a-z0-9` one hyphen, ends trimmed; subjects deduplicated, sorted and joined by
-  `+` (`water:kachchh`, `reaction:alizarin+alum`). A subject with no Latin letter or digit is
+  `+` (`water:lgd-449`, `reaction:alizarin+alum`). A subject with no Latin letter or digit is
   refused. `term_key(label)` is the same slug without a namespace (`iron-acetate`).
 - **Reuse rule** (`reuse_refusal(piece, ask, visible_claim_ids)`): a piece is reused for
   `ReuseAsk {craftId, facet, topicKey, depth}` when craft, facet and topic match, its depth is at
@@ -1821,8 +1868,11 @@ table also holds `embedding` (1536 dimensions, filled like claims, never sent) a
   to each subject it shows, exactly one column per kind, once per piece.
 - **Topic keys** (`research/piece_topics`): the facet's namespace (`FACET_NAMESPACES`) and as
   subjects the glossary terms the question names (`TermMarker` over the craft's glossary), else for
-  `GEOGRAPHY`, `GEOLOGY` and `CLIMATE` the craft's districts, else the craft's slug. A key longer
-  than `TOPIC_KEY_MAX_CHARS` is no key: that facet neither reuses nor stores.
+  `GEOGRAPHY`, `GEOLOGY` and `CLIMATE` the craft's districts by LGD code (`lgd-<code>`, or the
+  district set's digest past `TOPIC_KEY_MAX_CHARS`; `piece_topics.district_topic`, decision 0160),
+  else the craft's slug. Question terms longer than a key are no key: that facet neither reuses nor
+  stores. Migration `0083_piece_districts_and_places` rekeyed the place pieces stored under district
+  name slugs (`water:kachchh` is `water:lgd-449`).
 - **Storing** (`services/piece_store.SqlPieceStore.keep`, shielded): every English block of a
   researched section that cites claims and sources (`prose`, `process_ladder` and the blocks its
   builders added; an `images` block rests on illustrated claims and is not a piece), id `uuid5("knowledge-piece:<answer>:<block>")`,
@@ -1851,14 +1901,17 @@ table also holds `embedding` (1536 dimensions, filled like claims, never sent) a
 The explainer UI reads Listen as below (`frontend/lib/listen.ts`); the route that serves it is
 Listen's lane (0035). `shared/listen.script.golden.json` is the script both sides check.
 
-- `/answers/config` adds `listen {languages[code]}`: the answer languages Listen can speak. The
+- `/answers/config` adds `listen {languages[code], voice?}`: the answer languages Listen can speak
+  and the voice that reads first (`docs/contracts/voice.md`, Listen). The
   Listen control is drawn only after `done`, with an answer id, in a listed language; absent or
   off the contract, it is not drawn.
 - `GET /api/answers/{answerId}/listen?language=<code>` (the asker) answers `ListenScript
-  {schemaVersion 1, answerId, language, tracks[ListenTrack] (at least one)}`, refused by the
-  client unless `answerId` and `language` are the ones asked.
+  {schemaVersion 1, answerId, language, voice?, tracks[ListenTrack] (at least one)}`, refused by
+  the client unless `answerId` and `language` are the ones asked; `voice` names who read it
+  (`ELEVENLABS` or `GEMINI`, decision 0161).
 - `ListenTrack {blockId, audioUrl (https; the private media bucket's presigned URL), durationSeconds
-  > 0, words[ListenWord] (at least one)}`, one per part of each `prose` or `process_ladder` block
+  > 0, words[ListenWord], sentences?[ListenSentence]}`, timed by its words (ElevenLabs) or, with
+  `words` empty, by its sentences (Gemini), one per part of each `prose` or `process_ladder` block
   in reading order (sections by `order`, blocks in order); a block over 2,000 characters, or with
   sentences in two languages, has several tracks with the same `blockId`, in order (decision
   0035); the client plays them one after another. `?section=<id>` reads one section.
@@ -1867,6 +1920,8 @@ Listen's lane (0035). `shared/listen.script.golden.json` is the script both side
   sentence's shown text in the answer language, found there in order from where the previous
   word of the same sentence ended (text, not character offsets, as term spans; decision 0030
   point 4). The sentence being read is highlighted, and the word too when it is found.
+- `ListenSentence {sentenceId, start, end}`: the seconds of the track one sentence fills, in reading
+  order within the track; a track timed by sentences highlights the sentence being read and no word.
 
 ## Fixtures (`shared/`)
 
@@ -1896,8 +1951,11 @@ adapter response gives it, its record source `record_source_id(6293)`), two expe
 (Historian and Anthropologist, who differ on when the Khatris came to Kutch: the GI journal's
 400 years against Khamir's seventh century) and a supply map (indigo from Shikarpur and Dhamadka,
 blocks from Pethapur, unplaced). It also lists how each block is stored (`pieces`; map layer and
-molecule are none) and its sources in order of first citation. The river's `reachIds` and
-`mainRiv` are placeholders, named under `placeholders`, until lane 0043 loads HydroRIVERS; every
+molecule are none) and its sources in order of first citation. The river is the loaded Khari
+(`mainRiv` 41063203), traced from its headwater to its outlet through the reaches OpenStreetMap
+names Khari and named from `OSM_RIVER_NAMES`, whose row the story cites; its basin file is
+`shared/river.kachchh.golden.json`, the production file `GET /api/rivers/41063203` answered on
+2026-11-23 with each reach's districts as the decision 0153 load writes them (decision 0160). Every
 other id resolves to a seed row, a seeded science row, the LGD register, a golden or the recorded
 PubChem response (`tests/contracts/test_explainer_phase_b.py`). The client parses each block with
 its kind's shape and refuses it in the built-only parser and the stream

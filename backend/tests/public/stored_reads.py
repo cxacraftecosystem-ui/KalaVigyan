@@ -20,7 +20,7 @@ from app.data.craft_master_loader import build_catalogue
 from app.research.craft_compare import CraftComparison
 from app.research.craft_page import CraftPage
 from app.research.field_voices import FieldTranscript, FieldVoicesList
-from app.research.shared_science import SharedConcept, SharedScience
+from app.research.shared_science import ConceptCraftsPage, SharedConcept, SharedScience
 from app.services import craft_catalogue, knowledge_view
 from app.services.craft_page_cache import ServedPage, served_content
 from app.services.craft_page_snapshots import VARIANT_ACLS
@@ -143,6 +143,9 @@ def _learning_reads(asked: Asked) -> dict[Any, dict[str, Any]]:
                 "craft_shared_science", SharedScience.model_validate(shared["craft"])
             ),
             "shared_concept_of": concept,
+            "shared_concept_crafts": asked.loader(
+                "shared_concept_crafts", ConceptCraftsPage.model_validate(shared["crafts"])
+            ),
             "craft_comparison": asked.loader("craft_comparison", compared),
         }
     }

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator, Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 
+from app.core.errors import InvalidInput
 from app.curation.dossier import Dossier
 from app.curation.overview import OverviewSentence
+from app.data.district_register import load_district_codes
 from app.research.blocks import ProseBlock
 from app.research.knowledge_pieces import KnowledgePiece, PieceSlot, knowledge_piece, piece_content_hash
-from app.research.piece_topics import FACET_NAMESPACES, TopicSubjects, facet_topic
+from app.research.piece_topics import FACET_NAMESPACES, PLACE_FACETS, TopicSubjects, facet_topic
 from app.research.subject_keys import topic_key
 from app.research.term_marking import GlossaryEntry, TermMarker
 
@@ -25,6 +28,7 @@ __all__ = [
     "curated_glossary",
     "indexed_overview",
     "overview_pieces",
+    "piece_id_topic",
     "piece_topic",
     "placed_overview",
 ]
@@ -50,13 +54,22 @@ def curated_glossary(dossier: Dossier) -> list[GlossaryEntry]:
     return list(entries.values())
 
 
-def piece_topic(facet: str, slug: str, districts: Sequence[str]) -> str:
+def piece_topic(facet: str, slug: str, districts: Sequence[int]) -> str:
     found = facet_topic(facet, TopicSubjects(craft_slug=slug, districts=tuple(districts)))
     return found or topic_key(FACET_NAMESPACES[facet], slug)
 
 
+def piece_id_topic(facet: str, slug: str, districts: Sequence[int]) -> str:
+    named = {lgd: name for (_, name), lgd in load_district_codes().districts.items()}
+    names = [named[lgd] for lgd in districts if lgd in named]
+    if facet in PLACE_FACETS and names:
+        with suppress(InvalidInput):
+            return topic_key(FACET_NAMESPACES[facet], *names)
+    return topic_key(FACET_NAMESPACES[facet], slug)
+
+
 def overview_pieces(
-    dossier: Dossier, cited: CitedClaims, *, craft_id: uuid.UUID | None, districts: Sequence[str]
+    dossier: Dossier, cited: CitedClaims, *, craft_id: uuid.UUID | None, districts: Sequence[int]
 ) -> OverviewPieces:
     marker = TermMarker(curated_glossary(dossier))
     pieces: list[KnowledgePiece] = []
@@ -75,8 +88,11 @@ def overview_pieces(
         if kept:
             block = prose_block(f"curation.{part.lower()}", [candidate for candidate, _ in kept], cited)
             block = _marked(block, marker)
-            topic = piece_topic(facet, dossier.slug, districts)
-            piece = _piece(dossier, (craft_id, part, facet), block, topic)
+            topics = (
+                piece_topic(facet, dossier.slug, districts),
+                piece_id_topic(facet, dossier.slug, districts),
+            )
+            piece = _piece(dossier, (craft_id, part, facet), block, topics)
             pieces.append(piece)
             parts[part] = piece.id
             placed.update(
@@ -106,10 +122,11 @@ def _marked(block: ProseBlock, marker: TermMarker) -> ProseBlock:
 
 
 def _piece(
-    dossier: Dossier, part: tuple[uuid.UUID | None, str, str], block: ProseBlock, topic: str
+    dossier: Dossier, part: tuple[uuid.UUID | None, str, str], block: ProseBlock, topics: tuple[str, str]
 ) -> KnowledgePiece:
     craft_id, name, facet = part
-    piece_id = curated_id(dossier.slug, "piece", name, topic, piece_content_hash(block))
+    topic, id_topic = topics
+    piece_id = curated_id(dossier.slug, "piece", name, id_topic, piece_content_hash(block))
     slot = PieceSlot(craft_id, facet, topic, CURATED_DEPTH)
     return knowledge_piece(block, slot, piece_id=piece_id, answer_id=None, created_at=dossier.curated_at)
 

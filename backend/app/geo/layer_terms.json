@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "about": "The glossary term of each map layer of the registry (geo/layers.MAP_LAYERS): the words a section sentence uses for what the layer measures. The place builders mark a section's English sentences with these terms (research/term_marking.TermMarker) to choose the layer that sentence is about. A local name joins a term only with a source that gives it.",
+  "terms": [
+    {"key": "soil-ph", "label": "soil pH", "layer": "soil-ph-0-5cm", "aliases": ["pH", "acidic", "acidity", "alkaline", "alkalinity"], "localNames": []},
+    {"key": "soil-organic-carbon", "label": "soil organic carbon", "layer": "soil-organic-carbon-0-5cm", "aliases": ["organic carbon", "organic matter", "humus"], "localNames": []},
+    {"key": "soil-clay", "label": "clay", "layer": "clay-0-5cm", "aliases": ["clays", "clayey"], "localNames": []},
+    {"key": "soil-sand", "label": "sand", "layer": "sand-0-5cm", "aliases": ["sandy", "sands"], "localNames": []},
+    {"key": "cation-exchange-capacity", "label": "cation exchange capacity", "layer": "cation-exchange-0-5cm", "aliases": ["cation exchange"], "localNames": []},
+    {"key": "annual-mean-temperature", "label": "annual mean temperature", "layer": "annual-mean-temperature", "aliases": ["temperature", "temperatures"], "localNames": []},
+    {"key": "summer-heat", "label": "summer heat", "layer": "warmest-month-maximum", "aliases": ["heat", "hot", "summer", "summers"], "localNames": []},
+    {"key": "winter-cold", "label": "winter cold", "layer": "coldest-month-minimum", "aliases": ["cold", "winter", "winters", "frost"], "localNames": []},
+    {"key": "annual-precipitation", "label": "annual precipitation", "layer": "annual-precipitation", "aliases": ["rain", "rains", "rainfall", "precipitation", "drought", "droughts"], "localNames": []},
+    {"key": "monsoon-rainfall", "label": "monsoon rainfall", "layer": "monsoon-share", "aliases": ["monsoon", "monsoons"], "localNames": []},
+    {"key": "river-density", "label": "river density", "layer": "river-density", "aliases": ["rivers", "streams"], "localNames": []},
+    {"key": "distance-to-a-major-river", "label": "distance to a major river", "layer": "distance-to-major-river", "aliases": ["major river"], "localNames": []},
+    {"key": "tree-cover-in-2000", "label": "tree cover in 2000", "layer": "tree-cover-2000", "aliases": ["canopy"], "localNames": []},
+    {"key": "forest-loss", "label": "forest loss", "layer": "forest-loss-2001-2025", "aliases": ["deforestation"], "localNames": []},
+    {"key": "tree-cover-share", "label": "tree cover", "layer": "tree-cover-share", "aliases": ["trees", "forest", "forests"], "localNames": []},
+    {"key": "cropland-share", "label": "cropland", "layer": "cropland-share", "aliases": ["farmland", "crops", "fields"], "localNames": []},
+    {"key": "built-up-share", "label": "built-up land", "layer": "built-up-share", "aliases": ["built-up", "urban"], "localNames": []},
+    {"key": "bare-ground-share", "label": "bare ground", "layer": "bare-ground-share", "aliases": ["sparse vegetation", "barren"], "localNames": []},
+    {"key": "elevation", "label": "elevation", "layer": "elevation", "aliases": ["altitude", "hill", "hills", "mountain", "mountains"], "localNames": []},
+    {"key": "slope", "label": "slope", "layer": "slope", "aliases": ["slopes", "steep"], "localNames": []},
+    {"key": "mineral-sites", "label": "mineral sites", "layer": "mineral-sites", "aliases": ["mineral", "minerals", "ore", "ores", "mine", "mines", "mining"], "localNames": []}
+  ]
+}

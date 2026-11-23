@@ -169,7 +169,8 @@
               ]
             }
           }
-        ]
+        ],
+        "craftCount": 4
       },
       {
         "termKey": "indigo",
@@ -359,7 +360,8 @@
               ]
             }
           }
-        ]
+        ],
+        "craftCount": 5
       }
     ],
     "sources": [
@@ -634,7 +636,8 @@
             ]
           }
         }
-      ]
+      ],
+      "craftCount": 4
     },
     "sources": [
       {
@@ -668,6 +671,126 @@
         "attribution": null,
         "reliability": "B"
       },
+      {
+        "id": "bc0b16ce-9b7e-5979-a2dd-03c3071ad0b1",
+        "kind": "WEB_PAGE",
+        "title": "Kalamkari — The Block Prints of Machalipatnam (craft documentation)",
+        "authors": [
+          "Craftmark (All India Artisans and Craftworkers Welfare Association) — individual author not stated"
+        ],
+        "year": null,
+        "doi": null,
+        "url": null,
+        "publisher": "Craftmark / AIACA",
+        "licence": null,
+        "attribution": null,
+        "reliability": "B"
+      },
+      {
+        "id": "cea9c896-db5b-5a4a-b7d2-5fcf2f0ca25e",
+        "kind": "GI_JOURNAL",
+        "title": "Application for Registration of a Geographical Indication in Part A of the Register: Sanganeri Hand Block Printing (Statement of case)",
+        "authors": [
+          "Calico Printers Co-operative Society Ltd., Sanganer (applicant)"
+        ],
+        "year": null,
+        "doi": null,
+        "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/102-sanganeri-hand-block-printing.pdf",
+        "publisher": "Filed under the Geographical Indications of Goods (Registration & Protection) Act, 1999; PDF hosted by oriGIn",
+        "licence": null,
+        "attribution": null,
+        "reliability": "A"
+      }
+    ]
+  },
+  "crafts": {
+    "schemaVersion": 1,
+    "termKey": "alum",
+    "label": "Alum",
+    "craftCount": 4,
+    "offset": 2,
+    "crafts": [
+      {
+        "craft": {
+          "slug": "Machilipatnam-Kalamkari",
+          "name": "Machilipatnam Kalamkari",
+          "path": "/crafts/Machilipatnam-Kalamkari"
+        },
+        "conceptIds": [
+          "3ac2e4a0-7969-5009-a1a8-1dc91727ce8a",
+          "9bf13910-dedf-55e6-9c21-eb6298696281"
+        ],
+        "sentence": {
+          "id": "alum.3",
+          "text": "Alum (karam in Telugu) is pounded, boiled in water until reduced to half, and iron implements are avoided because iron darkens the colour.",
+          "level": "PROVISIONAL",
+          "citations": [
+            {
+              "id": "4acc438c-88ce-5fc0-9e75-049fe1fe07d1",
+              "claimId": "eaabf54d-e969-5db9-b342-a07a961dfc6d",
+              "sourceId": "bc0b16ce-9b7e-5979-a2dd-03c3071ad0b1",
+              "quote": "The solution is allowed to boil with occasional stirring until it has reduced to half. A mixture of iron in any form leads to darkening of the color and for this reason the iron implements and utensils are avoided.",
+              "locator": "PDF p. 5",
+              "context": null,
+              "evidence": "QUOTED",
+              "level": "PROVISIONAL"
+            },
+            {
+              "id": "7bee5e9c-1675-5fe0-8305-007094c58957",
+              "claimId": "eaabf54d-e969-5db9-b342-a07a961dfc6d",
+              "sourceId": "bc0b16ce-9b7e-5979-a2dd-03c3071ad0b1",
+              "quote": "Alum (Karam in Telugu) Dry alum crystals are pounded to powder. Water is added in the proportion of 4 liters water to 3.5 kilograms alum.",
+              "locator": "PDF p. 5",
+              "context": null,
+              "evidence": "QUOTED",
+              "level": "PROVISIONAL"
+            }
+          ],
+          "translated": false,
+          "terms": [
+            {
+              "text": "Alum",
+              "termKey": "alum"
+            }
+          ]
+        }
+      },
+      {
+        "craft": {
+          "slug": "Sanganeri-Hand-Block-Printing",
+          "name": "Sanganeri Hand Block Printing",
+          "path": "/crafts/Sanganeri-Hand-Block-Printing"
+        },
+        "conceptIds": [
+          "8e5e8218-87b8-5c75-8c01-d22675239958"
+        ],
+        "sentence": {
+          "id": "alum.4",
+          "text": "Post-mordanting with diluted alum (fitkari) makes the fugitive turmeric-pomegranate yellow fast.",
+          "level": "PROVISIONAL",
+          "citations": [
+            {
+              "id": "161ae158-075c-5945-a996-e9f37be681f3",
+              "claimId": "df6ca1e2-4294-519a-a324-60ceacf478ab",
+              "sourceId": "cea9c896-db5b-5a4a-b7d2-5fcf2f0ca25e",
+              "quote": "known u'Filkui Rangati' The dye extracted ftom turmeric and pomegranate peals is very fugitive and in order to make it fast, post mordanting is done witl alum (fitkari). ln this process the fab'ric is dipped in a big copper vessel filled with water and diluted",
+              "locator": "PDF p. 12",
+              "context": null,
+              "evidence": "QUOTED",
+              "level": "PROVISIONAL"
+            }
+          ],
+          "translated": false,
+          "terms": [
+            {
+              "text": "alum",
+              "termKey": "alum"
+            }
+          ]
+        }
+      }
+    ],
+    "sources": [
       {
         "id": "bc0b16ce-9b7e-5979-a2dd-03c3071ad0b1",
         "kind": "WEB_PAGE",

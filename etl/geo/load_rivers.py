@@ -11,7 +11,14 @@ import pandas as pd
 import shapely
 
 from geo_etl.river_districts import HIT_COLUMNS, REACH_DISTRICTS_FILE
-from geo_etl.rivers import BASINS_FILE, PROBLEMS_SHOWN, REACHES_FILE, network_problems, topology_key
+from geo_etl.rivers import (
+    BASINS_FILE,
+    PROBLEMS_SHOWN,
+    REACHES_FILE,
+    TOPOLOGY_PREFIX,
+    network_problems,
+    topology_key,
+)
 from load import clean, known_districts, quote, require, table_columns, upsert_datasets
 
 OUT = Path(__file__).resolve().parent / "out" / "rivers"
@@ -25,6 +32,7 @@ SERVER_SIDE_ENCRYPTION = "AES256"
 SHA_METADATA = "sha256"
 SRID = 4326
 MISSING_CODES = frozenset({"404", "NoSuchKey", "NotFound"})
+DELETE_BATCH = 1000
 
 
 @dataclass(frozen=True)
@@ -119,6 +127,29 @@ def upload_topologies(client, bucket: str, outputs: RiverOutputs) -> tuple[int, 
     return uploaded, unchanged
 
 
+def kept_keys(outputs: RiverOutputs) -> set[str]:
+    edition = outputs.manifest["dataset"]["edition"]
+    return {topology_key(edition, basin["mainRiv"], basin["sha256"]) for basin in outputs.manifest["basins"]}
+
+
+def superseded_keys(client, bucket: str, outputs: RiverOutputs) -> list[str]:
+    kept = kept_keys(outputs)
+    pages = client.get_paginator("list_objects_v2").paginate(Bucket=bucket, Prefix=f"{TOPOLOGY_PREFIX}/")
+    stored = (item["Key"] for page in pages for item in page.get("Contents") or [])
+    return sorted(key for key in stored if key not in kept)
+
+
+def delete_superseded(client, bucket: str, keys: list[str]) -> int:
+    for start in range(0, len(keys), DELETE_BATCH):
+        batch = [{"Key": key} for key in keys[start : start + DELETE_BATCH]]
+        answer = client.delete_objects(Bucket=bucket, Delete={"Objects": batch, "Quiet": True})
+        refused = answer.get("Errors") or []
+        if refused:
+            named = ", ".join(f"{error.get('Key')} ({error.get('Code')})" for error in refused[:PROBLEMS_SHOWN])
+            raise RuntimeError(f"{len(refused)} superseded river topologies could not be deleted: {named}")
+    return len(keys)
+
+
 def reach_rows(reaches: gpd.GeoDataFrame) -> list[list]:
     lines = shapely.to_wkb(shapely.set_srid(reaches.geometry.to_numpy(), SRID), hex=True, include_srid=True)
     values = reaches[REACH_COLUMNS[:-1]].itertuples(index=False, name=None)
@@ -192,6 +223,8 @@ def load(outputs: RiverOutputs, *, dsn: str, bucket: str) -> int:
         basins, reaches, hits = replace_rivers(cur, outputs)
         conn.commit()
     print(f"{BASIN_TABLE}: {basins} rows, {REACH_TABLE}: {reaches} rows, {REACH_DISTRICT_TABLE}: {hits} rows")
+    deleted = delete_superseded(client, bucket, superseded_keys(client, bucket, outputs))
+    print(f"superseded topologies: {deleted} deleted")
     return 0
 
 

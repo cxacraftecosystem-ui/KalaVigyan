@@ -21,7 +21,7 @@ import {
 } from "@/lib/learningContract";
 import { answerQuizPath, explainerQuizShape, type ExplainerQuiz } from "@/lib/quizContract";
 import { parseShape } from "@/lib/shape";
-import { CRAFT_SHARED_SCIENCE_PATH, sharedScienceShape, type SharedScience } from "@/lib/sharedScienceContract";
+import { conceptCraftsPageShape, CRAFT_SHARED_SCIENCE_PATH, SHARED_CONCEPT_CRAFTS_PATH, sharedScienceShape, type ConceptCraftsPage, type SharedScience } from "@/lib/sharedScienceContract";
 
 export async function fetchExplainerDocument(explainerId: string, version: number | null): Promise<ExplainerVersionDocument> {
   const path = version === null ? EXPLAINER_PATH(explainerId) : EXPLAINER_VERSION_PATH(explainerId, version);
@@ -69,6 +69,10 @@ export async function fetchComparison(slugs: string[]): Promise<ComparedCrafts> 
 
 export async function fetchCraftSharedScience(slug: string): Promise<SharedScience> {
   return parseShape(sharedScienceShape, await apiFetch<unknown>(CRAFT_SHARED_SCIENCE_PATH(slug)));
+}
+
+export async function fetchConceptCrafts(termKey: string, craft: string | null, offset: number): Promise<ConceptCraftsPage> {
+  return parseShape(conceptCraftsPageShape, await apiFetch<unknown>(SHARED_CONCEPT_CRAFTS_PATH(termKey, craft, offset)));
 }
 
 export async function fetchExplainerQuiz(answerId: string): Promise<ExplainerQuiz | null> {

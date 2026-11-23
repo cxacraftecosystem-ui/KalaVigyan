@@ -64,10 +64,10 @@ def test_a_hypothesis_outcome_is_not_read_aloud() -> None:
     assert [s.sentence_id for s in what_if.sentences] == ["s2.b1.1", "s2.b1.3", "s2.b1.4"]
 
 
-def test_the_cache_id_is_version_two_since_hypotheses_left_listen() -> None:
-    parts = ("kalavigyan-narration", "2", "eleven_v4", "voice_1", "en", HASH)
+def test_the_cache_id_is_version_three_since_listen_sent_elevenlabs_no_square_brackets() -> None:
+    parts = ("kalavigyan-narration", "3", "eleven_v4", "voice_1", "en", HASH)
     by_hand = hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
-    assert narration_cache_id(HASH, language="en", voice_id="voice_1") == by_hand
+    assert narration_cache_id(HASH, language="en", voice_id="voice_1", model="eleven_v4") == by_hand
 
 
 def what_if_explainer(*, hypothesis: str) -> Explainer:
@@ -158,12 +158,14 @@ def test_a_part_lasts_as_long_as_its_audio_or_its_last_word() -> None:
 
 
 def test_the_cache_id_changes_with_the_content_the_language_and_the_voice() -> None:
-    first = narration_cache_id(HASH, language="en", voice_id="voice_1")
-    assert first == narration_cache_id(HASH, language="en", voice_id="voice_1")
+    first = narration_cache_id(HASH, language="en", voice_id="voice_1", model="eleven_v4")
+    gemini = narration_cache_id(HASH, language="en", voice_id="Kore", model="gemini-3.8-flash-tts")
+    assert gemini != first and len(gemini) == 64
+    assert first == narration_cache_id(HASH, language="en", voice_id="voice_1", model="eleven_v4")
     others = {
-        narration_cache_id(HASH, language="hi", voice_id="voice_1"),
-        narration_cache_id(HASH, language="en", voice_id="voice_2"),
-        narration_cache_id("0" * 64, language="en", voice_id="voice_1"),
+        narration_cache_id(HASH, language="hi", voice_id="voice_1", model="eleven_v4"),
+        narration_cache_id(HASH, language="en", voice_id="voice_2", model="eleven_v4"),
+        narration_cache_id("0" * 64, language="en", voice_id="voice_1", model="eleven_v4"),
     }
     assert first not in others and len(others) == 3 and len(first) == 64
 
@@ -177,7 +179,7 @@ def test_seconds_are_estimated_at_the_documented_thousand_characters_a_minute() 
 )
 def test_narration_parts_are_named_by_the_one_convention(row: dict) -> None:
     moment = datetime.fromisoformat(row["generatedAt"])
-    assert narration_file_name(moment, row["part"]) == row["fileName"]
+    assert narration_file_name(moment, row["part"], ext=row.get("ext", "mp3")) == row["fileName"]
     key = narration_key(HASH, row["fileName"])
     assert key == f"media/narration/{HASH}/{row['fileName']}"
 

@@ -9,7 +9,7 @@ from app.voice.object_lease import LEASE_LEAF, ObjectLease
 
 from .listen_fakes import LISTENED_AT, Listening, Narrations, ask, golden_explainer
 
-WATER_CACHE_ID = "afef7e08b43bab3f5865d8204f6048a8e5eaeb12dc9bc12c478fbc88d7b5218b"
+WATER_CACHE_ID = "bd3236e34f5b67779faf30fe17ff46f5d16cb08fe505d716dcf3ad79a493e882"
 LEASE_KEY = narration_key(WATER_CACHE_ID, LEASE_LEAF)
 
 
@@ -51,8 +51,8 @@ async def test_a_second_reader_missing_the_same_block_waits_for_the_first_and_pa
     assert heard == await first
     assert (len(narrator.calls), waits) == (1, [1.0])
     assert {row.key for row in listening.ledger.rows} == {
-        "listen:00000000-0000-0000-0000-000000000001:hold",
-        "listen-refund:00000000-0000-0000-0000-000000000001",
+        "listen:00000000-0000-0000-0000-000000000001:elevenlabs:hold",
+        "listen-refund:00000000-0000-0000-0000-000000000001:elevenlabs",
     }
     assert LEASE_KEY not in listening.objects.stored
 

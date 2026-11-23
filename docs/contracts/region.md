@@ -329,9 +329,11 @@ RiverTrace {datasetCode: "HYDRORIVERS_1_0", mainRiv, reachIds[] (>= 1), district
   client then hides the river; decision 0050), 503 when the bucket is not configured or
   does not answer, 422 for an id no reach can have (outside 1 to 99,999,999). The basin row is
   read and its connection released before the bucket is read; files are kept in a per-process
-  cache by hash. `shared/river.topology.golden.json` is the phase B fixture's placeholder river
-  as the geo ETL writes it (reproduced by `etl/geo/tests/test_rivers.py`, parsed by
-  `e2e/river-topology-golden-unit.spec.ts`). The client draws
+  cache by hash. `shared/river.topology.golden.json` is a hand-made placeholder basin as the geo
+  ETL writes it (reproduced by `etl/geo/tests/test_rivers.py`, parsed by
+  `e2e/river-topology-golden-unit.spec.ts` and drawn by the place renderer specs);
+  `shared/river.kachchh.golden.json` is the loaded Khari's basin file, the phase B fixture's river
+  (decision 0160). The client draws
   the path's reaches from it with the districts from its district shapes, the boundary caption
   beneath, and the HydroRIVERS dataset row as the river's citation. The client
   (`frontend/lib/riverTopology.ts`, decision 0048) accepts exactly `type: "Topology"`, an optional

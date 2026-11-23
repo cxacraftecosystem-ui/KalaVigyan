@@ -1165,9 +1165,8 @@ Last updated: 2026-11-20.
    with voice testimony. After them: Expert auto-generated media, comic stories, the minister
    showcase questions with an answer-quality evaluation loop.
 
-1. Put the traced Kachchh river's ids into the phase B fixture (`docs/TECH_DEBT.md`, "The phase B
-   fixture's river ids are placeholders"); retire `/profile` and `/process` in the backend once the
-   redesigned frontend stops calling them. Further curation only for crafts the owner names.
+1. Retire `/profile` and `/process` in the backend once the redesigned frontend stops calling
+   them. Further curation only for crafts the owner names.
 2. The first live media jobs to confirm decision 0018's unverified items; the ElevenLabs spike of
    PLAN 10.1 on GitHub Actions (lane 0017's open item), which also records a relay turn's real
    billing; the governance lane serves the sharing route of `docs/contracts/media.md`. Science

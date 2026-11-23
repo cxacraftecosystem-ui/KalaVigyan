@@ -21,6 +21,7 @@ __all__ = [
     "reusable_groups",
     "reusable_simulation",
     "seated_pieces",
+    "usable_region_stories",
     "visible_as_cited",
     "with_region_story",
     "with_simulation",
@@ -116,15 +117,10 @@ def reusable_groups(
     ]
 
 
-def with_region_story(
-    group: Sequence[KnowledgePiece],
-    regions: Sequence[KnowledgePiece],
-    *,
-    depth: str,
-    current: Mapping[uuid.UUID, ClaimState],
-) -> tuple[KnowledgePiece, ...]:
-    facet = group[0].facet
-    usable = [
+def usable_region_stories(
+    regions: Sequence[KnowledgePiece], *, facet: str, depth: str, current: Mapping[uuid.UUID, ClaimState]
+) -> list[KnowledgePiece]:
+    return [
         piece
         for piece in regions
         if piece.kind == REGION_STORY_KIND
@@ -136,6 +132,16 @@ def with_region_story(
         )
         is None
     ]
+
+
+def with_region_story(
+    group: Sequence[KnowledgePiece],
+    regions: Sequence[KnowledgePiece],
+    *,
+    depth: str,
+    current: Mapping[uuid.UUID, ClaimState],
+) -> tuple[KnowledgePiece, ...]:
+    usable = usable_region_stories(regions, facet=group[0].facet, depth=depth, current=current)
     if not usable:
         return tuple(group)
     answer = group[0].created_from_answer_id

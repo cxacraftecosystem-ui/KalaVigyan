@@ -8,7 +8,7 @@ from app.research.blocks import stated_texts
 from app.research.blocks_place import SupplyLink
 from app.sources.reference.wikidata_places import PlaceCandidate, PlacePoint
 
-from .supply_links import OriginPlace
+from .place_points import OriginPlace
 
 __all__ = [
     "PLACED_ORIGINS_MAX",

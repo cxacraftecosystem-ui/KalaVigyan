@@ -32,7 +32,7 @@ def ask(**changes: Any) -> ReuseAsk:
     body = {
         "craftId": golden_json(PIECE)["craftId"],
         "facet": "GEOGRAPHY",
-        "topicKey": "water:kachchh",
+        "topicKey": "water:lgd-449",
         "depth": "EXPERT",
     }
     return ReuseAsk.model_validate(body | changes)

@@ -6,7 +6,7 @@ from typing import ClassVar, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel
+from .base import ContractModel, absent
 from .blocks import SENTENCE, BlockBase, ExplainerSentence, SentenceSpec, named_in, require_facts
 from .citations import AnswerSentence
 from .crafts import COMPARED_CRAFTS_MAX, CraftRef
@@ -167,9 +167,12 @@ class ConceptNode(ContractModel):
     term_key: TermKey
     label: str = Field(min_length=1, max_length=TERM_LABEL_MAX_CHARS)
     crafts: list[ConceptCraft] = Field(min_length=COMPARE_CRAFTS_MIN, max_length=CONCEPT_CRAFTS_MAX)
+    craft_count: int | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _a_concept_crafts_share(self) -> Self:
+        if self.craft_count is not None and self.craft_count < len(self.crafts):
+            raise ValueError(f"concept {self.term_key} counts at least the crafts it lists")
         slugs = [entry.craft.slug for entry in self.crafts]
         concepts = [concept for entry in self.crafts for concept in entry.concept_ids]
         if len(set(slugs)) != len(slugs) or len(set(concepts)) != len(concepts):

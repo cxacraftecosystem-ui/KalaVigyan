@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted.
 |---|---|
 | The lanes it reviewed | [0043](0043-river-lines-tracer-and-monthly-rain.md), [0044](0044-region-story-and-map-layers.md), [0045](0045-reactions-materials-molecules.md), [0046](0046-expert-panel.md), [0047](0047-seasons-and-supply.md), [0048](0048-place-renderers.md) and [0049](0049-matter-and-expert-renderers.md) |
 | What amended it | [0153 Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md): river names checked in prose and takes |
+| District other names, the negation window kept and widened, superseded river files deleted and the rivers flag read | [decision 0160](0160-place-builders-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

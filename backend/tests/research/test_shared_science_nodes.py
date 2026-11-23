@@ -10,6 +10,7 @@ from app.research.shared_science import (
     SHARED_SCIENCE_NODES_MAX,
     TermCraftOffer,
     TermOffer,
+    concept_crafts_page,
     concept_node,
     shared_concept,
     shared_science,
@@ -129,18 +130,22 @@ def test_the_best_ranked_claim_naming_the_term_speaks_for_a_craft() -> None:
     assert node.crafts[0].sentence.citations[0].claim_id == "a1"
 
 
-def test_the_limits_hold() -> None:
-    many = [
+def many_crafts(count: int) -> list[TermCraftOffer]:
+    return [
         entry(
             CraftRef(slug=f"craft-{n:03d}", name=f"Craft {n:03d}", path=f"/crafts/craft-{n:03d}"),
             100 + n,
-            fact(f"c{n}", f"Alum is used by craft {n}.", concept(100 + n)),
+            fact(f"c{n}", f"Alum is used by craft {n}.", concept(100 + n), source_id=f"s{n % 3}"),
         )
-        for n in range(CONCEPT_CRAFTS_MAX + 20)
+        for n in range(count)
     ]
-    node = concept_node(alum(*many), focus="craft-119")
+
+
+def test_the_limits_hold() -> None:
+    node = concept_node(alum(*many_crafts(CONCEPT_CRAFTS_MAX + 20)), focus="craft-119")
     assert node is not None
     assert len(node.crafts) == CONCEPT_CRAFTS_MAX and node.crafts[0].craft.slug == "craft-119"
+    assert node.craft_count == 120
     offers = [
         TermOffer(
             key=f"term{n:02d}",
@@ -169,3 +174,25 @@ def test_one_shared_concept_cites_every_craft_s_source_in_order() -> None:
     focused = shared_concept(alum(BAGRU_ALUM, AJRAKH_ALUM), sources, focus=AJRAKH.slug)
     assert focused is not None and [s.id for s in focused.sources] == ["s1", "s2"]
     assert shared_concept(alum(AJRAKH_ALUM), sources) is None
+
+
+def test_a_node_counts_every_craft_whose_own_claims_name_the_term() -> None:
+    node = concept_node(alum(SANGANER_SILENT, BAGRU_ALUM, AJRAKH_ALUM), focus=None)
+    assert node is not None and node.craft_count == 2
+
+
+def test_the_pages_of_a_node_continue_its_order_and_its_sentence_numbers() -> None:
+    offer = alum(*many_crafts(CONCEPT_CRAFTS_MAX + 20))
+    sources = {f"s{n}": source(f"s{n}") for n in range(3)}
+    page = concept_crafts_page(offer, sources, focus="craft-119", offset=CONCEPT_CRAFTS_MAX)
+    assert page is not None
+    assert (page.craft_count, page.offset, len(page.crafts)) == (120, 100, 20)
+    assert page.crafts[0].craft.slug == "craft-099" and page.crafts[-1].craft.slug == "craft-118"
+    assert [entry.sentence.id for entry in page.crafts][:2] == ["alum.101", "alum.102"]
+    assert [s.id for s in page.sources] == ["s0", "s1", "s2"]
+    first = concept_crafts_page(offer, sources, focus="craft-119", offset=0)
+    assert first is not None and len(first.crafts) == CONCEPT_CRAFTS_MAX
+    assert first.crafts[0].craft.slug == "craft-119" and first.crafts[0].sentence.id == "alum.1"
+    assert concept_crafts_page(offer, sources, focus="craft-119", offset=120) is None
+    assert concept_crafts_page(offer, sources, focus="no-such-craft", offset=0) is None
+    assert concept_crafts_page(alum(AJRAKH_ALUM), sources, focus=None, offset=0) is None

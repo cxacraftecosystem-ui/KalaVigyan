@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "sections": [
+    {
+      "id": "s6",
+      "discipline": "MATERIALS",
+      "blocks": [
+        {
+          "id": "s6.b1",
+          "kind": "supply_map",
+          "version": 1,
+          "reuse": null,
+          "links": [
+            {
+              "material": "Blocks",
+              "materialId": null,
+              "termKey": null,
+              "origin": "Gandhinagar",
+              "wikidataId": null,
+              "latitude": 23.175,
+              "longitude": 72.689,
+              "districtLgd": 446,
+              "sentence": {
+                "id": "s6.b1.1",
+                "text": "Blocks are carved from teak (sag); printers today buy blocks from block-makers in Pethapur near Gandhinagar.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "044896db-5844-58ff-9b15-1f22027ca674",
+                    "claimId": "0151b1fa-d92d-574c-bf7c-9ee318395b9e",
+                    "sourceId": "ba479ec5-4b93-570b-be74-2eab9711e777",
+                    "quote": "Today block printers buy their blocks from block-makers in Pethapur near Gandhinagar, Kachchh.",
+                    "locator": "§ \"Crafting the block\"",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  },
+                  {
+                    "id": "dbb742ed-b48a-51a6-b26c-4d88da877987",
+                    "claimId": "0151b1fa-d92d-574c-bf7c-9ee318395b9e",
+                    "sourceId": "ba479ec5-4b93-570b-be74-2eab9711e777",
+                    "quote": "Today, blocks are made using teak wood (sag).",
+                    "locator": "§ \"Crafting the block\"",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            }
+          ],
+          "datasets": [
+            {
+              "code": "DR_DISTRICT_SHAPES",
+              "title": "Indian district boundaries, matched to LGD codes",
+              "publisher": "Indian districts GeoJSON on Kaggle",
+              "edition": "2026",
+              "period": "2026",
+              "nativeResolution": "simplified to 0.01 degree, 0.001 degree coordinate grid",
+              "licence": "For reference only",
+              "licenceUrl": null,
+              "attribution": "District boundaries are indicative.",
+              "citation": null,
+              "url": "https://www.kaggle.com/datasets/adityaradha007/indian-districts-geojson"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "ba479ec5-4b93-570b-be74-2eab9711e777",
+      "kind": "WEB_PAGE",
+      "title": "Ajrakh exhibition, Part 2: The art of Ajrakh",
+      "authors": [
+        "Khamir (craft resource centre, Kachchh)"
+      ],
+      "year": null,
+      "doi": null,
+      "url": "https://exhibitions-khamir.org/ajrakh/art-of-ajrakh",
+      "publisher": "Khamir",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    }
+  ]
+}

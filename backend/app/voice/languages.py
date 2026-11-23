@@ -7,7 +7,7 @@ from app.research.vocabulary import ANSWER_LANGUAGES, language_option
 
 from .phrases import phrased_languages
 
-__all__ = ["LISTEN_LANGUAGES", "VOICE_LANGUAGES", "heard_and_spoken", "voice_language_options"]
+__all__ = ["VOICE_LANGUAGES", "heard_and_spoken", "voice_language_options"]
 
 
 def heard_and_spoken(
@@ -19,7 +19,6 @@ def heard_and_spoken(
 VOICE_LANGUAGES = phrased_languages(
     heard_and_spoken(ANSWER_LANGUAGES, heard=STT_LANGUAGE_CODES, spoken=TTS_LANGUAGES)
 )
-LISTEN_LANGUAGES = tuple(code for code in ANSWER_LANGUAGES if code in TTS_LANGUAGES)
 
 
 def voice_language_options() -> list[dict[str, str]]:

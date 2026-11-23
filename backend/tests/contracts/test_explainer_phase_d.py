@@ -213,7 +213,7 @@ def test_each_block_is_stored_as_the_contract_says() -> None:
                 continue
             if block.kind == "market_gi" and block.craft.slug != AJRAKH:
                 continue
-            subjects = TopicSubjects(craft_slug=AJRAKH, districts=("Kachchh",))
+            subjects = TopicSubjects(craft_slug=AJRAKH, districts=(449,))
             expected.append(
                 {
                     "blockId": block.id,

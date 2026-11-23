@@ -8,6 +8,7 @@ import { SeasonsStrip } from "@/components/answer/place/SeasonsStrip";
 import { BLOCK_SHAPES, BUILT_BLOCK_KINDS, explainerBlockShape } from "@/lib/explainerContract";
 import type { SeasonsBlock } from "@/lib/explainerPlace";
 import { blockSentences } from "@/lib/explainerView";
+import { SEASON_LABEL } from "@/lib/seasonsView";
 import { parseShape, ShapeError } from "@/lib/shape";
 
 import { withReading } from "./explainerRender";
@@ -65,4 +66,15 @@ test("a seasons block may show its district's rainfall with no season rows, and 
   expect(html).toContain('data-testid="rainfall-bars"');
   expect(html).not.toContain('data-testid="season-row"');
   expect(html).toContain(">July is the wettest month in Kachchh: 141 mm of a 370 mm year<");
+});
+
+test("every season the server names has the label the server gives it, and a post-monsoon row shows its chip", () => {
+  const source = readFileSync(join(__dirname, "..", "..", "backend", "app", "research", "calendar_words.py"), "utf8");
+  const labels = /^SEASON_LABELS[^\n]*\n([\s\S]*?)\n\)/m.exec(source)?.[1] ?? "";
+  const server = Object.fromEntries([...labels.matchAll(/"([A-Z_]+)": "([^"]+)"/g)].map((found) => [found[1], found[2]]));
+  expect(server).toEqual(SEASON_LABEL);
+  const seasons = parseShape(BLOCK_SHAPES.seasons, fixtureBlock("s3.b1"));
+  const row = { ...seasons.rows[0], months: [10, 11, 12], season: "POST_MONSOON" as const };
+  const html = withReading(createElement(SeasonsStrip, { block: parseShape(BLOCK_SHAPES.seasons, { ...seasons, rows: [row] }) }));
+  expect(html.match(/data-testid="season-chip"[^>]*>Post-monsoon</g)).toHaveLength(1);
 });

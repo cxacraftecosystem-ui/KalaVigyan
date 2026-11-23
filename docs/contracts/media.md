@@ -125,7 +125,7 @@ then id. The ids are stored on the job (`MediaJob.claimIds`) and returned as `cl
 | | Image | Video |
 |---|---|---|
 | Model (`RoutePolicy` `IMAGE` / `VIDEO`) | `gemini-3.1-flash-image` at 1K, drafts `gemini-nano-banana-2.1` | `gemini-omni-1.2-flash` via `POST /v1beta/interactions`, `background=true`, polled |
-| Output (`MEDIA_OUTPUT`) | `image/png` | `video/mp4`, 8 s, 720p, 16:9, no audio (any track stripped before storage) |
+| Output (`MEDIA_OUTPUT`) | `image/png`; Gemini answers `image/jpeg` (paid check, 2026-11-23), which `media/output.checked_output` converts to PNG losslessly from its pixels (`research/image_intake_pixels.converted`), metadata dropped; any other type is refused | `video/mp4`, 8 s, 720p, 16:9, no audio (any track stripped before storage) |
 | Queue concurrency (`QUEUE_CONCURRENCY`) | 4 | 2 |
 
 Each attempt has `JOB_TIMEOUT_SECONDS` (240); a failed attempt is retried at most `JOB_RETRIES`
@@ -198,7 +198,11 @@ shows on Usage. The official reference was read on 2026-11-18 (decision 0058 lis
 - One unit is recorded when the job is created (`QuotaLedger` key `media:<jobId>`); dollars are
   reserved and settled through `providers/router.reserve` and `settle`, so a media sub-cap or
   monthly ceiling set in the AI budget applies (none is set by default); `billedTokens` comes from
-  the usage metadata.
+  the usage metadata. A model with a media rate (`AiModel.media_price_per_mtok`: the image models,
+  $60 and $30 a million image tokens beside $3 and $7.50 for text and thinking) is billed its image
+  tokens (`output_tokens_by_modality`) at that rate and the rest of its output at the text rate; when
+  a reply gives no breakdown, every output token is billed at the media rate. An admin override may
+  set `media` beside `in` and `out` (decision 0161).
 - A job that ends `FAILED` (after its retries) or `BLOCKED` (the provider refused the content) is
   refunded: one `media-refund:<jobId>` row returns the unit and the reservation is released.
   `refunded` is true exactly then. The refund row is dated to the job's creation, so a job failing

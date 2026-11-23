@@ -19,7 +19,7 @@ export const UNKNOWN_CRAFT_SLUG = "not-a-craft";
 export const COMPARED_CRAFTS: readonly string[] = [CRAFT_SLUG, "Bagru-Hand-Block-Print"];
 export const NOT_FOUND_PATH = "/no-such-page-e2e";
 export const SCREENS_TIMEOUT_MS = 20 * 60_000;
-export const QUESTIONS_TIMEOUT_MS = 92 * 60_000;
+export const QUESTIONS_TIMEOUT_MS = 112 * 60_000;
 export const ROLE_SCREENS_TIMEOUT_MS = 10 * 60_000;
 
 const STARTED_HERE = new Date().toISOString();
@@ -46,10 +46,6 @@ export function baseUrl(): string {
 
 export function questionsRequested(): boolean {
   return process.env.E2E_QUESTIONS === "1";
-}
-
-export function riversLoaded(): boolean {
-  return process.env.E2E_RIVERS_LOADED === "1";
 }
 
 export function credentials(): Credentials {

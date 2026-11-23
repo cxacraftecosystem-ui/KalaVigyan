@@ -9,7 +9,7 @@ from urllib.parse import quote
 
 import httpx
 
-from app.core.errors import RETRYABLE_KINDS, failure_kind
+from app.core.errors import RETRYABLE_KINDS, InvalidInput, failure_kind
 from app.core.retry_after import parse_headers
 
 from .base import MediaPoll, MediaRequest, MediaResult, ProviderError
@@ -17,14 +17,22 @@ from .base import MediaPoll, MediaRequest, MediaResult, ProviderError
 __all__ = [
     "API_REVISION",
     "GEMINI_API",
+    "GEMINI_KEY_NAME",
+    "SERVICE",
+    "SPEECH_LANGUAGES",
+    "SPEECH_MODEL",
+    "SPEECH_VOICE",
     "GeminiMediaWire",
     "interaction_body",
     "interaction_poll",
+    "speech_audio",
+    "speech_body",
 ]
 
 GEMINI_API = "https://generativelanguage.googleapis.com/v1beta"
 API_REVISION = "2026-05-20"
 SERVICE = "gemini"
+GEMINI_KEY_NAME = "GEMINI_API_KEY"
 KEY_HEADER = "x-goog-api-key"
 REQUEST_TIMEOUT = httpx.Timeout(240.0, connect=10.0)
 OPEN_STATUSES = frozenset({"in_progress"})
@@ -32,6 +40,11 @@ DONE_STATUSES = frozenset({"completed", "incomplete"})
 STOPPED_STATUSES = frozenset({"failed", "cancelled", "requires_action", "requires_continuation"})
 BLOCK_WORDS = ("safety", "policy", "policies", "blocked", "prohibited", "responsible ai", "filtered")
 OUTPUT_TYPES = {"IMAGE": "image", "VIDEO": "video"}
+SPEECH_MODEL = "gemini-3.8-flash-tts"
+SPEECH_VOICE = "Kore"
+SPEECH_LANGUAGES = frozenset({"en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or", "pa", "as"})
+SPEECH_BLOCK = "audio"
+WAV_MAGIC = b"RIFF"
 
 
 class GeminiMediaWire:
@@ -66,10 +79,15 @@ class GeminiMediaWire:
     async def forget(self, ref: str) -> None:
         await self._send("DELETE", f"/interactions/{_segment(ref)}")
 
+    async def read_aloud(self, text: str, *, voice: str = SPEECH_VOICE) -> bytes:
+        if not text.strip():
+            raise InvalidInput(f"{SPEECH_MODEL} reads aloud a text that is not blank")
+        return speech_audio(await self._json("POST", "/interactions", json=speech_body(text, voice=voice)))
+
     async def _with_data(self, result: MediaResult, body: Mapping[str, Any], kind: str) -> MediaResult:
         if result.data:
             return result
-        uri = (_media_block(body, kind) or {}).get("uri")
+        uri = (_output_block(body, OUTPUT_TYPES[kind]) or {}).get("uri")
         if not isinstance(uri, str):
             raise _off_contract("a media block with neither data nor uri")
         data = (await self._send("GET", _download_path(self._base, uri), params={"alt": "media"})).content
@@ -120,6 +138,30 @@ def interaction_body(req: MediaRequest, *, background: bool) -> dict[str, Any]:
     return body
 
 
+def speech_body(text: str, *, voice: str) -> dict[str, Any]:
+    return {
+        "model": SPEECH_MODEL,
+        "input": [{"type": "user_input", "content": [{"type": "text", "text": text}]}],
+        "response_format": {"type": SPEECH_BLOCK},
+        "generation_config": {"speech_config": [{"voice": voice}]},
+    }
+
+
+def speech_audio(body: Mapping[str, Any]) -> bytes:
+    status = body.get("status")
+    if status in STOPPED_STATUSES:
+        raise _stopped(body, str(status))
+    if status not in DONE_STATUSES:
+        raise _off_contract(f"a speech interaction status {status!r}")
+    block = _output_block(body, SPEECH_BLOCK)
+    if block is None:
+        raise ProviderError(f"Gemini finished without speech ({status})", kind="refusal", service=SERVICE)
+    audio = _decoded(block.get("data"))
+    if not audio.startswith(WAV_MAGIC):
+        raise _off_contract("speech that is not a WAV file")
+    return audio
+
+
 def interaction_poll(body: Mapping[str, Any], kind: str) -> MediaPoll:
     status = body.get("status")
     if status in OPEN_STATUSES:
@@ -128,7 +170,7 @@ def interaction_poll(body: Mapping[str, Any], kind: str) -> MediaPoll:
         raise _stopped(body, str(status))
     if status not in DONE_STATUSES:
         raise _off_contract(f"an interaction status {status!r}")
-    block = _media_block(body, kind)
+    block = _output_block(body, OUTPUT_TYPES[kind])
     if block is None:
         raise ProviderError(
             f"Gemini finished without {OUTPUT_TYPES[kind]} output ({status})", kind="refusal", service=SERVICE
@@ -152,13 +194,13 @@ def _result(body: Mapping[str, Any], block: Mapping[str, Any], kind: str) -> Med
     )
 
 
-def _media_block(body: Mapping[str, Any], kind: str) -> Mapping[str, Any] | None:
+def _output_block(body: Mapping[str, Any], block_type: str) -> Mapping[str, Any] | None:
     found: Mapping[str, Any] | None = None
     for step in body.get("steps") or []:
         if not isinstance(step, dict) or step.get("type") != "model_output":
             continue
         for block in step.get("content") or []:
-            if isinstance(block, dict) and block.get("type") == OUTPUT_TYPES[kind]:
+            if isinstance(block, dict) and block.get("type") == block_type:
                 found = block
     return found
 

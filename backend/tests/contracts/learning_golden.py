@@ -9,7 +9,7 @@ from app.research.explainer_versions import (
     ExplainerVersionDocument,
 )
 from app.research.lessons import LessonList, LessonPack, LessonRequest
-from app.research.shared_science import SharedConcept, SharedScience
+from app.research.shared_science import ConceptCraftsPage, SharedConcept, SharedScience
 
 from .golden import golden_json
 
@@ -61,6 +61,7 @@ class SharedScienceFixture(ContractModel):
     schema_version: Literal[1]
     craft: SharedScience
     concept: SharedConcept
+    crafts: ConceptCraftsPage
 
 
 def learning(name: str) -> Any:

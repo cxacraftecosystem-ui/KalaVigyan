@@ -165,11 +165,14 @@ Last reviewed: 2026-11-22.
   `end_call` and client tools, Hindi in agents, CSP hosts and the plan's retention minimum
   (`docs/contracts/voice.md`). Relay text to speech cannot run with zero retention
   (`enable_logging=false` is enterprise only).
-- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): its agent turn binds a session to the conversation it opens and asks one
-  question, so a reply in `agent_turn_events.json` settles the header, the bearer and the suffix;
-  commit it as `backend/tests/voice/fixtures/agent_turn_events.json`; `voice.transport` stays
-  `RELAY` until it passes. Tool calls, Hindi in agents, the CSP hosts and retention still need a
-  browser call on the box; retention also needs an enterprise plan or the Gemini voice.
+- **Waits on:** the agent spike, which is the switched-off voice call (decision 0035), not another
+  paid run: the paid check of 2026-11-23 (run 45112123057) refused its agent turn because no
+  ElevenLabs agent, agent key or voice session key is provisioned. Once the spike provisions them,
+  the paid check's agent turn settles the header, the bearer and the suffix (commit its
+  `agent_turn_events.json` as `backend/tests/voice/fixtures/agent_turn_events.json`;
+  `voice.transport` stays `RELAY` until it passes). Tool calls, Hindi in agents, the CSP hosts and
+  retention need a browser call on the box; retention also needs an enterprise plan or the Gemini
+  voice.
 
 ## Voice backend (decision 0017)
 
@@ -217,13 +220,18 @@ Last reviewed: 2026-11-22.
 - **Clears it:** one real `AGENT` call once the spike passes, and the same check run on the page
   that mounts the dock when `VOICE_CALL_ENABLED` brings the call back.
 
-### The dock asks for a bit rate it cannot enforce
+### The dock's recorded bit rate is unmeasured in Safari
 
 - **What:** the relay recorder asks `MediaRecorder` for the session's `audioBitsPerSecond`
-  (32 kbit/s) and sends a turn at nine tenths of `maxAudioBytes`; a browser that ignores the asked
-  rate (Safari's AAC is the likely case, unverified) sends shorter turns than a minute.
-- **Clears it:** measure the recorded rate per browser in the smoke spec; if one ignores it, raise
-  that type's byte ceiling in the contract with its measured rate.
+  (32 kbit/s) and sends a turn at nine tenths of `maxAudioBytes`, so a full minute fits only at
+  36,000 bit/s or less. The browser smoke measures Chromium on every pull request
+  (`frontend/e2e/voice-rate.smoke.spec.ts`: `audio/webm` at 28,269 and 28,245 bit/s on 2026-11-23,
+  decision 0161); Safari records `audio/mp4` (AAC), and whether it keeps to the asked rate is
+  unmeasured.
+- **Waits on:** a Safari run, which no GitHub runner has (Playwright's WebKit is not Safari's media
+  stack): a person with a Mac runs the smoke spec in Safari once. If it records above 36,000 bit/s,
+  raise the `audio/mp4` byte ceiling in `docs/contracts/voice.md` and `schemas/voice.py` by its
+  measured rate.
 
 ## Science engine (decision 0015)
 
@@ -249,9 +257,14 @@ Last reviewed: 2026-11-22.
 
 ### Out-of-envelope readings are not in a review queue
 
-- **What:** the contract lists every `OUTSIDE` reading in the review queue; no review queue
-  exists, so they are only shown with their status.
-- **Clears it:** the review-queue lane lists readings whose `envelope_check` is `OUTSIDE`.
+- **What:** the contract lists every `OUTSIDE` reading in the review queue; the review queue
+  (`services/review_queue*`) now exists but has no readings kind, so an out-of-envelope reading is
+  only shown with its status. No stored reading is checked against an envelope yet (the entry
+  above), so the queue would list nothing today.
+- **Why left:** the review queue's kinds, routes and screen belonged to the MCP and contributors
+  lane in round 7's debt round; the place builders lane (decision 0160) did not touch them.
+- **Clears it:** a readings kind in the review queue listing the `ConditionReading` rows whose
+  `envelope_check` is `OUTSIDE`, decided on the review screen like the other kinds.
 
 ## Answers in Indian languages (decision 0023)
 
@@ -290,19 +303,17 @@ Last reviewed: 2026-11-22.
 
 ## Media backend (decision 0018)
 
-### Gemini media behaviour not yet seen live
+### Gemini video not yet seen live
 
-- **What:** how a safety block reads on the Interactions API, the image output type when none is
-  asked for (PNG assumed), the image's token breakdown and the interaction id alphabet are
-  unverified for images; for video also `DELETE /v1beta/interactions/{id}`, the clip's exact
-  duration, and the shape of an `image` input that would make the requester's stage image the
-  clip's first frame (PLAN 11 allows it; videos are `text_to_video` until the shape is seen, because
-  a wrong input fails every clip). The fixtures in `backend/tests/media/fixtures/` follow the
-  documented shapes, not captured traffic.
-- **Waits on:** images waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): commit its `image_completed_recorded.json` as
-  `backend/tests/media/fixtures/image_completed.json` and adjust `providers/gemini_media.py` where
-  the shapes differ. Video and the first frame wait on the owner approving one paid Gemini clip,
-  which the approval of 2026-11-22 does not include.
+- **What:** the paid check of 2026-11-23 saw an image made live (an unstored interaction with no id,
+  a thought step, `image/jpeg` output, usage by modality; `backend/tests/media/fixtures/image_completed.json`,
+  decision 0161). Video is still unseen: `DELETE /v1beta/interactions/{id}`, the clip's exact
+  duration, the shape of an `image` input that would make the requester's stage image the clip's
+  first frame (PLAN 11 allows it; videos are `text_to_video` until the shape is seen, because a wrong
+  input fails every clip), and how a safety block reads, which no paid call can be made to show.
+  The video fixtures follow the documented shapes, not captured traffic.
+- **Waits on:** the owner approving one paid Gemini clip, which the approval of 2026-11-22 does not
+  include.
 
 ### Community and caste names caught by group words only
 
@@ -314,13 +325,6 @@ Last reviewed: 2026-11-22.
   cited sources.
 - **Waits on:** the owner's and the governance lane's decision to keep the named practitioners per
   craft as cited data; the claim set and the named-cluster flag then check against it.
-
-### Media image output priced at one rate
-
-- **What:** a media call's text and thinking tokens are priced at the media output rate, which
-  overstates the cost of an image slightly.
-- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): its `image_completed_recorded.json` shows the
-  `output_tokens_by_modality` breakdown; then price each modality at its own rate.
 
 ## Yahoo sign-in (decision 0026)
 
@@ -508,24 +512,31 @@ Last reviewed: 2026-11-22.
 
 ## Listen and the switched-off call (decision 0035)
 
-### Narration not yet heard from ElevenLabs
+### Narration heard in English and Hindi only
 
-- **What:** `ElevenLabs.narration` follows the documented `/with-timestamps` shape; no request has
-  reached ElevenLabs, so `eleven_v4` on that endpoint, the alignment spelling the text in every
-  language, bracketed text read as text rather than as a v4 audio tag, and the real speaking rate
-  behind the 1,000-characters-a-minute hold are unverified (decision 0035, Unverified).
-- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): commit its `narration_en.json` and `narration_hi.json` as
-  `backend/tests/voice/fixtures/narration_with_timestamps.json` and a Hindi sibling; its report
-  gives each reply's characters a minute and whether the alignment spells the text. If `eleven_v4`
-  is refused, set `NARRATION_MODEL` to `eleven_v4_turbo`.
+- **What:** the paid check of 2026-11-23 heard `eleven_v4` on `/with-timestamps` in English and
+  Hindi: accepted, the alignment spelling the text code point for code point, 882 and 765 characters
+  a minute (`backend/tests/voice/fixtures/narration_with_timestamps.json` and its Hindi sibling,
+  decision 0161). It also showed Hindi skipping square-bracketed words as an audio tag, so Listen now
+  sends them as parentheses; that a parenthesis is read in Hindi, and the alignment in the eleven
+  other languages, are unheard. A mismatch fails loudly, and Listen then reads with the Gemini voice.
+- **Waits on:** the next paid check, whose narration step now sends the text as Listen does and
+  reports `parenthesisedSeconds`; the other languages wait on a reviewed sentence in each for
+  `paid_check_steps.NARRATIONS`, as interface words are reviewed (decision 0157).
 
-### Listen has no fallback voice
+### The Gemini read-aloud has not reached Gemini
 
-- **What:** PLAN 10.6 reads aloud with the Gemini voice when ElevenLabs is down; Listen is hidden
-  instead (`listen.languages` empty), because the Gemini voice gives no word timings.
-- **Why left:** highlighting needs timings; a fallback without them is a second Listen.
-- **Clears it:** a Gemini read-aloud that highlights by sentence only, if the owner wants Listen
-  while ElevenLabs is down.
+- **What:** Listen's fallback voice (`GeminiMediaWire.read_aloud`, decision 0161) follows the
+  speech page of the Gemini documentation read on 2026-11-23: `POST /v1beta/interactions` with
+  `gemini-3.8-flash-tts`, the voice in `generation_config.speech_config`, and a RIFF WAV of 24 kHz
+  mono 16-bit PCM in the last `audio` block of the `model_output` step. No request has reached
+  Gemini, so that shape, whether the `Api-Revision` header the media wire sends is accepted, the
+  real speaking rate behind the 1,000-characters-a-minute hold, and whether a cited sentence's
+  angle brackets are read as text rather than as an inline speech tag are unverified.
+- **Waits on:** the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154),
+  whose `gemini_speech` step reads one sentence and parses it as Listen does; commit its
+  `speech_completed.json` as a fixture of `backend/tests/media/test_gemini_speech.py`. A refusal
+  there names what to change in `providers/gemini_media.py`.
 
 ## Sectioned composition (decision 0032)
 
@@ -556,29 +567,6 @@ Last reviewed: 2026-11-22.
   concept and a review screen where a Professor places it in the craft's process or rejects it,
   writing the `ProcessStage` with the review's note. It waits on that screen (design and answer UI
   lane) and its review-queue item being scheduled together.
-
-## Phase B contract (decision 0042)
-
-### Months and seasons are read in English only
-
-- **What:** `research/calendar` reads capitalised English month names, their abbreviations and
-  ranges joined by `to`, `till`, `until`, `through` or a dash, and three season words. Indian
-  month names (Shravan, Kartik), `between June and September` (read as the two months only) and
-  other seasons (post-monsoon, spring) place nothing.
-- **Why left:** a season row shows only what a source names; reading less is safe, reading more
-  needs a cited calendar of regional months.
-- **Clears it:** a cited table of regional month names and seasons with their Gregorian months
-  (owner O5's rule, as for local units), read by `months_named`.
-
-### The phase B fixture's river ids are placeholders
-
-- **What:** `shared/explainer.phase-b.golden.json` names reach ids 1, 2, 3 and outlet 3 under
-  `placeholders`; every other id resolves.
-- **Why left:** the river lines are built (decision 0043) but load only on GitHub Actions after
-  the deploy; the real ids come from that load.
-- **Clears it:** after the first `riverlines` load (decision 0043), take the Kachchh river from
-  `river_store.rivers_crossing(session, [449])` and `trace_river`, write its reach ids and outlet
-  into the fixture, and remove `placeholders` from the fixture and its model.
 
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
@@ -643,167 +631,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** one HTML reader for the live fetcher and curation; long books usually come as PDFs.
 - **Clears it:** a cap option on `extract` that curation passes.
 
-## Region story and map layers (decision 0044)
-
-### A researched geography section rebuilds a stored story
-
-- **What:** a stored region story is reused only together with its facet's reused section; a
-  researched geography section (a new craft in the same district, or a stale craft set) makes one
-  plan-model call for a new story, which supersedes the stored one of its basin, even when the
-  stored story still passes the reuse rule.
-- **Why left:** the registry refuses a builder block with a reuse mark (decision 0042 point 9), and
-  a stored block shown without its mark would hide that it is earlier research.
-- **Clears it:** a registry path that places a reusable stored piece with its mark (the entry names
-  the piece slot it reads), so the builder spends nothing when a current story exists.
-
-### Story steps are only the section's own claims
-
-- **What:** steps are chosen from the fact-level stored claims the section's checked blocks cite
-  (at most 12), so a story never adds a stored place or water claim the prose did not use, and its
-  steps repeat sentences of the section's prose.
-- **Why left:** those claims are already checked and cited for this question; searching place
-  claims per district is a retrieval change.
-- **Clears it:** an offer of the district's stored place claims (by `CraftLocation` district and
-  the GEOGRAPHY concept headings) beside the section's, ranked by the question.
-
-### Map layer subjects are a fixed English word list
-
-- **What:** `geo/section_layers.LAYER_SUBJECTS` picks a section's layer by whole English words in
-  its sentences (rain, monsoon, clay, pH ...); a subject the list lacks falls back to registry
-  order, so a climate section about humidity shows the annual mean temperature.
-- **Why left:** builders see English sentences, and a deterministic list keeps the model out of a
-  value the server chooses.
-- **Clears it:** glossary terms linked to layers (a `Term` per registry layer with its local
-  names), marked by the existing `TermMarker` instead of a word list.
-
-### Many-district stories are not stored
-
-- **What:** a story without a river is keyed by every district (`lgd-<code>` joined by `+`); past
-  `TOPIC_KEY_MAX_CHARS` (about 23 districts) the key is refused, the story is shown but not kept,
-  and the lookup offers no district key for such a craft.
-- **Why left:** crafts practised in more than 20 mapped districts are rare, and a key per district
-  would let one story answer for another district's craft.
-- **Clears it:** a stored district list on the piece (a `districtLgds` column with a GIN index)
-  looked up by overlap instead of an exact key.
-
-### The place builders have not run against loaded rivers
-
-- **What:** the builders are tested on fixture reaches and, on GitHub Actions, on a hand-made
-  network in Kachchh; no answer has yet traced a real HydroRIVERS basin, so the time of a large
-  basin's trace (the Ganga's links and its stored reach districts) inside the 20 s wait is unmeasured.
-- **Why left:** the river lines load only after the deploy (decision 0043).
-- **Clears it:** after the `riverlines` load, one Expert answer for a Ganga craft and one for Kutch
-  Ajrakh in production, recording the builder's time; if a trace nears the wait, cache traces per
-  crossing reach.
-
-## Seasons and supply (decision 0047)
-
-### A season gets months only from a quote the section offers
-
-- **What:** a season row is given months only by a quote among the section's cited claims and the
-  craft's stage claims that states the season's months; most climate sections cite none, so their
-  rows show the season chip alone. No regional season calendar is stored.
-- **Why left:** owner rule: a named Indian season maps to months only where a source states the
-  mapping, and no cited calendar is curated yet.
-- **Clears it:** cited regional season calendars per state or district (for example the India
-  Meteorological Department's season definitions), stored as claims on a district concept and
-  offered to the seasons builder with the section's claims.
-
-### The season mapping reads short English word lists
-
-- **What:** `calendar.season_months` maps a season only when the words between it and one month
-  range are on short lists (`SPAN_WORDS_AFTER`, `SPAN_WORDS_BEFORE`) and no reference word
-  (`POINT_WORDS`: after, before, end, onset, early ...) stands just before the season word; any
-  other phrasing maps nothing, and an enumeration whose items share those words (`the monsoon, the
-  summer months of June to September`) could still give a range to the wrong season.
-- **Why left:** reading less only leaves a row with its season chip; a parser would be a new
-  dependency for one rule.
-- **Clears it:** tests on the real climate quotes the curation run stores, widening or narrowing the
-  lists with each case found.
-
-### Supply origins are placed through Wikidata only
-
-- **What:** an origin is pinned only with a Wikidata item's P625; a district the register holds
-  (with its polygon) whose name finds no single Wikidata item is listed without a pin, and a
-  village with namesakes is pinned only when its sentence names a word of the right item's
-  description.
-- **Why left:** version 1 of `SupplyLink` has no field that cites a district row, and the client
-  links every pin to its Wikidata item (decision 0047).
-- **Clears it:** a version 2 link with `districtLgd`, placed at the register district's centroid and
-  citing `DR_DISTRICT_SHAPES`, on both sides.
-
-### Place lookups are asked again for every supply map
-
-- **What:** each supply map searches Wikidata for every origin again (the source HTTP cache keeps an
-  answer ten minutes per process); only a stored piece keeps its coordinates. The supply builder
-  also reads the craft's matter again, after the material card and molecule builders of the same
-  section (as in "Each matter builder reads the craft's matter again").
-- **Why left:** a section has few origins, and stored pieces answer repeat questions.
-- **Clears it:** a stored place table keyed by origin and context words with the item, its
-  coordinates and revision, refreshed monthly; one matter read shared by a section's builders.
-
-### The seasons and supply builders have not met production
-
-- **What:** both are tested on fixtures, recorded Wikidata answers and, on GitHub Actions, the
-  seeded claims; neither has run on production claims, and the supply builder's time inside its
-  30 s wait (one plan-model call, up to 8 searches paced at 0.2 s and one SPARQL query paced at 1 s)
-  is unmeasured.
-- **Why left:** they reach readers with the next deploy.
-- **Clears it:** the Kutch Ajrakh climate and materials questions in the production E2E, recording
-  each builder's time and the rows and pins shown.
-
-## Phase B review fixes (decision 0050)
-
-### Register place names are matched as written
-
-- **What:** the check reads every state and district name of the LGD register as written, whole
-  words: an alias (Kutch for Kachchh) is not read, so a story step naming Kutch stays unplaced and
-  a sentence naming Kutch is not checked, and a district name that is also a common word or a
-  person's name (Mon, Anand, Sagar, Korea) drops a sentence whose sources do not repeat it.
-  District names made only of compass words (Delhi's North, South West) are skipped.
-- **Why left:** the register has no aliases; failing closed drops a sentence rather than showing
-  an unstated place.
-- **Clears it:** a cited alias table for districts, read by `register_places_named` and by the
-  step district check.
-
-### A negation within five words rules a timing out
-
-- **What:** `calendar.year_months` and `only_season` drop a month or season when a negating or
-  excluding word stands within five words before it in its clause, so a sentence about the
-  season that negates something else ("so they do not expand in the rainy season") places no row.
-- **Why left:** telling the negated verb apart needs a parser; a wrong month on screen is worse
-  than a missing row.
-- **Clears it:** a dependency parse of the claim (spaCy, a recorded decision) that drops only
-  mentions inside the negation's scope.
-
-### Superseded river files stay in the bucket
-
-- **What:** topology keys carry their SHA-256, so a load whose content changed writes new objects
-  and leaves the earlier ones under `media/rivers/<edition>/<mainRiv>/<old sha256>/`.
-- **Why left:** the river load role may write and read only; deleting needs a wider grant, and
-  the files are small next to the bucket's media.
-- **Clears it:** a lifecycle rule on `media/rivers/` expiring objects no `RiverBasin` row names,
-  or a delete step in the load with `s3:DeleteObject` on that prefix.
-
-### The stream's reaction event outlives the reaction player
-
-- **What:** `research/stream.py` still declares the `reaction` event and the client still parses
-  it into `ReactionsPanel`, although no server path emits it since the explainer (decision 0030)
-  and reactions now arrive as `reaction_player` blocks.
-- **Why left:** removing an event changes the stream contract on both sides and the frontend
-  state; it shows nothing today.
-- **Clears it:** drop `ReactionEvent`, the client's `reaction` event, `reactions` state and
-  `ReactionsPanel` in one change with `docs/contracts/research.md`.
-
-### The water question needs `rivers_loaded` set by hand
-
-- **What:** the production E2E's water question fails a missing region story only when dispatched
-  with `rivers_loaded` true; it cannot tell on its own whether the river lines are loaded.
-- **Why left:** no route says whether rivers are loaded, and adding one for a test would be an
-  admin surface with no reader.
-- **Clears it:** dispatch with `rivers_loaded` true from the first run after the `riverlines` load,
-  then make it the default.
-
 ## Phase C contract (decision 0054)
 
 ### Numbers the explainer computes are not checked
@@ -864,9 +691,13 @@ Last reviewed: 2026-11-22.
   is not named by a plain "madder".
 - **Why left:** a wider gap joins co-ingredients ("clay, millet flour, gum and alum or lime"),
   which must never be offered as alternatives; the seed's contrast relations and the curated
-  dossiers' "madder or al root" cover the crafts held.
-- **Clears it:** curation storing alternatives as `CONTRASTS_WITH` relations (or a material's
-  alternatives) so no text has to be read.
+  dossiers' "madder or al root" cover the crafts held. The what-if inputs already read stored
+  `CONTRASTS_WITH` relations (`what_if_offers._contrasted`); what is missing is a curated way to
+  write them: the dossier schema and its generator (`tools/curation`) and structure proposals
+  belonged to the MCP and monograph lanes in round 7's debt round (checked 2026-11-23, decision
+  0160).
+- **Clears it:** a material's alternatives in the dossier (and in `propose_structure`), imported
+  as `CONTRASTS_WITH` concept edges with their cited claim, so no text has to be read.
 
 ### Temperatures and water sources are not offered as inputs
 
@@ -876,6 +707,9 @@ Last reviewed: 2026-11-22.
   waters are stored materials with alternatives.
 - **Why left:** no stored row relates a condition's stated range, or one water source, to an
   outcome; a what-if over them would need numbers or outcomes a model would have to supply.
+  Checked 2026-11-23 (decision 0160): the dossier model holds no stage conditions and the science
+  seed's conditions carry readings and no outcome; it waits on condition ranges a source ties to
+  outcomes, found and cited through the KalaVigyan MCP research tools and curated.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
 
@@ -1077,32 +911,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
   dataset value), or a contract change that leaves yearly rows out of its facets.
 
-### Ask the map matches a prose piece by the district's name
-
-- **What:** a place-facet prose piece's topic names its craft's districts by name slug
-  (`water:kachchh`); only crafts placed in the tapped district are read, so a piece is shown for
-  the wrong district only when one craft is placed in two districts sharing a name (Bilaspur in
-  Himachal Pradesh and in Chhattisgarh).
-- **Why left:** the topic keys of decision 0033 name districts by name; changing them is a piece
-  contract change.
-- **Clears it:** place-facet topic keys by LGD code (`water:lgd-449`, as region stories already
-  use), with a piece rebuild.
-
-## Follow-ups, versions and alerts (decision 0063)
-
-### A follow-up that lost a race shows its old block numbers until a reload
-
-- **What:** a follow-up that finds a newer version saved meanwhile is merged onto it and stored
-  with its blocks renumbered (decision 0143), and its `version` event carries the new mark
-  (`basedOn` the newer version); the reader still sees the blocks under the numbers they streamed
-  with, beside the version they asked on, until the page is reloaded.
-- **Why left:** the stream has no event that renumbers shown blocks, and the client's version
-  reader (`frontend/lib/explainerVersions`) belonged to the design lane running at the same time
-  (2026-11-22).
-- **Clears it:** `reduceAnswerEvent` reloads the stored version when the `version` event's
-  `basedOn` differs from the `builds_on` version it followed, instead of keeping the streamed
-  sections.
-
 ## Learning block renderers (decision 0068)
 
 ### Quiz picks are kept in the page only
@@ -1111,21 +919,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** no route stores quiz attempts, and decision 0062 makes a quiz a rebuilt block.
 - **Clears it:** an attempts route if the owner wants scores kept (for a class, with the lesson
   builder).
-
-## Quiz, compare and the shared-science explorer (decision 0064)
-
-### A shared-science node lists at most 100 of the crafts sharing its term
-
-- **What:** the explorer and the concept graph now read every craft whose claims name a term, with
-  all its naming claims (`SharedTermCraft`, rebuilt by `refresh_shared_terms` at each release and
-  each night, decision 0143), but a node (`ConceptNode.crafts`, `CONCEPT_CRAFTS_MAX` in the
-  contract) still lists at most 100 of them, the focus craft first and then by name, and does not
-  say how many share the term.
-- **Why left:** a term such as cotton or indigo can be shared by hundreds of crafts and a craft's
-  explorer answers up to 24 nodes; a longer list or a count changes the shape the client draws
-  (`frontend/lib`), which belonged to the design lane at the time (2026-11-22).
-- **Clears it:** a node carries how many crafts share its term and the route pages a node's crafts,
-  in the contract, the backend and the client together.
 
 ## Craft page rebuild (decision 0071)
 
@@ -1461,18 +1254,6 @@ Last reviewed: 2026-11-22.
   photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
   missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
 
-### The question writer keeps few of the facts it samples
-
-- **What:** generation run 44993519051 sampled 727 facts and dropped 580 questions because they
-  reused their fact's distinctive words, so the generated set holds 169 questions, 58 in English.
-  Decision 0151 asks the writer once more for each such fact, naming the words it reused, and
-  reports `asked`, `keptEnglish`, `keptShare`, `askedAgain` and `rewritten`; the committed set was
-  written before it.
-- **Why left:** a generation run spends money on production and is the lead's to dispatch.
-- **Clears it:** dispatch `eval-questions.yml` after the release that carries decision 0151, commit
-  the set, compare its `keptShare` with run 44993519051's, and score the new questions in the fused
-  order with `eval_retrieval --fusion`.
-
 ### The quantities table has not been measured by the judge
 
 - **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65); the Ajrakh
@@ -1560,17 +1341,6 @@ Last reviewed: 2026-11-22.
   the queue anyway.
 - **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
   `ReviewEvent` by `live_research`.
-
-### The count of hidden facts has no admin screen
-
-- **What:** the nightly count of approved facts a signed-out reader cannot see, by craft and reason
-  (decision 0149), is in the night's report and at `GET /api/coverage/hidden-facts` for admins, but
-  no admin screen shows it.
-- **Why left:** the contributions-visible lane built the count, its route and the failing night;
-  the admin screens belong to the design-system work, and a screen needs the kalavigyan-design
-  review of a new admin card.
-- **Clears it:** a card on the admin settings page that reads the route and lists each craft's
-  hidden facts by reason, with the unexplained ones first, and a unit spec of its shape.
 
 ## How this document is kept true
 
