@@ -100,7 +100,7 @@ test.describe("a reader operates every control", () => {
     expect(problems, problems.join("\n")).toEqual([]);
   });
 
-  test("an answer page: its choices and reading tools, signed in", async ({ page }) => {
+  test("an answer page: its choices, its pictures' credits, a term's sheet and its reading tools, signed in", async ({ page }) => {
     const email = process.env.E2E_EMAIL ?? "";
     const password = process.env.E2E_PASSWORD ?? "";
     test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD to sign in to the answer page.");
