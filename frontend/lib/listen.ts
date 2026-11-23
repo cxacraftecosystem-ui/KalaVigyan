@@ -89,7 +89,7 @@ export function elapsedOf(script: ListenScript, position: ListenPosition): numbe
   return before + Math.max(0, position.time);
 }
 
-export function activeIndex(timed: readonly { start: number }[], time: number): number {
+export function activeIndex<T extends { start: number }>(timed: readonly T[], time: number): number {
   let low = 0;
   let high = timed.length - 1;
   let found = -1;
