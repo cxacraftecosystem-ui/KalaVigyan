@@ -568,17 +568,6 @@ Last reviewed: 2026-11-22.
   `etl/geo/geo_etl/layers/groundwater.py`), or the owner's choice to load the National Compilation's
   district annexure another way (for example a transcription recorded as its own dataset).
 
-### Ask the map lists every year of the series
-
-- **What:** ask the map lists each district value, so Climate shows 45 years of CHIRPS annual
-  means (with their 10th and 90th percentiles) and 45 years of GHCN CAMS means beside the normals
-  and trends. The region route no longer does: a place there sends only its facets' headline
-  values (`geo/headline.HEADLINE_SERIES`, decision 0153).
-- **Why left:** ask the map gives a district's values as stored (contract); folding a series is a
-  screen choice.
-- **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
-  dataset value), or a contract change that leaves yearly rows out of its facets.
-
 ## Public transcripts and share links (decision 0097)
 
 ### The `SIGNED_IN` chunk ACL is read by everyone
