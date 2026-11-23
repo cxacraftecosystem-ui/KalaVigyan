@@ -822,19 +822,6 @@ Last reviewed: 2026-11-22.
   posting a refusal that `SandboxFrame` turns into hiding the block. Waits on the owner's rule
   (checked again on 2026-11-22: the static check covers code numerals since decision 0061).
 
-### Chromium ignores the frame policy's webrtc directive
-
-- **What:** `SANDBOX_CSP` ends with `webrtc 'block'` (decision 0061), but Chromium 158 logs
-  "Unrecognized Content-Security-Policy directive 'webrtc'." as a console error in every generated
-  explainer and lets a peer connection reach a STUN server; there the client's `FRAME_GUARD` is
-  what stops it (no constructor, no nested window, no nested frame), proved by
-  `e2e/sandbox-frame-unit.spec.ts`. The production screens walk ignores exactly that console
-  error from `about:srcdoc`.
-- **Why left:** browsers that read the directive enforce it, and the guard covers the rest; the
-  directive's support is the browsers'.
-- **Clears it:** nothing in this repository; drop the screens walk's exception once Chromium
-  recognises the directive.
-
 ## Generated explainers (decision 0055)
 
 ### A redraft can run past the builder's wait
@@ -948,21 +935,6 @@ Last reviewed: 2026-11-22.
 
 ## Phase D contract (decision 0062)
 
-### No stored source states a regional unit conversion yet
-
-- **What:** a `REGIONAL` measure needs a stored claim whose quote states the factor for a region
-  (owner O5); no seed or curated claim does, so until one is curated only exactly defined units
-  (inch, foot, yard, mile, square foot) convert, and the fixture's measure is a feet value. The
-  regional path is built and tested on hand-written quotes (decision 0066).
-- **Why left:** a regional value has to come from a source a curator verifies; inventing one would
-  break O5.
-- **Clears it:** curation only; the code path is built, and since decision 0147 the region may
-  be named by its register spelling or any other name `data/district_other_names.json` lists
-  ("a seer of Kutch" now names Kachchh). For Kutch Ajrakh: a dossier claim quoting the weights and
-  measures table of the Kutch district gazetteer (Gujarat State Gazetteers, Kutch District, 1971,
-  or the Gazetteer of the Bombay Presidency, Cutch, 1880) as an equality ("a seer ... weighs ...
-  kg", "a gaj is ... m"); then the review adds a `REGIONAL` row to the fixture from that claim.
-
 ### The phase D fixture shows no price and no Kutch Ajrakh sign of imitation
 
 - **What:** the market blocks show Kutch Ajrakh's GI record and Bagru's GI record with its GI
@@ -995,42 +967,7 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the seed and curated sources store organisation authors whole (the curation
   checker already keeps them whole); the export needs no change.
 
-### Ask the map lists only crafts placed in the district by a cited location
-
-- **What:** a district answers only crafts with a cited district or point location there; a craft
-  the master list knows only by its state of practice is not listed for any district.
-- **Why left:** placing a state-level craft in every district of the state would be a claim no
-  source makes.
-- **Clears it:** curation only; the code path reads any cited district or point location. For
-  each GI craft the master list places by state alone, a dossier place naming its district from
-  the GI journal's "geographical area" passage or the district gazetteer, starting with the GI
-  crafts no dossier covers yet (Tharu embroidery, Kutch embroidery, Kasuti embroidery and the
-  other GI rows of `craft_master_list.json` without a dossier).
-
 ## Local measures, and market and GI (decision 0066)
-
-### A price stated with several years, places or prices needs a curated row
-
-- **What:** without curated rows, a price is read from a cited claim of the craft only when the
-  claim states exactly one price, one year and one LGD district (decision 0147,
-  `market_store.stated_price_offer`); a claim stating two prices, a range of years or two places
-  ("a cotton bandhani cost Rs. 10 to Rs. 50 and a georgette one Rs. 50 to Rs. 250") shows none.
-  19 prices in 12 dossiers are curated today.
-- **Why left:** choosing among several dates or places in one sentence would be a guess.
-- **Clears it:** curation only: `market.prices` rows for those claims, starting with the crafts
-  whose GI journal or gazetteer prices state several items (Kutch Bandhani, Tikuli Painting,
-  Uttarakhand Ringal Craft), each row naming its date and place.
-
-### GI fields are read by their labels
-
-- **What:** without a curated record, the registry fields come from labelled words in GI journal
-  and government claims ("application 183", "Certificate Date 11-05-2011", "Journal Number 37");
-  a claim phrased otherwise adds nothing, and two claims stating different values give no status.
-- **Why left:** the registry offers no open API, and a curated record replaces the reading.
-- **Clears it:** curation only: a `market.gi` record for each GI craft (21 of the master list's
-  209 GI crafts have one), read from its GI journal and registry pages as the 21 are, starting with
-  Tharu Embroidery, Kutch Embroidery, Kasuti Embroidery, Sandur Lambani Embroidery and Toda
-  Embroidery; the label reader then serves only crafts without a dossier.
 
 ### Imitation is a fixed word list
 
@@ -1102,15 +1039,6 @@ Last reviewed: 2026-11-22.
   `basedOn` differs from the `builds_on` version it followed, instead of keeping the streamed
   sections.
 
-## Learning block renderers (decision 0068)
-
-### Quiz picks are kept in the page only
-
-- **What:** a reload or a new visit clears the reader's answers and score.
-- **Why left:** no route stores quiz attempts, and decision 0062 makes a quiz a rebuilt block.
-- **Clears it:** an attempts route if the owner wants scores kept (for a class, with the lesson
-  builder).
-
 ## Quiz, compare and the shared-science explorer (decision 0064)
 
 ### A shared-science node lists at most 100 of the crafts sharing its term
@@ -1125,18 +1053,6 @@ Last reviewed: 2026-11-22.
   (`frontend/lib`), which belonged to the design lane at the time (2026-11-22).
 - **Clears it:** a node carries how many crafts share its term and the route pages a node's crafts,
   in the contract, the backend and the client together.
-
-## Craft page rebuild (decision 0071)
-
-### The register's description is no longer shown
-
-- **What:** the old page showed the craft register's `description` above the claims. `PageCraft`
-  has no description, so a craft without a dossier or claims shows only its register facts
-  (category, kind, GI status, states).
-- **Why left:** the field is not in the contract, and it is uncited register text, which the page
-  otherwise never shows as a sentence.
-- **Clears it:** an owner decision; if wanted, `description` on `PageCraft` (model, contract,
-  fixture) drawn beside the register facts and marked as the register's.
 
 ## Lesson packs and exports (decision 0067)
 
@@ -1233,13 +1149,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** job step 5 with the route, and an AI media slot in the monograph document.
 
 ## Track 1, round 1 (decision 0101, 2026-11-19)
-
-### Contributed quotes from web pages are researcher-only
-
-- **What:** a fact quoted from a fetched web page keeps the T4 page's researcher-only chunk access,
-  so it is withheld from signed-out pages and `get_facts` even once approved.
-- **Why left:** it is today's research write-back rule; changing it is a licence decision.
-- **Clears it:** a public chunk access for a quote the gates verified from an openly licensed page.
 
 ### Gate thresholds are first guesses
 
@@ -1553,19 +1462,6 @@ Last reviewed: 2026-11-22.
   504968ea-49cc-469c-88f9-205a2ea90e8a` (and `--since` for the older ones), which prints where each
   fact is against where today's rule files it (decision 0136), and approves each under the craft it
   names (approve with `craft`), approves it where it is, or rejects it.
-
-### The places that block filing are word lists
-
-- **What:** the regions and cultures abroad in `data/places_abroad.json` are kept by hand (its
-  countries are now held to Natural Earth's sovereign states by a test), and the places of India that
-  hold a fact for a reviewer instead of filing it are the LGD state and district names and the craft
-  index's place labels. Since decision 0136 they are read in a quote's passage and its source's title
-  too, so a district named like a common word in a paragraph holds a general fact that names nothing
-  else, and a region abroad missing from the list lets one through.
-- **Why left:** no open gazetteer of regions and cultures is vendored, and a model judging each
-  sentence's places would cost a call per sentence.
-- **Clears it:** read the held and refused write-backs the filing report lists after each round of
-  live research, and add places, other senses and left-out names from what it shows.
 
 ### The review page does not show why a write-back is held
 

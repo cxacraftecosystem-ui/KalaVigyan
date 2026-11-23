@@ -447,6 +447,12 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
   against where it is, plus the facts with no gate checks. It never writes. A reviewer acts on it in
   the review queue: approve (optionally with `craft` to file a held fact under another craft) or
   reject. Held facts are `DRAFT`, which no reader or search sees.
+- **After each round of live research** (decision 0163): run the filing report with `--since` the
+  round's first day and read the facts it lists as held or refused. The places that hold or refuse
+  a fact are word lists, so extend them from what it shows: a region or culture abroad that let a
+  fact through, another sense of a place word that held one, or a name left out, each in
+  `backend/app/data/places_abroad.json` (`regions`, `cultures`, `otherSenses`, `leftOut`; its
+  countries stay Natural Earth's sovereign states, which a test holds), in a change of its own.
 
 ## Nightly upkeep and page builds
 
