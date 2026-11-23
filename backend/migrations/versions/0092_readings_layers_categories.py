@@ -65,10 +65,10 @@ def downgrade() -> None:
 
 
 def _review_readings() -> None:
-    op.add_column(READINGS, sa.Column("reviewStatus", sa.String(length=CODE_CHARS), nullable=True))
-    op.add_column(READINGS, sa.Column("reviewedById", sa.UUID(), nullable=True))
-    op.add_column(READINGS, sa.Column("reviewedAt", STAMP, nullable=True))
-    op.add_column(READINGS, sa.Column("reviewNote", sa.String(length=NOTE_CHARS), nullable=True))
+    op.add_column("ConditionReading", sa.Column("reviewStatus", sa.String(length=CODE_CHARS), nullable=True))
+    op.add_column("ConditionReading", sa.Column("reviewedById", sa.UUID(), nullable=True))
+    op.add_column("ConditionReading", sa.Column("reviewedAt", STAMP, nullable=True))
+    op.add_column("ConditionReading", sa.Column("reviewNote", sa.String(length=NOTE_CHARS), nullable=True))
     op.create_foreign_key(
         op.f(f"{READINGS}_reviewedById_fkey"), READINGS, "User", ["reviewedById"], ["id"], ondelete="SET NULL"
     )
@@ -85,7 +85,7 @@ def _review_readings() -> None:
 
 def _category_subjects() -> None:
     op.alter_column(PROPOSALS, "craftId", existing_type=sa.UUID(), nullable=True)
-    op.add_column(PROPOSALS, sa.Column("categoryId", sa.UUID(), nullable=True))
+    op.add_column("StructureProposal", sa.Column("categoryId", sa.UUID(), nullable=True))
     op.create_foreign_key(
         op.f(f"{PROPOSALS}_categoryId_fkey"),
         PROPOSALS,
