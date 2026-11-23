@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Collection, Iterable
 from typing import Any
 
+from app.research.named_groups import names_a_listed_group
 from app.research.retrieval import HIDDEN_CLAIM_STATUSES, VISIBLE_SENSITIVITY
 from app.research.vocabulary import LEVEL_ORDER
 from app.schemas.media import MEDIA_MAX_CLAIMS, MEDIA_MIN_CLAIMS, names_a_group
@@ -22,10 +23,12 @@ QUOTED_LEVELS = frozenset({"PROVISIONAL"})
 PASSING_QUOTE = "PASS"
 
 
-def claim_set(claims: Iterable[ClaimFacts], *, acls: Collection[str]) -> tuple[ClaimFacts, ...]:
+def claim_set(
+    claims: Iterable[ClaimFacts], *, acls: Collection[str], named: Collection[str] = ()
+) -> tuple[ClaimFacts, ...]:
     chosen: dict[Any, ClaimFacts] = {}
     for claim in claims:
-        if not _usable(claim, acls):
+        if not _usable(claim, acls) or names_a_listed_group(claim.text, named):
             continue
         known = chosen.get(claim.id)
         if known is None or (claim.own and not known.own):

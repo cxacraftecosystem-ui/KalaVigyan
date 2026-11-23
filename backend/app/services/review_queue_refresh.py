@@ -31,7 +31,7 @@ from app.research.review_queue import (
     QueueDecision,
 )
 from app.research.review_queue_stages import PLACED_STATUS
-from app.research.structure_proposals import APPROVED_STATUS
+from app.research.structure_proposals import APPROVED_STATUS, GROUP_NAME
 
 from .page_revalidation import claim_owners, craft_owners, merged_owners, refresh_pages
 from .review_queue_readings import reading_craft
@@ -78,7 +78,7 @@ def _owning_craft(decided: QueueDecision) -> Select[Any] | None:
 
 async def _structure_owners(session: AsyncSession, proposal_id: uuid.UUID) -> PageOwners:
     row = await session.get(StructureProposal, proposal_id)
-    if row is None:
+    if row is None or row.kind == GROUP_NAME:
         return PageOwners()
     if row.categoryId is not None:
         slug = await session.scalar(select(CraftCategory.slug).where(CraftCategory.id == row.categoryId))

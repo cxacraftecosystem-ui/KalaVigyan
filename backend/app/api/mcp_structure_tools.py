@@ -21,10 +21,12 @@ PROPOSE_DESCRIPTION = (
     "stage's after (STAGE_AFTER, with its colours) or why (STAGE_WHY), a native name as a source gives it "
     "(NATIVE_NAME), a reaction (REACTION), a material's botanical name (BOTANICAL_NAME) or a material that can "
     "stand in for it (ALTERNATIVE), a glossary term (GLOSSARY_TERM), an open question (OPEN_QUESTION), parts of "
-    "the GI record (GI_RECORD), or held facts that disagree (CONFLICT: their ids, no new fact). A category page "
-    "takes a reaction without a stage, a term, a question or a conflict. Read get_facts and get_page first: "
-    "stage and material keys are the page's own. Every name, colour and number given must be in a quote; the "
-    "gates fetch every source, re-find every quote and grade the source. It waits in the review queue, and "
+    "the GI record (GI_RECORD), held facts that disagree (CONFLICT: their ids, no new fact), or a community or "
+    "person a source names (GROUP_NAME: sources only, no fact; kept out of AI pictures, never shown, any craft). "
+    "A category page takes a reaction without a stage, a term, a question or a conflict. Read get_facts and "
+    "get_page first: stage and material keys are the page's own. Every name, colour and number given must be "
+    "in a quote; the gates fetch every source, re-find every quote and grade the source. It waits in the "
+    "review queue, and "
     "approval writes it into the page and its dossier. Name the field task you claimed as task_key: a passing "
     "proposal completes it. Names inside the proposal are snake_case; the old camelCase names work until the "
     "next release."
@@ -43,7 +45,7 @@ class ProposeStructure(SnakeBodyArguments):
             "subject {kind craft or category, slug}, item {kind and its parts, such as stage_key}, field, statement (one "
             "sentence), sources [{url, title, licence, language, quotes [{text, locator}]}], the task_key you "
             "claimed and an optional note; a CONFLICT item gives about and claim_ids and no field, statement or "
-            "sources"
+            "sources; a GROUP_NAME item gives name and group_kind, with sources only"
         )
     )
 

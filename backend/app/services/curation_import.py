@@ -36,6 +36,7 @@ from .curation_seed_rows import SeedRetirement, retire_curated_seed_rows
 from .curation_store import source_aliases, write_evidence, write_records, write_structure
 from .curation_terms import write_curated_term_summaries
 from .curation_writes import insert_missing, stored_values, sync_rows
+from .group_names import keep_dossier_group_names
 from .monograph_generated_sections import SectionOwner
 from .piece_lookup import craft_districts
 from .piece_store import piece_values
@@ -180,6 +181,7 @@ async def import_dossier(
     changed |= await write_evidence(session, plan)
     changed |= await write_structure(session, plan, previous)
     changed |= await write_records(session, plan, previous)
+    changed["groupNames"] = await keep_dossier_group_names(session, craft.id, dossier)
     await session.flush()
     changed["sections"] = await publish_dossier_sections(session, dossier, SectionOwner.craft(craft.id))
     overview = await _overview(session, plan, craft)

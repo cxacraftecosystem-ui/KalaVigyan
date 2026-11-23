@@ -14,7 +14,8 @@ export const STRUCTURE_KIND_LABELS: Record<StructureKind, string> = {
   CONFLICT: "Facts that disagree",
   OPEN_QUESTION: "Open question",
   GI_RECORD: "GI record",
-  ALTERNATIVE: "Alternative material"
+  ALTERNATIVE: "Alternative material",
+  GROUP_NAME: "Name kept out of AI pictures"
 };
 
 const GI_PARTS: [keyof GiRecordEntry, string][] = [
@@ -63,6 +64,11 @@ export function entryLines(entry: StructureEntry): EntryLine[] {
         { term: "Material", value: entry.materialKey },
         { term: "Its alternative", value: entry.alternativeKey }
       ];
+    case "GROUP_NAME":
+      return [
+        { term: "Name", value: entry.name },
+        { term: "Names a", value: codeLabel(entry.groupKind).toLowerCase() }
+      ];
   }
 }
 
@@ -73,6 +79,7 @@ export function checkLines(checks: StructureCheck[]): GateCheck[] {
 export function writesLine(review: StructureReview): string {
   if (review.stale) return `The page has moved on, so it can only be rejected: ${review.stale}.`;
   if (review.kind === "CONFLICT") return `Approving shows these facts as disagreeing on the ${review.subjectName} page and in its dossier.`;
+  if (review.kind === "GROUP_NAME") return `Approving adds the name to the ${review.subjectName} list of names kept out of AI pictures. Readers never see the list.`;
   return `Approving writes it into the ${review.subjectName} page and its dossier, with its fact cited.`;
 }
 

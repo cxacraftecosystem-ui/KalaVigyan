@@ -72,6 +72,9 @@ SHOWN_STATEMENT = (
     "Drawn as a sentence of its field's section; approval also writes it into the page's structure."
 )
 LISTED_CONFLICT = "A conflict changes no sentence until a reviewer decides it, so the preview lists it only."
+LISTED_NAME = (
+    "A name kept out of AI pictures changes no sentence and is never shown, so the preview lists it only."
+)
 SHOWN_COMPONENT = "Drawn from its spec where the page will draw it once it is registered."
 NO_SPEC = "A component of a page bundle carries its spec, so that it is drawn as delivered."
 SHOWN_LAYOUT = "The page is ordered by this layout, as the next version would order it."
@@ -188,11 +191,13 @@ async def _structure(
     refuse_on(structure_subject_problem(bundle, subject, index, item))
     _, curated = await curated_subject(session, item.subject)
     refuse_on(dossier_problem(item) or target_problem(curated, item.item))
-    if item.item.kind == CONFLICT or item.field is None or item.statement is None:
+    if item.item.kind == CONFLICT:
         return _report(STRUCTURE, index, LISTED, LISTED_CONFLICT)
     stated = stated_check(item.item, [quote.text for source in item.sources for quote in source.quotes])
     if not stated.passed:
         raise InvalidInput(stated.reasons[0])
+    if item.field is None or item.statement is None:
+        return _report(STRUCTURE, index, LISTED, LISTED_NAME)
     draft.drafted(f"structure:{index}", item.field, item.statement, item.sources)
     return _report(STRUCTURE, index, SHOWN, SHOWN_STATEMENT)
 

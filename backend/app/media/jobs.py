@@ -114,7 +114,7 @@ async def media_options(deps: MediaDeps, user: Any, craft_slug: str) -> MediaOpt
         stages=[
             MediaStageOption(stage_id=stage.id, kinds=offered)
             for stage in stages
-            if enough_claims(claim_set(claims.get(stage.id, []), acls=acls))
+            if enough_claims(claim_set(claims.get(stage.id, []), acls=acls, named=craft.group_names))
         ],
     )
 
@@ -177,7 +177,7 @@ async def _visible_stage(deps: MediaDeps, user: Any, stage_id: uuid.UUID) -> Sta
 
 async def _stage_claim_set(deps: MediaDeps, user: Any, stage: StageFacts) -> tuple[ClaimFacts, ...]:
     found = await deps.store.stage_claims([stage.id])
-    claims = claim_set(found.get(stage.id, []), acls=chunk_acls_for(user))
+    claims = claim_set(found.get(stage.id, []), acls=chunk_acls_for(user), named=stage.craft.group_names)
     if not enough_claims(claims):
         raise MediaRefused("too_few_claims")
     return claims
@@ -192,7 +192,14 @@ def _new_record(
     model: str,
     now: datetime,
 ) -> JobRecord:
-    prompt = build_prompt(request.kind, stage.name, claims, style_hint=request.style_hint, model=model)
+    prompt = build_prompt(
+        request.kind,
+        stage.name,
+        claims,
+        style_hint=request.style_hint,
+        model=model,
+        named=stage.craft.group_names,
+    )
     return JobRecord(
         id=uuid.uuid4(),
         kind=request.kind,
