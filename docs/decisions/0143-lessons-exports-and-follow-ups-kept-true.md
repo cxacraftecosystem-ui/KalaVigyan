@@ -22,6 +22,7 @@ The contracts are `docs/contracts/learning.md` and `docs/contracts/research.md`.
 | The compare and explorer rules it amends | [decision 0064](0064-quiz-compare-and-shared-science.md) |
 | The lede it puts on the title slide | [decision 0077](0077-lede-headings-and-question-order.md) |
 | The shapes and files | [learning.md](../contracts/learning.md), Lesson packs and Exports |
+| Every scholarly adapter names the journal, and stored DOIs' journals are read again | [decision 0167](0167-answer-leftovers-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -17,7 +17,7 @@ from app.sources.reference.wikidata import WikidataAdapter
 
 from .builder_evidence import section_facts
 from .builder_interface import BuildAsk, BuilderTools, Built
-from .craft_matter import CraftMatter, MaterialRows, craft_matter
+from .craft_matter import CraftMatter, MaterialRows
 from .matter_builders import MOLECULE_CANDIDATES_MAX, molecule_candidates
 from .molecule_conformers import ConformerCache, ConformerObjects, ConformerSource, live_pubchem
 from .object_store import media_bucket
@@ -76,7 +76,7 @@ class ZoomStoryBuilder:
         facts = section_facts(ask.blocks, ask.cited, limit=ZOOM_FACTS_MAX)
         if craft is None or not facts:
             return Built()
-        matter = await craft_matter(self._tools.sessions, craft)
+        matter = await ask.matter.read(self._tools.sessions, craft)
         if matter is None:
             return Built()
         fibres = [m for m in matter.materials if m.kind == FIBRE_KIND]

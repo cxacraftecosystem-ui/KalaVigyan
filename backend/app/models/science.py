@@ -27,6 +27,7 @@ CONDITION_KEY_MAX_CHARS = 40
 READING_REVIEW_NOTE_CHARS = 500
 READING_REVIEW_STATUSES = ("APPROVED", "REJECTED")
 READING_APPROVED, READING_REJECTED = READING_REVIEW_STATUSES
+STAGE_REVIEW_STATUSES = ("PLACED", "REJECTED")
 
 
 class Process(Base):
@@ -73,6 +74,25 @@ class ProcessStage(Base):
     updatedAt: Mapped[datetime] = updated_at()
 
     __table_args__ = (UniqueConstraint("processId", "ordinal"),)
+
+
+class StageReview(Base):
+    __tablename__ = "StageReview"
+
+    conceptId: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("Concept.id", ondelete="CASCADE"), primary_key=True
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text)
+    reviewerId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("User.id", ondelete="SET NULL")
+    )
+    processStageId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ProcessStage.id", ondelete="SET NULL")
+    )
+    createdAt: Mapped[datetime] = created_at()
+
+    __table_args__ = (CheckConstraint(one_of("status", STAGE_REVIEW_STATUSES), name="status"),)
 
 
 class Compound(Base):

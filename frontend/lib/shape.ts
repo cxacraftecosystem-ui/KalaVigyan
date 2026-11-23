@@ -99,6 +99,17 @@ export function list<T>(item: Shape<T>, min = 0): Shape<T[]> {
   };
 }
 
+export function knownOnly<T>(item: Shape<T>, isKnown: (value: unknown) => boolean): Shape<T[]> {
+  return {
+    expected: `a list of ${item.expected}`,
+    parse(value, path) {
+      if (!Array.isArray(value)) throw new ShapeError(path, `a list of ${item.expected}`);
+      const kept = unknownFields === "ignore" ? value.filter(isKnown) : value;
+      return kept.map((entry, index) => item.parse(entry, `${path}[${index}]`));
+    }
+  };
+}
+
 export function dictionary<T>(key: RegExp, item: Shape<T>): Shape<Record<string, T>> {
   return {
     expected: `a map of ${item.expected}`,

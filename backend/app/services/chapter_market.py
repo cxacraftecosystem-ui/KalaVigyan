@@ -47,7 +47,7 @@ def _offers(ctx: ChapterContext) -> MarketOffers:
             proprietors=gi.proprietors,
             authorised_user_count=gi.authorised_user_count,
         )
-        record = GiRecordOffer(fields=fields, claim_ids=gi.claim_ids)
+        record = GiRecordOffer(fields=fields, claim_ids=gi.claim_ids, imitation=gi.imitation_claim_ids)
     prices = tuple(
         PriceOffer(
             claim_id=price.claim_id, priced_on=price.priced_on, place=price.place_name, district_lgd=None

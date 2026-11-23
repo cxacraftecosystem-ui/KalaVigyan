@@ -16,6 +16,7 @@ from app.research.planning import (
 )
 from app.research.vocabulary import CANONICAL_LANGUAGE, RETRIEVAL_TIERS, STORED_TIERS
 
+from .colourants import colourant_queries
 from .drafting import DraftQuery, PlanDraft
 from .policy import DEGRADED_MODES, request_limits
 
@@ -80,7 +81,8 @@ def planned_queries(
     wanted = set(facet_indexes)
     drafted = [query for query in draft.queries if query.facet_index in wanted]
     firsts = [_first_query(request.craft, draft, drafted, index) for index in facet_indexes]
-    ordered = [*firsts, *(query for query in drafted if query not in firsts)]
+    colourants = colourant_queries(search_question(request, draft), request.craft, draft, facet_indexes)
+    ordered = [*firsts, *colourants, *(query for query in drafted if query not in firsts)]
     planned: list[PlannedQuery] = []
     seen: set[tuple[str, str]] = set()
     for query in ordered:

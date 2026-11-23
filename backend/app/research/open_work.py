@@ -104,6 +104,7 @@ REVIEW_QUEUES: Mapping[str, Capability] = MappingProxyType(
         "STRUCTURE": Capability.MARK_CLAIM_LEVEL,
         "READINGS": Capability.MARK_CLAIM_LEVEL,
         "LAYERS": Capability.REVIEW_CONTRIBUTIONS,
+        "STAGES": Capability.MARK_CLAIM_LEVEL,
     }
 )
 REVIEW_QUEUE_LABELS: Mapping[str, str] = MappingProxyType(
@@ -116,6 +117,7 @@ REVIEW_QUEUE_LABELS: Mapping[str, str] = MappingProxyType(
         "STRUCTURE": "structure proposals",
         "READINGS": "readings outside their stage's range",
         "LAYERS": "map layer proposals",
+        "STAGES": "process stages answers found",
     }
 )
 COMPONENT_NEEDS: Mapping[str, tuple[str, ...]] = MappingProxyType(

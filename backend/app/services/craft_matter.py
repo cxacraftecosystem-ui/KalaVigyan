@@ -38,6 +38,7 @@ class GlossaryTerm:
     aliases: tuple[str, ...]
     local_names: tuple[str, ...]
     wikidata_id: str | None
+    sentence_name: str | None = None
 
     def surfaces(self) -> tuple[str, ...]:
         return (self.label, *self.aliases, *self.local_names)
@@ -159,6 +160,7 @@ async def _concept_terms(
                 aliases=tuple(term.aliases),
                 local_names=tuple(term.localNames),
                 wikidata_id=term.wikidataId,
+                sentence_name=term.sentenceName,
             )
         )
     return {concept_id: tuple(terms) for concept_id, terms in found.items()}

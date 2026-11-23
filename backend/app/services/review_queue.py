@@ -19,6 +19,7 @@ from app.research.review_queue import (
     LAYERS,
     LAYOUTS,
     READINGS,
+    STAGES,
     STRUCTURE,
     TESTIMONY,
     TESTIMONY_ORIGIN,
@@ -45,6 +46,7 @@ from .review_queue_layers import layer_items
 from .review_queue_layouts import layout_items
 from .review_queue_readings import ReadingScope, reading_count, reading_entries, reading_items
 from .review_queue_select import QueueScope, Rendered, RenderedItem, queue_count, queue_entries, rows_by_id
+from .review_queue_stages import stage_items
 from .review_queue_structure import structure_items
 from .testimony_views import Turns, review_item
 
@@ -145,6 +147,8 @@ async def _rendered(
         return await reading_items(session, ids)
     if kind == LAYERS:
         return await layer_items(session, ids)
+    if kind == STAGES:
+        return await stage_items(session, ids)
     if kind == TESTIMONY:
         return await _testimony_items(session, ids, adapters=adapters, now=now)
     return await _picture_items(session, ids, adapters=adapters, now=now)

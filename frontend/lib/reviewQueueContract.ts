@@ -4,8 +4,9 @@ import { imageContributionShape, type ImageContribution } from "@/lib/imageContr
 import { layerReviewShape, type LayerReview } from "@/lib/layerReviewContract";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { monographDocumentShape } from "@/lib/monographDocumentShape";
-import { boolean, dictionary, integer, list, nullable, number, object, oneOf, optional, parseShape, tagged, text, type Shape } from "@/lib/shape";
+import { boolean, dictionary, integer, knownOnly, list, nullable, number, object, oneOf, optional, parseShape, tagged, text, type Shape } from "@/lib/shape";
 import {
+  isKnownStructure,
   STRUCTURE_KINDS,
   structureCheckShape,
   structureEntryShape,
@@ -20,7 +21,7 @@ import { reviewEntryShape, type ClosedReviewItem, type RejectReason, type Review
 export type { FactSource, ReadingReview, SourceQuote, SuppliedProvenance };
 
 export const REVIEW_QUEUE_PATH = "/review-queue";
-export const QUEUE_KINDS = ["FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS", "LAYERS"] as const;
+export const QUEUE_KINDS = ["FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS", "LAYERS", "STAGES"] as const;
 export const REVIEW_ORIGINS = ["RESEARCH", "CONTRIBUTION", "AGENT", "TESTIMONY"] as const;
 export const QUEUE_ACTIONS = ["approve", "raise", "reject", "retract"] as const;
 export const LAYOUT_CHANGES = ["ADDED", "CHANGED", "REMOVED"] as const;
@@ -38,7 +39,8 @@ export type RelatedFact = { id: string; text: string };
 export type GateCheck = { gate: string; passed: boolean; reasons: string[]; model: string | null; related: RelatedFact[] };
 export type FactConcept = { name: string; type: string };
 export type HeldWriteBack = { reason: string; suggestedCraft: string };
-export type Filing = { craft: string } | { family: string };
+export type Placement = { processId: string; afterStageId: string | null };
+export type Filing = { craft: string } | { family: string } | Placement;
 
 export type FactReview = {
   statement: string;
@@ -131,6 +133,11 @@ export type StructureReview = {
   stale: string | null;
 };
 
+export type ProcessStep = { id: string; ordinal: number; name: string };
+export type StageProcess = { id: string; name: string; stages: ProcessStep[] };
+export type StageFact = { id: string; text: string; sources: FactSource[] };
+export type StagePlacing = { name: string; description: string | null; processes: StageProcess[]; facts: StageFact[] };
+
 type ItemBase = { id: string; origin: ReviewOrigin; submittedAt: string; craft: CraftLink | null; proposer: Proposer | null };
 
 export type FactItem = ItemBase & { kind: "FACTS"; fact: FactReview };
@@ -141,7 +148,17 @@ export type LayoutItem = ItemBase & { kind: "LAYOUTS"; layout: LayoutReview };
 export type StructureItem = ItemBase & { kind: "STRUCTURE"; structure: StructureReview };
 export type ReadingItem = ItemBase & { kind: "READINGS"; reading: ReadingReview };
 export type LayerItem = ItemBase & { kind: "LAYERS"; layer: LayerReview };
-export type QueueItem = FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureItem | ReadingItem | LayerItem;
+export type StageItem = ItemBase & { kind: "STAGES"; stage: StagePlacing };
+export type QueueItem =
+  | FactItem
+  | TestimonyItem
+  | PictureItem
+  | ComponentItem
+  | LayoutItem
+  | StructureItem
+  | ReadingItem
+  | LayerItem
+  | StageItem;
 
 export type ReviewQueuePage = {
   schemaVersion: 1;
@@ -274,6 +291,15 @@ const structureShape: Shape<StructureReview> = object<StructureReview>({
   stale: nullable(text)
 });
 
+const placingShape: Shape<StagePlacing> = object<StagePlacing>({
+  name: text,
+  description: nullable(text),
+  processes: list(
+    object<StageProcess>({ id: text, name: text, stages: list(object<ProcessStep>({ id: text, ordinal: integer, name: text })) })
+  ),
+  facts: list(object<StageFact>({ id: text, text, sources: list(sourceShape) }))
+});
+
 const base = { id: text, origin: originShape, submittedAt: INSTANT, craft: nullable(craftLinkShape), proposer: nullable(proposerShape) };
 
 export const queueItemShape: Shape<QueueItem> = tagged<QueueItem>("kind", {
@@ -284,39 +310,26 @@ export const queueItemShape: Shape<QueueItem> = tagged<QueueItem>("kind", {
   LAYOUTS: object<LayoutItem>({ ...base, kind: oneOf(["LAYOUTS"] as const), layout: layoutShape }),
   STRUCTURE: object<StructureItem>({ ...base, kind: oneOf(["STRUCTURE"] as const), structure: structureShape }),
   READINGS: object<ReadingItem>({ ...base, kind: oneOf(["READINGS"] as const), reading: readingShape }),
-  LAYERS: object<LayerItem>({ ...base, kind: oneOf(["LAYERS"] as const), layer: layerReviewShape })
+  LAYERS: object<LayerItem>({ ...base, kind: oneOf(["LAYERS"] as const), layer: layerReviewShape }),
+  STAGES: object<StageItem>({ ...base, kind: oneOf(["STAGES"] as const), stage: placingShape })
 });
 
-function isKnownKind(value: unknown): value is QueueKind {
+export function isQueueKind(value: unknown): value is QueueKind {
   return QUEUE_KINDS.includes(value as QueueKind);
 }
 
-function isLaterKind(entry: unknown): boolean {
-  const kind = (entry as { kind?: unknown } | null)?.kind;
-  return typeof kind === "string" && /^[A-Z_]+$/.test(kind) && !isKnownKind(kind);
+function isKnownItem(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return true;
+  const item = value as { kind?: unknown; structure?: unknown };
+  return isQueueKind(item.kind) && (item.kind !== "STRUCTURE" || isKnownStructure(item.structure));
 }
-
-const knownKinds: Shape<QueueKind[]> = {
-  expected: "a list of queue kinds",
-  parse: (value, path) => list(text).parse(value, path).filter(isKnownKind)
-};
-
-const knownItems: Shape<QueueItem[]> = {
-  expected: `a list of ${queueItemShape.expected}`,
-  parse(value, path) {
-    if (!Array.isArray(value)) return list(queueItemShape).parse(value, path);
-    const entries = value.map((entry: unknown, index) => ({ entry, index }));
-    const known = entries.filter(({ entry }) => !isLaterKind(entry));
-    return known.map(({ entry, index }) => queueItemShape.parse(entry, `${path}[${index}]`));
-  }
-};
 
 export const reviewQueuePageShape: Shape<ReviewQueuePage> = object<ReviewQueuePage>({
   schemaVersion,
-  kinds: knownKinds,
-  counts: dictionary(/^[A-Z]+$/, integer),
+  kinds: knownOnly(kindShape, isQueueKind),
+  counts: dictionary(/^[A-Z_]+$/, integer),
   total: integer,
-  items: knownItems,
+  items: knownOnly(queueItemShape, isKnownItem),
   nextCursor: nullable(text)
 });
 

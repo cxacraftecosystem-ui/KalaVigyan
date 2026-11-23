@@ -171,15 +171,22 @@ def _imitation(
     block_id: str,
     numbered: int,
 ) -> list[ExplainerSentence]:
-    signs = [
+    curated = offers.record.imitation if offers.record else ()
+    worded = [
         facts[claim_id]
         for claim_id in offers.candidates
-        if claim_id in facts
-        and claim_id not in used
-        and states_imitation(facts[claim_id].text)
-        and _cites_any(facts[claim_id], IMITATION_SOURCE_KINDS, offers.sources)
+        if claim_id in facts and claim_id not in curated and states_imitation(facts[claim_id].text)
     ]
-    chosen = _ranked(signs, offers.sources)[:IMITATION_MAX]
+    ordered = [
+        *(facts[claim_id] for claim_id in curated if claim_id in facts),
+        *_ranked(worded, offers.sources),
+    ]
+    signs = [
+        claim
+        for claim in ordered
+        if claim.id not in used and _cites_any(claim, IMITATION_SOURCE_KINDS, offers.sources)
+    ]
+    chosen = signs[:IMITATION_MAX]
     return [fact_sentence(claim, f"{block_id}.{numbered + n}") for n, claim in enumerate(chosen, start=1)]
 
 

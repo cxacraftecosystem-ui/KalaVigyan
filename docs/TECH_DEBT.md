@@ -59,30 +59,29 @@ Last reviewed: 2026-11-22.
 - **Clears it:** split them along their steps, behaviour unchanged, once those lanes have merged;
   run `tools/hygiene_check.py --update-baseline` and delete this entry.
 
-### Scholarly adapters: what waits on keys and the planner (decisions 0005, 0139)
+### Scholarly adapters: what waits on keys and Wiley's token (decisions 0005, 0139)
 
 - **What:**
   - Fixtures that are not recordings: `semantic_scholar_search.json` wraps two recorded paper
     records in the search envelope (search answered 429 without a key);
     `springer_nature_search.synthetic.json`, `springer_nature_jats.synthetic.xml`,
     `springer_nature_jats_none.synthetic.xml` and `elsevier_article.synthetic.xml` are hand-written
-    from the documented shapes (`backend/tests/sources/fixtures`).
+    from the documented shapes (`backend/tests/sources/fixtures`); CORE's `journals` is tested on the
+    recorded work with the documented field added, since the recording carries none.
   - The configured `ELSEVIER_API_KEY` may search Scopus but not read abstracts or full text
     without an institution token, so `elsevier` fetch is `not_found` for every record.
   - OpenAlex without `OPENALEX_API_KEY` allows $0.10 a day per address, about 100 searches; after
     that it answers 429 until midnight UTC and the shared hold pauses every process.
-  - Publisher full text (`ScholarlySources.publisher`, `sources/scholarly/publishers`) is built
-    but nothing asks it: the planner reads only the open-copy locator.
+  - The planner reads a closed DOI from its publisher (`LiveSources.publisher`, decision 0167), but
+    no publisher is built until `ELSEVIER_INSTTOKEN` or `SPRINGER_NATURE_API_KEY` is set.
   - Wiley TDM is not read: it serves PDF only, behind a redirect, with its token, and the fetcher
     sends no keys.
 - **Why left:** no `OPENALEX_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY` or `SPRINGER_NATURE_API_KEY` and
-  no Elsevier institution token exist yet; the planner belonged to the answer-composition lane of
-  round 7, which ran beside the sources and providers lane.
+  no Elsevier institution token exist yet (the owner's to obtain); Wiley's PDF needs the fetcher to
+  carry one host's token.
 - **Clears it:** the owner sets the three keys (Springer Nature's with text-mining terms) and
-  `ELSEVIER_INSTTOKEN`, each tested from the settings screen, and the fixtures are recorded then; give `planner/reading.LiveSources` a
-  `publisher` field, set it in `services/live_sources` from `scholarly.publisher`, and let
-  `DocumentReader.open_access_document` read a closed DOI the publisher holds; read Wiley's PDF
-  once the fetcher can carry one host's token.
+  `ELSEVIER_INSTTOKEN`, each tested from the settings screen, and the fixtures are recorded then
+  (CORE's with `journals`); read Wiley's PDF once the fetcher can carry one host's token.
 
 ### Web search and fetcher: recordings and the box (decisions 0007, 0139)
 
@@ -135,25 +134,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the reader turns documents into quoted evidence once the owner allows its calls;
   follow reference lists through OpenAlex `referenced_works`; route facet types to the sources that
   can serve them once the checks show which do.
-
-## Live research write-back (decision 0011)
-
-### The composer does not yet ask for quote renderings (decisions 0013, 0023, 0139)
-
-- **What:** `research/quote_renderings.english_renderings` renders a draft's non-English quotes into
-  English through the TRANSLATE route and keeps a rendering only when `translation_problems`, read
-  from the quote's language, finds nothing; `research/composition.sentence_violations(...,
-  renderings=)` then measures the overlap, the unrelated-source and the stance checks on the
-  rendering while the citation keeps the verbatim quote. Nothing calls it yet: the composer's
-  post-check (`composer/drafts.checked_sentence`) passes no renderings and the write-back's quote
-  gate (`services/write_back_plan`) compares raw quotes, so a sentence resting only on a Hindi
-  passage is still dropped.
-- **Why left:** the composer and the write-back plan belonged to the answer-composition and
-  write-back lanes of round 7, which ran beside the sources and providers lane.
-- **Clears it:** in `composer/drafts`, collect the spans whose evidence item's `language` is not
-  English as `QuotedIn`, call `english_renderings` with the TRANSLATE route's `ModelTranslator`
-  once per draft, and pass the renderings to `sentence_violations`; let `write_back_plan`'s
-  overlap read the same renderings.
 
 ## Science, region, voice and media contracts (decision 0014)
 
@@ -242,18 +222,22 @@ Last reviewed: 2026-11-22.
   of Cambay, Firozabad Glass, Cane and Bamboo, through `services/curation_structure`). What is
   left: Dabu (its dossier holds no reaction) and Akola stages have materials and tools but no
   reaction, because no source the seed or a dossier holds states one; no craft has a process with a `FIRE` stage, so kaolinite dehydroxylation has no
-  reaction (the terracotta seed is sub-category mechanism chains); stage concepts without an
-  upstream ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block
-  carving) get no stage although `PRECEDES` edges could place them; and no seed claim states a
-  temperature or pH, so no seeded reading is checked against an envelope.
-- **Why left:** reactions and readings are written only as a cited quote states them; the
-  sources still to find are a GI application or a chemistry paper on Dabu mud resist and on
-  Akola's mud and indigo work, a curated clay craft's firing schedule, and a dyeing source
-  stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP server
-  (`search_sources`, `read_source`, then `propose_structure` for a reaction).
+  reaction (the terracotta seed is sub-category mechanism chains); four stage concepts state no
+  ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block carving) and
+  get no stage, since no `PRECEDES` edge joins them to their craft's ladder: the seed's only one
+  among them says mud soaking precedes paste preparation (`tests/science/test_seed_stage_order.py`);
+  and no seed claim states a temperature or pH, so no seeded reading is checked against an
+  envelope.
+- **Why left:** reactions, readings and a stage's place are written only as a cited quote states
+  them; the sources still to find are a GI application or a chemistry paper on Dabu mud resist and
+  on Akola's mud and indigo work (and where its mud stages fall), a source placing block carving in
+  the Machilipatnam and Sanganeri processes, a curated clay craft's firing schedule, and a dyeing
+  source stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP
+  server (`search_sources`, `read_source`, then `propose_structure` for a reaction or a stage).
 - **Clears it:** a dossier or seed reaction for Dabu and Akola from such a source, a curated clay
-  craft with a `FIRE` stage and its stated temperature, and `claim_seed.stage_rows` ordering a
-  stage by its `PRECEDES` edges when no ordinal is stated.
+  craft with a `FIRE` stage and its stated temperature, and each unordered stage's place written
+  from a source that states it (its ordinal, or a stated `PRECEDES` edge to a ladder stage, which
+  `claim_seed.stage_rows` would then be taught to read).
 
 ## Answers in Indian languages (decision 0023)
 
@@ -425,50 +409,6 @@ Last reviewed: 2026-11-22.
   `speech_completed.json` as a fixture of `backend/tests/media/test_gemini_speech.py`. A refusal
   there names what to change in `providers/gemini_media.py`.
 
-## Sectioned composition (decision 0032)
-
-### The voice turn's reply limits are prompt lines
-
-- **What:** the voice turn's one section of three sentences and no follow-ups are lines of its
-  prompt only: `voice/compose.voice_composed` calls `parsed_answer` without a form, so a longer
-  reply is trimmed to the whole answer's six sections of eight sentences instead. The
-  whole-answer composer and the translation are trimmed and checked on our side (decision 0138).
-- **Why left:** `backend/app/voice/**` is the voice lane's, and the voice call is switched off.
-- **Clears it:** `voice_composed` passes `form=AnswerForm(sections=1, sentences=VOICE_MAX_SENTENCES,
-  follow_ups=0)`, with a unit test.
-
-## Stored knowledge pieces (decision 0033)
-
-### Answers never grow the Process tab
-
-- **What:** plan 2.2 wants process stages answers find to land in the science tables. No answer
-  writes `Process` or `ProcessStage` rows (decision 0038). The cited-order route (order stages only
-  by `PRECEDES` edges from claims that state the sequence, names only from curated or seeded
-  concepts) can create nothing: every craft holding curated or seeded stage concepts already has
-  its process (checked 2026-11-22: the six seeded crafts with stage concepts each have a seed
-  process, every dossier with stages writes its curated process), and the stages answers find carry
-  the names a planner chose, which the route may not use.
-- **Why left:** an answer-found stage can only join a craft's existing process by a person's
-  placing it (decision 0142).
-- **Clears it:** the other route this entry named: a review-queue item for an answer-found stage
-  concept and a review screen where a Professor places it in the craft's process or rejects it,
-  writing the `ProcessStage` with the review's note. It waits on that screen (design and answer UI
-  lane) and its review-queue item being scheduled together.
-
-## Reaction player, material cards and 3D molecules (decision 0045)
-
-### The zoom story reads the craft's matter on its own
-
-- **What:** the reaction, card, molecule, what-if, supply-map and generated-explainer builders
-  share one read of the craft's matter per answer (`BuildAsk.matter`, decision 0152); the zoom
-  story builder (`services/journey_builders.ZoomStoryBuilder`) still calls `craft_matter` itself,
-  so an answer whose chemistry or materials section shows a zoom reads the rows once more.
-- **Why left:** `journey_builders.py` belonged to the time, market and figures lane in round 7's
-  debt round, so this lane left it.
-- **Clears it:** `ZoomStoryBuilder.build` reading `await ask.matter.read(self._tools.sessions,
-  craft)`, with `tests/journey/test_zoom_story.py` patching `app.services.craft_matter` as
-  `tests/matter/test_matter_reads.py` does.
-
 ## Expert panel (decision 0046)
 
 ### The reading share does not steer queries
@@ -627,15 +567,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** add C049's price to `s5.b1` by `curation_keys.curated_id` and regenerate the
   goldens built from it, with the APA text of the new source checked by hand.
 
-### Quizzes mostly vanish in other languages
-
-- **What:** a quiz option is a glossary term marked in its sentence; a translated sentence keeps a
-  span only where the English term still occurs, so most questions are dropped outside English.
-- **Why left:** translating option terms and re-marking them needs term translations the glossary
-  does not hold.
-- **Clears it:** local-language names of glossary terms (`Term.localNames` by language) marked in
-  translated sentences, then the quiz rebuilt from them.
-
 ### Author names are cited as stored
 
 - **What:** citation exports write each stored author as written, so seed sources split on commas
@@ -650,20 +581,6 @@ Last reviewed: 2026-11-22.
 - **Waits on:** a run of `python etl/crafts/seed_claims.py` against those checkouts and the refresh
   of the goldens built from the seed's sources (`shared/learning.citations.golden.json` and the
   other files that cite the V&A); the next seed after the release restamps the stored sources.
-
-## Local measures, and market and GI (decision 0066)
-
-### Imitation is a fixed word list
-
-- **What:** a sign of imitation must name one of the listed words (fake, imitation, counterfeit,
-  spurious, knock-off, passed off, screen-printed, machine-made, power loom, mill-made);
-  "duplicate", "copies" and "substitute" are left out because they also name other things. (A
-  price's `per` is read after "per", "a", "an" or "/" since decision 0147.)
-- **Why left:** a model choosing would spend on every economics section; the list errs toward
-  showing less; a dossier field needs a stored column the curated import writes, and the import
-  belongs to the curated-import lane, which was running in the same tree.
-- **Clears it:** a dossier `market.imitation` list of claim ids (each citing a GI journal), stored
-  by the curated import and read before the word list by `services/market_builder`.
 
 ## Climate and risk, and ask the map (decision 0065)
 
@@ -696,23 +613,6 @@ Last reviewed: 2026-11-22.
   screen choice.
 - **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
   dataset value), or a contract change that leaves yearly rows out of its facets.
-
-## Lesson packs and exports (decision 0067)
-
-### Papers from six adapters still name no journal
-
-- **What:** a source now stores the journal it is in (`Source.containerTitle`, decision 0143), and
-  a paper's APA, CSL, BibTeX and RIS name it; but only Europe PMC and Semantic Scholar papers carry
-  one (their `publisher` is the journal, `JOURNAL_AS_PUBLISHER_ADAPTERS`). Crossref
-  (`container-title`, already requested), OpenAlex (`primary_location.source.display_name`), DOAJ
-  (`bibjson.journal.title`), Springer Nature (`publicationName`), Elsevier
-  (`prism:publicationName`, which it now uses as a fallback publisher) and CORE (`journals[].title`)
-  do not fill `EvidenceItem.container_title`, so their papers' references still end without it.
-- **Why left:** the adapters (`backend/app/sources/scholarly/`) belonged to the sources lane
-  running at the same time (2026-11-22).
-- **Clears it:** each scholarly adapter fills `container_title` from the field above (Europe PMC and
-  Semantic Scholar too, which retires `JOURNAL_AS_PUBLISHER_ADAPTERS`); sources stored before keep
-  no journal until a script reads their DOIs again.
 
 ## Public transcripts and share links (decision 0097)
 
@@ -999,19 +899,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the lead runs answer-quality on the same questions and raises `rubricMean` to the
   run's mean less 0.05, rounded down.
 
-### Leftovers of the sentence-once lane
-
-- **What:** a ladder stage's Sources differ readings are not checked against the stage
-  sentences, so a reading may repeat a sentence the stage says. The supply heading lowers a later
-  material name only when a block sentence writes its first word in lower case, so a name met only
-  at a sentence's start keeps its capital ("Indigo and Alum"). (The rubric's shown-sentence count
-  and the market block's GI and price sentences were cleared by decision 0147.)
-- **Why left:** both are rare; the glossary holds no sentence-case name (its labels are title case
-  for seeded and curated terms alike), so the payload cannot yet say which names are proper names.
-- **Clears it:** `explainerView.stagesSaidOnce` leaves out a differ reading a stage sentence says;
-  curation gives each glossary term its sentence-case name (a `Term` field the import fills), the
-  supply builder carries it on `SupplyLink.material`, and `namesText` keeps a later name as carried.
-
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 
 - **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a was asked what gives Khurja's glazes their
@@ -1023,10 +910,11 @@ Last reviewed: 2026-11-22.
   is about Jaipur blue pottery.
 - **Why left:** the colourant must come from a source that names it for Khurja and can be cited, and
   Khurja Pottery's facts are written through the MCP server, not a dossier.
-- **Clears it:** open the two statement-of-case PDFs of application 178 at search.ipindia.gov.in in a
-  browser, read the glaze and colour section, and propose its sentence (cobalt, copper, or whatever it
-  names) through `propose_facts` with `supply_source` for the PDF; let the planner search for the
-  colourant by its element names when a question asks what gives a colour.
+  The planner now searches the colourant oxides when a question asks what gives a glaze its colour
+  (decision 0167), so a citable source that names them is found once one is open to the fetcher.
+- **Clears it:** a person opens the two statement-of-case PDFs of application 178 at
+  search.ipindia.gov.in in a browser, reads the glaze and colour section, and proposes its sentence
+  (cobalt, copper, or whatever it names) through `propose_facts` with `supply_source` for the PDF.
 
 ### Write-backs filed before decision 0135
 

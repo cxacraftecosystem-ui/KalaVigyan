@@ -14,6 +14,7 @@ from .review_queue_components import ComponentReview
 from .review_queue_layers import LayerReview
 from .review_queue_parts import FactSource, GateCheck
 from .review_queue_readings import ReadingReview
+from .review_queue_stages import StagePlacing
 from .review_queue_structure import StructureReview
 from .review_switch import PROPOSAL_ORIGINS
 from .vocabulary import Discipline, EvidenceLevel
@@ -33,6 +34,7 @@ __all__ = [
     "QueueItem",
     "ReadingQueueItem",
     "ReviewOrigin",
+    "StageQueueItem",
     "StructureQueueItem",
     "TestimonyItem",
 ]
@@ -119,6 +121,11 @@ class LayerQueueItem(_QueueItem):
     layer: LayerReview
 
 
+class StageQueueItem(_QueueItem):
+    kind: Literal["STAGES"] = "STAGES"
+    stage: StagePlacing
+
+
 QueueItem = Annotated[
     FactItem
     | TestimonyItem
@@ -127,6 +134,7 @@ QueueItem = Annotated[
     | LayoutItem
     | StructureQueueItem
     | ReadingQueueItem
-    | LayerQueueItem,
+    | LayerQueueItem
+    | StageQueueItem,
     Field(discriminator="kind"),
 ]

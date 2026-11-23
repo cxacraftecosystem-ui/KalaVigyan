@@ -80,6 +80,10 @@ async def test_only_the_fields_the_reply_marks_as_asked_are_asked_and_the_rest_e
     fields = SectionFields.of(found.asked, (), [])
     assert [fields.sentences_max(field, 8) for field in WATER_LISTED] == [8, 8, 4, 4, 4]
     assert "- asked:" in UNDERSTAND_SYSTEM_PROMPT and "ECOLOGY the pollution" in UNDERSTAND_SYSTEM_PROMPT
+    assert (
+        "MATERIALS what its objects are made of (metal or alloy, clay, fibre, dye)"
+        in UNDERSTAND_SYSTEM_PROMPT
+    )
 
 
 async def test_an_asked_field_the_reply_does_not_list_is_left_out_and_none_marked_leaves_every_one_asked() -> (

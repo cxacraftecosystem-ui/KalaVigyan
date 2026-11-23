@@ -48,9 +48,10 @@ test("a reading outside its range is read from the server with its stage, its ra
   expect(() => parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...ITEM, reading: { ...READING, min: "130" } }] })).toThrow();
 });
 
-test("a kind this page does not know yet is left out of the tabs and the items, never breaking the page", () => {
+test("in production a kind this page does not know yet is left out of the tabs and the items", () => {
   const later = { ...PAGE, kinds: [...PAGE.kinds, "LATER"], counts: { ...PAGE.counts, LATER: 2 }, items: [{ kind: "LATER", id: "x" }, ITEM] };
-  const page = parseShape(reviewQueuePageShape, later);
+  expect(() => parseShape(reviewQueuePageShape, later)).toThrow();
+  const page = parseShape(reviewQueuePageShape, later, "ignore");
   expect(page.kinds).toEqual(["FACTS", "STRUCTURE", "READINGS"]);
   expect(page.items.map((each) => each.kind)).toEqual(["READINGS"]);
 });

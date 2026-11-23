@@ -153,7 +153,13 @@ async def _headed(
     opened = await showing.opening
     shown = [(spec, heading_supports(placed[spec.id].blocks, reused.cited)) for spec, reused in chosen]
     language = showing.stream.language
-    return await headed_specs(opened.headings, shown, language=language, translation=showing.translation)
+    return await headed_specs(
+        opened.headings,
+        shown,
+        language=language,
+        translation=showing.translation,
+        claim=showing.stream.claim_heading,
+    )
 
 
 async def _opened(section: _Reused, showing: ReusedShowing, pictures: PictureSearches) -> list[Block]:

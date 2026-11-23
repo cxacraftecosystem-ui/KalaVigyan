@@ -124,6 +124,7 @@ def curated_offers(slug: str, *, candidates: Sequence[str] = ()) -> MarketOffers
                 authorised_user_count=row["authorisedUserCount"],
             ),
             claim_ids=tuple(row["claimIds"]),
+            imitation=tuple(row["imitationClaimIds"]),
         )
     prices = tuple(
         PriceOffer(row["claimId"], row["pricedOn"], row["placeName"], row["districtLgd"])

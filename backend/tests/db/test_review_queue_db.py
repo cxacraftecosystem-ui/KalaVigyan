@@ -63,6 +63,7 @@ async def test_an_admin_sees_every_pending_kind_from_other_people_newest_first(
         "STRUCTURE",
         "READINGS",
         "LAYERS",
+        "STAGES",
     ]
     assert (page.counts, page.total, page.next_cursor) == (
         {
@@ -74,6 +75,7 @@ async def test_an_admin_sees_every_pending_kind_from_other_people_newest_first(
             "STRUCTURE": 0,
             "READINGS": 0,
             "LAYERS": 0,
+            "STAGES": 0,
         },
         5,
         None,
@@ -99,9 +101,9 @@ async def test_a_professor_reviews_facts_testimony_and_structure_only_and_never_
 ) -> None:
     session, people = seeded
     page = await listed(session, people.professor)
-    assert page.kinds == ["FACTS", "TESTIMONY", "STRUCTURE", "READINGS"]
+    assert page.kinds == ["FACTS", "TESTIMONY", "STRUCTURE", "READINGS", "STAGES"]
     assert ids(page) == [AGENT_WAITING, ADMIN_OWN, LIVE, RESEARCHED]
-    assert page.counts == {"FACTS": 4, "TESTIMONY": 0, "STRUCTURE": 0, "READINGS": 0}
+    assert page.counts == {"FACTS": 4, "TESTIMONY": 0, "STRUCTURE": 0, "READINGS": 0, "STAGES": 0}
     assert ADMIN_OWN not in ids(await listed(session, people.admin))
     assert await listed(session, people.researcher) == ReviewQueuePage(
         kinds=[], counts={}, total=0, items=[], next_cursor=None

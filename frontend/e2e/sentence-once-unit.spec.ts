@@ -69,6 +69,13 @@ test("a list of names is in sentence case, lowering a later name only where the 
   expect(namesText([], words)).toBe("");
 });
 
+test("a later name carried in sentence case is kept as carried, though the sentences write it only at their start", () => {
+  const words = sentenceWords([{ ...supply().links[0].sentence, text: "Alum comes from Bhuj. Indigo comes from Shikarpur." }]);
+  expect(namesText(["indigo", "alum"], words)).toBe("Indigo and alum");
+  expect(namesText(["Indigo", "Alum"], words)).toBe("Indigo and Alum");
+  expect(namesText(["indigo", "Kutch cotton"], words)).toBe("Indigo and Kutch cotton");
+});
+
 test("materials that rest on one sentence are one row naming them in order, and the sentence is said once", () => {
   const block = supplyOf([
     linked("Quartz stone", "Jaipur", "s2.supply.1", JAIPUR),

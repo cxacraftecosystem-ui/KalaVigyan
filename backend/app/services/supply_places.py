@@ -71,9 +71,9 @@ def context_words(link: SupplyLink) -> frozenset[str]:
 
 
 def stated_words(texts: Iterable[str], own: Iterable[str]) -> frozenset[str]:
-    left_out = {word for name in own for word in DESCRIPTION_WORD.findall(name)}
+    left_out = {word.casefold() for name in own for word in DESCRIPTION_WORD.findall(name)}
     stated = {word for text in texts for word in CONTEXT_WORD.findall(text)}
-    return frozenset(stated - left_out)
+    return frozenset(word for word in stated if word.casefold() not in left_out)
 
 
 def _origin_contexts(links: Sequence[SupplyLink]) -> dict[str, tuple[str, frozenset[str]]]:

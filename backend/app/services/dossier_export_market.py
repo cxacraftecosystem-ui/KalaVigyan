@@ -23,8 +23,10 @@ def stored_market(
         Workforce(claim_id=keyed([row["claimId"]], keys)[0], year=row["year"])
         for row in stored.market.workforce
     ]
+    gi = stored.market.gi
     return Market(
-        gi=_gi(stored.market.gi, keys),
+        gi=_gi(gi, keys),
+        imitation=keyed(gi["imitationClaimIds"] or [], keys) if gi is not None else [],
         prices=guided(
             prices,
             lambda item: (item.claim_id, item.date, item.place_id),

@@ -38,6 +38,7 @@ from .curation_writes import insert_missing, stored_values, sync_rows
 from .monograph_generated_sections import SectionOwner
 from .piece_lookup import craft_districts
 from .piece_store import piece_values
+from .term_sentence_names import fill_sentence_names
 
 __all__ = [
     "IMPORTED",
@@ -87,6 +88,7 @@ class ImportReport:
     dossiers: tuple[DossierOutcome, ...]
     retired_seed_rows: SeedRetirement = field(default_factory=SeedRetirement)
     term_summaries: int = 0
+    sentence_names: int = 0
 
     @property
     def refused(self) -> list[DossierOutcome]:
@@ -97,6 +99,7 @@ class ImportReport:
             "withdrawnEdgeSentences": self.withdrawn_edges,
             "retiredSeedRows": self.retired_seed_rows.summary(),
             "termSummaries": self.term_summaries,
+            "sentenceNames": self.sentence_names,
             "imported": sum(1 for outcome in self.dossiers if outcome.status == IMPORTED),
             "refused": len(self.refused),
             "waiting": sum(1 for outcome in self.dossiers if outcome.status == WAITING),
@@ -123,6 +126,7 @@ async def import_curation(
         dossiers=tuple(outcomes),
         retired_seed_rows=retired,
         term_summaries=await write_curated_term_summaries(session),
+        sentence_names=await fill_sentence_names(session),
     )
 
 

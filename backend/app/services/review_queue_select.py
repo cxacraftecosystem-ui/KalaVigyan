@@ -15,12 +15,18 @@ from app.models import (
     Claim,
     ClaimSource,
     ComponentProposal,
+    Concept,
     Craft,
     ImageContribution,
     LayoutProposal,
     MapLayerProposal,
+    Process,
+    ProcessStage,
+    StageReview,
     StructureProposal,
 )
+from app.models.science import live_process
+from app.research.retrieval import SHOWN_CLAIM_STATUSES
 from app.research.review_queue import (
     COMPONENTS,
     FACTS,
@@ -28,6 +34,7 @@ from app.research.review_queue import (
     LAYERS,
     LAYOUTS,
     PENDING_FACT_STATUSES,
+    STAGES,
     STRUCTURE,
     TESTIMONY,
     ComponentItem,
@@ -38,14 +45,18 @@ from app.research.review_queue import (
     QueueEntry,
     QueueKey,
     ReadingQueueItem,
+    StageQueueItem,
     StructureQueueItem,
     TestimonyItem,
 )
+from app.research.review_queue_stages import STAGE_CONCEPT_TYPE
 from app.research.review_switch import AGENT, RESEARCH
 from app.research.write_back import WRITE_BACK_ORIGIN
 from app.retrieval.statements import CraftScope, scope_claims
 
 from .claim_holds import held_in_queue
+from .claim_writer import LIVE_CONCEPT_ORIGIN
+from .curation_keys import CURATED_PROCESS_VARIANT
 
 __all__ = [
     "PENDING",
@@ -55,13 +66,16 @@ __all__ = [
     "RenderedItem",
     "gated_fact",
     "pending_conditions",
+    "placeable_process",
     "queue_count",
     "queue_entries",
     "rows_by_id",
+    "waiting_stage",
 ]
 
 PENDING = "PENDING"
 CRAFT_SUBJECT = "CRAFT"
+CONCEPT_SUBJECT = "CONCEPT"
 QUEUE_MODELS: Mapping[str, Any] = MappingProxyType(
     {
         FACTS: Claim,
@@ -71,6 +85,7 @@ QUEUE_MODELS: Mapping[str, Any] = MappingProxyType(
         LAYOUTS: LayoutProposal,
         STRUCTURE: StructureProposal,
         LAYERS: MapLayerProposal,
+        STAGES: Concept,
     }
 )
 
@@ -84,6 +99,7 @@ RenderedItem = (
     | StructureQueueItem
     | ReadingQueueItem
     | LayerQueueItem
+    | StageQueueItem
 )
 
 
@@ -102,6 +118,30 @@ class QueueScope:
 
 def gated_fact() -> ColumnElement[bool]:
     return exists().where(CandidateCheck.claimId == Claim.id)
+
+
+def placeable_process() -> ColumnElement[bool]:
+    return and_(live_process(), Process.variant.is_distinct_from(CURATED_PROCESS_VARIANT))
+
+
+def waiting_stage() -> ColumnElement[bool]:
+    told = exists().where(
+        Claim.subjectType == CONCEPT_SUBJECT,
+        Claim.subjectId == Concept.id,
+        Claim.status.in_(SHOWN_CLAIM_STATUSES),
+    )
+    process = exists().where(
+        ProcessStage.processId == Process.id, Process.craftId == Concept.craftId, placeable_process()
+    )
+    return and_(
+        Concept.type == STAGE_CONCEPT_TYPE,
+        Concept.originRef == LIVE_CONCEPT_ORIGIN,
+        Concept.craftId.is_not(None),
+        ~exists().where(ProcessStage.conceptId == Concept.id),
+        ~exists().where(StageReview.conceptId == Concept.id),
+        told,
+        process,
+    )
 
 
 def pending_conditions(kind: str, scope: QueueScope) -> list[ColumnElement[bool]]:
@@ -216,6 +256,13 @@ def _layer_conditions(scope: QueueScope) -> list[ColumnElement[bool]]:
     return conditions
 
 
+def _stage_conditions(scope: QueueScope) -> list[ColumnElement[bool]]:
+    conditions = [waiting_stage()]
+    if scope.craft is not None:
+        conditions.append(Concept.craftId == scope.craft.id)
+    return conditions
+
+
 _CONDITIONS: Mapping[str, Callable[[QueueScope], list[ColumnElement[bool]]]] = MappingProxyType(
     {
         FACTS: _fact_conditions,
@@ -225,5 +272,6 @@ _CONDITIONS: Mapping[str, Callable[[QueueScope], list[ColumnElement[bool]]]] = M
         LAYOUTS: _layout_conditions,
         STRUCTURE: _structure_conditions,
         LAYERS: _layer_conditions,
+        STAGES: _stage_conditions,
     }
 )

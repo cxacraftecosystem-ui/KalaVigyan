@@ -149,6 +149,7 @@ Review queues and who sees them; queues are listed only without a subject filter
 | `LAYOUTS` | pending page layout proposals | `REVIEW_CONTRIBUTIONS` |
 | `STRUCTURE` | pending page structure proposals | `MARK_CLAIM_LEVEL`, Professor and above |
 | `LAYERS` | pending map layer proposals (`propose_dataset` with its `layer`) | `REVIEW_CONTRIBUTIONS` |
+| `STAGES` | process stages answers found, waiting to be placed in their craft's process | `MARK_CLAIM_LEVEL`, Professor and above |
 
 ### Priority and order
 

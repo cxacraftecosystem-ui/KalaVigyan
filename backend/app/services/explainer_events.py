@@ -5,6 +5,7 @@ import logging
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from typing import Any
 
+from app.data.craft_text import fold
 from app.research.blocks_lede import LedeBlock
 from app.research.explainer import Block
 from app.research.sections import SectionSpec
@@ -46,6 +47,7 @@ class ExplainerStream:
         self._lock = asyncio.Lock()
         self._sent_sources: set[str] = set()
         self._section_titles: dict[str, str] = {}
+        self._headings: dict[str, str] = {}
         self._totals: dict[str, int] = {}
         self._latest: tuple[str, str] = ("", "")
         self._open_questions = 0
@@ -63,6 +65,9 @@ class ExplainerStream:
             shown = self.ledger.admit_lede(block, sources)
             await self._sources(shown.cited_source_ids(), {**sources, **self.ledger.sources.refs()})
             await self.emit("lede", {"block": shown})
+
+    def claim_heading(self, section_id: str, heading: str) -> bool:
+        return self._headings.setdefault(fold(heading), section_id) == section_id
 
     async def section_heading(self, section_id: str, *, title: str, original: str | None) -> None:
         shown = {"title": title, **({"original": original} if original else {})}

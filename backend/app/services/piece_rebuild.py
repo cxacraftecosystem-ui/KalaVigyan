@@ -99,7 +99,7 @@ async def stale_groups(
 ) -> list[StaleGroup]:
     asks = (
         select(Answer.craftId.label("craftId"), func.count().label("asks"))
-        .where(Answer.userId.is_not(None), Answer.craftId.is_not(None))
+        .where(Answer.userId.is_not(None), Answer.craftId.is_not(None), Answer.stoppedAt.is_(None))
         .where(Answer.createdAt >= now - PIECE_REBUILD_ASK_WINDOW)
         .group_by(Answer.craftId)
         .order_by(func.count().desc(), Answer.craftId)

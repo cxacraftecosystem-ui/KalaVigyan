@@ -154,6 +154,9 @@ def gi_row(dossier: Dossier, craft: CraftTarget) -> dict[str, Any] | None:
         "proprietors": list(gi.proprietors),
         "authorisedUserCount": gi.authorised_user_count,
         "claimIds": [curated_id(dossier.craft_slug, claim_id) for claim_id in gi.claim_ids],
+        "imitationClaimIds": [
+            curated_id(dossier.craft_slug, claim_id) for claim_id in dossier.market.imitation
+        ],
     }
 
 

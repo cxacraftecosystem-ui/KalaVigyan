@@ -5,7 +5,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0092_readings_layers_categories"
-down_revision: str | Sequence[str] | None = "0089_piece_embedding_stamps"
+down_revision: str | Sequence[str] | None = "0090_answer_leftovers"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

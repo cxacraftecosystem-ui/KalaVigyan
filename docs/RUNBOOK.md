@@ -698,7 +698,9 @@ fixture or the category page (`docs/contracts/category-page.md`).
   writes nothing; `python -m app.scripts.retitle_sources` prints `{titles, authors}`: the sources whose title is a
   file name or under three words, and those whose authors hold a PDF producer's word such as `sys`
   (`research/front_page.producer_token`), each with its id, title, url and citations, for the lead
-  to correct by hand; `--set <id> --title "<the work's title>"` replaces a title with an audit row.
+  to correct by hand; `--set <id> --title "<the work's title>"` replaces a title with an audit row;
+  `python -m app.scripts.source_journals` reads the journal of every stored source with a DOI and no
+  journal from Crossref and prints it (`--limit <n>` to read fewer), and `--write` stores each one found.
 - **Generated retrieval questions** (`eval-questions.yml`): by hand only, from main:
   `gh workflow run eval-questions.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f cap=<USD>`,
   3 by default). It writes a question for each sampled published fact on the box and keeps the set as

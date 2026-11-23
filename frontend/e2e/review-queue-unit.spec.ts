@@ -105,8 +105,7 @@ test("a queue page from the server is read item by item, whatever its kind", () 
   expect(page.items.map((item) => item.kind)).toEqual(["FACTS", "COMPONENTS", "TESTIMONY"]);
   const fact = page.items[0] as Extract<QueueItem, { kind: "FACTS" }>;
   expect(fact.fact.sources[0].quotes[0]).toEqual({ text: "the vat is yellow-green", locator: "p. 4" });
-  expect(parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...FACT, kind: "PAGES" }] }).items).toEqual([]);
-  expect(() => parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...FACT, kind: 7 }] })).toThrow();
+  expect(() => parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...FACT, kind: "PAGES" }] })).toThrow();
   expect(() => parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...FACT, email: "x@example.org" }] })).toThrow();
 });
 

@@ -150,6 +150,8 @@ async def _demand(session: AsyncSession, crafts: Sequence[uuid.UUID]) -> dict[uu
     if not crafts:
         return {}
     rows = await session.execute(
-        select(Answer.craftId, func.count()).where(Answer.craftId.in_(list(crafts))).group_by(Answer.craftId)
+        select(Answer.craftId, func.count())
+        .where(Answer.craftId.in_(list(crafts)), Answer.stoppedAt.is_(None))
+        .group_by(Answer.craftId)
     )
     return {craft_id: int(count) for craft_id, count in rows.all()}

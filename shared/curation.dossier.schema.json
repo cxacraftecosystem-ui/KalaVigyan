@@ -496,6 +496,14 @@
           },
           "title": "Workforce",
           "type": "array"
+        },
+        "imitation": {
+          "items": {
+            "pattern": "^C\\d{3,4}$",
+            "type": "string"
+          },
+          "title": "Imitation",
+          "type": "array"
         }
       },
       "title": "Market",

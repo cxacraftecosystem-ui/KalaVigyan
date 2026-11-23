@@ -7,6 +7,7 @@ from html import unescape
 from html.parser import HTMLParser
 from typing import Any
 
+from app.models.knowledge import CONTAINER_TITLE_CHARS
 from app.research.base import PARTIAL_DATE_PATTERN, https_url
 from app.research.evidence import DOI_PATTERN
 
@@ -19,6 +20,7 @@ __all__ = [
     "doi_of",
     "doi_url",
     "https_or_none",
+    "journal_of",
     "markup_text",
     "partial_date_of",
     "published_since",
@@ -72,6 +74,12 @@ def title_of(value: Any) -> str:
     if title is None:
         raise UnusableRecord("no title")
     return title
+
+
+def journal_of(value: Any) -> str | None:
+    names = value if isinstance(value, list | tuple) else [value]
+    found = next((name for name in (markup_text(entry) for entry in names) if name), None)
+    return found if found is not None and len(found) <= CONTAINER_TITLE_CHARS else None
 
 
 def markup_text(value: Any) -> str | None:

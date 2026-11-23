@@ -103,3 +103,14 @@ export const structureEntryShape: Shape<StructureEntry> = tagged<StructureEntry>
   }),
   ALTERNATIVE: object<AlternativeEntry>({ kind: tag("ALTERNATIVE"), materialKey: text, alternativeKey: text })
 });
+
+function kindOf(value: unknown): unknown {
+  return typeof value === "object" && value !== null ? (value as { kind?: unknown }).kind : undefined;
+}
+
+export function isKnownStructure(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return true;
+  const kinds: readonly unknown[] = STRUCTURE_KINDS;
+  const item = (value as { item?: unknown }).item;
+  return kinds.includes(kindOf(value)) && (typeof item !== "object" || item === null || kinds.includes(kindOf(item)));
+}

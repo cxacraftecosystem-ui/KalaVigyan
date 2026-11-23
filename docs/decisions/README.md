@@ -72,7 +72,7 @@ flowchart LR
 | [0036](0036-asking-screen.md) | The asking screen: dictation, an optional craft, depth by role | · |
 | [0037](0037-explainer-ui.md) | The explainer view | [0140](0140-voice-and-listen-kept-true.md) |
 | [0038](0038-phase-a-review-fixes.md) | Phase A review fixes | · |
-| [0039](0039-pictures-and-terms-wired.md) | Pictures and terms in the answer stream | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
+| [0039](0039-pictures-and-terms-wired.md) | Pictures and terms in the answer stream | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0040](0040-no-connection-held-across-a-model-call.md) | No connection held across a model call | · |
 | [0041](0041-one-gemini-content-per-embedded-text.md) | One Gemini content per embedded text | · |
 | [0042](0042-phase-b-contract.md) | Phase B contract: place, matter and the expert panel | · |
@@ -101,7 +101,7 @@ flowchart LR
 | [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md), [0143](0143-lessons-exports-and-follow-ups-kept-true.md) and [0160](0160-place-builders-kept-true.md) |
 | [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md), [0143](0143-lessons-exports-and-follow-ups-kept-true.md) and [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
 | [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
-| [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md) and [0147](0147-time-market-and-figures-kept-true.md) |
+| [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md), [0147](0147-time-market-and-figures-kept-true.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0067](0067-lessons-and-exports.md) | Lesson packs, the explainer PDF and citation export | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0068](0068-learning-block-renderers.md) | Learning block renderers | · |
 | [0069](0069-learning-screens.md) | Learning screens: follow-ups, saved answers, notes, lessons, exports, the map and compare | [0070](0070-phase-d-review-fixes.md), [0067](0067-lessons-and-exports.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
@@ -127,7 +127,7 @@ flowchart LR
 | [0086](0086-signature-figures-built.md) | The four signature figures are built, as lede figures only, behind a setting | · |
 | [0087](0087-generated-explainers-per-concept.md) | A generated explainer, or a picture, for every concept that needs one | · |
 | [0088](0088-reactions-step-by-step-and-molecules.md) | Reactions play step by step with their stage, conditions, colours and why; curated CIDs become compounds | [0095](0095-craft-page-chapters.md) |
-| [0089](0089-expert-depth-caps-and-answer-routes.md) | Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation | [0093](0093-no-caps-for-now.md) |
+| [0089](0089-expert-depth-caps-and-answer-routes.md) | Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation | [0093](0093-no-caps-for-now.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0091](0091-field-voices-kalavigyan-side.md) | Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view | [0097](0097-public-reading-everywhere-but-asking.md), [0112](0112-reviewed-field-photographs.md) and [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0092](0092-design-system.md) | The KalaVigyan design system: Alum & Indigo | [0114](0114-kinds-and-datasets.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
@@ -165,7 +165,7 @@ flowchart LR
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
 | [0118](0118-python-3-15.md) | The backend runs on Python 3.15, and each release pins its interpreter | · |
 | [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | · |
-| [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | [0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | [0149](0149-a-fact-readers-can-see.md) |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
@@ -182,20 +182,20 @@ flowchart LR
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) and [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
-| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | [0165](0165-answers-counted-as-settled-asked-as-asked.md) |
-| [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
+| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
+| [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | · |
-| [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
+| [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | [0167](0167-answer-leftovers-kept-true.md) |
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
-| [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | [0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 | [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) and [0169](0169-mcp-follow-ups-kept-true.md) |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
-| [0151](0151-a-release-the-live-side-can-read.md) | A release is one the live side can read: the web ignores a field it does not know, every migration reads under the release before, and the first stage's fusion is measured before it is weighted | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
+| [0151](0151-a-release-the-live-side-can-read.md) | A release is one the live side can read: the web ignores a field it does not know, every migration reads under the release before, and the first stage's fusion is measured before it is weighted | [0167](0167-answer-leftovers-kept-true.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) | An answer reads a craft's matter once and shows each card, molecule and what-if once, matter blocks cite every value they show, and the science seed deletes what it no longer plans | · |
 | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) | Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see | · |
 | [0154](0154-ai-media-and-film-scores-kept-true.md) | A film score is made once and timed by what was heard, AI pictures are shared on their craft page, and the paid checks run under a cap | · |
@@ -210,6 +210,7 @@ flowchart LR
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
 | [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | · |
+| [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
 | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) | A quantities table is drawn under a sentence the answer already said, and the Python files are split along what they do | · |
 | [0169](0169-mcp-follow-ups-kept-true.md) | A write-back asks the cheap judge first, a reviewer decides readings, map layers and a category's structure, and a PDF is described by its first page | · |
 

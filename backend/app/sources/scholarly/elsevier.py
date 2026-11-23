@@ -20,6 +20,7 @@ from ..records import (
     doi_of,
     doi_url,
     https_or_none,
+    journal_of,
     markup_text,
     partial_date_of,
     query_terms,
@@ -100,6 +101,7 @@ class ElsevierAdapter(HttpSourceAdapter):
             doi=doi,
             publisher=clean_text(record.get("dc:publisher"))
             or clean_text(record.get("prism:publicationName")),
+            container_title=journal_of(record.get("prism:publicationName")),
             trust=trust,
             external_ids={"scopus": scopus_id},
         )

@@ -18,6 +18,7 @@ from ..records import (
     doi_of,
     doi_url,
     https_or_none,
+    journal_of,
     markup_text,
     partial_date_of,
     title_of,
@@ -83,6 +84,7 @@ class SemanticScholarAdapter(HttpSourceAdapter):
             licence=clean_text((record.get("openAccessPdf") or {}).get("license")),
             doi=doi,
             publisher=clean_text(journal.get("name")) or clean_text(record.get("venue")),
+            container_title=journal_of(journal.get("name")) or journal_of(record.get("venue")),
             trust=trust,
             external_ids={"semantic_scholar": paper_id},
         )

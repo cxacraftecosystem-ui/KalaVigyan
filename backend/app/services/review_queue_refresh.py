@@ -25,10 +25,12 @@ from app.research.review_queue import (
     IMAGES,
     LAYOUTS,
     READINGS,
+    STAGES,
     STRUCTURE,
     TESTIMONY,
     QueueDecision,
 )
+from app.research.review_queue_stages import PLACED_STATUS
 from app.research.structure_proposals import APPROVED_STATUS
 
 from .page_revalidation import claim_owners, craft_owners, merged_owners, refresh_pages
@@ -65,6 +67,8 @@ async def _owners(session: AsyncSession, decided: QueueDecision) -> PageOwners:
 def _owning_craft(decided: QueueDecision) -> Select[Any] | None:
     if decided.kind == TESTIMONY and decided.status == REJECTED_TESTIMONY:
         return select(ArtisanContribution.craftId).where(ArtisanContribution.id == decided.id)
+    if decided.kind == STAGES and decided.status == PLACED_STATUS:
+        return select(Concept.craftId).where(Concept.id == decided.id)
     if decided.kind == IMAGES and decided.status == APPROVED:
         return select(ImageContribution.craftId).where(ImageContribution.id == decided.id)
     if decided.kind == READINGS and decided.status == READING_REJECTED:
