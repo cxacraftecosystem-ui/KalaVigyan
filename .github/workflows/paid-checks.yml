@@ -7,6 +7,30 @@ on:
         description: "Spend at most this many US dollars (the owner approved at most 5 on 2026-11-22)"
         type: string
         default: "5"
+      narration:
+        description: "Make one English and one Hindi narration"
+        type: boolean
+        default: true
+      music:
+        description: "Make a 10 s music bed"
+        type: boolean
+        default: true
+      image:
+        description: "Make a Gemini image"
+        type: boolean
+        default: true
+      speech:
+        description: "Make a Gemini voice reading"
+        type: boolean
+        default: true
+      agent:
+        description: "Make one agent turn"
+        type: boolean
+        default: true
+      video:
+        description: "Make one 8 s Gemini clip (the owner approved one on 2026-11-23)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -18,7 +42,7 @@ concurrency:
 
 jobs:
   check:
-    name: Make one English and one Hindi narration, a music bed, a Gemini image and an agent turn on the box and keep each reply
+    name: Make the chosen narrations, music bed, Gemini image, voice reading, agent turn and Gemini clip on the box and keep each reply
     if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
     runs-on: ubuntu-26.04
     timeout-minutes: 30
@@ -27,8 +51,14 @@ jobs:
       INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
       BUCKET: ${{ vars.MEDIA_BUCKET }}
       CAP: ${{ inputs.cap }}
+      NARRATION: ${{ inputs.narration }}
+      MUSIC: ${{ inputs.music }}
+      IMAGE: ${{ inputs.image }}
+      SPEECH: ${{ inputs.speech }}
+      AGENT: ${{ inputs.agent }}
+      VIDEO: ${{ inputs.video }}
     steps:
-      - name: Check the repository variables and the cap
+      - name: Check the repository variables, the cap and the chosen checks
         run: |
           set -euo pipefail
           for v in AWS_REGION INSTANCE_ID BUCKET; do
@@ -36,6 +66,13 @@ jobs:
           done
           [[ "$CAP" =~ ^[0-9]+(\.[0-9]+)?$ ]] || { echo "::error::cap is a number of US dollars"; exit 1; }
           awk -v cap="$CAP" 'BEGIN { exit !(cap > 0 && cap <= 5) }' || { echo "::error::the owner approved at most US\$5"; exit 1; }
+          checks=""
+          for check in narration music image speech agent video; do
+            flag="${check^^}"
+            if [ "${!flag}" = true ]; then checks="${checks:+$checks,}$check"; fi
+          done
+          [ -n "$checks" ] || { echo "::error::choose at least one check"; exit 1; }
+          echo "CHECKS=$checks" >> "$GITHUB_ENV"
 
       - name: Assume the deploy role
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -55,7 +92,7 @@ jobs:
           install -d -o kalavigyan -m 0750 $dir
           cd /opt/kalavigyan/current/backend
           status=0
-          runuser -u kalavigyan -- bash -c "set -a; . /opt/kalavigyan/.env; set +a; exec ./.venv/bin/python -m app.scripts.paid_checks --cap $CAP --out $dir" || status=\$?
+          runuser -u kalavigyan -- bash -c "set -a; . /opt/kalavigyan/.env; set +a; exec ./.venv/bin/python -m app.scripts.paid_checks --cap $CAP --checks $CHECKS --out $dir" || status=\$?
           aws s3 cp --only-show-errors --recursive --region $AWS_REGION $dir $files
           rm -rf $dir
           exit \$status

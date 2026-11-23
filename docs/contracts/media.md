@@ -92,8 +92,8 @@ decision 0121): a linked citation follows its passage, an unquoted one is readab
 quote takes the most closed passage of its source and the source's own sensitivity, so a quote of a
 closed-licence page whose passages are for researchers only enters only a researcher's claim set.
 The store reads each citation's access as the ACL of the most open reader tier that may read it
-(`services/citation_tiers.reading_acl` over `READER_TIERS`: `PUBLIC` for anyone, `SIGNED_IN`,
-`RESEARCHER` for `READ_RESEARCHER_QUOTES` holders), or none when no reader may, and the claim set
+(`services/citation_tiers.reading_acl` over `READER_TIERS`: `PUBLIC` for anyone, who reads the open
+ACLs, and `RESEARCHER` for `READ_RESEARCHER_QUOTES` holders; decision 0179), or none when no reader may, and the claim set
 counts a citation only when that ACL is among the asker's (`chunk_acls_for`); a `RESTRICTED`
 source or linked chunk counts as a restricted source. A claim
 using a group word (community, caste, jati, samaj, tribe, tribal, clan, gotra, biradari, adivasi) is left
@@ -133,7 +133,11 @@ Each attempt has `JOB_TIMEOUT_SECONDS` (240); a failed attempt is retried at mos
 missing route is final. Images are one synchronous interaction (`store: false`); video runs with
 `background: true`, is polled every 5 s and deleted once read. A polled interaction carries the
 clip inline (a `uri` block is downloaded from the Files API host only). Omni documents no
-silent-output option, so any audio track is removed from the MP4 before storage. Jobs run in
+silent-output option, so any audio track is removed from the MP4 before storage. The paid checks'
+`gemini_video` step (`scripts/paid_check_video.py`, decision 0179) makes one 8 s clip through this
+adapter with the job's requested output and records the start, the first open poll and the
+finished interaction, the `DELETE` reply, the clip's exact duration and size, whether it came
+silent, how long it took and whether `checked_output` would store it. Jobs run in
 `kv-worker` (`python -m app.worker`) from the `Job` queue (`media.image`, `media.video`;
 `SELECT … FOR UPDATE SKIP LOCKED` under a per-queue lock that counts running rows); a `RUNNING`
 row older than 6 minutes is handed back as a spent attempt. `MediaJob.bundle` holds tool

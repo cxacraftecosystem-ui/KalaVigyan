@@ -94,6 +94,11 @@ def test_feature_layers_do_not_import_each_other_sideways() -> None:
     ]
 
 
+def test_a_script_checks_media_through_the_media_pipeline_and_nothing_below_imports_media() -> None:
+    assert check("backend/app/scripts/paid_check_video.py", "from app.media.mp4 import video_facts\n") == []
+    assert check("backend/app/services/media_ref_store.py", "from app.media.mp4 import video_facts\n") != []
+
+
 def test_nothing_below_the_entry_points_imports_main_or_scripts() -> None:
     assert check("backend/app/api/router.py", "from app.main import app\n") != []
     assert check("backend/app/services/craft_seed.py", "from app.scripts import seed_crafts\n") != []

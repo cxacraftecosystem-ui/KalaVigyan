@@ -13,7 +13,7 @@ from app.planner.policy import SEAT_RESEARCH_DEPTHS, SEAT_RESEARCH_SECONDS, seat
 from app.research.coverage import FieldCoverage
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.expert_panel import SeatBrief
-from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, KnowledgeHits, KnowledgeQuery
+from app.research.retrieval import OPEN_CHUNK_ACLS, KnowledgeHits, KnowledgeQuery
 from app.research.vocabulary import FACT_LEVELS
 
 from . import knowledge_view
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 SEAT_SEARCH_LIMIT = 12
 SEAT_CLAIMS_MAX = 6
-SEAT_READING_ACLS = SIGNED_IN_CHUNK_ACLS
+SEAT_READING_ACLS = OPEN_CHUNK_ACLS
 
 
 @dataclass(frozen=True)

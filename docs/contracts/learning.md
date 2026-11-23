@@ -406,8 +406,8 @@ PDF report for an answer, the lesson with its citations, slides and handout for 
 **As public.** The shared version is the asker's stored version read as the asker reads it
 (`explainer_history.shown_version`: hidden generated explainers, withdrawn testimony and withdrawn
 field voices left out), then `public_explainer.public_version`: every citation whose claim and
-source have no `ClaimSource` an anonymous reader may quote (chunk ACL outside `PUBLIC` and
-`SIGNED_IN`, a `RESTRICTED` chunk or source, a withheld field source, a hidden claim status or a
+source have no `ClaimSource` an anonymous reader may quote (chunk ACL outside `OPEN_CHUNK_ACLS`,
+a `RESTRICTED` chunk or source, a withheld field source, a hidden claim status or a
 non-`OPEN` claim) is withdrawn with `field_voices_readback.without_withdrawn`, so a prose sentence
 citing it, or any other block citing it, leaves, and a section left with nothing is `EMPTY`. A
 Researcher's answer therefore never publishes its closed-licence quotes. A share whose public

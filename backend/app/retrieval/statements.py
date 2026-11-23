@@ -96,6 +96,7 @@ class CraftScope:
     sub_category_id: uuid.UUID | None
     category_id: uuid.UUID | None = None
     merged_ids: tuple[uuid.UUID, ...] = ()
+    linked_ids: tuple[uuid.UUID, ...] = ()
 
 
 EVERY_CRAFT = CraftScope(craft_id=None, sub_category_id=None)
@@ -118,6 +119,8 @@ def _owners(scope: CraftScope) -> list[ColumnElement[bool]]:
         owners.append(and_(Concept.craftId.is_(None), Concept.subCategoryId == scope.sub_category_id))
     if scope.category_id is not None:
         owners.append(_family_science(scope.category_id))
+    if scope.linked_ids:
+        owners.append(Concept.id.in_(list(scope.linked_ids)))
     return owners
 
 
@@ -188,6 +191,7 @@ def chunk_conditions(
     facets: Sequence[str] = (),
     fields: Sequence[str] = (),
     acls: Sequence[str],
+    kinds: Sequence[str],
 ) -> list[ColumnElement[bool]]:
     claims = select(Claim.id).where(*claim_conditions(scope, mode=mode, facets=facets, fields=fields))
     sources = select(Source.id).where(
@@ -198,6 +202,7 @@ def chunk_conditions(
         or_(Chunk.sourceId.in_(sources), Chunk.sourceId.in_(field_interview_sources(scope.craft_id))),
         Chunk.sourceId.not_in(withheld_field_sources()),
         Chunk.acl.in_(list(acls)),
+        Chunk.kind.in_(list(kinds)),
         Chunk.sensitivity != RESTRICTED_SENSITIVITY,
         *_every_craft(scope),
     ]

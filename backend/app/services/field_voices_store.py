@@ -23,7 +23,7 @@ from app.models import (
     Source,
 )
 from app.research.quotes import quote_occurs
-from app.research.retrieval import PUBLIC_CHUNK_ACL
+from app.research.retrieval import PASSAGE_CHUNK_KIND
 from app.retrieval.indexing import replace_planned_chunks
 from app.services.field_voices_feed import TRANSCRIPTS, Live, stream_digest
 from app.services.field_voices_items import FeedCraft, TranscriptItem
@@ -165,7 +165,7 @@ async def recheck_quoted_claims(session: AsyncSession, source_id: uuid.UUID) -> 
     quotes = (
         await session.execute(
             select(Chunk.id, Chunk.locator, Chunk.text)
-            .where(Chunk.sourceId == source_id, Chunk.acl == PUBLIC_CHUNK_ACL)
+            .where(Chunk.sourceId == source_id, Chunk.kind == PASSAGE_CHUNK_KIND)
             .order_by(Chunk.ordinal)
         )
     ).all()

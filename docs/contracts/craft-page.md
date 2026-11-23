@@ -140,8 +140,9 @@ is drawn (`/api/molecules/{pubchemCid}/conformer`, `/api/map/layers/{layer}`,
 The body depends on the reader in one way only, a licence term, never a role: a reader holding
 `READ_RESEARCHER_QUOTES` gets the `RESEARCHER` variant, which may quote closed-licence full text
 (chunk ACL `RESEARCHER`, decision 0013); everyone else gets the `OPEN` variant, byte for byte the
-same whether anonymous or signed in, since both read the same chunk ACLs, `PUBLIC` and the field
-transcripts' `SIGNED_IN` (decision 0097). `READ_ALL_EVIDENCE` is retired.
+same whether anonymous or signed in, since both read the same chunk ACLs, `OPEN_CHUNK_ACLS`
+(`PUBLIC`, and the field transcripts' `SIGNED_IN` until it is folded into `PUBLIC`; decisions 0097
+and 0179). `READ_ALL_EVIDENCE` is retired.
 
 Asking stays signed in: Ask, the page's questions (start research, open questions), Talk, and a
 term lookup that would research (decision 0079 item 4). A signed-out reader who presses one is

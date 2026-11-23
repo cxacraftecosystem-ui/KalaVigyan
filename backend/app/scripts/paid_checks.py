@@ -20,6 +20,7 @@ from app.voice.runtime import voice_settings
 
 from .paid_check_agent import AGENT_TURN_USD, agent_check
 from .paid_check_ledger import CapLedger, Recorder, approved_cap, written_fixture
+from .paid_check_runs import STANDING_GROUPS, chosen_checks, groups_of
 from .paid_check_steps import (
     IMAGE_USD,
     MUSIC_SECONDS,
@@ -33,13 +34,14 @@ from .paid_check_steps import (
     narration_estimate,
     speech_check,
 )
+from .paid_check_video import video_check, video_estimate
 
 __all__ = ["run", "run_checks"]
 
 CENT_TENTHS = Decimal("0.001")
 
 
-async def run(*, cap: str, out: Path) -> dict[str, Any]:
+async def run(*, cap: str, out: Path, groups: Sequence[str] = STANDING_GROUPS) -> dict[str, Any]:
     settings = get_settings()
     recorder = Recorder()
     try:
@@ -48,7 +50,8 @@ async def run(*, cap: str, out: Path) -> dict[str, Any]:
         ledger = CapLedger(approved_cap(cap))
         async with httpx.AsyncClient(follow_redirects=False, event_hooks={"response": [recorder]}) as client:
             keys = _Keys(client, recorder, elevenlabs=voice.api_key, gemini=settings.gemini_api_key)
-            return await run_checks(_checks(keys, voice.voice_id, settings), ledger, out)
+            checks = chosen_checks(_checks(keys, voice.voice_id, settings), groups)
+            return await run_checks(checks, ledger, out)
     finally:
         await dispose_engine()
 
@@ -107,6 +110,9 @@ def _checks(keys: _Keys, voice_id: str, settings: Settings) -> list[PaidCheck]:
     async def speech() -> CheckResult:
         return await speech_check(keys.gemini(), keys.recorder)
 
+    async def video() -> CheckResult:
+        return await video_check(keys.gemini(), keys.recorder)
+
     music_usd = (MUSIC_USD_PER_SECOND * Decimal(str(MUSIC_SECONDS))).quantize(CENT_TENTHS, rounding=ROUND_UP)
     return [
         PaidCheck("narration_en", narration_estimate("en"), partial(narration, "en")),
@@ -115,6 +121,7 @@ def _checks(keys: _Keys, voice_id: str, settings: Settings) -> list[PaidCheck]:
         PaidCheck("gemini_image", IMAGE_USD, image),
         PaidCheck("gemini_speech", SPEECH_USD, speech),
         PaidCheck("agent_turn", AGENT_TURN_USD, partial(agent_check, keys.client, settings)),
+        PaidCheck("gemini_video", video_estimate(), video),
     ]
 
 
@@ -126,8 +133,15 @@ def main() -> int:
     parser.add_argument(
         "--out", type=Path, required=True, help="the folder the recorded replies are written to"
     )
+    parser.add_argument(
+        "--checks",
+        type=groups_of,
+        default=STANDING_GROUPS,
+        help="the checks to make, comma-separated (narration, music, image, speech, agent, video); "
+        "every one but video by default",
+    )
     args = parser.parse_args()
-    report = asyncio.run(run(cap=args.cap, out=args.out))
+    report = asyncio.run(run(cap=args.cap, out=args.out, groups=args.checks))
     written_fixture(
         args.out, "paid_checks_report.json", (json.dumps(report, indent=2) + "\n").encode("utf-8")
     )

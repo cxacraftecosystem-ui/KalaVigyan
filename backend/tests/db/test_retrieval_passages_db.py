@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Chunk
 from app.research.field_voices import FIELD_SOURCE_KIND
-from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, KnowledgeQuery
+from app.research.retrieval import EVERY_CHUNK_KINDS, OPEN_CHUNK_ACLS, KnowledgeQuery
 from app.retrieval.hybrid import StoredKnowledgeSearch
 from app.services.claim_seed import load_seed_claims, seed_claims, seed_id
 from app.services.claim_seed_passages import seed_passages, store_seed_passages
@@ -64,7 +64,8 @@ async def test_passages_never_crowd_an_artisans_words_out_of_the_hits() -> None:
                 craft_slug="Kutch-Ajrakh",
                 text="How is ajrakh printed and dyed?",
                 mode="HYBRID",
-                chunk_acls=SIGNED_IN_CHUNK_ACLS,
+                chunk_acls=OPEN_CHUNK_ACLS,
+                chunk_kinds=EVERY_CHUNK_KINDS,
                 limit=2,
             )
         )
