@@ -9,6 +9,7 @@ Date: 2026-11-17. Status: accepted.
 
 | For | Read |
 |---|---|
+| A translated sentence keeps a term by its stored local name, a whole word of its script | [decision 0167](0167-answer-leftovers-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

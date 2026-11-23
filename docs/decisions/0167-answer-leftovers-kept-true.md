@@ -1,0 +1,130 @@
+# 0167. A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation
+
+An answer whose stream stops before it finishes is marked stopped instead of left empty; the
+composer reads a failing sentence's quotes in an Indian script through one bounded English
+rendering; a translated sentence keeps a glossary term by its stored local name, so a Hindi answer
+keeps its quiz; a glossary term carries the casing its texts write it in; a dossier lists its signs
+of imitation; every scholarly adapter names a paper's journal; the planner reads a closed DOI from
+the publisher that holds it and searches the colourant oxides when a question asks what gives a
+glaze its colour.
+
+Date: 2026-11-23. Status: accepted (the lead's answer-leftovers lane brief of 2026-11-23, round 7's
+debt-clearing programme). It amends [decision 0039](0039-pictures-and-terms-wired.md) and
+[decision 0089](0089-expert-depth-caps-and-answer-routes.md) (term spans in a translation),
+[decision 0066](0066-local-measures-and-market-gi.md) (signs of imitation),
+[decision 0139](0139-sources-and-providers-reach-outside-services-once.md) (quote renderings and
+publisher full text), [decision 0143](0143-lessons-exports-and-follow-ups-kept-true.md) (the journal
+a paper is in) and [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) (the answer
+record). The contracts are `docs/contracts/research.md` (the composer, the planner, the answering
+service), `docs/contracts/explainer.md` (term spans, the supply map, the market block),
+`docs/contracts/curation.md` (Market and GI, the glossary) and `docs/contracts/craft-page.md`.
+
+| For | Read |
+|---|---|
+| Term spans kept in a translation | [decision 0039](0039-pictures-and-terms-wired.md) and [decision 0089](0089-expert-depth-caps-and-answer-routes.md) |
+| The imitation word list | [decision 0066](0066-local-measures-and-market-gi.md) |
+| Quote renderings and publisher full text, built and not yet asked | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
+| The journal a source stores | [decision 0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
+| The answer row and its request id | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
+| The answer regression this lane kept the cost line of | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| Every decision, by group | [README.md](README.md) |
+
+## Context
+
+Twelve entries of `docs/TECH_DEBT.md` were left after round 7's lanes, and the lead found a new
+fault on production: nine `Answer` rows with no payload and no sections, every one a production
+check whose stream closed after about 11 seconds (answer 943e22ff, request 861d96b4542bebc7824ab8b5).
+The row is begun before research and written at the finish; a stream the client closes cancels
+the answer between the two. Several entries needed a choice the register did not make: whether a
+stopped row is deleted or kept, where a curated imitation list is stored, how a quote's language is
+known when no evidence item records one, which local name a translated sentence may carry, and how
+a glossary term's sentence-case name is found when no dossier states it.
+
+## Decision
+
+1. **A stopped answer is marked, not deleted.** `Answer.stoppedAt` (migration 0090) is set for the
+   request's rows that have no `latencyMs` when anything stops the answer after it began: a
+   cancelled stream, a failed research, a lost version (`answer_stops.stopped_unless_finished`
+   around `answering._answer`, `SqlAnswerStore.stop(request_id)`); `finish` clears it. We chose
+   marking over deleting: a deleted row would take its usage rows, kept pieces' and write-backs'
+   answer links and its saved items with it, and the cost the nightly upkeep settles would lose its
+   row. A stopped row has no explainer, so the history already leaves it out; the open-work demand
+   and the piece rebuild's asks do not count it. The migration marks the rows of more than an hour
+   ago that never finished.
+2. **A failing sentence's quotes in an Indian script are rendered once per draft.** After the first
+   draft and before any regenerate, the quotes of its failing sentences written in a script of an
+   answer language other than English go to `quote_renderings.english_renderings` in one call of
+   the `TRANSLATE` route's `ModelTranslator`, at most `RENDERED_QUOTES_MAX` (8) per draft. A quote's
+   language is its script's when one answer language writes it (Gujarati, Tamil, Urdu), else the
+   language its source id names (`wikipedia:hi:<page>`), else it is not rendered: we did not guess
+   Hindi for every Devanagari quote, since the rendering's stance check reads the source language's
+   negations and hedges. A sentence passing the checks on the rendering is kept, citing the verbatim
+   quote; one that still fails goes on to the regenerate. The extra work is bounded: one
+   `TRANSLATE` call (two with its translator's retry) per draft with such a failing quote, at most
+   8 quotes of at most 300 characters, about 2,400 input tokens with the prompt and about 700 output
+   tokens; an English answer on English sources makes none.
+3. **A translated sentence keeps a term by its local name.** When neither a span's English text nor
+   its rendering shows in the translation, one of the term's stored `Term.localNames` that the
+   translation shows as a whole word keeps the span (`term_marking.local_name_spans`, read once per
+   translated block by `AnswerTranslation.local_names`). We chose occurrence over a language field
+   on each local name: a name the translated sentence shows is in that sentence's language, so no
+   new field or source is needed, and the quiz, built from the translated spans, keeps the
+   questions whose terms have such names. A word of an Indic or Arabic script runs through its
+   vowel signs and marks (`term_marking.WORD_CHARS`), so नील is not marked inside नीला. No model
+   call is added.
+4. **A glossary term carries the casing its texts write it in.** `Term.sentenceName` is the casing
+   its meaning and its concepts' claims write it in most often away from a sentence's start
+   (`research/sentence_names.sentence_name`), filled after every curated import for each term that
+   has none; a term never written there keeps none. The supply map carries it as a link's
+   `material`, and the web keeps a later name as carried ("Indigo and alum"). We chose reading the
+   stored texts over a new dossier field, which every dossier would have to fill by hand.
+5. **A dossier lists its signs of imitation.** `market.imitation` lists claim ids, each citing a GI
+   journal, kept with the GI record (`CraftGiRecord.imitationClaimIds`, so `market.gi` is given);
+   the market block shows them first, in their order, then what the word list finds, at most three.
+   We chose the GI record's column over a table of its own: a sign of imitation is evidence the GI
+   journal gives, so a dossier without a GI record has none to list.
+6. **Every scholarly adapter names the journal.** Crossref, OpenAlex (a journal, conference or book
+   series source only, never a repository), DOAJ, Springer Nature, Elsevier, CORE, Europe PMC and
+   Semantic Scholar fill `container_title` (`sources/records.journal_of`), which retires
+   `JOURNAL_AS_PUBLISHER_ADAPTERS`; each `publisher` is unchanged. `app.scripts.source_journals`
+   reads the journal of each stored source with a DOI and none from Crossref, storing it only with
+   `--write`.
+7. **The planner reads a closed DOI from its publisher, and searches the colourant oxides.**
+   `LiveSources.publisher` is the registry's `PublisherFullText`; a DOI the locator calls closed is
+   read from the publisher holding its prefix. A question asking what gives a glaze, glass, enamel,
+   pigment or pottery its colour adds one query per tier the model used, naming its hues and the
+   oxides of cobalt, copper, iron, manganese and chromium, inside the mode's query limit, so it adds
+   no model call.
+8. **No rule orders the seed's four unordered stages.** The seed holds no `PRECEDES` edge joining
+   them to their crafts' ladders (its only one among them says Akola's mud soaking precedes paste
+   preparation), so a rule reading such edges would place nothing; a test holds the seed's edges as
+   they are, and the register names the sources that would place them.
+
+## Consequences
+
+- Migration 0090 adds `Answer.stoppedAt`, `Term.sentenceName` and
+  `CraftGiRecord.imitationClaimIds`, and marks the old stopped rows; the lead links it after the
+  other lanes' migrations.
+- The voice turn is trimmed to one section of three sentences and no follow-ups by
+  `voice/compose.VOICE_FORM`, and the zoom story reads the answer's one read of the craft's matter.
+- `fill_sentence_names` runs over every term without a name, seeded ones included, at each curated
+  import; the seed itself fills none.
+- The write-back's quote gate still reads raw quotes, so a sentence kept by its rendering is shown
+  and not written back until `services/write_back_plan` reads the renderings; the register says so.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-23; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md). Its rules are tested by
+`backend/tests/answering/test_stopped_answers.py`, `backend/tests/db/test_stopped_answers_db.py`,
+`backend/tests/composer/test_quote_renderings_compose.py`,
+`backend/tests/terms/test_local_name_marks.py`, `backend/tests/research/test_sentence_names.py`,
+`backend/tests/db/test_term_sentence_names_db.py`, `backend/tests/place/test_supply_sentence_names.py`,
+`backend/tests/answering/test_market_imitation.py`, `backend/tests/curation/test_imitation_checks.py`,
+`backend/tests/sources/test_scholarly_journals.py`, `backend/tests/sources/test_source_journal_reads.py`,
+`backend/tests/db/test_source_journals_db.py`, `backend/tests/planner/test_publisher_reads.py`,
+`backend/tests/planner/test_colourant_search.py`, `backend/tests/science/test_seed_stage_order.py`,
+`backend/tests/voice/test_voice_compose.py`, `backend/tests/journey/test_zoom_story.py` and the
+unit specs `frontend/e2e/sentence-once-unit.spec.ts` and `frontend/e2e/sentence-once-figures-unit.spec.ts`.

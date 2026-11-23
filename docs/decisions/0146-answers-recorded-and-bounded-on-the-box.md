@@ -29,6 +29,7 @@ budget), `docs/contracts/nightly-upkeep.md` and `docs/contracts/infra.md`.
 | The provider layer and its routers | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | The early lede that shows stored findings first | [decision 0077](0077-lede-headings-and-question-order.md) |
 | An answered call settles at its cost whatever cuts its caller off | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| An answer that stops before it finishes is marked stopped and keeps its cost | [decision 0167](0167-answer-leftovers-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
