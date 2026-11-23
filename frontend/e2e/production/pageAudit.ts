@@ -94,9 +94,10 @@ export function auditPage(options: AuditOptions): PageAudit {
     .filter((element) => past(element) > 1 && !(element.parentElement && past(element.parentElement) > 1) && !scrolledOrClipped(element.parentElement ?? element))
     .map((element) => ({ named: name(element), px: past(element) }));
   const pseudos = elements
-    .filter((element) => past(element) <= 1 && !scrolledOrClipped(element))
-    .flatMap((element) => ["::before", "::after"].map((which) => ({ named: `${name(element)}${which}`, px: pseudoPast(element, which) })))
-    .filter((pseudo) => pseudo.px > 1);
+    .filter((element) => past(element) <= 1)
+    .flatMap((element) => ["::before", "::after"].map((which) => ({ element, which, px: pseudoPast(element, which) })))
+    .filter((pseudo) => pseudo.px > 1 && !scrolledOrClipped(pseudo.element))
+    .map((pseudo) => ({ named: `${name(pseudo.element)}${pseudo.which}`, px: pseudo.px }));
   const widest = [...boxes, ...pseudos]
     .sort((one, other) => other.px - one.px)
     .slice(0, WIDEST_NAMED)
