@@ -19,8 +19,8 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Module | Operations |
 | --- | ---: |
-| `auth.py` | 16 |
 | `contribution_streams.py` | 12 |
+| `auth.py` | 9 |
 | `settings.py` | 9 |
 | `users.py` | 9 |
 | `lessons.py` | 8 |
@@ -35,6 +35,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `explainers.py` | 6 |
 | `image_contributions.py` | 6 |
 | `oauth_consent.py` | 6 |
+| `password_links.py` | 6 |
 | `shared.py` | 6 |
 | `artisan_conversations.py` | 5 |
 | `knowledge.py` | 5 |
@@ -66,6 +67,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `password_change.py` | 2 |
 | `place_ground.py` | 2 |
 | `supplied_sources.py` | 2 |
+| `auth_signup.py` | 1 |
 | `contributed_pictures.py` | 1 |
 | `craft_media.py` | 1 |
 | `craft_monograph.py` | 1 |
@@ -134,14 +136,14 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1348 | 190,853 |
+| `backend/app` | 1355 | 191,109 |
 | `backend/tests` | 1023 | 134,207 |
 | `backend/migrations` | 73 | 10,359 |
 | `frontend/app` | 110 | 10,009 |
 | `frontend/components` | 612 | 41,871 |
 | `frontend/lib` | 258 | 26,177 |
 | `frontend/e2e` | 294 | 32,331 |
-| `etl` | 66 | 10,894 |
+| `etl` | 71 | 11,058 |
 | `tools` | 96 | 8,232 |
 | `infra` | 17 | 2,194 |
 

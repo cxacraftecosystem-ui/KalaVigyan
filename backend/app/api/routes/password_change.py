@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routes.auth import (
+from app.api.auth_session import (
     SAME_PASSWORD_DETAIL,
     SESSION_TOKEN_HEADER,
     THROTTLED_DETAIL,

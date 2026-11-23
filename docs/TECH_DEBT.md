@@ -42,15 +42,13 @@ Last reviewed: 2026-11-22.
 
 ### Python code over budget
 
-- **What:** recorded in `tools/hygiene_baseline.json`, 9 files over 400 lines, 46 functions over
-  40 lines and 9 functions with more than 5 positional parameters on 2026-11-22 (12, 54 and 9 on
-  2026-11-16). The largest files:
-  `backend/migrations/versions/0001_initial_schema.py` (2853), `etl/crafts/wikidata_link.py`
-  (1121), `backend/app/api/routes/auth.py` (784), `backend/app/services/two_factor.py` (703),
-  `etl/crafts/seed_claims.py` (642), `backend/app/providers/router.py` (566),
-  `etl/crafts/aliases.py` (543),
-  `backend/tests/db/test_db_flows.py` (464), `backend/app/services/knowledge_view.py` (502),
-  `backend/app/data/craft_master_loader.py` (433).
+- **What:** the counts are in `tools/hygiene_baseline.json`: 6 files over 400 lines, 36 functions
+  over 40 lines and 9 functions with more than 5 positional parameters on 2026-11-23 (12, 54 and 9
+  on 2026-11-16). The files: `backend/migrations/versions/0001_initial_schema.py` (2853),
+  `backend/app/services/two_factor.py` (703), `etl/crafts/seed_claims.py` (642),
+  `etl/crafts/aliases.py` (535), `backend/tests/db/test_db_flows.py` (473) and
+  `backend/app/data/craft_master_loader.py` (433). The sign-in routes, the AI router and the
+  Wikidata linker were split on 2026-11-23 and are no longer among them.
 - **Why left:** most were ported from the designer portal with the same shapes so the portals
   stay mergeable; splitting them is a separate restructuring change.
 - **Clears it:** split along responsibilities when a file is next changed; run

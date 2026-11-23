@@ -1,20 +1,8 @@
 from app.data.craft_master_loader import MasterCraft
 
-from wikidata_link import (
-    ACCEPT,
-    FLAG,
-    LOW_CONFIDENCE,
-    MATCHED,
-    NO_MATCH,
-    Candidate,
-    clean_term,
-    decide,
-    describe,
-    name_similarity,
-    query_variants,
-    resolve_shared,
-    score,
-)
+from wikidata_link import describe, resolve_shared
+from wikidata_names import Candidate, clean_term, name_similarity, query_variants
+from wikidata_scoring import ACCEPT, FLAG, LOW_CONFIDENCE, MATCHED, NO_MATCH, decide, score
 
 
 def craft(name, slug, states=("Rajasthan",), gi="GI"):
