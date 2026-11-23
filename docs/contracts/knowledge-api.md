@@ -39,7 +39,7 @@ without a list of names:
 | reading | `ask` | ask | `mcp-ask-and-upload.md` |
 | sources | `search_sources` (contribute; a pictures-only search is read), `read_source` (contribute), `lookup` (read), `supply_source` (contribute) | as listed | this file, Source tools; `knowledge-writes.md` for `supply_source` |
 | work | `list_open_work` (read; its review queues need review), `my_work`, `reserve_tasks`, `steward_craft`, `get_proposal` | contribute | `open-work.md`, `knowledge-writes.md` |
-| proposing | `propose_facts`, `propose_structure`, `propose_source`, `propose_dataset` | contribute | `knowledge-writes.md`, decision 0108; decision 0114 for `propose_dataset` |
+| proposing | `propose_facts`, `propose_structure`, `propose_source`, `propose_dataset` | contribute | `knowledge-writes.md`, decision 0108; decision 0114 for `propose_dataset`, the datasets reference for its `layer` and `review-queue.md` for `LAYERS` |
 | pages | `edit_draft`, `preview_page`, `propose_page` | contribute | `open-work.md` |
 | pictures | `give_pictures` | contribute | `mcp-ask-and-upload.md` |
 

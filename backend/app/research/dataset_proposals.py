@@ -11,6 +11,7 @@ from pydantic import Field
 from .base import ContractModel, HttpsUrl
 from .datasets import DATASET_CODE_PATTERN, DOI_PATTERN, SHA256_PATTERN
 from .licences import open_licence
+from .map_layer_proposals import LAYER_TYPES, MapLayerPlan, layer_problems
 
 __all__ = [
     "CELL_MAX_CHARS",
@@ -28,6 +29,7 @@ __all__ = [
     "TableRefused",
     "parsed_table",
     "record_problems",
+    "upload_types",
     "upload_url",
 ]
 
@@ -60,6 +62,7 @@ class DatasetProposal(ContractModel):
     landing_url: HttpsUrl
     url: HttpsUrl
     sha256: str = Field(pattern=SHA256_PATTERN)
+    layer: MapLayerPlan | None = None
 
 
 class DatasetUploadStart(ContractModel):
@@ -78,6 +81,7 @@ class DatasetReply(ContractModel):
     upload: DatasetUploadStart | None = None
     columns: list[str] = Field(default_factory=list)
     rows: int = Field(default=0, ge=0)
+    features: int = Field(default=0, ge=0)
 
 
 @dataclass(frozen=True)
@@ -101,7 +105,13 @@ def record_problems(proposal: DatasetProposal) -> list[str]:
         problems.append("a contributed dataset is one its licence lets anyone redistribute")
     if proposal.doi is not None and proposal.doi not in proposal.citation:
         problems.append(f"the citation names its DOI {proposal.doi}")
+    if proposal.layer is not None:
+        problems += layer_problems(proposal.crs, proposal.layer)
     return problems
+
+
+def upload_types(proposal: DatasetProposal) -> list[str]:
+    return list(LAYER_TYPES if proposal.layer is not None else TABLE_TYPES)
 
 
 def parsed_table(data: bytes) -> ParsedTable:

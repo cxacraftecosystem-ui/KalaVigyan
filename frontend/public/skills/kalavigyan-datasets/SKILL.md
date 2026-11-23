@@ -39,7 +39,9 @@ Each reference is also on the site under `/skills/references/`.
    prices, registry records) become facts and a delivered component: follow "Over the MCP server".
    Values measured over the land by district (rain, temperature, soil, cover, elevation, geology,
    rivers) belong to the site's own layers (the dataset guide, From a dataset to a component):
-   follow "In the repository", or, over MCP, leave them to the site.
+   follow "In the repository". Over MCP they are never facts; a new layer of them goes to
+   `propose_dataset` with its `layer` (the dataset guide, Map layers over MCP), for a reviewer
+   and then an engineer.
 
 ## Over the MCP server
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
-from sqlalchemy import ColumnElement, and_, exists, func, or_, select, tuple_
+from sqlalchemy import ColumnElement, and_, exists, false, func, or_, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
@@ -18,18 +18,21 @@ from app.models import (
     Craft,
     ImageContribution,
     LayoutProposal,
+    MapLayerProposal,
     StructureProposal,
 )
 from app.research.review_queue import (
     COMPONENTS,
     FACTS,
     IMAGES,
+    LAYERS,
     LAYOUTS,
     PENDING_FACT_STATUSES,
     STRUCTURE,
     TESTIMONY,
     ComponentItem,
     FactItem,
+    LayerQueueItem,
     LayoutItem,
     PictureItem,
     QueueEntry,
@@ -67,6 +70,7 @@ QUEUE_MODELS: Mapping[str, Any] = MappingProxyType(
         COMPONENTS: ComponentProposal,
         LAYOUTS: LayoutProposal,
         STRUCTURE: StructureProposal,
+        LAYERS: MapLayerProposal,
     }
 )
 
@@ -79,6 +83,7 @@ RenderedItem = (
     | LayoutItem
     | StructureQueueItem
     | ReadingQueueItem
+    | LayerQueueItem
 )
 
 
@@ -201,6 +206,16 @@ def _structure_conditions(scope: QueueScope) -> list[ColumnElement[bool]]:
     return conditions
 
 
+def _layer_conditions(scope: QueueScope) -> list[ColumnElement[bool]]:
+    conditions = [
+        MapLayerProposal.status == PENDING,
+        MapLayerProposal.proposerId.is_distinct_from(scope.viewer_id),
+    ]
+    if scope.craft is not None:
+        conditions.append(false())
+    return conditions
+
+
 _CONDITIONS: Mapping[str, Callable[[QueueScope], list[ColumnElement[bool]]]] = MappingProxyType(
     {
         FACTS: _fact_conditions,
@@ -209,5 +224,6 @@ _CONDITIONS: Mapping[str, Callable[[QueueScope], list[ColumnElement[bool]]]] = M
         COMPONENTS: _component_conditions,
         LAYOUTS: _layout_conditions,
         STRUCTURE: _structure_conditions,
+        LAYERS: _layer_conditions,
     }
 )

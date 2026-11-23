@@ -16,6 +16,7 @@ from app.research.review_queue import (
     FACTS,
     IMAGES,
     KIND_ORIGINS,
+    LAYERS,
     LAYOUTS,
     READINGS,
     STRUCTURE,
@@ -40,6 +41,7 @@ from .object_store import ObjectStore
 from .review_queue_components import component_items
 from .review_queue_errors import UnknownCraft
 from .review_queue_fact_views import fact_items
+from .review_queue_layers import layer_items
 from .review_queue_layouts import layout_items
 from .review_queue_readings import ReadingScope, reading_count, reading_entries, reading_items
 from .review_queue_select import QueueScope, Rendered, RenderedItem, queue_count, queue_entries, rows_by_id
@@ -141,6 +143,8 @@ async def _rendered(
         return await structure_items(session, ids)
     if kind == READINGS:
         return await reading_items(session, ids)
+    if kind == LAYERS:
+        return await layer_items(session, ids)
     if kind == TESTIMONY:
         return await _testimony_items(session, ids, adapters=adapters, now=now)
     return await _picture_items(session, ids, adapters=adapters, now=now)

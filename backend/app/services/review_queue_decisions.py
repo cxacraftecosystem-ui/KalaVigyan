@@ -20,6 +20,7 @@ from app.research.review_queue import (
     COMPONENTS,
     FACTS,
     IMAGES,
+    LAYERS,
     LAYOUTS,
     RAISE,
     READINGS,
@@ -39,6 +40,7 @@ from . import audit, image_contributions as images, testimony_writes
 from .review_queue_components import approve_component, reject_component
 from .review_queue_errors import DecisionConflict, NotYourQueue, OwnItem, UnknownItem
 from .review_queue_facts import FactDecision, decide_fact
+from .review_queue_layers import approve_layer, reject_layer
 from .review_queue_layouts import approve_layout, reject_layout
 from .review_queue_readings import decide_reading
 from .review_queue_refile import refiling_problem
@@ -165,6 +167,18 @@ async def _reject_reading(
     return await decide_reading(session, item_id, reviewer, (READING_REJECTED, decision.stated()), now=now)
 
 
+async def _approve_layer(
+    session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueApproval, *, now: datetime
+) -> QueueDecision:
+    return await approve_layer(session, item_id, reviewer, note=decision.note, now=now)
+
+
+async def _reject_layer(
+    session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueRejection, *, now: datetime
+) -> QueueDecision:
+    return await reject_layer(session, item_id, reviewer, reason=decision.stated(), now=now)
+
+
 async def _approve_testimony(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueApproval, *, now: datetime
 ) -> QueueDecision:
@@ -280,6 +294,7 @@ _APPROVERS: Mapping[str, Decide] = MappingProxyType(
         LAYOUTS: _approve_layout,
         STRUCTURE: _approve_structure,
         READINGS: _approve_reading,
+        LAYERS: _approve_layer,
     }
 )
 _REJECTERS: Mapping[str, Decide] = MappingProxyType(
@@ -291,5 +306,6 @@ _REJECTERS: Mapping[str, Decide] = MappingProxyType(
         LAYOUTS: _reject_layout,
         STRUCTURE: _reject_structure,
         READINGS: _reject_reading,
+        LAYERS: _reject_layer,
     }
 )

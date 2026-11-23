@@ -41,7 +41,7 @@ from app.research.review_queue_components import closest_components
 from app.services.claim_writer import HELD_NOTE, held_note
 from app.services.write_back_crafts import HELD_OTHER_PLACE
 
-ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS")
+ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS", "LAYERS")
 NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
 
 
@@ -69,7 +69,7 @@ def test_only_admins_and_master_admins_see_who_proposed(role: str, shown: bool) 
     ("origin", "kinds"),
     [
         ("RESEARCH", ("FACTS", "READINGS")),
-        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS", "STRUCTURE", "READINGS")),
+        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS", "STRUCTURE", "READINGS", "LAYERS")),
         ("AGENT", ("FACTS", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS")),
         ("TESTIMONY", ("TESTIMONY",)),
         (None, ALL_KINDS),
@@ -97,6 +97,8 @@ def test_a_kind_filter_never_reaches_past_the_viewers_kinds() -> None:
         (COMPONENTS, APPROVE, Capability.REVIEW_CONTRIBUTIONS),
         (LAYOUTS, APPROVE, Capability.REVIEW_CONTRIBUTIONS),
         (LAYOUTS, REJECT, Capability.REVIEW_CONTRIBUTIONS),
+        ("LAYERS", APPROVE, Capability.REVIEW_CONTRIBUTIONS),
+        ("LAYERS", REJECT, Capability.REVIEW_CONTRIBUTIONS),
         (STRUCTURE, APPROVE, Capability.MARK_CLAIM_LEVEL),
         (STRUCTURE, REJECT, Capability.MARK_CLAIM_LEVEL),
     ],

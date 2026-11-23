@@ -17,6 +17,7 @@ from app.models import (
     ComponentProposal,
     ImageContribution,
     LayoutProposal,
+    MapLayerProposal,
     StructureProposal,
     TaskReservation,
 )
@@ -167,6 +168,7 @@ async def review_queues(session: AsyncSession, queues: Sequence[str]) -> dict[st
         "COMPONENTS": (ComponentProposal.createdAt, ComponentProposal.status == PENDING),
         "LAYOUTS": (LayoutProposal.createdAt, LayoutProposal.status == PENDING),
         "STRUCTURE": (StructureProposal.createdAt, StructureProposal.status == PENDING),
+        "LAYERS": (MapLayerProposal.createdAt, MapLayerProposal.status == PENDING),
     }
     return {
         queue: await reading_standing(session)

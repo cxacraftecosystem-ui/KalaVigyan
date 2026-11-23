@@ -11,6 +11,7 @@ from .crafts import CraftRef
 from .image_contributions import ImageContributionView
 from .layout_proposals import LayoutReview
 from .review_queue_components import ComponentReview
+from .review_queue_layers import LayerReview
 from .review_queue_parts import FactSource, GateCheck
 from .review_queue_readings import ReadingReview
 from .review_queue_structure import StructureReview
@@ -25,6 +26,7 @@ __all__ = [
     "FactItem",
     "FactReview",
     "HeldWriteBack",
+    "LayerQueueItem",
     "LayoutItem",
     "PictureItem",
     "Proposer",
@@ -112,6 +114,11 @@ class ReadingQueueItem(_QueueItem):
     reading: ReadingReview
 
 
+class LayerQueueItem(_QueueItem):
+    kind: Literal["LAYERS"] = "LAYERS"
+    layer: LayerReview
+
+
 QueueItem = Annotated[
     FactItem
     | TestimonyItem
@@ -119,6 +126,7 @@ QueueItem = Annotated[
     | ComponentItem
     | LayoutItem
     | StructureQueueItem
-    | ReadingQueueItem,
+    | ReadingQueueItem
+    | LayerQueueItem,
     Field(discriminator="kind"),
 ]

@@ -25,6 +25,7 @@ from .review_queue_items import (
     FactItem,
     FactReview,
     HeldWriteBack,
+    LayerQueueItem,
     LayoutItem,
     PictureItem,
     Proposer,
@@ -63,6 +64,7 @@ __all__ = [
     "IMAGES",
     "KIND_ACTIONS",
     "KIND_ORIGINS",
+    "LAYERS",
     "LAYOUTS",
     "ONE_HOME",
     "PAGE_DEFAULT",
@@ -94,6 +96,7 @@ __all__ = [
     "FactSource",
     "GateCheck",
     "HeldWriteBack",
+    "LayerQueueItem",
     "LayoutItem",
     "PictureItem",
     "Proposer",
@@ -126,7 +129,7 @@ __all__ = [
 
 REVIEW_QUEUE_SCHEMA_VERSION = 1
 QUEUE_KINDS: tuple[str, ...] = tuple(REVIEW_QUEUES)
-FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE, READINGS = QUEUE_KINDS
+FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE, READINGS, LAYERS = QUEUE_KINDS
 KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
         FACTS: PROPOSAL_ORIGINS,
@@ -136,6 +139,7 @@ KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         LAYOUTS: (CONTRIBUTION, AGENT),
         STRUCTURE: (CONTRIBUTION, AGENT),
         READINGS: PROPOSAL_ORIGINS,
+        LAYERS: (CONTRIBUTION,),
     }
 )
 APPROVE, REJECT, RAISE, RETRACT = "approve", "reject", "raise", "retract"
