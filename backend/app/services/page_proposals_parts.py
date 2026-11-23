@@ -44,7 +44,8 @@ CHECKS_UNAVAILABLE = (
 )
 OTHER_PAGE = "{part} {index} names {named}, not this bundle's page {page}: a bundle builds one page."
 NOT_A_CRAFT = (
-    "Structure belongs to a craft's curated page; a category's bundle carries facts, components and layout."
+    "A bundle's structure belongs to a craft's curated page; a category's bundle carries facts, components and "
+    "layout, and a category's structure is proposed on its own with propose_structure."
 )
 NOT_KEYED = (
     "Component {index} is keyed to another craft: key it to {slug} with craft_slug or a CRAFT subject."
@@ -105,7 +106,7 @@ def structure_subject_problem(
 ) -> str | None:
     if bundle.subject.kind == CATEGORY:
         return NOT_A_CRAFT
-    if _same_slug(item.subject.slug, bundle.subject, subject):
+    if item.subject.kind != CATEGORY and _same_slug(item.subject.slug, bundle.subject, subject):
         return None
     return OTHER_PAGE.format(part="Structure item", index=index, named=item.subject.slug, page=subject.slug)
 

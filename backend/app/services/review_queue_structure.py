@@ -10,20 +10,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Refused
-from app.models import (
-    Claim,
-    Craft,
-    CuratedCraft,
-    ProcessStage,
-    Source,
-    StructureProposal as ProposalRow,
-    User,
-)
+from app.models import Claim, Craft, ProcessStage, Source, StructureProposal as ProposalRow, User
 from app.research.crafts import CraftRef
 from app.research.review_queue import STRUCTURE, QueueDecision, StructureQueueItem
 from app.research.review_queue_parts import FactSource, RelatedFact, SourceQuote
 from app.research.review_queue_structure import StructureReview
 from app.research.structure_proposals import (
+    ALTERNATIVE,
     BOTANICAL_NAME,
     CONFLICT,
     PENDING_STATUS,
@@ -31,18 +24,17 @@ from app.research.structure_proposals import (
     STAGE_AFTER,
     STAGE_WHY,
     StructureCheck,
-    StructureSubject,
     parsed_item,
 )
 
-from .curated_index import CuratedPage, stored_curated_page
+from .curated_index import CuratedPage
 from .knowledge_view import craft_ref
 from .review_queue_errors import DecisionConflict, OwnItem, UnknownItem
 from .review_queue_select import Rendered, rows_by_id
-from .structure_proposals import craft_page_url
-from .structure_proposals_page import current_value, material_of, stage_of, target_problem
+from .structure_proposals_owner import StructureOwner, owner_page, proposal_owner
+from .structure_proposals_page import OwnerPage, current_value, material_of, stage_of, target_problem
 from .structure_proposals_review import approve_structure, reject_structure
-from .structure_proposals_write import NO_PAGE
+from .structure_proposals_write import NO_PAGE, held_claims
 
 __all__ = ["approve_structure_item", "reject_structure_item", "structure_items"]
 
@@ -55,8 +47,14 @@ SITE_RELATIVE = ""
 
 
 @dataclass(frozen=True)
+class _Subject:
+    owner: StructureOwner
+    page: OwnerPage | None
+    held: frozenset[uuid.UUID] | None
+
+
+@dataclass(frozen=True)
 class _Known:
-    pages: Mapping[uuid.UUID, CuratedPage | None]
     claims: Mapping[uuid.UUID, str]
     stages: Mapping[uuid.UUID, str]
     grades: Mapping[str, str] = field(default_factory=dict)
@@ -64,20 +62,22 @@ class _Known:
 
 async def structure_items(session: AsyncSession, ids: Sequence[uuid.UUID]) -> list[Rendered]:
     rows = list(await session.scalars(select(ProposalRow).where(ProposalRow.id.in_(list(ids)))))
+    subjects = {row.id: subject for row in rows if (subject := await _subject(session, row)) is not None}
     crafts = await rows_by_id(session, Craft, [row.craftId for row in rows])
-    known = await _known(session, rows)
+    known = await _known(session, rows, subjects)
     return [
         Rendered(
             StructureQueueItem(
                 id=row.id,
                 origin=row.origin,
                 submitted_at=row.createdAt,
-                craft=CraftRef.model_validate(craft_ref(crafts[row.craftId])),
-                structure=_review(row, crafts[row.craftId], known),
+                craft=_craft(crafts.get(row.craftId) if row.craftId else None),
+                structure=_review(row, subjects[row.id], known),
             ),
             row.proposerId,
         )
         for row in rows
+        if row.id in subjects
     ]
 
 
@@ -111,23 +111,33 @@ async def _pending(session: AsyncSession, proposal_id: uuid.UUID, reviewer: User
     return row
 
 
-async def _known(session: AsyncSession, rows: Sequence[ProposalRow]) -> _Known:
-    craft_ids = list({row.craftId for row in rows})
-    stored = (
-        await session.execute(
-            select(CuratedCraft.craftId, CuratedCraft.page).where(CuratedCraft.craftId.in_(craft_ids))
-        )
-    ).all()
-    pages = {craft_id: stored_curated_page(craft_id, page) for craft_id, page in stored}
-    claim_ids = [claim for row in rows for claim in _named_claims(row, pages.get(row.craftId))]
-    stage_ids = [stage.stage_id for page in pages.values() if page is not None for stage in page.stages]
+async def _subject(session: AsyncSession, row: ProposalRow) -> _Subject | None:
+    owner = await proposal_owner(session, row)
+    if owner is None:
+        return None
+    page = await owner_page(session, owner, lock=False)
+    return _Subject(owner, page, await held_claims(session, owner))
+
+
+def _craft(craft: Craft | None) -> CraftRef | None:
+    return CraftRef.model_validate(craft_ref(craft)) if craft is not None else None
+
+
+async def _known(
+    session: AsyncSession, rows: Sequence[ProposalRow], subjects: Mapping[uuid.UUID, _Subject]
+) -> _Known:
+    pages = [subject.page for subject in subjects.values()]
+    claim_ids = [
+        claim for row in rows if row.id in subjects for claim in _named_claims(row, subjects[row.id].page)
+    ]
+    stage_ids = [stage.stage_id for page in pages if isinstance(page, CuratedPage) for stage in page.stages]
     claims = await _texts(session, Claim.id, Claim.text, claim_ids)
     stages = await _texts(session, ProcessStage.id, ProcessStage.name, stage_ids)
     source_ids = [
         uuid.UUID(source["sourceId"]) for row in rows for source in row.sources if source["sourceId"]
     ]
     grades = await _texts(session, Source.id, Source.reliability, source_ids)
-    return _Known(pages, claims, stages, {str(key): value for key, value in grades.items()})
+    return _Known(claims, stages, {str(key): value for key, value in grades.items()})
 
 
 async def _texts(
@@ -140,22 +150,24 @@ async def _texts(
     return {found: str(text) for found, text in rows.tuples().all()}
 
 
-def _named_claims(row: ProposalRow, page: CuratedPage | None) -> list[uuid.UUID]:
+def _named_claims(row: ProposalRow, page: OwnerPage | None) -> list[uuid.UUID]:
     item = parsed_item(row.item)
     if item.kind == CONFLICT:
         return list(item.claim_ids)
-    stage = stage_of(page, item.stage_key) if page is not None and item.kind == STAGE_WHY else None
+    if not isinstance(page, CuratedPage) or item.kind != STAGE_WHY:
+        return []
+    stage = stage_of(page, item.stage_key)
     return [stage.why_claim_id] if stage is not None and stage.why_claim_id is not None else []
 
 
-def _review(row: ProposalRow, craft: Craft, known: _Known) -> StructureReview:
+def _review(row: ProposalRow, subject: _Subject, known: _Known) -> StructureReview:
     item = parsed_item(row.item)
-    page = known.pages.get(row.craftId)
+    owner, page = subject.owner, subject.page
     return StructureReview(
         kind=item.kind,
-        subject=StructureSubject(slug=craft.slug),
-        subject_name=craft.name,
-        page_url=craft_page_url(SITE_RELATIVE, craft.slug),
+        subject=owner.subject,
+        subject_name=owner.name,
+        page_url=owner.page_url(SITE_RELATIVE),
         target=_target(item, page, known),
         current=_current(item, page, known),
         item=item,
@@ -169,27 +181,36 @@ def _review(row: ProposalRow, craft: Craft, known: _Known) -> StructureReview:
             RelatedFact(id=claim_id, text=known.claims.get(claim_id, ""))
             for claim_id in (item.claim_ids if item.kind == CONFLICT else [])
         ],
-        stale=NO_PAGE if page is None else target_problem(page, item),
+        stale=NO_PAGE if page is None else target_problem(page, item, held=subject.held),
     )
 
 
-def _target(item: Any, page: CuratedPage | None, known: _Known) -> str | None:
+def _target(item: Any, page: OwnerPage | None, known: _Known) -> str | None:
     if page is None:
         return None
-    if item.kind in (STAGE_AFTER, STAGE_WHY, REACTION) and getattr(item, "stage_key", None):
-        stage = stage_of(page, item.stage_key)
-        name = known.stages.get(stage.stage_id) if stage is not None else None
+    if isinstance(page, CuratedPage) and item.kind in (STAGE_AFTER, STAGE_WHY, REACTION):
+        stage = stage_of(page, getattr(item, "stage_key", None)) if getattr(item, "stage_key", None) else None
+        if stage is None:
+            return None
+        name = known.stages.get(stage.stage_id)
         return f"Stage {item.stage_key}" + (f", {name}" if name else "")
+    if item.kind == ALTERNATIVE:
+        named = _material_line(page, item.material_key)
+        return f"{named}, with {_material_line(page, item.alternative_key).lower()} as its alternative"
     if item.kind == BOTANICAL_NAME:
-        material = material_of(page, item.material_key)
-        return f"Material {item.material_key}" + (f", {material.name}" if material else "")
+        return _material_line(page, item.material_key)
     return None
 
 
-def _current(item: Any, page: CuratedPage | None, known: _Known) -> str | None:
+def _material_line(page: OwnerPage, key: str) -> str:
+    material = material_of(page, key)
+    return f"Material {key}" + (f", {material.name}" if material else "")
+
+
+def _current(item: Any, page: OwnerPage | None, known: _Known) -> str | None:
     if page is None:
         return None
-    if item.kind == STAGE_WHY:
+    if isinstance(page, CuratedPage) and item.kind == STAGE_WHY:
         stage = stage_of(page, item.stage_key)
         why = stage.why_claim_id if stage is not None else None
         return known.claims.get(why) if why is not None else None

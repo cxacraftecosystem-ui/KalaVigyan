@@ -102,6 +102,11 @@ class IndexStage(ContractModel):
     why_claim_id: uuid.UUID | None = None
 
 
+class IndexAlternative(ContractModel):
+    key: str
+    claim_id: uuid.UUID
+
+
 class IndexMaterial(ContractModel):
     key: str
     material_id: uuid.UUID
@@ -113,6 +118,7 @@ class IndexMaterial(ContractModel):
     botanical_name: str | None
     pubchem_cid: int | None
     claim_ids: ClaimIds
+    alternatives: list[IndexAlternative] = Field(default_factory=list)
 
 
 class IndexTool(ContractModel):

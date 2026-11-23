@@ -186,7 +186,7 @@ async def _structure(
 ) -> PartReport:
     bundle, subject = page
     refuse_on(structure_subject_problem(bundle, subject, index, item))
-    _, curated = await curated_subject(session, item.subject.slug)
+    _, curated = await curated_subject(session, item.subject)
     refuse_on(dossier_problem(item) or target_problem(curated, item.item))
     if item.item.kind == CONFLICT or item.field is None or item.statement is None:
         return _report(STRUCTURE, index, LISTED, LISTED_CONFLICT)

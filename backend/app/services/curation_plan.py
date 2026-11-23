@@ -31,6 +31,7 @@ from .curation_rows import (
     source_rows,
 )
 from .curation_structure import (
+    alternative_rows,
     location_rows,
     material_rows,
     process_row,
@@ -63,6 +64,7 @@ PLAN_PARTS = (
     "stageMaterials",
     "reactions",
     "reactionCitations",
+    "alternatives",
     "media",
     "mediaClaims",
     "terms",
@@ -132,6 +134,7 @@ def curation_plan(
         "stageMaterials": stage_material_rows(dossier),
         "reactions": reaction_rows(dossier),
         "reactionCitations": reaction_citation_rows(dossier),
+        "alternatives": alternative_rows(dossier, concepts),
         "media": media_rows(dossier),
         "mediaClaims": media_claim_rows(dossier),
         "terms": term_rows(dossier),

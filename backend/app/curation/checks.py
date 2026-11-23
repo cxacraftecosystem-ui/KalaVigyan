@@ -11,6 +11,7 @@ from .claim_rules import claim_problems
 from .coverage import coverage_problems
 from .dossier import CATEGORY_SCOPE, Dossier
 from .entity_rules import (
+    alternative_problems,
     community_problems,
     market_problems,
     picture_problems,
@@ -33,6 +34,7 @@ DOSSIER_RULES: tuple[Callable[[Dossier], list[Problem]], ...] = (
     community_problems,
     stage_problems,
     reaction_problems,
+    alternative_problems,
     market_problems,
     picture_problems,
     stage_page_problems,

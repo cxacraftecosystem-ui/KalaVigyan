@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Refused
-from app.models import Claim, ClaimSource, Craft, CuratedClaim, ReviewEvent, Source, StructureProposal, User
+from app.models import Claim, ClaimSource, ReviewEvent, Source, StructureProposal, User
 from app.research.candidate_gates import QUOTES_GATE, SOURCE_GATE, GateOutcome
 from app.research.evidence import canonical_url
 
@@ -18,6 +18,7 @@ from .curation_keys import CURATED_PREDICATE, CURATED_STATUS, CURATION_ACTOR, QU
 from .curation_rows import claim_source_id
 from .live_source_store import chunk_for_quote
 from .proposal_writes import PROPOSAL_CLAIM_ORIGIN
+from .structure_proposals_owner import StructureOwner, claim_marker, taken_claim_keys
 from .structure_proposals_page import next_key
 
 __all__ = [
@@ -51,7 +52,7 @@ SHARED_DOI = (
 
 @dataclass(frozen=True)
 class ClaimPlan:
-    craft: Craft
+    owner: StructureOwner
     concept_id: uuid.UUID
     version: int
     proposal: StructureProposal
@@ -65,12 +66,11 @@ def dossier_marker(source: Source) -> tuple[str | None, str | None]:
 
 async def write_curated_claim(session: AsyncSession, plan: ClaimPlan, reviewer: User) -> uuid.UUID:
     row = plan.proposal
-    taken = await session.scalars(select(CuratedClaim.key).where(CuratedClaim.craftId == plan.craft.id))
-    key = next_key(CLAIM_PREFIX, taken.all(), width=CLAIM_WIDTH)
-    claim_id = curated_id(plan.craft.slug, key)
+    key = next_key(CLAIM_PREFIX, await taken_claim_keys(session, plan.owner), width=CLAIM_WIDTH)
+    claim_id = curated_id(plan.owner.slug, key)
     session.add(_claim(plan, claim_id))
     await session.flush()
-    session.add(CuratedClaim(claimId=claim_id, craftId=plan.craft.id, key=key, discipline=row.field))
+    session.add(claim_marker(plan.owner, claim_id, key, row.field))
     await _cite(session, plan, claim_id, key)
     await record_checks(session, claim_id, _kept_outcomes(row.checks), checked_at=row.createdAt)
     session.add(
@@ -80,7 +80,7 @@ async def write_curated_claim(session: AsyncSession, plan: ClaimPlan, reviewer: 
             actorKind=USER_ACTOR,
             toStatus=CURATED_STATUS,
             toLevel=QUOTED_LEVEL,
-            note=f"structure proposal {row.id} ({row.kind}) approved into the dossier of {plan.craft.slug}",
+            note=f"structure proposal {row.id} ({row.kind}) approved into the dossier of {plan.owner.slug}",
         )
     )
     await session.flush()
@@ -108,7 +108,7 @@ def _claim(plan: ClaimPlan, claim_id: uuid.UUID) -> Claim:
 
 
 async def _cite(session: AsyncSession, plan: ClaimPlan, claim_id: uuid.UUID, claim_key: str) -> None:
-    slug = plan.craft.slug
+    slug = plan.owner.slug
     taken = await _source_keys(session, slug)
     for stored in plan.proposal.sources:
         source, source_key = await _dossier_source(session, plan, stored, taken)
@@ -136,7 +136,7 @@ async def _cite(session: AsyncSession, plan: ClaimPlan, claim_id: uuid.UUID, cla
 async def _dossier_source(
     session: AsyncSession, plan: ClaimPlan, stored: Mapping[str, Any], taken: Sequence[str]
 ) -> tuple[Source, str]:
-    slug = plan.craft.slug
+    slug = plan.owner.slug
     source = await session.get(Source, uuid.UUID(str(stored["sourceId"])), with_for_update=True)
     if source is None:
         raise Refused(MOVED_SOURCE, GONE_SOURCE.format(url=stored["url"]))

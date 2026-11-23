@@ -99,6 +99,10 @@ def _claim_references(dossier: Dossier) -> Iterator[Reference]:
 def _entity_references(dossier: Dossier) -> Iterator[Reference]:
     for item in (*dossier.places, *dossier.materials, *dossier.tools, *dossier.glossary):
         yield from _claims(item.id, item.claim_ids)
+    for material in dossier.materials:
+        for alternative in material.alternatives:
+            yield Reference(material.id, "material", alternative.material_id)
+            yield Reference(material.id, "claim", alternative.claim_id)
     for community in dossier.communities:
         yield from _claims(community.id, community.claim_ids)
         if community.place_id is not None:

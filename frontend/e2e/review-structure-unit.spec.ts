@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { reviewQueuePageShape, type StructureItem, type StructureReview } from "@/lib/reviewQueueContract";
 import { KIND_LABELS, KIND_NOUNS, gateLine, kindTabs } from "@/lib/reviewQueueView";
 import { parseShape } from "@/lib/shape";
-import { checkLines, entryLines, speciesLine, structureActions, targetLine, writesLine } from "@/lib/structureReviewView";
+import { checkLines, entryLines, speciesLine, STRUCTURE_KIND_LABELS, structureActions, targetLine, writesLine } from "@/lib/structureReviewView";
 
 const NAME = { kind: "NATIVE_NAME", text: "Ajrak", language: "sd", script: "Latn" };
 const QUOTE = { text: "Printers here call the cloth ajrak, from the word for blue", locator: "para 1" };
@@ -115,4 +115,31 @@ test("a proposal the page has moved past can only be rejected, and says why", ()
   expect(writesLine(stale)).toBe("The page has moved on, so it can only be rejected: P01 is not a stage of this page.");
   expect(writesLine(review({}))).toBe("Approving writes it into the Kutch Ajrakh page and its dossier, with its fact cited.");
   expect(targetLine(review({ target: "Stage P01, Second wash" }))).toBe("Kutch Ajrakh · Stage P01, Second wash");
+});
+
+test("an alternative names a material of the page and the material that can stand in for it", () => {
+  const alternative = { kind: "ALTERNATIVE" as const, materialKey: "M01", alternativeKey: "M03" };
+  expect(entryLines(alternative)).toEqual([
+    { term: "Material", value: "M01" },
+    { term: "Its alternative", value: "M03" }
+  ]);
+  expect(STRUCTURE_KIND_LABELS.ALTERNATIVE).toBe("Alternative material");
+  const page = parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...ITEM, structure: { ...REVIEW, kind: "ALTERNATIVE", item: alternative } }] });
+  expect((page.items[0] as StructureItem).structure.item).toEqual(alternative);
+});
+
+test("a category's structure proposal is read with its category subject and no craft", () => {
+  const term = { kind: "GLOSSARY_TERM", term: "Kalamkari", meaning: "Pen work, the drawing of a dye resist by hand.", language: null, script: null };
+  const structure = {
+    ...REVIEW,
+    kind: "GLOSSARY_TERM",
+    subject: { kind: "category", slug: "Textiles-Based-Craft-Category" },
+    subjectName: "Textiles",
+    pageUrl: "/categories/Textiles-Based-Craft-Category",
+    item: term
+  };
+  const page = parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...ITEM, craft: null, structure }] });
+  const item = page.items[0] as StructureItem;
+  expect([item.craft, item.structure.subject.kind, targetLine(item.structure)]).toEqual([null, "category", "Textiles"]);
+  expect(writesLine(item.structure)).toBe("Approving writes it into the Textiles page and its dossier, with its fact cited.");
 });

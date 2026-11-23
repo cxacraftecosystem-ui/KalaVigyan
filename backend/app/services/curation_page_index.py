@@ -11,6 +11,7 @@ from app.data.district_register import DistrictCodes
 from .curated_index import (
     CuratedPage,
     IndexAfter,
+    IndexAlternative,
     IndexCommunity,
     IndexConflict,
     IndexEnvironment,
@@ -205,6 +206,10 @@ def _materials(dossier: Dossier, concepts: ConceptPlan) -> list[IndexMaterial]:
             botanical_name=item.botanical_name,
             pubchem_cid=item.pubchem_cid,
             claim_ids=_ids(slug, item.claim_ids),
+            alternatives=[
+                IndexAlternative(key=other.material_id, claim_id=curated_id(slug, other.claim_id))
+                for other in item.alternatives
+            ],
         )
         for item in dossier.materials
     ]

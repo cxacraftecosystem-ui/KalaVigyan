@@ -24,8 +24,11 @@ from .curation_keys import (
 from .curation_rows import ConceptPlan, CraftTarget, claim_source_id
 
 __all__ = [
+    "CONTRAST_RELATION",
     "NAME_NORM_CHARS",
     "REACTION_LABEL_MAX_CHARS",
+    "alternative_edge_id",
+    "alternative_rows",
     "location_rows",
     "material_rows",
     "place_codes",
@@ -41,6 +44,7 @@ __all__ = [
 ]
 
 NAME_NORM_CHARS = 300
+CONTRAST_RELATION = "CONTRASTS_WITH"
 REACTION_LABEL_MAX_CHARS = 200
 SPECIES_JOIN = " + "
 REACTION_ARROW = " → "
@@ -243,3 +247,23 @@ def reaction_citation_rows(dossier: Dossier) -> list[dict[str, Any]]:
                 row_id = curated_id(slug, "reaction-citation", reaction.id, str(cited))
                 rows.setdefault(row_id, {"id": row_id, "reactionId": reaction_id, "claimSourceId": cited})
     return list(rows.values())
+
+
+def alternative_edge_id(slug: str, material_key: str, alternative_key: str) -> uuid.UUID:
+    return curated_id(slug, "alternative", material_key, alternative_key)
+
+
+def alternative_rows(dossier: Dossier, concepts: ConceptPlan) -> list[dict[str, Any]]:
+    slug = dossier.slug
+    return [
+        {
+            "id": alternative_edge_id(slug, material.id, other.material_id),
+            "srcId": concepts.ids[material.id],
+            "dstId": concepts.ids[other.material_id],
+            "relation": CONTRAST_RELATION,
+            "sourceRelation": None,
+            "claimId": curated_id(slug, other.claim_id),
+        }
+        for material in dossier.materials
+        for other in material.alternatives
+    ]

@@ -6,12 +6,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
 from app.core.roles import PROFESSOR, ROLE_LABELS, has_rank
-from app.models import Craft, CuratedCraft, StructureProposal as ProposalRow, User
+from app.models import StructureProposal as ProposalRow, User
 from app.research.candidate_gates import Candidate
 from app.research.evidence import canonical_url
 from app.research.fetcher import Fetcher
@@ -30,24 +29,23 @@ from app.research.structure_proposals import (
 )
 from app.research.structure_proposals_values import stated_check
 
-from . import knowledge_view
 from .candidate_gates import first_gates
 from .candidate_sources import ReadSource, read_source
-from .curated_index import CuratedPage, stored_curated_page
 from .fact_proposals import role_now
 from .fact_task_checks import check_question_task
 from .live_source_store import keep_document
 from .proposal_writes import mark_contributed
 from .structure_proposals_dossier import dossier_problem
-from .structure_proposals_page import target_problem
+from .structure_proposals_owner import StructureOwner, owner_page, subject_owner
+from .structure_proposals_page import OwnerPage, target_problem
 from .structure_proposals_review import approve_structure
+from .structure_proposals_write import held_claims
 from .supplied_sources_gate import keep_supplied
 from .task_reservations import complete_task, give_back_task
 
-__all__ = ["CANDIDATE_REF", "craft_page_url", "curated_subject", "propose_structure"]
+__all__ = ["CANDIDATE_REF", "curated_subject", "propose_structure"]
 
 CANDIDATE_REF = "structure"
-UNKNOWN_CRAFT = "No craft has the slug {slug!r}; find_crafts gives the slugs of crafts and families."
 NOT_CURATED = (
     "{slug} has no curated page yet, so its structure arrives with its first dossier. Propose facts for it "
     "with propose_facts instead."
@@ -72,19 +70,14 @@ class _Checked:
         return all(check.passed for check in self.checks)
 
 
-def craft_page_url(site: str, slug: str) -> str:
-    return f"{site}/crafts/{slug}"
-
-
-async def curated_subject(session: AsyncSession, slug: str) -> tuple[Craft, CuratedPage]:
-    craft = await knowledge_view.resolve_craft(session, slug)
-    if craft is None:
-        raise InvalidInput(UNKNOWN_CRAFT.format(slug=slug))
-    stored = await session.scalar(select(CuratedCraft.page).where(CuratedCraft.craftId == craft.id))
-    page = stored_curated_page(craft.id, stored)
+async def curated_subject(
+    session: AsyncSession, subject: StructureSubject
+) -> tuple[StructureOwner, OwnerPage]:
+    owner = await subject_owner(session, subject)
+    page = await owner_page(session, owner, lock=False)
     if page is None:
-        raise InvalidInput(NOT_CURATED.format(slug=craft.slug))
-    return craft, page
+        raise InvalidInput(NOT_CURATED.format(slug=owner.slug))
+    return owner, page
 
 
 async def propose_structure(
@@ -97,14 +90,15 @@ async def propose_structure(
 ) -> StructureProposalResult:
     origin, fetcher, site = context
     role = await role_now(session, user.id)
-    craft, page = await curated_subject(session, proposal.subject.slug)
-    problem = dossier_problem(proposal) or target_problem(page, proposal.item)
+    owner, page = await curated_subject(session, proposal.subject)
+    held = await held_claims(session, owner)
+    problem = dossier_problem(proposal) or target_problem(page, proposal.item, held=held)
     if problem is not None:
         raise InvalidInput(problem)
     await check_question_task(session, proposal.task_key, tuple(filter(None, (proposal.field,))))
     checked = await _checked(session, fetcher, proposal, user.id)
     kept = await _kept(session, checked.read, user.id) if checked.passed else {}
-    row = _row(proposal, (craft.id, user.id, origin), checked, kept, now)
+    row = _row(proposal, (owner, user.id, origin), checked, kept, now)
     session.add(row)
     await session.flush()
     if proposal.task_key is not None:
@@ -113,7 +107,7 @@ async def propose_structure(
     if checked.passed and has_rank(role, PROFESSOR):
         note = f"approved at once: proposed by a {ROLE_LABELS.get(role, role)} account"
         await approve_structure(session, row, user, note=note, now=now)
-    return _result(row, craft.slug, checked.checks, site)
+    return _result(row, owner, checked.checks, site)
 
 
 async def _checked(
@@ -151,17 +145,17 @@ async def _kept(
 
 def _row(
     proposal: StructureProposal,
-    owners: tuple[uuid.UUID, uuid.UUID, str],
+    owners: tuple[StructureOwner, uuid.UUID, str],
     checked: _Checked,
     kept: Mapping[str, uuid.UUID],
     now: datetime,
 ) -> ProposalRow:
-    craft_id, proposer_id, origin = owners
+    owner, proposer_id, origin = owners
     return ProposalRow(
         id=uuid.uuid4(),
         createdAt=now,
         proposerId=proposer_id,
-        craftId=craft_id,
+        **owner.row_owner(),
         kind=proposal.item.kind,
         item=proposal.item.model_dump(mode="json"),
         field=proposal.field,
@@ -192,7 +186,7 @@ def _stored_source(source: Any, kept: Mapping[str, uuid.UUID]) -> dict[str, Any]
 
 
 def _result(
-    row: ProposalRow, slug: str, checks: Sequence[StructureCheck], site: str
+    row: ProposalRow, owner: StructureOwner, checks: Sequence[StructureCheck], site: str
 ) -> StructureProposalResult:
     outcome = (
         REFUSED if row.status == REFUSED_STATUS else WRITTEN if row.status == APPROVED_STATUS else STORED
@@ -206,9 +200,9 @@ def _result(
         proposal_id=row.id,
         status=row.status,
         kind=row.kind,
-        subject=StructureSubject(slug=slug),
+        subject=owner.subject,
         claim_id=row.claimId,
         checks=list(checks),
-        page_url=craft_page_url(site, slug),
+        page_url=owner.page_url(site),
         message=message,
     )

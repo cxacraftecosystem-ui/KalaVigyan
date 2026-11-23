@@ -10,6 +10,7 @@ from app.curation.entities import (
     After,
     Community,
     Material,
+    MaterialAlternative,
     MaterialUse,
     Place,
     Reaction,
@@ -89,6 +90,10 @@ def page_materials(page: CuratedPage, keys: ClaimKeys) -> list[Material]:
             botanical_name=item.botanical_name,
             pubchem_cid=item.pubchem_cid,
             claim_ids=keyed(item.claim_ids, keys),
+            alternatives=[
+                MaterialAlternative(material_id=other.key, claim_id=keyed([other.claim_id], keys)[0])
+                for other in item.alternatives
+            ],
         )
         for item in page.materials
     ]
