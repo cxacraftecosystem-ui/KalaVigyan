@@ -7,6 +7,7 @@ from app.research.blocks_journey import TimelineMapBlock, ZoomStoryBlock
 from app.research.blocks_matter import MaterialCardBlock, Molecule3dBlock, ReactionPlayerBlock
 from app.research.blocks_place import MapLayerBlock, RegionStoryBlock, SeasonsBlock, SupplyMapBlock
 from app.research.blocks_play import SimulationBlock, SimulationValue
+from app.research.sentence_names import upper_first
 
 from .export_pdf_charts import climate_figure, seasons_figure
 from .export_pdf_maps import map_layer_figure, region_story_figure, zoom_story_figure
@@ -101,7 +102,7 @@ def _supply(writer: PdfWriter, block: SupplyMapBlock) -> None:
     for link in block.links:
         origins.setdefault(link.material, []).append(link.origin)
     for material, places in origins.items():
-        writer.text(f"{material}: {', '.join(places)}", CELL)
+        writer.text(f"{upper_first(material)}: {', '.join(places)}", CELL)
     writer.go_to(writer.y + FIGURE_GAP_MM)
 
 

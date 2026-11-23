@@ -1116,19 +1116,6 @@ Last reviewed: 2026-11-22.
   answer-quality on the same questions and raises `rubricMean` to the run's mean less 0.05, rounded
   down.
 
-### Leftovers of the sentence-once lane
-
-- **What:** a ladder stage's Sources differ readings are not checked against the stage
-  sentences, so a reading may repeat a sentence the stage says. The supply heading lowers a later
-  material name only when a block sentence writes its first word in lower case, so a name met only
-  at a sentence's start keeps its capital ("Indigo and Alum"). (The rubric's shown-sentence count
-  and the market block's GI and price sentences were cleared by decision 0147.)
-- **Why left:** both are rare; the glossary holds no sentence-case name (its labels are title case
-  for seeded and curated terms alike), so the payload cannot yet say which names are proper names.
-- **Clears it:** `explainerView.stagesSaidOnce` leaves out a differ reading a stage sentence says;
-  curation gives each glossary term its sentence-case name (a `Term` field the import fills), the
-  supply builder carries it on `SupplyLink.material`, and `namesText` keeps a later name as carried.
-
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 
 - **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a was asked what gives Khurja's glazes their

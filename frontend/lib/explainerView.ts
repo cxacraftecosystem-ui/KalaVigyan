@@ -1,12 +1,12 @@
 import type { ExplainerSentence, TermSpan } from "@/lib/explainerBlockBase";
 import { componentSourceIds } from "@/lib/explainerComponent";
-import type { BlockByKind, Discipline, ExplainerBlock, LadderStage, LedeBlock, TypedBlockKind, WorkingSectionState } from "@/lib/explainerContract";
+import type { BlockByKind, DifferReading, Discipline, ExplainerBlock, LadderStage, LedeBlock, TypedBlockKind, WorkingSectionState } from "@/lib/explainerContract";
 import { reactionPlayerCitations } from "@/lib/explainerMatter";
 import { signatureSentences, signatureSourceIds } from "@/lib/explainerSignature";
 import type { SectionState, SectionView } from "@/lib/explainerState";
 import { TRAIL_GROUPS, TRAIL_STAGES, type TrailEntry } from "@/lib/explainerStream";
 import { byCount, formatDate } from "@/lib/format";
-import { onceSaid } from "@/lib/sentenceGroups";
+import { onceSaid, type Sayer } from "@/lib/sentenceGroups";
 import type { AnswerSection, Citation } from "@/lib/types";
 
 export type UnderstoodPart = "craft" | "depth" | "language";
@@ -147,12 +147,19 @@ export function showsEarlierResearch(sections: readonly SectionView[]): boolean 
   return sections.some((section) => section.blocks.some((block) => block.reuse !== null));
 }
 
+function differsOnce(differs: readonly DifferReading[], say: Sayer): DifferReading[] {
+  return differs
+    .map((differ) => ({ ...differ, readings: differ.readings.map((reading) => ({ ...reading, sentence: say(reading.sentence) })) }))
+    .filter((differ) => differ.readings.some((reading) => reading.sentence !== null));
+}
+
 export function stagesSaidOnce(stages: readonly LadderStage[]): LadderStage[] {
   const say = onceSaid();
-  return stages.map(({ why: stated, ...stage }) => {
+  return stages.map(({ why: stated, differs: read, ...stage }) => {
     const sentences = stage.sentences.flatMap((sentence) => say(sentence) ?? []);
     const why = say(stated);
-    return why ? { ...stage, sentences, why } : { ...stage, sentences };
+    const differs = read ? differsOnce(read, say) : [];
+    return { ...stage, sentences, ...(why ? { why } : {}), ...(differs.length ? { differs } : {}) };
   });
 }
 

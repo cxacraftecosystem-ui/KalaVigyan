@@ -177,7 +177,9 @@ def _placed(link: SupplyLink, place: ShownPlace | None) -> SupplyLink:
 
 def _shown_name(material: MaterialRows) -> str:
     term = material_term(material)
-    return term.label if term is not None else material.name
+    if term is None:
+        return material.name
+    return term.sentence_name or term.label
 
 
 def _material_text(material: MaterialRows) -> str:

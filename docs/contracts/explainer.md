@@ -408,7 +408,8 @@ construct, and the builder that made it adds nothing.
   rainfall. **Piece:** the section's slot.
 - **`supply_map`** `{links[{material, materialId?, termKey?, origin, wikidataId?, latitude?,
   longitude?, districtLgd?, sentence}] (1+), datasets[DatasetRef]?}`. Server: `material` is the
-  glossary term's label or the stored material's name, else words the sentence states;
+  glossary term's sentence-case name (`Term.sentenceName`, decision 0167), else its label, else the
+  stored material's name, else words the sentence states;
   coordinates are the register district's stored centroid when the origin is one LGD district by
   its register or other name (`districtLgd`, the block then citing `DR_DISTRICT_SHAPES` in
   `datasets`), else the Wikidata item's (P625). Model: which claims, which material and origin
@@ -676,7 +677,9 @@ gets neither.
   offered, whose origin or unstored material its sentence and quotes do not state, whose stored
   material's own use claims do not include the statement and whose sentence and quotes name none
   of the material's surfaces (decision 0050), or whose material is its own origin is dropped, each pair once, at most 12. A stored material is shown by
-  its glossary term's label, else its name. An origin that is one LGD district by its register or
+  its glossary term's sentence-case name, else its label, else its name; the web writes the first
+  name of a list with a capital and keeps a later one as carried, lowering a title-case one only
+  where the sentences write it in lower case (`sentenceGroups.namesText`). An origin that is one LGD district by its register or
   other name is placed at that district's stored centroid (`place_register.register_points`),
   citing the `DR_DISTRICT_SHAPES` row (no row, no district placement). The other origins are
   placed through the Wikidata adapter: `place_candidates` (`wbsearchentities`, the hits whose
