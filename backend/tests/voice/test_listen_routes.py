@@ -124,8 +124,8 @@ def test_no_seconds_left_is_429_until_midnight() -> None:
     assert response.json()["detail"] == "Not enough listening time is left today."
 
 
-def test_a_provider_failure_is_503_without_its_details() -> None:
-    response = Client(failing="Presence of iron").http.get(PATH)
+def test_a_provider_failure_on_the_first_block_is_503_without_its_details() -> None:
+    response = Client(failing="Presence of iron").http.get(PATH, params={"section": "s2"})
     assert response.status_code == 503
     assert response.json()["detail"] == "Listening isn't available right now. Try again later."
 

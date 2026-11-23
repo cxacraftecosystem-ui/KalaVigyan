@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Iterable
+from datetime import datetime
 from functools import partial
 
 from app.core.errors import AppError
@@ -138,10 +139,15 @@ class _Making:
             await asyncio.sleep(LEASE_RENEW_SECONDS)
             now = self._deps.clock()
             for cache_id in list(self._open):
-                try:
-                    await renew_lease(self._deps.objects, _lease_key(cache_id), cache_id, now=now)
-                except AppError as error:
-                    logger.warning("the lease on narration %s was not renewed: %s", cache_id, error)
+                await self._renewed(cache_id, now)
+
+    async def _renewed(self, cache_id: str, now: datetime) -> None:
+        if cache_id not in self._open:
+            return
+        try:
+            await renew_lease(self._deps.objects, _lease_key(cache_id), cache_id, now=now)
+        except AppError as error:
+            logger.warning("the lease on narration %s was not renewed: %s", cache_id, error)
 
     async def _block(self, cache_id: str, block: SpokenBlock) -> NarrationManifest:
         try:
