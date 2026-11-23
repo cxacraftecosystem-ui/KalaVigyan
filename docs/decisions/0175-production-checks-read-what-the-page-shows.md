@@ -105,7 +105,8 @@ Run 45161989142 failed 11 of 38 checks; its report and the box's rows showed wha
 9. **A term whose defining claims left is read from the curated facts that name it.** Alum's five
    concepts each kept only seed claims, all retired by decision 0142 when Kutch Ajrakh's dossier
    took over, and 0142 links no seed claim to a curated successor; alum then answered 404 to every
-   reader. When no defining claim is visible, the stored English summary reads the curated facts of
+   reader. On production (2026-11-23) 118 terms had lost every visible defining claim this way, 85
+   of them with no English summary at all, against 250 that still had one. When no defining claim is visible, the stored English summary reads the curated facts of
    the term's crafts that name it as a whole word (label, aliases and local names, the glossary
    marker's rule), those opening with it first, at most three shown (`term_store.curated_naming`).
    It makes no model call and serves signed-out readers too. We chose this over pointing each
@@ -128,7 +129,7 @@ Run 45161989142 failed 11 of 38 checks; its report and the box's rows showed wha
   report; the audit now names the outermost boxes past the screen, so the next run says which.
 - A reader who presses Listen or Film on a new answer still waits while every block is narrated at
   once (about 100 s on a 63-sentence answer); playing the first block while the rest are made is
-  left to the voice work, since it changes the listen route's contract and the dock.
+  queued as a follow-up, since it changes the listen route's contract and the dock.
 
 ## How this record is kept true
 
