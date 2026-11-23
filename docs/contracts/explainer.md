@@ -2006,6 +2006,13 @@ backend reproduces both byte for byte and holds the lede to the prose checks
 (`tests/contracts/test_explainer_lede_contract.py`); the client parses both and reduces the stream
 to the document (`e2e/explainer-contract-unit.spec.ts`, `e2e/explainer-view-unit.spec.ts`).
 
+`explainer.translated.golden.json` (decision 0168) is the document golden's water section as a
+Hindi answer gives it: the heading and two sentences translated, each keeping its English
+`original` and its citations, the third left in English, and an understanding in Hindi read by the
+model (`basis` `MODEL`, as the document golden's is). The backend reproduces it byte for byte and
+ties each original to the document's sentence (`tests/contracts/test_explainer_translated.py`); the
+client parses it and shows either text (`e2e/answer-languages-unit.spec.ts`).
+
 `explainer.phase-d.golden.json` (decision 0062) holds every phase D kind for Kutch Ajrakh,
 compared with Bagru Hand Block Print, in six sections: a quiz (three cloze questions on alum,
 kut and indigo, each keyed to a GI journal claim, the distractors glossary terms of other Ajrakh

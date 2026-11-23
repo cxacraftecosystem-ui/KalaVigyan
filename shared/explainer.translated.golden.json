@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "answerId": "5d8f2c6e-1b4a-4f7e-9c3d-2a6b8e0f1c47",
+  "question": "कच्छ अजरख के लिए पानी क्यों मायने रखता है?",
+  "understood": {
+    "crafts": [
+      {
+        "slug": "Kutch-Ajrakh",
+        "name": "Kutch Ajrakh",
+        "path": "/crafts/Kutch-Ajrakh"
+      }
+    ],
+    "candidates": [],
+    "depth": "DETAILED",
+    "language": "hi",
+    "basis": "MODEL"
+  },
+  "sections": [
+    {
+      "id": "s1",
+      "discipline": "GEOGRAPHY",
+      "title": "पानी क्यों मायने रखता है",
+      "original": "Why the water matters",
+      "order": 1,
+      "state": "READY",
+      "blocks": [
+        {
+          "id": "s1.b1",
+          "kind": "prose",
+          "version": 1,
+          "reuse": {
+            "pieceId": "7d4e2c10-5a6b-4c7d-9e8f-0a1b2c3d4e5f",
+            "storedAt": "2026-11-12T08:15:00Z"
+          },
+          "sentences": [
+            {
+              "id": "s1.b1.1",
+              "text": "पानी की आपूर्ति में लोहा होने से अंतिम रंग फीके और गहरे पड़ जाते हैं; फिटकरी, टिन या क्रोम के जमाव रंगों को चमकाने में मदद करते हैं।",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "bf7fda76-2629-5609-ac54-d4c011fbb573",
+                  "claimId": "826c1d72-9373-59f0-85c3-6bb38aa89320",
+                  "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                  "quote": "Water enriched with alum, tin or chrome mineral deposits will help brighten the colors but presence of iron in the water supply dulls and darkens the final result.",
+                  "locator": "GI Journal No. 188 copy (application 1050), PDF p. 8",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": true,
+              "original": "Presence of iron in the water supply dulls and darkens the final result; alum, tin or chrome deposits help brighten colours.",
+              "terms": []
+            },
+            {
+              "id": "s1.b1.2",
+              "text": "अजरख की छपाई वहीं केंद्रित हुई जहाँ अतिरिक्त नरम पानी उपलब्ध था।",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "c333691c-bb17-5c97-a725-c037ff9f24ce",
+                  "claimId": "6d42a538-0a5e-5cfb-b8f5-68012eb0d4d6",
+                  "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                  "quote": "The district gazetteers of 1971 have mentioned that Ajrakh Printing-Ajrakh is another popular variety in hand-printing of textiles in Kutch. Ajrakh printing originally came from Sindh and got concentrated where extra soft water was available.",
+                  "locator": "GI Journal No. 188 copy (application 1050), PDF p. 3",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": true,
+              "original": "Ajrakh printing got concentrated where extra soft water was available.",
+              "terms": []
+            },
+            {
+              "id": "s1.b1.3",
+              "text": "Excess iron in groundwater threatened Ajrakh in Dhamadka and is again threatening it in Ajrakhpur.",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "02b489ed-7b2a-5ece-bb34-caf590e4b31f",
+                  "claimId": "faa466c1-8940-5552-a7f5-851cebb40f64",
+                  "sourceId": "907e2c52-14e7-5e41-9b27-9c10f70906a9",
+                  "quote": "Excess iron in groundwater that threatened Ajrakh in Dhamadka, is once again threatening the craft in Ajrakhpur.",
+                  "locator": "§ \"Share this article\"",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": false,
+              "terms": []
+            }
+          ]
+        }
+      ],
+      "searched": null
+    }
+  ],
+  "sources": [
+    {
+      "id": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+      "kind": "GI_JOURNAL",
+      "title": "Geographical Indications Journal No. 188 (19 Dec 2023), G.I. Application No. 1050 - Kutch Ajrakh (journal copy)",
+      "authors": [
+        "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan",
+        "facilitated by Textiles Committee, Ministry of Textiles)"
+      ],
+      "year": 2023,
+      "doi": null,
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/1050",
+      "publisher": "Geographical Indications Registry, Chennai (IP India)",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "907e2c52-14e7-5e41-9b27-9c10f70906a9",
+      "kind": "WEB_PAGE",
+      "title": "Water woes: Kutch's age-old Ajrakh craft faces its nemesis, once again",
+      "authors": [
+        "Azera Parveen Rahman"
+      ],
+      "year": 2019,
+      "doi": null,
+      "url": "https://india.mongabay.com/2019/10/water-woes-kutchs-age-old-ajrakh-craft-faces-its-nemesis-once-again/",
+      "publisher": "Mongabay India",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    }
+  ],
+  "followUps": [],
+  "createdAt": "2026-11-17T10:30:00Z"
+}

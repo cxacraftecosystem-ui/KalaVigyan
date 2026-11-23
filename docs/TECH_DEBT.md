@@ -1135,21 +1135,31 @@ Last reviewed: 2026-11-22.
 
 ### Goldens that do not yet show every field
 
-- **What:** 177 fields of 38 models the web is served (the craft page's field voices, field photos,
-  contributed plates, AI media and searched parts, the people and component blocks, groundwater,
-  monthly rain and dataset references, a source's journal name, a translated sentence's original,
-  a reaction step's ΔH)
-  appear in no golden in `shared/`, so the web's strict parse of the goldens does not test them.
-  `backend/tests/contracts/unshown_fields.json` lists them; `test_golden_fields.py` fails on any
-  other unshown field, so every field added since decision 0151 is shown (but for the step's ΔH of
-  decision 0152, which no source a golden is built from states), and on a listed field that is
-  shown, so the list only shrinks.
-- **Why left:** the craft page goldens are the Kutch Ajrakh dossier and Farrukhabad Prints as the
-  preview builds them, and neither has field voices, contributed or AI pictures, people blocks or a
-  journal paper; showing them needs inputs for those builders, a change of its own.
-- **Clears it:** give the preview builders inputs that carry each part (a recorded voice and field
-  photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
-  missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
+- **What:** `backend/tests/contracts/unshown_fields.json` still lists the fields of a served payload
+  that no golden in `shared/` shows, each waiting on data the repository does not hold
+  (`test_golden_fields.py` fails on any other unshown field and on a listed one that is shown, so
+  the list only shrinks; decision 0168 left out what the web never parses and showed the DOI, the
+  understanding's basis, a translated answer and the craft page's voices and field photos):
+  - `GroundwaterValue` and `MonthlyRain`: the only geo ETL extract recorded here
+    (`backend/tests/geo/geo_district_env_extract.json`, run 44204618054) predates the groundwater
+    load and the monthly rainfall normals.
+  - `MeasureRegion`, `ReactionStep.delta_h` and `StepEnergy`: no stored claim states a regional
+    factor (decision 0163's kept limit) or a step's ΔH (decision 0152).
+  - `ReactionStep.formula_basis` and `formula_sources`: only the craft page's chapters infer
+    formulas, and the web drops the chapters; an answer's reaction player never sets them.
+  - `ComponentBlock` and `ComponentSource`: a placed component's sources are its units' stored
+    claims' sources, read from the database when its monograph is loaded.
+  - `SourceRef.container_title`, `PageSource.container_title` and `NumberedSource.container_title`:
+    no seeded or curated source carries a journal name; only live research stores one.
+  - `AnswerSentence.original`: only the category page's lede is a plain answer sentence, and
+    category pages are not translated.
+  - `LocalName`: nothing fills `PageCraft.local_names`.
+- **Why left:** a golden shows recorded or stated data, never a value made up for the test.
+- **Clears it:** record a later geo ETL run's Kachchh extract with its groundwater and monthly
+  normals and give the climate and seasons fixtures those rows; a curated quote stating a regional
+  factor or a ΔH; a test that records the Kutch Ajrakh red player's sources from the monograph load;
+  a live-research source with its journal in a fixture; and an owner decision on a craft's own names
+  in scripts (fill `local_names` or retire it) and on translated category pages. Empty the list.
 
 ### The rubric floor waits on a run that shows the quantities table
 

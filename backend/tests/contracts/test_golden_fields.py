@@ -36,6 +36,7 @@ GOLDEN_MODELS: dict[str, Any] = {
     "explainer.document.golden.json": Explainer,
     "explainer.lede.golden.json": Explainer,
     "explainer.withdrawn.golden.json": Explainer,
+    "explainer.translated.golden.json": Explainer,
     "explainer.phase-b.golden.json": PhaseBFixture,
     "explainer.phase-c.golden.json": PhaseCFixture,
     "explainer.phase-d.golden.json": PhaseDFixture,

@@ -96,6 +96,9 @@ export function emptyPage(): CraftPage {
     body.evidence = { groups: [], hypotheses: [] };
     body.claims = [];
     body.sources = [];
+    body.voices = [];
+    body.fieldPhotos = [];
+    body.fieldVoicesTotal = { quotes: 0, images: 0 };
     body.lede = [];
     body.cite = null;
     body.masthead = { ...body.masthead, nativeName: null, gi: null, picture: null, provenance: { basis: "REGISTER", sources: 0, reliability: { a: 0, b: 0, c: 0, d: 0 }, curatedOn: null, updatedOn: null } };

@@ -12,7 +12,7 @@ from app.science.records import CompoundRecord
 from .category_preview import category_dossier_records
 from .chapter_context import ChapterRows
 from .chapter_family import family_science
-from .chapter_inputs import chapter_inputs, inputs_rows
+from .chapter_inputs import chapter_inputs, inputs_records, inputs_rows
 from .craft_page import craft_page
 from .craft_page_records import CraftPageRecords
 from .curated_compounds import curated_compounds
@@ -28,6 +28,8 @@ def chapter_preview(
     craft_slug: str, *, family: str | None = None, inputs: Path | None = None, directory: Path = CURATION_DIR
 ) -> CraftPage:
     records = dossier_records(craft_slug, directory=directory)
+    if inputs is not None:
+        records = inputs_records(chapter_inputs(inputs), records)
     return craft_page(records, preview_rows(records, family=family, inputs=inputs, directory=directory))
 
 

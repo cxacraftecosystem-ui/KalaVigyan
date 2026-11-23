@@ -4,14 +4,16 @@ A quantities row whose sentence the answer already said keeps its quantity and i
 points to the sentence that said it, which every reader of the answer then reads once; the four
 Python files over budget are split along their responsibilities with their callers' paths kept or
 moved, the long and wide functions outside the other lanes' areas are cut into named steps, and
-the initial migration stays one file by choice.
+the initial migration stays one file by choice; and the golden field check leaves out what the web
+never parses while the goldens show more of what it does.
 
 Date: 2026-11-23. Status: accepted (the lead's final clean-up brief of 2026-11-23, within the
 owner's go-ahead of 2026-11-22 to clear the register "not just for this round, also for all
 time"; the lead chose the table's way, which [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md)
 left to the lead). It amends [decision 0147](0147-time-market-and-figures-kept-true.md) (item 1,
 the table drawn with each sentence under its rows, and its consequence that the table repeats the
-prose) and [decision 0134](0134-each-sentence-once-in-a-block.md) (what the judge reads). It is
+prose), [decision 0134](0134-each-sentence-once-in-a-block.md) (what the judge reads) and
+[decision 0151](0151-a-release-the-live-side-can-read.md) (the golden field check's scope). It is
 the third record of limits kept by choice after [decision 0137](0137-limits-kept-by-choice.md)
 and [decision 0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md). The
 contracts are `docs/contracts/explainer.md` (One claim, one rendering; Each sentence once; the
@@ -25,6 +27,7 @@ contracts are `docs/contracts/explainer.md` (One claim, one rendering; Each sent
 | The run that found the table dropped, and the choice left to the lead | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
 | A reading that points to the sentence already showing it (`DifferRead.shownIn`) | [decision 0098](0098-craft-page-chapters-build.md) |
 | The earlier records of limits kept by choice, and the earlier splits with their import paths kept | [decision 0137](0137-limits-kept-by-choice.md), [decision 0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) |
+| Every served field in a golden, and the chapters the web drops | [decision 0151](0151-a-release-the-live-side-can-read.md), [decision 0162](0162-unused-craft-page-chapters-retired.md) |
 | What is still below standard | [TECH_DEBT.md](../TECH_DEBT.md) |
 | Every decision, by group | [README.md](README.md) |
 
@@ -107,6 +110,23 @@ ties the rows to their sentence for assistive technology and lets a test check w
    seed claims, in the pictures lane's files, and one knowledge reader in the contributors' lanes')
    stays in the debt register until those lanes have merged.
 
+### Every field the web parses, in a golden
+
+9. **What the web never parses is left out.** The golden field check
+   (`tests/contracts/test_golden_fields.py`, decision 0151) no longer asks a golden for what only
+   the craft page's chapters hold, since the web drops them before parsing (decision 0162), nor
+   for the block kinds a served explainer refuses as not built (`in_practice`, `open_questions`,
+   `artisan_voice`, `designs` and `quiz`, which reaches the web only through its own route and
+   golden). We chose this over writing fixtures for payload the web cannot receive: a golden there
+   would test a shape nothing reads. 85 fields left the list this way.
+10. **What it parses is shown from recorded data.** The phase D climate block's CHIRPS row carries
+    the registry's DOI; the document and stream goldens say the model read the question (`basis`
+    `MODEL`, as production sends it); `explainer.translated.golden.json` is the document's water
+    section as a Hindi answer gives it, each translated sentence and the heading keeping its
+    English; and the craft page preview's inputs (version 2) carry a recorded Field Repository
+    voice and photo of Kutch Ajrakh, as the app's own conversion makes them from the recorded
+    feed, so the craft page golden shows the page's voices and field photos.
+
 ### The limit kept
 
 | Limit | Why it is kept | What would change it |
@@ -131,5 +151,6 @@ on 2026-11-23; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.
 [contracts](../contracts/README.md). Its rules are tested by
 `backend/tests/contracts/test_explainer_quantities.py`, `backend/tests/ledger/test_ledger_kinds.py`,
 `backend/tests/research/test_shown_sentences.py`, `backend/tests/voice/test_narration.py`,
-`frontend/e2e/quantities-unit.spec.ts` and, for the splits, the tests of each moved module, which
-are unchanged but for their imports.
+`frontend/e2e/quantities-unit.spec.ts`, `backend/tests/contracts/test_golden_fields.py`,
+`test_explainer_translated.py`, `test_craft_page_voices.py`, `frontend/e2e/answer-languages-unit.spec.ts`
+and, for the splits, the tests of each moved module, which are unchanged but for their imports.
