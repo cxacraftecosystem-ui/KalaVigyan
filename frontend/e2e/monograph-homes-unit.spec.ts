@@ -139,7 +139,7 @@ test("figures borrowed from another page are numbered again in this page's order
     }
   );
   const blocks = [MADDER, PLAYER, STEPS].map((label) => ({ kind: "component" as const, label }));
-  const plan: PagePlan = { masthead: { kicker: null, standfirst: [], lede: null, picture: null }, label: null, chapters: [{ key: "chem", index: 1, number: 1, label: "The chemistry", blocks }] };
+  const plan: PagePlan = { masthead: { kicker: null, standfirst: [], lede: null, picture: null }, label: null, chapters: [{ key: "chem", index: 1, number: 1, label: "The chemistry", rail: "The chemistry", blocks }] };
   const shown = numberedDocument(given, plan);
   expect([shown.content.units.u0010.nodes, shown.content.units.u0011.nodes]).toEqual([["Fig. 1"], ["Fig. ", { m: "b", c: ["2"] }]]);
   expect(shown.content.units.u0012.nodes).toEqual(["See ", { m: "figref", ref: "chem:2", c: ["Fig. 2"] }, "."]);
