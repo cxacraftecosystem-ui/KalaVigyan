@@ -97,6 +97,10 @@ references, Reference lister) and `docs/contracts/retrieval.md` (the seed import
 - Over-blocking is possible where a listed name is also an ordinary word of a craft's facts (Kumar,
   Naga, Muslim); it costs a stage a fact for its picture, never a name in one.
 - Expert answers may read more of their reference reserve than before; their fetch limit is unchanged.
+- The new item kind would have taken `tools/list` past its 60 KiB input budget (decision 0159), so
+  `mcp_schemas.compact` drops a default that only repeats its node's `const` (every item's `kind`
+  tag), and `propose_structure`'s description and argument text were shortened; the list's inputs
+  measure 61,369 bytes of 61,440.
 - The Wood Handbook's 137 printed pages become public passages, embedded by `embed_knowledge` after
   the seeds, and wood questions can now cite its pages.
 - `index.json` is stale for Dabu until the lead regenerates it (`check.py --write-index`).
@@ -111,5 +115,5 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/media/test_runner.py`, `backend/tests/structure/test_group_name_proposals.py`,
 `backend/tests/curation/test_group_names.py`, `backend/tests/db/test_group_names_db.py`,
 `backend/tests/planner/test_reference_lists.py`, `backend/tests/sources/test_openalex_references.py`,
-`backend/tests/retrieval/test_vendored_texts.py`, `backend/tests/db/test_retrieval_passages_db.py` and
-`frontend/e2e/review-structure-unit.spec.ts`.
+`backend/tests/retrieval/test_vendored_texts.py`, `backend/tests/db/test_retrieval_passages_db.py`,
+`backend/tests/mcp/test_tool_budget.py` and `frontend/e2e/review-structure-unit.spec.ts`.

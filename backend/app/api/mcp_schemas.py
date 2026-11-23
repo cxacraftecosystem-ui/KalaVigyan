@@ -14,6 +14,7 @@ __all__ = ["KINDS_LISTED_ONCE", "compact", "input_schema", "output_schema", "sch
 DATA_KEYS = frozenset({"default", "const", "enum", "examples"})
 MAP_KEYS = frozenset({"properties", "$defs", "patternProperties"})
 NULL: Mapping[str, str] = {"type": "null"}
+NO_CONST = object()
 JSON_TYPES = ((bool, "boolean"), (int, "integer"), (float, "number"), (str, "string"))
 KINDS_LISTED_ONCE = frozenset(PIECE_KINDS)
 
@@ -49,7 +50,7 @@ def compact(node: Any) -> Any:
         return node
     kept: dict[str, Any] = {}
     for key, value in node.items():
-        if key == "title" or (key == "default" and value is None):
+        if key == "title" or (key == "default" and (value is None or value == node.get("const", NO_CONST))):
             continue
         if key in MAP_KEYS and isinstance(value, dict):
             kept[key] = {name: compact(child) for name, child in value.items()}

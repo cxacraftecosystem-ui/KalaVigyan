@@ -22,7 +22,7 @@ def _groups(plain: dict[str, Any]) -> None:
 
 def test_a_community_or_person_is_listed_only_by_a_name_its_own_quotes_state() -> None:
     found = stated_group_names(changed_dossier(_groups))
-    assert [(name.name, name.kind, name.source.id) for name in found] == [("Khatri", "COMMUNITY", "S01")]
+    assert [(name.name, name.kind, name.source.id) for name in found] == [("Khatri", "COMMUNITY", "S02")]
     assert "Khatri printers" in found[0].quote.quote
 
 

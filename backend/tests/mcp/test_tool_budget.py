@@ -108,7 +108,7 @@ def test_a_read_only_tool_that_keeps_its_bookkeeping_still_commits() -> None:
     assert not TOOLS["get_page"].commits and TOOLS["propose_page"].commits
 
 
-def test_an_input_schema_keeps_its_names_and_drops_generated_titles_and_null_defaults() -> None:
+def test_an_input_schema_keeps_its_names_and_drops_generated_titles_null_defaults_and_constant_ones() -> None:
     generated = {
         "title": "Example",
         "type": "object",
@@ -122,6 +122,8 @@ def test_an_input_schema_keeps_its_names_and_drops_generated_titles_and_null_def
             },
             "page": {"anyOf": [{"$ref": "#/$defs/Page"}, {"type": "null"}], "default": None},
             "limit": {"default": 20, "type": "integer", "title": "Limit"},
+            "kind": {"const": "PAGE", "default": "PAGE", "type": "string", "title": "Kind"},
+            "mode": {"const": "DEEP", "default": "HYBRID", "type": "string"},
         },
         "$defs": {"Page": {"title": "Page", "type": "object", "properties": {"slug": {"type": "string"}}}},
     }
@@ -136,6 +138,8 @@ def test_an_input_schema_keeps_its_names_and_drops_generated_titles_and_null_def
             },
             "page": {"anyOf": [{"$ref": "#/$defs/Page"}, {"type": "null"}]},
             "limit": {"default": 20, "type": "integer"},
+            "kind": {"const": "PAGE", "type": "string"},
+            "mode": {"const": "DEEP", "default": "HYBRID", "type": "string"},
         },
         "$defs": {"Page": {"type": "object", "properties": {"slug": {"type": "string"}}}},
     }

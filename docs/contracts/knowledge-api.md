@@ -274,8 +274,8 @@ Knowledge API's camelCase.
 ## Small schemas (decision 0111)
 
 `tools/list` is what a client may load into every conversation, so it is kept small:
-`api/mcp_schemas.input_schema` drops each node's generated `title` and a `null` default and folds a
-nullable simple type into `type: [T, "null"]`; the part schemas of a page appear once, in
+`api/mcp_schemas.input_schema` drops each node's generated `title`, a `null` default and a default that
+only repeats the node's `const` (an item's `kind` tag, decision 0181), and folds a nullable simple type into `type: [T, "null"]`; the part schemas of a page appear once, in
 `edit_draft`'s `add`, and `preview_page` and `propose_page` list a bundle's parts by name and kind and
 point there (`mcp_page_arguments.bundle_schema`), while the server validates the whole bundle as
 before; a component's spec is an object in the input schemas,
