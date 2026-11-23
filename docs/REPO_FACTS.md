@@ -7,9 +7,9 @@ Every count that changes with the code, generated from the working tree by `tool
 | What | Count |
 | --- | ---: |
 | Tables (`__tablename__` in `backend/app/models/`) | 147 |
-| Migrations (`backend/migrations/versions/`) | 68 |
+| Migrations (`backend/migrations/versions/`) | 69 |
 
-Newest migration: `0077_state_and_reach_districts`.
+Newest migration: `0080_stream_stamps_differs_on`.
 
 Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `AllowanceBucket`, `Answer`, `AnswerCitation`, `AnswerGap`, `AnswerSentence`, `AnswerTrace`, `AnswerVerdict`, `AppSetting`, `ArticleSection`, `ArtisanContribution`, `ArtisanConversation`, `ArtisanConversationAudio`, `ArtisanCraft`, `ArtisanProfile`, `AuditLog`, `AuthNonce`, `CandidateCheck`, `Chunk`, `Claim`, `ClaimSource`, `ClaimTranslation`, `ComponentProposal`, `Compound`, `Concept`, `ConceptEdge`, `ConditionReading`, `ConsentRecord`, `Conversation`, `Craft`, `CraftAlias`, `CraftCategory`, `CraftCode`, `CraftGiRecord`, `CraftLocation`, `CraftPageArchive`, `CraftPageSnapshot`, `CraftPrice`, `CraftSpelling`, `CraftSteward`, `CraftSubCategory`, `CraftWorkforce`, `CuratedCategory`, `CuratedCategoryClaim`, `CuratedClaim`, `CuratedCraft`, `CxaCraftMap`, `DataRequest`, `DatasetTable`, `DatasetUpload`, `DistrictEnvValue`, `DistrictGeology`, `EnrichmentJob`, `EnrichmentProposal`, `EnvDataset`, `EvalCase`, `EvalResult`, `EvalRun`, `FieldImage`, `FieldImageCraft`, `FieldPhotoReview`, `FieldPhotoScreen`, `FieldRecording`, `FieldRecordingCraft`, `FieldSegment`, `FieldVoiceStream`, `ImageContribution`, `ImageFingerprint`, `ImageScreen`, `Invite`, `Job`, `KnowledgePiece`, `KnowledgePieceSubject`, `LayoutProposal`, `LessonPack`, `ManagedSecret`, `Material`, `McpTermsAcceptance`, `McpToolCall`, `McpToolCallDay`, `MediaAsset`, `MediaJob`, `MediaRef`, `MediaRefClaim`, `Message`, `MonographDocument`, `Notification`, `OAuthClient`, `OAuthCode`, `OAuthGrant`, `OAuthToken`, `Objection`, `OpenDataRelease`, `PageDraft`, `PageLayout`, `PagePreview`, `PageTextUnit`, `PageTranslation`, `PasswordResetRequest`, `PasswordResetToken`, `PictureDeclaration`, `Process`, `ProcessCondition`, `ProcessStage`, `Provider`, `QueuedProposal`, `QuotaLedger`, `QuotaPolicy`, `Reaction`, `ReactionCitation`, `ReviewEvent`, `RiverBasin`, `RiverReach`, `RiverReachDistrict`, `RoleRequest`, `RoutePolicy`, `SavedItem`, `SecretTestResult`, `SharedTermCraft`, `Source`, `SourceLease`, `SourcePace`, `SourceUpkeep`, `StageMaterial`, `StateEnvValue`, `StoredDocument`, `StructureProposal`, `StudentProfile`, `SuppliedSource`, `TaskReservation`, `Term`, `TermConcept`, `TermCraft`, `TermSummary`, `TranslationReader`, `TrustTierOverride`, `TwoFactorChallenge`, `UploadLink`, `UsageEvent`, `User`, `UserPreference`, `VoiceSession`, `WebFetch`, `WikidataPoint`.
 
@@ -106,15 +106,15 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 661 | 5015 |
-| Backend, on Postgres | 175 | 823 |
+| Backend, without a database | 665 | 5059 |
+| Backend, on Postgres | 179 | 835 |
 | Tools | 23 | 188 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 21 | 221 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
 | --- | ---: | ---: |
-| Unit specs (`*-unit.spec.ts`) | 170 | 1254 |
+| Unit specs (`*-unit.spec.ts`) | 171 | 1265 |
 | Browser and release specs | 16 | 54 |
 
 A Python test is a `test_` function in a `test_` file; a frontend test is a `test(` call at the start of a line. Every suite runs on GitHub Actions, never on a development machine.
@@ -123,7 +123,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 148 |
+| Decision records (`docs/decisions/`) | 149 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 27 |
 | Curated craft dossiers | 32 |
@@ -133,13 +133,13 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1317 | 186,834 |
-| `backend/tests` | 989 | 129,790 |
-| `backend/migrations` | 69 | 10,159 |
-| `frontend/app` | 109 | 9,983 |
-| `frontend/components` | 604 | 41,527 |
-| `frontend/lib` | 255 | 25,913 |
-| `frontend/e2e` | 273 | 30,473 |
+| `backend/app` | 1323 | 187,585 |
+| `backend/tests` | 997 | 131,056 |
+| `backend/migrations` | 70 | 10,196 |
+| `frontend/app` | 110 | 10,009 |
+| `frontend/components` | 609 | 41,647 |
+| `frontend/lib` | 257 | 26,018 |
+| `frontend/e2e` | 276 | 30,629 |
 | `etl` | 66 | 10,894 |
 | `tools` | 96 | 8,232 |
 | `infra` | 17 | 2,188 |

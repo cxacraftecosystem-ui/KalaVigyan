@@ -5,6 +5,7 @@ import { explainerEventOf, type ExplainerEvent } from "@/lib/explainerStream";
 import { blockSentences, ledeSentences } from "@/lib/explainerView";
 import type { AnswerSentence } from "@/lib/types";
 
+import { NO_EXPERT_PANEL, expertPanelNote, withExpertPanel } from "./expertPanel";
 import { NO_GENERATED_EXPLAINER, generatedExplainerFound, generatedExplainerOutcome, withGeneratedExplainer, type GeneratedExplainerRecord } from "./generatedExplainer";
 import type { TappedChunk, TappedStream } from "./streamTap";
 import { NO_REGION_STORY, waterStoryFound, waterStoryOutcome, withRegionStory, type CheckOutcome, type RegionStoryRecord } from "./waterStory";
@@ -201,6 +202,7 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
   let notEnoughEvidence: string | null = null;
   let regionStory = NO_REGION_STORY;
   let generatedExplainer = NO_GENERATED_EXPLAINER;
+  let expertPanel = NO_EXPERT_PANEL;
   let lede = NO_LEDE;
   for (const { at, event } of parsed.events) {
     if (event.type === "lede") {
@@ -211,6 +213,7 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
       sentences.push(...blockSentences(event.data.block).map((sentence) => sentenceRecord("sentence", event.data.sectionId, sentence, event.data.block)));
       regionStory = withRegionStory(regionStory, event.data.block);
       generatedExplainer = withGeneratedExplainer(generatedExplainer, event.data.block);
+      expertPanel = withExpertPanel(expertPanel, event.data.block);
     } else if (event.type === "open_question") sentences.push(sentenceRecord("open_question", event.data.sectionId, event.data.sentence));
     else if (event.type === "source") {
       const { id, kind, title, publisher, year, doi, url } = event.data;
@@ -264,7 +267,7 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
     pageSentenceIds: null,
     pageSentencesWithoutChip: null,
     problems: [],
-    notes: []
+    notes: question.depth === "EXPERT" ? [expertPanelNote(expertPanel)] : []
   };
 }
 

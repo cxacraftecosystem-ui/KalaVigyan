@@ -12,7 +12,7 @@ import { MarginNotes, Spread } from "@/components/editorial/MarginNotes";
 import { marginPicture, scriptLeading, sectionNotes, textScript } from "@/lib/answerEssay";
 import { headingView } from "@/lib/answerLanguages";
 import type { SectionView } from "@/lib/explainerState";
-import { DISCIPLINE_LABEL, sectionAnchor, workingLabel } from "@/lib/explainerView";
+import { DISCIPLINE_LABEL, sectionAnchor, withdrawnNote, workingLabel } from "@/lib/explainerView";
 import { sectionRuns } from "@/lib/expertPanel";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +80,11 @@ export function ExplainerSectionView({ section, streaming, reduce, onActive, num
               )
             )}
           </div>
+        ) : null}
+        {section.withdrawn ? (
+          <p className="mt-4 font-ui text-label text-ink-3" data-testid="section-withdrawn">
+            {withdrawnNote(section.withdrawn)}
+          </p>
         ) : null}
       </Spread>
     </motion.section>

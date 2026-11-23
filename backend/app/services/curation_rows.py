@@ -34,6 +34,7 @@ __all__ = [
     "claim_source_rows",
     "concept_plan",
     "curated_claim_rows",
+    "differing_on",
     "place_concept_keys",
     "source_rows",
 ]
@@ -152,7 +153,7 @@ def claim_level(claim: DossierClaim) -> str:
 
 
 def claim_rows(dossier: Dossier, check: CheckFile, concepts: ConceptPlan) -> list[dict[str, Any]]:
-    differ = {claim_id for conflict in dossier.conflicts for claim_id in conflict.claim_ids}
+    differ = differing_on(dossier)
     verified = f"every quote re-found verbatim by {check.tool} on {check.checked_at.date().isoformat()}"
     return [
         {
@@ -170,10 +171,19 @@ def claim_rows(dossier: Dossier, check: CheckFile, concepts: ConceptPlan) -> lis
             "createdByKind": "SYSTEM",
             "sensitivity": claim.sensitivity,
             "sourcesDiffer": claim.id in differ,
+            "differsOn": differ.get(claim.id),
             "field": claim.discipline,
         }
         for claim in dossier.claims
     ]
+
+
+def differing_on(dossier: Dossier) -> dict[str, str]:
+    named: dict[str, str] = {}
+    for conflict in dossier.conflicts:
+        for claim_id in conflict.claim_ids:
+            named.setdefault(claim_id, conflict.about)
+    return named
 
 
 def curated_claim_rows(dossier: Dossier, owner_column: str, owner_id: uuid.UUID) -> list[dict[str, Any]]:

@@ -53,11 +53,16 @@ async def test_a_conflict_joins_the_page_and_marks_both_facts_without_a_new_fact
     page = await stored_page(session)
     assert [conflict.claim_ids for conflict in page.conflicts][-1] == [HELD_A, HELD_B]
     differ = await session.execute(
-        select(Claim.id, Claim.sourcesDiffer)
+        select(Claim.id, Claim.sourcesDiffer, Claim.differsOn)
         .where(Claim.id.in_([HELD_A, HELD_B, HELD_C]))
         .execution_options(populate_existing=True)
     )
-    assert dict(differ.tuples().all()) == {HELD_A: True, HELD_B: True, HELD_C: False}
+    about = "Whether the river had dried"
+    assert {row[0]: tuple(row[1:]) for row in differ.tuples().all()} == {
+        HELD_A: (True, about),
+        HELD_B: (True, about),
+        HELD_C: (False, None),
+    }
     assert await markers(session) == 3
 
 

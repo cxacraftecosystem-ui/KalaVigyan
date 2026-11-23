@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +14,7 @@ from app.research.retrieval import ChunkHit
 
 from .write_back_stored import PASSAGE_TIER, passage_document
 
-__all__ = ["field_documents", "field_hits"]
+__all__ = ["FIELD_TRUST", "field_documents", "field_hit_documents", "field_hits"]
 
 FIELD_TRUST = "A"
 
@@ -24,7 +24,10 @@ def field_hits(pack: EvidencePack) -> list[ChunkHit]:
 
 
 async def field_documents(session: AsyncSession, pack: EvidencePack) -> Mapping[str, SourceDocument]:
-    hits = field_hits(pack)
+    return await field_hit_documents(session, field_hits(pack))
+
+
+async def field_hit_documents(session: AsyncSession, hits: Sequence[ChunkHit]) -> dict[str, SourceDocument]:
     if not hits:
         return {}
     sources = {

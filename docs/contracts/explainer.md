@@ -87,7 +87,11 @@ interview whose recording is no longer shown (withdrawn, deleted, hidden, or its
 from in 7 days) or whose claim no longer cites it is taken out with its prose sentence, or with its
 whole block for any other kind; an image left illustrating no cited claim goes; `sources` is
 renumbered; a section left with nothing is `EMPTY` with `searched` "A field interview this section
-quoted is no longer shown."; an explainer with no `READY` section left is not served (404).
+quoted is no longer shown."; a `READY` section that keeps other blocks carries `withdrawn`, the
+number of sentences and artisan quotes taken out of it (added to any count it already had), and the
+client draws "A field interview this section quoted is no longer shown, so one passage was taken
+out." (or "so N passages were taken out.") under its blocks (`lib/explainerView.withdrawnNote`); an
+explainer with no `READY` section left is not served (404).
 
 - `understood` is the `Understood` shape of the stream event below.
 - Sections are listed by `order`, 1 to n; ids are `s1`, `s2`, ... and unique. Order is the
@@ -99,8 +103,12 @@ quoted is no longer shown."; an explainer with no `READY` section left is not se
 - At least one section is `READY`.
 
 `ExplainerSection {id, discipline, title (1-120), original?, order >= 1, state, blocks[Block],
-searched}`. Stored sections are `READY` (at least one block, `searched` null) or `EMPTY` (no
-blocks, `searched` the one sentence of what was searched). `original` is the English title when
+searched, withdrawn?}`. Stored sections are `READY` (at least one block, `searched` null) or `EMPTY`
+(no blocks, `searched` the one sentence of what was searched). `withdrawn` (at least 1, left out
+when 0) is set only by the field voices readback above; the stream never sends it. Fixture:
+`shared/explainer.withdrawn.golden.json`, the document golden as read after a withdrawal, its
+`s3` carrying `withdrawn` 1 and its sentence `s3.b1.3` a named difference (`sourcesDiffer`,
+`differsOn`), so both fields stand in a golden (decision 0151). `original` is the English title when
 `title` is a translation. An image block may illustrate only claims another block of the same
 section cites. Disciplines (`models/enums.DISCIPLINES`): `OVERVIEW`, `PROCESS`, `CHEMISTRY`,
 `PHYSICS`, `MATERIALS`, `GEOGRAPHY` (geography and water), `GEOLOGY` (geology and soil),
@@ -196,9 +204,15 @@ old one), `reuse` is null or `ReuseMarker {pieceId, storedAt}` when the block ca
 piece ("From earlier research" and its date). Each block says what it rests on:
 `cited_claim_ids()`, `cited_source_ids()` (citation sources, then sources cited directly), and
 `illustrated_claim_ids()` for images. Sentences in blocks are `ExplainerSentence`, today's
-`AnswerSentence` plus `terms[TermSpan]` and `sourcesDiffer`, present (and `true`) only when a
-claim the sentence cites is marked sources differ; the client draws the madder Sources differ tag
-after such a sentence (`components/answer/ExplainerSentence.tsx`, decision 0120).
+`AnswerSentence` plus `terms[TermSpan]`, `sourcesDiffer`, present (and `true`) only when a
+claim the sentence cites is marked sources differ, and `differsOn` (1-300), present only with
+`sourcesDiffer`: what the sources differ on, the first flagged claim's stored `Claim.differsOn`
+(`services/section_blocks.explainer_sentence`, decision 0156). The client draws the madder Sources
+differ tag after such a sentence (`components/answer/ExplainerSentence.tsx`, decision 0120) and,
+when the sentence cites quoted readings from two sources or more, a `<details>` after its paragraph,
+never inside it (`components/answer/SentencesDiffer.tsx`, drawn by `CitedText`, the ladder stage,
+the signature figures and the lesson slides): the summary "Sources differ: {differsOn}", or
+"Sources differ" when the claim names none, over each source's reading quoted and cited once.
 
 | Kind | Phase | Built |
 |---|---|---|
@@ -353,7 +367,12 @@ construct, and the builder that made it adds nothing.
   seat; an agreement is mutual; a difference is "Experts differ" only when the other seat states
   the mirrored difference (its `thisView` cites this view's `otherView` claims and the other way
   round). The client draws one "Experts differ" card per pair with both citations
-  (`expertsDiffer`). **Piece:** the section's slot; the views of a section are one reuse set.
+  (`expertsDiffer`). **Piece:** the section's slot; the views of a section are one reuse set,
+  reused only for the seats the new answer seats in that section (`expert_panel.panel_seats` of its
+  understanding and depth): a view of another seat is left out, the kept views lose the agreements
+  and differences that name it (each piece's claims, sources and hash taken again), and a kept view
+  that so loses its last difference and cites only claims the section's other pieces show is left
+  out too (`piece_reuse.seated_pieces`, `reused_sections.ReuseBuilds.seated`, decision 0156).
 - **`seasons`** `{rows[{stageId?, label, months[], season?, sentence}] (0+; none only with
   rainfall), rainfall:
   MonthlyRain?, datasets[DatasetRef]}`, `MonthlyRain {district: DistrictRef, datasetCode, period,
@@ -627,27 +646,44 @@ speaking or voiced seat.
   take sentences are read. A reply off the schema, a failed or a refused call drops that seat's
   view only.
 - **Takes.** Every take sentence passes the prose checks (the composer's sentence validator, then
-  `section_blocks.prose_problems`) or that seat's view is not shown (`kept_takes`). A view whose
+  `section_blocks.prose_problems`) or that seat's view is not shown (`services/expert_seat_takes.
+  kept_takes`). A take with a failing sentence is asked for once more, whole
+  (`composer/expert_takes.compose_retake`: the seat's own message with each failed sentence
+  numbered, its problems and its text in an untrusted block, as the composer's regenerate lists
+  them; `PROSE_CHECK` names a sentence that failed `prose_problems`), all failing seats at once and
+  bounded to `RETAKE_SECONDS` (20 s), and only while at least `RETAKE_SECONDS` plus
+  `RETAKE_LEAVES_SECONDS` (20 s for the difference pass) of the 90 s wait remain
+  (decision 0156). The retake is the seat's take: a sentence still failing drops the view. An empty
+  take, a reply off the schema, a failed call and a retake the headroom refuses are not asked again;
+  that seat's view is not shown. A view whose
   every claim the section's blocks already cite is not shown either, unless the seat carries a
   difference that is kept (`seated_takes`, decision 0120): the differences are judged over every
   view that passed, so a seat restating the section can still be the other side of one.
 - **Experts differ.** A final pass (`composer/expert_differences.compose_differences`), one
   `COMPOSE` call, runs only when two or more seats gave a view and two offered statements on one
-  concept cite no common source. It names the seats that spoke and the statements they were offered;
+  subject cite no common source. It names the seats that spoke and the statements they were offered;
   reply `{differences[{seat, statement, otherSeat, otherStatement}]}`, at most 3 read. A proposed
   pair is kept when its seats differ and both gave a view, both statements are fact-level stored
-  claims, they are two claims, no source is cited by both and both claims are stored on one
-  concept (`ClaimView.concept_id`); each pair of seats differs once. Both views carry it mirrored,
-  each side the claim's own text, level and citations (`difference_refusal` names why a pair is
-  refused).
+  claims, they are two claims, no source is cited by both and both claims are about one subject:
+  stored on one concept (`ClaimView.concept_id`), or on two concepts one glossary term links
+  (`TermConcept`, the curated link the shared-science explorer reads; `services/expert_subjects`,
+  read once per section after the takes, decision 0156); a claim on a concept edge has no concept
+  and is refused. Each pair of seats differs once. Both views carry it mirrored, each side the
+  claim's own text, level and citations (`services/expert_view_blocks.difference_refusal` names
+  why a pair is refused).
 - **The artisan's voice.** When `ARTISAN` is a voiced seat of the section, `FIELD_VOICES_ENABLED`
   is on and the craft's field transcript chunks (`FIELD_TESTIMONY` sources, chunk ACLs `PUBLIC`
-  and `SIGNED_IN`, recordings shown for the craft) answer the question, the seat quotes up to 3
-  stored claims that quote those chunks, spoken by a speaker recorded as an artisan
-  (`services/artisan_seat.py`). Each sentence is one artisan's account, never the craft's general
-  fact: `In one artisan's account, <recorded name>, who practises <recorded craft> in <district>
-  district, said: "<quoted words>"`, the quoted words checked by `prose_problems` and the
-  sentence citing the stored claim and its transcript source. Without such a transcript the seat
+  and `SIGNED_IN`, never the asker's own, recordings shown for the craft) answer the question,
+  the seat quotes up to 3 stored claims that quote those chunks, spoken by a speaker recorded as
+  an artisan (`services/artisan_seat.py`); in a `PROCESS`, `MATERIALS`, `DESIGN`, `ECONOMICS` or
+  `SOCIETY` section a quotable artisan turn no claim quotes yet is first written back as one
+  `QUOTED` claim of the craft and quoted from it (`docs/contracts/field-voices.md`, decision 0156).
+  Each sentence is one artisan's account, never the craft's general fact: `In one artisan's
+  account, <recorded name>, who practises <recorded craft> in <district> district, said:
+  "<quoted words>"` (`In one account from an artisan who practises <recorded craft> in <district>
+  district: "<quoted words>"` when the recording names nobody), the quoted words checked by
+  `prose_problems` and the sentence citing the stored claim and its transcript source. Without
+  such a transcript the seat
   gives no view and no text says so. The model never writes the artisan's view, and the seat never
   takes part in a difference.
 - **Agreement.** Two views whose takes cite one stored claim and that do not differ agree, both
@@ -1921,7 +1957,8 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
 | The block builders and their checks | `backend/tests/answering/test_block_builders.py`, `test_section_blocks.py` and `backend/tests/research/test_explainer_blocks.py` |
 | One claim, one rendering | `backend/tests/ledger/test_ledger_rules.py`, `test_ledger_kinds.py` and `test_restated_facts.py` |
 | No gap on the page, and a question's named stages on its ladder | `backend/tests/ledger/test_gap_routing.py`, `backend/tests/research/test_gap_admissions.py`, `test_named_stages.py` and `backend/tests/answering/test_reused_stages.py` |
-| The lede's search, its answer sentence, a sentence's Sources differ flag and its tag | `backend/tests/answering/test_lede_answer.py`, `test_lede_flow.py`, `test_grounded_blocks.py`, `test_lede_english.py`, `backend/tests/composer/test_lede_compose.py`, `backend/tests/db/test_claim_view_reads_db.py` (a stored claim's flag reaching its sentence) and `frontend/e2e/sentence-differ-unit.spec.ts` |
+| The lede's search, its answer sentence, a sentence's Sources differ flag, what its sources differ on, its tag and its readings after the paragraph | `backend/tests/answering/test_lede_answer.py`, `test_lede_flow.py`, `test_grounded_blocks.py`, `test_lede_english.py`, `backend/tests/composer/test_lede_compose.py`, `backend/tests/db/test_claim_view_reads_db.py` (a stored claim's flag reaching its sentence), `backend/tests/curation/test_curation_claim_rules.py`, `backend/tests/db/test_structure_writes_db.py` and `test_review_queue_decisions_db.py` (what the sources differ on stored with the flag) and `frontend/e2e/sentence-differ-unit.spec.ts` |
+| A section a withdrawn field interview shortened: its count and its note | `backend/tests/field_voices/test_readback.py` and `frontend/e2e/sentence-differ-unit.spec.ts` |
 | The understood event's `basis` | `backend/tests/research/test_understanding_contract.py`, `backend/tests/answering/test_answer_flow.py` and `frontend/e2e/explainer-contract-unit.spec.ts` |
 
 Re-read it when a block kind is built or retired, a stream event is added, or a depth rule changes.

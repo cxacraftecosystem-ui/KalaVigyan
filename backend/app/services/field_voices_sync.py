@@ -33,6 +33,7 @@ __all__ = [
     "ImageCopy",
     "PortalReader",
     "PortalReport",
+    "Stamp",
     "StreamCursors",
     "StreamReport",
     "SyncClock",
@@ -48,6 +49,8 @@ RETRIES = 3
 PAGE_REREADS = 3
 NOT_SERVED = 404
 EXPIRED_STATUSES = frozenset({400, 403})
+
+Stamp = tuple[datetime, str]
 
 
 class PortalReader(Protocol):
@@ -70,6 +73,8 @@ class StreamCursors:
     cursor: str | None
     gone_cursor: str | None
     rereading: bool
+    last: Stamp | None = None
+    gone_last: Stamp | None = None
 
 
 @dataclass(frozen=True)
@@ -182,9 +187,7 @@ def _stopped(report: StreamReport, error: Exception, *, refused: bool) -> None:
     logger.warning("%s stopped: %s", report.stream, error)
 
 
-def _after(
-    portal: str, page: FieldVoicesPage, last: tuple[datetime, str] | None
-) -> tuple[datetime, str] | None:
+def _after(portal: str, page: FieldVoicesPage, last: Stamp | None) -> Stamp | None:
     if not page.changes:
         return last
     first = page.changes[0]
@@ -194,6 +197,12 @@ def _after(
         )
     final = page.changes[-1]
     return final.updated_at, final.id
+
+
+@dataclass(frozen=True)
+class _Position:
+    cursor: str | None
+    last: Stamp | None
 
 
 def _unreachable(report: PortalReport, error: ExternalFailure) -> PortalReport:
@@ -234,12 +243,12 @@ class _Run:
 
     async def _stream(self, stream: str, report: StreamReport, screen: PortalScreen) -> None:
         cursors = await self._ledger.cursors(self.portal, stream)
-        await self._read(stream, VIEW_GONE, cursors.gone_cursor, report, screen, deadline=None)
+        gone = _Position(cursors.gone_cursor, cursors.gone_last)
+        await self._read(stream, VIEW_GONE, gone, report, screen, deadline=None)
         await self._ledger.contact(self.portal, stream)
         deadline = self._clock.monotonic() + STREAM_BUDGET_SECONDS
-        report.caught_up = await self._read(
-            stream, VIEW_ALL, cursors.cursor, report, screen, deadline=deadline
-        )
+        everything = _Position(cursors.cursor, cursors.last)
+        report.caught_up = await self._read(stream, VIEW_ALL, everything, report, screen, deadline=deadline)
         if not report.caught_up:
             return
         if cursors.rereading:
@@ -250,13 +259,13 @@ class _Run:
         self,
         stream: str,
         view: str,
-        cursor: str | None,
+        start: _Position,
         report: StreamReport,
         screen: PortalScreen,
         *,
         deadline: float | None,
     ) -> bool:
-        last: tuple[datetime, str] | None = None
+        cursor, last = start.cursor, start.last
         while deadline is None or self._clock.monotonic() < deadline:
             page, copies = await self._page_with_copies(stream, view, cursor, screen)
             last = _after(self.portal, page, last)

@@ -40,7 +40,7 @@ from .craft_process import process_records
 from .curated_index import CuratedPage, stored_curated_page
 from .field_voices_view import FieldVoicesPart, voices_part
 from .knowledge_view import ClaimView
-from .media_ref_store import stored_media_ref, stored_media_refs
+from .media_ref_store import field_media, stored_media_ref, stored_media_refs
 from .piece_lookup import stored_pieces
 from .term_glossary import glossary_entries
 
@@ -208,7 +208,7 @@ async def _stored_extras(session: AsyncSession, craft: Craft, records: CraftPage
         await session.execute(
             select(MediaRefRow, MediaRefClaim.claimId)
             .join(MediaRefClaim, MediaRefClaim.mediaRefId == MediaRefRow.id)
-            .where(MediaRefClaim.claimId.in_(claim_ids))
+            .where(MediaRefClaim.claimId.in_(claim_ids), MediaRefRow.id.not_in(field_media()))
             .order_by(MediaRefRow.id, MediaRefClaim.claimId)
         )
     ).all()

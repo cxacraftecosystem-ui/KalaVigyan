@@ -9,6 +9,7 @@ Date: 2026-11-19. Status: accepted. Extends decision 0046 (the expert panel); ke
 
 | For | Read |
 |---|---|
+| What amended it | [0156 The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run](0156-expert-panel-and-field-voices-kept-true.md): the artisan seat writes back what it would quote and keeps the public reading ACLs; a reused panel keeps only the seats it seats |
 | What it builds on | [0046 The expert panel](0046-expert-panel.md): the expert panel, widened |
 | Every decision, by group | [README.md](README.md) |
 

@@ -10,6 +10,7 @@ import { craftPageMetadata } from "@/lib/readingMetadata";
 import { prerenderedPages } from "@/lib/server/readingPages";
 import type { CraftParams } from "@/lib/sitePagesContract";
 
+import { craftFieldVoices } from "./craftFieldVoices";
 import { craftRecordPage } from "./craftRecordPage";
 
 const MonographShellPage = dynamic(() => import("@/components/monograph/MonographShellPage").then((page) => page.MonographShellPage));
@@ -37,9 +38,11 @@ export default async function CraftPage({ params }: CraftRoute) {
   const document = await serverCraftDocument(slug);
   if (document) {
     const languages = await serverPageLanguages(document.subjectKind, document.subjectSlug);
-    return document.shell !== null ? <MonographShellPage document={document} deferred languages={languages} /> : <MonographDocumentPage document={document} deferred languages={languages} />;
+    if (document.shell !== null) return <MonographShellPage document={document} deferred languages={languages} />;
+    const voices = await craftFieldVoices(slug);
+    return <MonographDocumentPage document={document} deferred languages={languages} voices={voices} />;
   }
-  const page = await craftRecordPage(slug);
+  const [page, voices] = await Promise.all([craftRecordPage(slug), craftFieldVoices(slug)]);
   if (!page) notFound();
-  return <CraftWithoutMonograph record={craftRecordView(page)} />;
+  return <CraftWithoutMonograph record={craftRecordView(page)} voices={voices} />;
 }

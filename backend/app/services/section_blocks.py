@@ -20,6 +20,7 @@ from .stated_names import unstated_names
 from .write_back_plan import composed_sentences
 
 __all__ = [
+    "DIFFERS_ON_FIELD",
     "SOURCES_DIFFER_FIELD",
     "BlockRefused",
     "DroppedSentence",
@@ -37,6 +38,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 SOURCES_DIFFER_FIELD = "sources_differ"
+DIFFERS_ON_FIELD = "differs_on"
 
 
 class BlockRefused(InvalidInput):
@@ -161,9 +163,8 @@ def lede_block(question: str, sentences: Sequence[KeptSentence], cited: CitedCla
 
 
 def explainer_sentence(sentence_id: str, sentence: KeptSentence, cited: CitedClaims) -> ExplainerSentence:
-    differing = {"sourcesDiffer": True} if _sources_differ(_views(sentence, cited)) else {}
     return ExplainerSentence.model_validate(
-        cited_sentence(sentence_id, sentence, cited) | {"terms": []} | differing
+        cited_sentence(sentence_id, sentence, cited) | {"terms": []} | _differing(_views(sentence, cited))
     )
 
 
@@ -209,8 +210,13 @@ def _quotes(views: Sequence[ClaimView]) -> list[str]:
     return [citation["quote"] for citation in _citations(views) if citation["quote"]]
 
 
-def _sources_differ(views: Sequence[ClaimView]) -> bool:
-    return any(getattr(view, SOURCES_DIFFER_FIELD, False) is True for view in views)
+def _differing(views: Sequence[ClaimView]) -> dict[str, Any]:
+    flagged = [view for view in views if getattr(view, SOURCES_DIFFER_FIELD, False) is True]
+    if not flagged:
+        return {}
+    named = (getattr(view, DIFFERS_ON_FIELD, None) for view in flagged)
+    about = next((on.strip() for on in named if isinstance(on, str) and on.strip()), None)
+    return {"sourcesDiffer": True} | ({"differsOn": about} if about else {})
 
 
 def _level(views: Sequence[ClaimView]) -> str | None:

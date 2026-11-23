@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.research.review_queue import FactLevelRaise, FactRetraction, QueueApproval, QueueRejection
 from app.services import review_queue_decisions as decisions, testimony_writes
+from app.services.candidate_writes import mark_sources_differ
 from app.services.review_queue_errors import DecisionConflict, OwnItem, UnknownItem
 
 from .review_queue_seed import (
@@ -78,6 +79,28 @@ async def test_approving_a_waiting_fact_publishes_it_and_marks_where_sources_dif
         await decisions.approve_item(
             session, ref("FACTS", AGENT_WAITING), people.admin, QueueApproval(), now=NOW
         )
+
+
+async def test_a_named_difference_is_stored_with_the_flag_and_keeps_a_name_already_stored(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, _people = seeded
+    kept = "How long the red dye bath lasts"
+    held = await session.get(Claim, HELD)
+    assert held is not None
+    held.differsOn = kept
+    await session.flush()
+    about = "How many times the saaj soaking is repeated"
+    assert await mark_sources_differ(session, AGENT_WAITING, about=about) == [HELD]
+    rows = await session.execute(
+        select(Claim.id, Claim.sourcesDiffer, Claim.differsOn)
+        .where(Claim.id.in_([AGENT_WAITING, HELD]))
+        .execution_options(populate_existing=True)
+    )
+    assert {row[0]: tuple(row[1:]) for row in rows.tuples().all()} == {
+        AGENT_WAITING: (True, about),
+        HELD: (True, kept),
+    }
 
 
 async def test_approving_a_live_unreviewed_fact_leaves_its_neighbours_alone(

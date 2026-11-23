@@ -788,7 +788,7 @@ images stored, refused pages, `portalScrubMisses`) and exits 1 when any stream f
 
 | Table | Columns |
 |---|---|
-| `FieldVoiceStream` | `portal`, `stream` (`TRANSCRIPTS`, `IMAGES`), `cursor`, `goneCursor`, `lastContactAt`, `lastCaughtUpAt`, `lastReconciledAt`, `live`, `digest`; primary key (`portal`, `stream`) |
+| `FieldVoiceStream` | `portal`, `stream` (`TRANSCRIPTS`, `IMAGES`), `cursor`, `goneCursor`, `lastAt` and `lastId` (the `updatedAt` and `id` of the last change read before `cursor`), `goneLastAt` and `goneLastId` (the same before `goneCursor`), `lastContactAt`, `lastCaughtUpAt`, `lastReconciledAt`, `live`, `digest`; primary key (`portal`, `stream`); each stamp is both its columns or neither |
 | `FieldRecording` | `id`, `portal`, `portalMediaId`, `portalRecordingId`, `revision`, `portalUpdatedAt`, `mediaType`, `recordedAt`, `durationMs`, `context` (JSONB: workshop, session, topics, stage, record, area), `people` (JSONB), `speakers` (JSONB), `transcriptSource`, `languages`, `english` (JSONB), `scrubbing` (JSONB), `unresolvedCrafts` (JSONB), `sourceId` (FK `Source`, cascade), `hiddenAt`; unique (`portal`, `portalMediaId`) |
 | `FieldSegment` | `id`, `recordingId` (FK, cascade), `portalSegmentId`, `position`, `speakerKey`, `personId`, `role`, `startMs`, `endMs`, `language`, `text`, `textSource`, `english`, `englishSource`, `quotable`; unique (`recordingId`, `portalSegmentId`) |
 | `FieldRecordingCraft` | `recordingId`, `craftId`; primary key both |
@@ -865,7 +865,20 @@ machine translation, and the original text is always shown beside it. Exports
   by `origin`; and a "From the workshops" gallery of the craft's images grouped by product, process
   step and prototype, each credited. Both show a first page and "Show all N", which opens
   `GET /api/crafts/{slug}/field-voices?kind=quotes|images&cursor=` (public reading, 25 a page,
-  newest recording or image first), so the last record is always reachable.
+  newest recording or image first), so the last record is always reachable. As built: the
+  craft route reads the first page of each kind on the server (`app/(reading)/crafts/[slug]/
+  craftFieldVoices.ts`, revalidated with the craft page; a read that fails draws no part, as the
+  page's languages do, so the page never fails for its voices) and `components/craft/FieldVoicesPart.tsx`
+  draws the first 6 quotes and 12 photographs of it (`lib/fieldVoicesView`: `FIRST_QUOTES`,
+  `FIRST_PHOTOS`, the backend's `FIELD_VOICES_SHOWN` and `FIELD_PHOTOS_SHOWN`) after a generated
+  monograph's chapters, or before "Start the research" on a craft without one; "Show all N" is a
+  button with `aria-expanded` that reads the later pages in order (`restOfList`) and shows them in
+  place. Each quote shows the original (with `lang` and `data-script`), the English with "Machine
+  translation" where it is one, its citation, and "Read the full interview" when it has a
+  `recordingId`; photographs are grouped by their first placement, captioned first, then credited
+  with the rights statement and holder. A craft with neither draws nothing. The authored Kutch Ajrakh
+  page (its document's `shell`, decision 0100) is the owner's approved page and draws no field
+  voices; adding them there is the owner's call.
 - **The `artisan_voice` block moves to version 2:** `speaker {name, role (ARTISAN or DESIGNER),
   yearsInCraft?, district?, state?}`, `quote` (at most 600 characters, cut at sentence ends),
   `language` any BCP 47 tag or `und`, `english?`, `englishSource?`, `sourceId`, `locator`,
@@ -879,8 +892,26 @@ machine translation, and the original text is always shown beside it. Exports
   recording's context, speakers and every segment with its English, and the citation, scrubbed
   and credited exactly as before; the web page `/voices/<id>` shows it, and every public quote
   links to it with "Read the full interview".
-- **The expert panel's artisan seat** speaks from quote chunks and from the full-transcript
-  chunks.
+- **The expert panel's artisan seat** (`services/artisan_seat.py`, decision 0156) searches the
+  craft's quote chunks and full-transcript chunks with the public reading ACLs
+  (`FIELD_READING_ACLS`: `PUBLIC` and `SIGNED_IN`), never the asker's own: its sentence carries the
+  artisan's words in its text, and expert views are stored as knowledge pieces, reused for other
+  askers and served through share links, so a `RESEARCHER` chunk quoted for one asker would reach
+  readers without that access. It quotes the stored claims whose citation links a chunk it found
+  or quotes words inside one, spoken by a speaker recorded as an artisan. A chunk no claim quotes,
+  lying inside one quotable artisan turn (its words or its English rendering) that no citation of
+  the recording quotes yet, is written back first (`services/artisan_turns.py`,
+  `services/artisan_write_back.py`), up to the seat's 3 sentences and only in a section whose field
+  a field interview alone may support (`PROCESS`, `MATERIALS`, `DESIGN`, `ECONOMICS`, `SOCIETY`,
+  the write-back plan's rule): one `QUOTED` claim filed under the craft, its text
+  `An artisan who practises <craft> says: “<quote>”` naming no person, the quote the chunk's first
+  whole sentences within 300 characters (else its first whole words), cited `DIRECT` with the
+  quote checked, through `research_write_back.write_through_gates` with no judge and no embedder
+  (the nightly `embed_knowledge` adds its vector), `foundBy` `ANSWER` with the answer's id (an
+  answer not yet stored writes nothing). Only claims the gates file and the public reading shows
+  are quoted, so a claim held for review is not quoted until it is published; a later answer finds the
+  turn quoted and writes nothing new. KalaVigyan testimony is not read by the seat: the
+  `artisan_voice` block of the same section already quotes it.
 
 ### Images become credited media
 
@@ -899,7 +930,17 @@ the stored key (a read presigns it for 900 seconds, inline, with its leaf name, 
 `author` the credited names, `site` the publisher, `credit` "<names> · <workshop>, <date> ·
 <publisher>", `licence` null, the statement and rights holder shown. Field images join the
 illustration candidates of their crafts' claims (`MediaRefClaim`, relevance `TEXT` from caption
-and labels). Not openly licensed: never offered for reuse, download or export.
+and labels): each time an image is applied with a new revision, and when a craft it named is
+resolved later, its `MediaRef` is linked again to the visible fact-level claims of its crafts that
+share at least `IMAGE_MIN_SHARED_STEMS` (2) content stems with its caption and the labels of what
+it shows (product, tool, process, step, prototype, design stage; never a person, session or
+workshop label), the crafts' names left out, at most `CLAIMS_PER_IMAGE_MAX` (3), by the same rule as
+every other picture (`image_relevance.illustrated_claims`). A link never shows a held image: every
+read of pictures beside a sentence (`media_ref_store.stored_pictures`) leaves out the `MediaRef` of
+any field image not currently shown (`field_photo_scope.shown_field_photos`: hidden, stale, linked to
+no craft, or artisan-linked and not decided to show), and the craft page's own pictures leave out
+every field image, which it draws in its gallery. Withdrawing an image deletes its `MediaRef`, and
+the foreign key deletes its links. Not openly licensed: never offered for reuse, download or export.
 
 **Artisan-linked images are brought, screened and shown one by one after a person's decision**
 (owner, 2026-11-18: "Bring it, but do not show, we will figure out something later, but do not
@@ -1070,14 +1111,14 @@ answers 404 and its streams are skipped.
 
 | Part | Where | Differs from the text above |
 |---|---|---|
-| Reader | `services/field_voices_feed.py` (state and page envelopes, tombstones, revision, digest), `field_voices_items.py` (the item models; `scrubbing.replaced` is a list of `{kind, count}`, each kind once), `field_voices_never_sent.py` (the extended key scan, no exemption), `field_voices_placements.py` (the legal floor's never stage fields and caption pattern, refusing the page), `field_voices_screen.py` (KalaVigyan's own screen, counted as `portalScrubMisses`), `field_voices_reader.py`; `ImageItem.artisan_linked` is required, so an image page without `artisanLinked` is refused | the order of changes is checked within a page and across the pages of one view in a run; a run does not keep the last stamp for the next run, whose first page is checked against its own cursor only |
+| Reader | `services/field_voices_feed.py` (state and page envelopes, tombstones, revision, digest), `field_voices_items.py` (the item models; `scrubbing.replaced` is a list of `{kind, count}`, each kind once), `field_voices_never_sent.py` (the extended key scan, no exemption), `field_voices_placements.py` (the legal floor's never stage fields and caption pattern, refusing the page), `field_voices_screen.py` (KalaVigyan's own screen, counted as `portalScrubMisses`), `field_voices_reader.py`; `ImageItem.artisan_linked` is required, so an image page without `artisanLinked` is refused | the order of changes is checked within a page, across the pages of one view in a run, and across runs: the ledger keeps the last change's (`updatedAt`, `id`) of each view beside its cursor (`FieldVoiceStream.lastAt`/`lastId`, `goneLastAt`/`goneLastId`, written only when the cursor moves past a page with changes, cleared with the cursor when a stream is read again), and a run's first page is refused when it starts at or before it |
 | Recorded answers | `backend/tests/field_voices/recorded/`: hand-written pages of both portals, `portal-built-designer-transcripts.json` and `portal-built-designer-images.json` (made on 2026-11-18, after the loosening, by the designer portal's own `transcripts.build`, `images.build` and `pages.page` over in-memory rows, so the shape a portal really sends is pinned: a stage recording that names its village, a take that answers "Your phone number" with the number scrubbed, a prototype photograph, a portrait filed on its artisan sent `artisanLinked` and an event photograph; KalaVigyan's own screen finds nothing in them), and `field-voices-scrub-vectors.json` (the portals' shared vectors, byte for byte, its hash pinned to the line of the portals' `shared/field-voices.sha256`; the pattern-only cases are run through `field_voices_screen.without_field_personal_data` and the `identityImage` cases through `field_voices_placements.IDENTITY_CAPTION`) | none |
 | Sync | `services/field_voices_sync.py` (the run over both views, retries, 20-minute budget, reconciliation), `field_voices_ledger.py` (database writes), `field_voices_run.py`, `app/scripts/sync_field_voices.py`, `.github/workflows/field-voices-sync.yml` (daily 22:17 UTC and dispatch) | none |
-| Storage | migration `0027_field_voices` (the six tables, `ChunkAcl` `SIGNED_IN`, `MediaRef.objectKey`, `FieldImage.artisanLinked` with its index); `services/field_voices_store.py`, `field_voices_records.py`, `field_voices_image_store.py`, `field_voices_images.py`, `field_voices_photos.py`, `field_voices_credit.py` | `FieldVoiceStream.rereadFrom` and `seenAt` on both item tables mark a re-read after a digest mismatch, so items that read does not list are withdrawn at its end |
-| Images | the neutral copy is made again in KalaVigyan (orientation applied, re-encoded, no metadata) and stored at `naming.field_voice_key` | `MediaRef.imageUrl` and `pageUrl` are the stable `/api/field-voices/images/{id}` route, which answers 302 to a fresh 15-minute presigned URL; reads never presign. `objectKey` names the stored copy for the cascade. Field images are not yet illustration candidates of their crafts' claims (no `MediaRefClaim` rows; `docs/TECH_DEBT.md`) |
-| Retrieval | `retrieval/field_scope.py` adds the chunks of shown field recordings of the craft to stored-knowledge chunk retrieval, and `withheld_field_sources` (recordings hidden, stale or linked to no craft) is left out of `claim_conditions` (through `citation_access.reader_fact`), `citation_access.reader_citations` and `chunk_conditions`; `composer/candidates.field_candidate` offers each as an `EVIDENCE` candidate labelled "field interview: …"; `services/field_voices_citations.py` turns a cited passage into the write-back's document, so the sentence becomes a `PROVISIONAL` claim citing the recording's `Source` and chunk | answers read `PUBLIC` quote chunks only (the stored pack is read with `OPEN_CHUNK_ACLS`). The rubric's limit is enforced by `write_back_plan`, which cannot tell which facet a sentence is about: a sentence citing only field interviews is written back only when every facet the section planned is `PROCESS`, `MATERIALS`, `DESIGN` or `ECONOMICS` (by `CONCEPT_TYPE_DISCIPLINES`), filed under the first such facet; a sentence citing field interviews beside other sources is filed under the facet of its first other source and, when that facet is of another discipline, written back only when an other source is A or B |
-| Withdrawal | `field_voices_store.withdraw_recording` and `recheck_quoted_claims`; `services/field_voices_readback.py` (`current_field_voices`), applied wherever a stored explainer is read: the explainer versions and their exports and lesson packs, the quiz, Listen and film mode | a stored explainer is filtered when it is read, not rewritten: a citation of a portal interview is shown only while its recording is shown and its claim still cites it; a prose sentence carrying such a citation is dropped, any other block carrying one is dropped, images left illustrating no cited claim go, the sources are renumbered, and a section left with nothing is shown `EMPTY` with "A field interview this section quoted is no longer shown."; an explainer left with no ready section is not shown. A section only partly affected carries no "quote withdrawn" note (`docs/TECH_DEBT.md`) |
-| Craft page | `voices` (`PageVoice`: the `VoiceQuote` of `research/voices.py` with `stage`, `citation`, `recordingId`), `fieldPhotos` (`PageFieldPhoto`), `fieldVoicesTotal {quotes, images}`; each quote's `Source` is listed in `sources`; KalaVigyan testimony is merged from `services/testimony_store` | portal quotes and testimony are paged in one SQL order (`field_voices_view.quote_order`): newest recording or conversation first, then portal quotes before testimony, then the recording and the turn's position (testimony: approval time and id); a page loads only its own 25 rows. `recordedOn` is a partial date: `YYYY-MM-DD` for portal quotes, `YYYY-MM` for testimony. The Voices and gallery components are not drawn yet |
+| Storage | migration `0027_field_voices` (the six tables, `ChunkAcl` `SIGNED_IN`, `MediaRef.objectKey`, `FieldImage.artisanLinked` with its index), and `0080_stream_stamps_differs_on` (each view's last stamp on `FieldVoiceStream`); `services/field_voices_store.py`, `field_voices_records.py`, `field_voices_image_store.py`, `field_voices_images.py`, `field_voices_photos.py`, `field_voices_credit.py` | `FieldVoiceStream.rereadFrom` and `seenAt` on both item tables mark a re-read after a digest mismatch, so items that read does not list are withdrawn at its end |
+| Images | the neutral copy is made again in KalaVigyan (orientation applied, re-encoded, no metadata) and stored at `naming.field_voice_key` | `MediaRef.imageUrl` and `pageUrl` are the stable `/api/field-voices/images/{id}` route, which answers 302 to a fresh 15-minute presigned URL; reads never presign. `objectKey` names the stored copy for the cascade. `services/field_voices_illustrations.py` links each applied image to the claims its caption and labels name (above); `media_ref_store.unshown_field_media` keeps a field image not shown away from every sentence, and `field_media` keeps every field image out of the craft page's own pictures |
+| Retrieval | `retrieval/field_scope.py` adds the chunks of shown field recordings of the craft to stored-knowledge chunk retrieval, and `withheld_field_sources` (recordings hidden, stale or linked to no craft) is left out of `claim_conditions` (through `citation_access.reader_fact`), `citation_access.reader_citations` and `chunk_conditions`; `composer/candidates.field_candidate` offers each as an `EVIDENCE` candidate labelled "field interview: …"; `services/field_voices_citations.py` turns a cited passage into the write-back's document (`field_hit_documents`, shared by the answer's write-back and the artisan seat's), so the sentence becomes a `PROVISIONAL` claim citing the recording's `Source` and chunk | answers read `PUBLIC` quote chunks only (the stored pack is read with `OPEN_CHUNK_ACLS`). The rubric's limit is enforced by `write_back_plan`, which cannot tell which facet a sentence is about: a sentence citing only field interviews is written back only when every facet the section planned is `PROCESS`, `MATERIALS`, `DESIGN` or `ECONOMICS` (by `CONCEPT_TYPE_DISCIPLINES`), filed under the first such facet; a sentence citing field interviews beside other sources is filed under the facet of its first other source and, when that facet is of another discipline, written back only when an other source is A or B |
+| Withdrawal | `field_voices_store.withdraw_recording` and `recheck_quoted_claims`; `services/field_voices_readback.py` (`current_field_voices`), applied wherever a stored explainer is read: the explainer versions and their exports and lesson packs, the quiz, Listen and film mode | a stored explainer is filtered when it is read, not rewritten: a citation of a portal interview is shown only while its recording is shown and its claim still cites it; a prose sentence carrying such a citation is dropped, any other block carrying one is dropped, images left illustrating no cited claim go, the sources are renumbered, and a section left with nothing is shown `EMPTY` with "A field interview this section quoted is no longer shown."; an explainer left with no ready section is not shown. A section only partly affected carries `withdrawn`, the count of sentences and artisan quotes taken out of it, and the reader sees "A field interview this section quoted is no longer shown, so one passage was taken out." (or "N passages") under it (`docs/contracts/explainer.md`, decision 0156) |
+| Craft page | `voices` (`PageVoice`: the `VoiceQuote` of `research/voices.py` with `stage`, `citation`, `recordingId`), `fieldPhotos` (`PageFieldPhoto`), `fieldVoicesTotal {quotes, images}`; each quote's `Source` is listed in `sources`; KalaVigyan testimony is merged from `services/testimony_store` | portal quotes and testimony are paged in one SQL order (`field_voices_view.quote_order`): newest recording or conversation first, then portal quotes before testimony, then the recording and the turn's position (testimony: approval time and id); a page loads only its own 25 rows. `recordedOn` is a partial date: `YYYY-MM-DD` for portal quotes, `YYYY-MM` for testimony. The web draws the first page of the list route, not these fields (`components/craft/FieldVoicesPart`, Craft pages above; decision 0156) |
 | Reading | `GET /api/crafts/{slug}/field-voices?kind=quotes|images&cursor=<offset>` (public, 25 a page), `GET /api/field-voices/recordings/{id}` (public since decision 0097), `GET /api/field-voices/images/{id}` (public 302), web page `/voices/<id>` | the list cursor is the offset of the page, a multiple of 25 |
 | Held images | `FieldImage.artisanLinked`; `models/field_photo_reviews.py` (`FieldPhotoReview`, `FieldPhotoScreen`, migration `0054_field_photo_reviews`); `services/field_photo_scope.py`, `field_photo_screens.py`, `field_photo_decisions.py`, `field_photo_crops.py`, `field_photo_queue.py`, `field_photo_items.py`, `field_voices_held.py`; `api/routes/field_photo_reviews.py` and `field_voices_held.py`; the web's `/admin/field-photos` | decided one photograph at a time (decision 0112); the setting is the master kill switch |
 | Speaker | `VoiceSpeaker {name: str | null, line, role, yearsInCraft, district, state}` | `line` is the credit as shown, "An artisan of <craft>, <district>, <state>" when `name` is null |
@@ -1090,6 +1131,7 @@ answers 404 and its streams are skipped.
 | The legal floor's scrubbing and labels | `backend/tests/field_voices/test_scrub_vectors.py`, over `field-voices-scrub-vectors.json`, byte-identical in both portals |
 | Placements, image names and copies | `backend/tests/field_voices/test_placements.py`, `test_field_image_names.py` and `test_image_copies.py` |
 | Sync, storage and withdrawal | `backend/tests/field_voices/test_sync.py`, `test_records.py`, `test_readback.py`, `backend/tests/db/test_field_voices_db.py` and `test_field_voices_withdrawal_db.py` |
+| Each view's last stamp across runs, and field images as illustration candidates | `backend/tests/field_voices/test_sync.py`, `test_field_image_claims.py`, `backend/tests/db/test_field_voice_stamps_db.py` and `test_field_image_claims_db.py` |
 | Citing and the routes | `backend/tests/field_voices/test_citing_rules.py` and `test_routes.py` |
 | Held images and reviewed field photographs | `backend/tests/field_voices/test_held_images.py`, `test_field_photo_rules.py`, `backend/tests/db/test_field_photo_reviews_db.py` and `test_field_photo_decisions_db.py` |
 | The web client | `frontend/e2e/field-voices-unit.spec.ts` |

@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted. Builds the KalaVigyan side of decision 0084.
 |---|---|
 | What amended it | [0097 Everything reads without signing in except asking](0097-public-reading-everywhere-but-asking.md): field recordings and their transcripts read without signing in |
 | What amended it | [0112 Each field photograph filed on an artisan is reviewed by a person before it is shown](0112-reviewed-field-photographs.md): its held images, each field photograph filed on an artisan now reviewed by a person |
+| What amended it | [0156 The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run](0156-expert-panel-and-field-voices-kept-true.md): point 12, field images linked to the claims they show and never shown while held; the craft page draws the voices; the order check spans runs |
 | What it amends | [0079 Craft, category, map and science pages read without signing in](0079-public-reading.md): point 3, what each reader reads of field transcripts |
 | What it builds on | [0084 Field voices v2: both portals, full transcripts and craft images, by cursor with tombstones](0084-field-voices-v2.md): its KalaVigyan side |
 | The contracts it names | [field-voices.md](../contracts/field-voices.md) |

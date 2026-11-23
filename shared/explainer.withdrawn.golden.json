@@ -1,0 +1,740 @@
+{
+  "schemaVersion": 1,
+  "answerId": "0c5e7a1d-2b3f-4c6d-8e9f-a0b1c2d3e4f5",
+  "question": "How is Kutch Ajrakh made, and why does its water matter?",
+  "understood": {
+    "crafts": [
+      {
+        "slug": "Kutch-Ajrakh",
+        "name": "Kutch Ajrakh",
+        "path": "/crafts/Kutch-Ajrakh"
+      }
+    ],
+    "candidates": [
+      {
+        "slug": "Bagru-Hand-Block-Print",
+        "name": "Bagru Hand Block Print",
+        "path": "/crafts/Bagru-Hand-Block-Print"
+      }
+    ],
+    "depth": "EXPERT",
+    "language": "en"
+  },
+  "sections": [
+    {
+      "id": "s1",
+      "discipline": "PROCESS",
+      "title": "How it is made",
+      "order": 1,
+      "state": "READY",
+      "blocks": [
+        {
+          "id": "s1.b1",
+          "kind": "process_ladder",
+          "version": 1,
+          "reuse": null,
+          "craft": {
+            "slug": "Kutch-Ajrakh",
+            "name": "Kutch Ajrakh",
+            "path": "/crafts/Kutch-Ajrakh"
+          },
+          "processId": "3a3730fb-a5e7-563f-bb05-af878d8c4f2a",
+          "stages": [
+            {
+              "stageId": "77bf953a-03a3-54c3-a1bb-37ac338266df",
+              "ordinal": 4,
+              "name": "Khariyanu (lime-gum resist outline printing)",
+              "stageType": "RESIST",
+              "level": "PROVISIONAL",
+              "sentences": [
+                {
+                  "id": "s1.b1.1",
+                  "text": "Outlines where white is required are printed with a carved block and a lime and tree-gum resist paste.",
+                  "level": "PROVISIONAL",
+                  "citations": [
+                    {
+                      "id": "1425b713-ec54-50d0-95af-13bd46973b16",
+                      "claimId": "f363ce3a-c4a6-5b24-87e7-2634e18175cf",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Preparation of Outline of design (Khariyanu/ Kiriyana):- Outlines of the design, where white is required, are printed with a carved wooden block and a resist paste containing lime and tree gum.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ],
+                  "translated": false,
+                  "terms": [
+                    {
+                      "text": "resist paste",
+                      "termKey": "resist-paste"
+                    }
+                  ]
+                },
+                {
+                  "id": "s1.b1.2",
+                  "text": "The dyer block-prints resist paste on areas that will remain white.",
+                  "level": "PROVISIONAL",
+                  "citations": [
+                    {
+                      "id": "d297bffd-4280-5880-b15e-0bcb1b216a35",
+                      "claimId": "5e8d6976-2377-5e50-8410-623cd6561f99",
+                      "sourceId": "f0dde764-b68a-5ea6-8d1c-05ca4a7db2b7",
+                      "quote": "The dyer block-prints resist paste on the areas to remain white, and mordant pastes to fix the colour on the areas to be dyed red or black.",
+                      "locator": "§ \"Object details\"",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    },
+                    {
+                      "id": "320fc86d-4cf8-577a-a7d8-e310d0f7dff7",
+                      "claimId": "5e8d6976-2377-5e50-8410-623cd6561f99",
+                      "sourceId": "84cc8e03-ef75-55a3-9fb6-ca8b8e872a93",
+                      "quote": "The dyer block-prints resist paste on the areas to remain white, and mordant pastes to fix the colour on the areas to be dyed red or black.",
+                      "locator": "§ \"Object details\"",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ],
+                  "translated": false,
+                  "terms": []
+                }
+              ],
+              "materials": [],
+              "conditions": [],
+              "reactionIds": []
+            },
+            {
+              "stageId": "5ced8309-b0f4-571a-8482-4223d1d4fccc",
+              "ordinal": 5,
+              "name": "Kut (iron-black printing)",
+              "stageType": "PRINT",
+              "level": "PROVISIONAL",
+              "sentences": [
+                {
+                  "id": "s1.b1.3",
+                  "text": "Areas where black is required are printed with kut paste, usually an infill (datla) between khariyanu outlines.",
+                  "level": "PROVISIONAL",
+                  "citations": [
+                    {
+                      "id": "d826d5c9-9361-556d-9a62-fb69781a67b8",
+                      "claimId": "0bb14c01-aa8c-5c9e-940d-f0d1bac4a2e9",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Areas where black is required are now printed with kut paste. In true Ajrakh, this is usually an infill or datla between selected khariyanu outliners.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ],
+                  "translated": false,
+                  "terms": [
+                    {
+                      "text": "kut",
+                      "termKey": "kut"
+                    },
+                    {
+                      "text": "datla",
+                      "termKey": "datla"
+                    },
+                    {
+                      "text": "khariyanu",
+                      "termKey": "khariyanu"
+                    }
+                  ]
+                },
+                {
+                  "id": "s1.b1.4",
+                  "text": "Printed on harde-treated cloth, kut develops a deep fast chocolate-black as iron reacts with the tannic acid.",
+                  "level": "PROVISIONAL",
+                  "citations": [
+                    {
+                      "id": "6211c7f6-8d84-5ac5-8528-256a5dc1cb5b",
+                      "claimId": "8e106f5b-6c6e-5857-9d66-95ec73a07421",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "When printed onto the harde treated cloth kut develops a deep fast chocolate-black colour as the iron particles in the kut paste oxidise with the tannic acid.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ],
+                  "translated": false,
+                  "terms": [
+                    {
+                      "text": "harde",
+                      "termKey": "harde"
+                    }
+                  ]
+                }
+              ],
+              "materials": [
+                {
+                  "materialId": "6a3e5cb8-ef2e-501f-a7f8-d7d0772d56e4",
+                  "name": "Kut (iron-water black paste)",
+                  "kind": "MORDANT",
+                  "role": "MORDANT",
+                  "citations": [
+                    {
+                      "id": "bbda0126-cff0-5edb-b58b-1b9ee4f8bc1a",
+                      "claimId": "c407fde1-3c40-5c81-8a5e-320317aacf9d",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Kut printing is usually undertaken in the afternoon.The kut is a smooth finer paste made from jaggery, or molasses, in which scrap iron such as horse-hoes and besan (gram flour) have been fermented for ten to fifteen days.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    },
+                    {
+                      "id": "cc110cce-fba5-54c5-aa96-14f4fae15347",
+                      "claimId": "c407fde1-3c40-5c81-8a5e-320317aacf9d",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "The resulting liquid or “ironwater” is drained off and mixed with smooth tree gum paste.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ]
+                }
+              ],
+              "conditions": [
+                {
+                  "label": "Fermenting the iron paste",
+                  "stated": "ten to fifteen days",
+                  "citations": [
+                    {
+                      "id": "bbda0126-cff0-5edb-b58b-1b9ee4f8bc1a",
+                      "claimId": "c407fde1-3c40-5c81-8a5e-320317aacf9d",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Kut printing is usually undertaken in the afternoon.The kut is a smooth finer paste made from jaggery, or molasses, in which scrap iron such as horse-hoes and besan (gram flour) have been fermented for ten to fifteen days.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ]
+                }
+              ],
+              "reactionIds": [
+                "d9643f49-fefc-5e3a-ad08-a5ae499a4161"
+              ]
+            },
+            {
+              "stageId": "575d3427-7a90-568d-87d5-bb0f1c602591",
+              "ordinal": 6,
+              "name": "Pa (alum mordant printing for red)",
+              "stageType": "MORDANT",
+              "level": "PROVISIONAL",
+              "sentences": [
+                {
+                  "id": "s1.b1.5",
+                  "text": "Pa, a smooth paste of alum in tamarind-seed paste, is printed with blocks patterned for the mavi areas where red is required.",
+                  "level": "PROVISIONAL",
+                  "citations": [
+                    {
+                      "id": "44887a17-3ba2-551b-8ac3-8604beadc326",
+                      "claimId": "9a3c214f-f54f-5f76-a5b7-88aa6a363489",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "This smooth paste called Pa, is printed with blocks which have been carved so that the printing portion of the raised face is patterned only, with the areas of the design called mavi, where red is required.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    },
+                    {
+                      "id": "bbc5ffe3-77cd-574c-81fe-dd953be4d0a7",
+                      "claimId": "9a3c214f-f54f-5f76-a5b7-88aa6a363489",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Alum is suspended in a sticky paste of boiled powder from roasted and ground tamarind seeds (locally known as kachika).",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 6",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ],
+                  "translated": false,
+                  "terms": [
+                    {
+                      "text": "Pa",
+                      "termKey": "pa"
+                    },
+                    {
+                      "text": "mavi",
+                      "termKey": "mavi"
+                    }
+                  ]
+                }
+              ],
+              "materials": [
+                {
+                  "materialId": "e2c65ac5-52a9-5625-9ed7-ce0d1c1cb19c",
+                  "name": "Alum (fatakdi)",
+                  "kind": "MORDANT",
+                  "role": "MORDANT",
+                  "citations": [
+                    {
+                      "id": "c7c60b8b-8e49-5da9-9b60-3b3a7d360670",
+                      "claimId": "1dcf0fe9-1f1c-518e-868b-5e54bcd44a2e",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Alum is used as a mordant in the process to fasten the colours.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 2",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ]
+                }
+              ],
+              "conditions": [],
+              "reactionIds": []
+            },
+            {
+              "stageId": "eb895bd5-83a3-511a-9e64-ba7e452afea8",
+              "ordinal": 11,
+              "name": "Red dyeing (rang) with madder or alizarin",
+              "stageType": "DYE",
+              "level": "PROVISIONAL",
+              "sentences": [
+                {
+                  "id": "s1.b1.6",
+                  "text": "Alizarin crystals or steeped madder roots are heated in a copper pot; dyeing the purest reds continues for up to four hours.",
+                  "level": "PROVISIONAL",
+                  "citations": [
+                    {
+                      "id": "bcc71322-675e-51c1-b19c-84258612d340",
+                      "claimId": "cd8140e6-98fc-5882-b261-766e143dd8c2",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Red Dyeing:- Alizarin crystals or the crushed and steeped roots of majeeta or Indian Madder are gently heated in a large copper pot.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 7",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    },
+                    {
+                      "id": "244a9196-0787-5a14-ad11-ed7d5ae200da",
+                      "claimId": "cd8140e6-98fc-5882-b261-766e143dd8c2",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Dyeing the purest reds continues for up to four hours.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 8",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ],
+                  "translated": false,
+                  "terms": [
+                    {
+                      "text": "Alizarin",
+                      "termKey": "alizarin"
+                    },
+                    {
+                      "text": "madder",
+                      "termKey": "madder"
+                    }
+                  ]
+                }
+              ],
+              "materials": [
+                {
+                  "materialId": "a96fc53e-88ae-5f99-acd3-09346d9a67ea",
+                  "name": "Indian madder (majith/majeeta, Rubia cordifolia)",
+                  "kind": "DYE",
+                  "role": "DYE",
+                  "citations": [
+                    {
+                      "id": "59e42547-3723-53f0-b468-8af16d07504c",
+                      "claimId": "542cae98-9a85-5410-a375-69334290d130",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "This dye extracted from these long thin roots links to the alum mordant on the cotton fibres and develops red area of a design, where Pa, Gach pastes have been printed.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 8",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    },
+                    {
+                      "id": "c3767047-5db1-5638-a64e-e3b9b61835ae",
+                      "claimId": "542cae98-9a85-5410-a375-69334290d130",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Ajrakh with Madder Dye:- Indian Madder roots, Rubia Cordifolia, locally known as majeeta, have been traditionally used in the creation of Ajrakh since Ajrakh itself was born many millennia ago.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 8",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ]
+                }
+              ],
+              "conditions": [
+                {
+                  "label": "Red dye bath",
+                  "stated": "up to four hours",
+                  "citations": [
+                    {
+                      "id": "244a9196-0787-5a14-ad11-ed7d5ae200da",
+                      "claimId": "cd8140e6-98fc-5882-b261-766e143dd8c2",
+                      "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                      "quote": "Dyeing the purest reds continues for up to four hours.",
+                      "locator": "GI Journal No. 188 copy (application 1050), PDF p. 8",
+                      "context": null,
+                      "evidence": "QUOTED",
+                      "level": "PROVISIONAL"
+                    }
+                  ]
+                }
+              ],
+              "reactionIds": [
+                "26229ecd-184c-5adf-86d0-b45c56394f27"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s1.b2",
+          "kind": "images",
+          "version": 1,
+          "reuse": null,
+          "items": [
+            {
+              "media": {
+                "id": "a1c3e5f7-0b2d-4f6a-8c9e-1d3f5a7b9c0e",
+                "display": "INLINE",
+                "provider": "wikimedia_commons",
+                "pageUrl": "https://commons.wikimedia.org/wiki/File:Ajrak_Printing_Materials_1.jpg",
+                "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Ajrak_Printing_Materials_1.jpg/960px-Ajrak_Printing_Materials_1.jpg",
+                "width": 4160,
+                "height": 3120,
+                "title": "Ajrak Printing Materials 1",
+                "alt": "Sticky gums used during indigo printing.",
+                "author": "SMarndi",
+                "site": "Wikimedia Commons",
+                "credit": null,
+                "licence": "CC BY-SA 4.0",
+                "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+                "sourceId": null,
+                "retrievedAt": "2026-11-17T10:20:00Z"
+              },
+              "claimIds": [
+                "f363ce3a-c4a6-5b24-87e7-2634e18175cf"
+              ],
+              "relevance": "TEXT"
+            },
+            {
+              "media": {
+                "id": "b2d4f6a8-1c3e-4a7b-9d0f-2e4a6c8e0f1a",
+                "display": "LINK_CARD",
+                "provider": "searxng",
+                "pageUrl": "https://collections.vam.ac.uk/item/O132500/",
+                "imageUrl": "https://framemark.vam.ac.uk/collections/2015HK4003/full/!100,100/0/default.jpg",
+                "width": null,
+                "height": null,
+                "title": "Ajrakh process sample, IS.7:1 to 3-2007 (made by Ismail Mohammad Khatri, Ajrakhpur, 2006)",
+                "alt": "Strips of cotton cloth block-printed in progressive stages of the ajrakh process.",
+                "author": null,
+                "site": "Victoria and Albert Museum, London",
+                "credit": "© Victoria and Albert Museum, London",
+                "licence": null,
+                "licenceUrl": null,
+                "sourceId": "f0dde764-b68a-5ea6-8d1c-05ca4a7db2b7",
+                "retrievedAt": "2026-11-17T10:20:00Z"
+              },
+              "claimIds": [
+                "5e8d6976-2377-5e50-8410-623cd6561f99"
+              ],
+              "relevance": "TEXT"
+            }
+          ]
+        }
+      ],
+      "searched": null
+    },
+    {
+      "id": "s2",
+      "discipline": "GEOGRAPHY",
+      "title": "Why the water matters",
+      "order": 2,
+      "state": "READY",
+      "blocks": [
+        {
+          "id": "s2.b1",
+          "kind": "prose",
+          "version": 1,
+          "reuse": {
+            "pieceId": "7d4e2c10-5a6b-4c7d-9e8f-0a1b2c3d4e5f",
+            "storedAt": "2026-11-12T08:15:00Z"
+          },
+          "sentences": [
+            {
+              "id": "s2.b1.1",
+              "text": "Presence of iron in the water supply dulls and darkens the final result; alum, tin or chrome deposits help brighten colours.",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "bf7fda76-2629-5609-ac54-d4c011fbb573",
+                  "claimId": "826c1d72-9373-59f0-85c3-6bb38aa89320",
+                  "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                  "quote": "Water enriched with alum, tin or chrome mineral deposits will help brighten the colors but presence of iron in the water supply dulls and darkens the final result.",
+                  "locator": "GI Journal No. 188 copy (application 1050), PDF p. 8",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": false,
+              "terms": [
+                {
+                  "text": "alum",
+                  "termKey": "alum"
+                }
+              ]
+            },
+            {
+              "id": "s2.b1.2",
+              "text": "Ajrakh printing got concentrated where extra soft water was available.",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "c333691c-bb17-5c97-a725-c037ff9f24ce",
+                  "claimId": "6d42a538-0a5e-5cfb-b8f5-68012eb0d4d6",
+                  "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                  "quote": "The district gazetteers of 1971 have mentioned that Ajrakh Printing-Ajrakh is another popular variety in hand-printing of textiles in Kutch. Ajrakh printing originally came from Sindh and got concentrated where extra soft water was available.",
+                  "locator": "GI Journal No. 188 copy (application 1050), PDF p. 3",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": false,
+              "terms": [
+                {
+                  "text": "soft water",
+                  "termKey": "soft-water"
+                }
+              ]
+            },
+            {
+              "id": "s2.b1.3",
+              "text": "Excess iron in groundwater threatened Ajrakh in Dhamadka and is again threatening it in Ajrakhpur.",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "02b489ed-7b2a-5ece-bb34-caf590e4b31f",
+                  "claimId": "faa466c1-8940-5552-a7f5-851cebb40f64",
+                  "sourceId": "907e2c52-14e7-5e41-9b27-9c10f70906a9",
+                  "quote": "Excess iron in groundwater that threatened Ajrakh in Dhamadka, is once again threatening the craft in Ajrakhpur.",
+                  "locator": "§ \"Share this article\"",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": false,
+              "terms": []
+            }
+          ]
+        }
+      ],
+      "searched": null
+    },
+    {
+      "id": "s3",
+      "discipline": "CHEMISTRY",
+      "title": "The chemistry of the colours",
+      "order": 3,
+      "state": "READY",
+      "blocks": [
+        {
+          "id": "s3.b1",
+          "kind": "prose",
+          "version": 1,
+          "reuse": null,
+          "sentences": [
+            {
+              "id": "s3.b1.1",
+              "text": "Ajrakh colours come from indigo, madder and iron acetate.",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "f5e2ff39-d761-5d50-bcff-34138c663abe",
+                  "claimId": "feaa25b3-b79c-59ce-9c6b-1a841c7e12ed",
+                  "sourceId": "4ce205e3-653f-51db-9e49-14fb3b3f2e14",
+                  "quote": "1 The colors are created with a complex process of resist and mordant printing, and dyeing with indigo, madder, and iron acetate (Figure 3).",
+                  "locator": "§ \"Indigo in Kutch, India: Art and Science, Environment and Economics\"",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": false,
+              "terms": [
+                {
+                  "text": "indigo",
+                  "termKey": "indigo"
+                },
+                {
+                  "text": "madder",
+                  "termKey": "madder"
+                },
+                {
+                  "text": "iron acetate",
+                  "termKey": "iron-acetate"
+                }
+              ]
+            },
+            {
+              "id": "s3.b1.2",
+              "text": "At first bright green, the cloth rapidly becomes blue as oxygen meets the dye on the fibres.",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "b07d4901-bd3a-5371-9c26-335792e34e39",
+                  "claimId": "90d52dfd-901a-5287-b34a-16498a1a1912",
+                  "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                  "quote": "At first bright green, the cloth rapidly becomes blue as oxygen meets the dye particles on the fibres.",
+                  "locator": "GI Journal No. 188 copy (application 1050), PDF p. 7",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": false,
+              "terms": []
+            },
+            {
+              "id": "s3.b1.3",
+              "text": "Gach with alum is printed where larger red areas are required (red ground gudh or mavi infill); the clay and millet resist indigo while the alum acts as mordant.",
+              "level": "PROVISIONAL",
+              "citations": [
+                {
+                  "id": "0d79016f-5404-513c-be49-dc6754cecd1b",
+                  "claimId": "5318b398-a3e5-5c80-a3fa-377fa4a2160a",
+                  "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                  "quote": "Alum is added to half of this paste, and printed where larger areas of the Red are required in a design, for example a red background gudh or infill areas called mavi.",
+                  "locator": "GI Journal No. 188 copy (application 1050), PDF p. 7",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                },
+                {
+                  "id": "da36e163-b833-5393-9689-52074b87af24",
+                  "claimId": "5318b398-a3e5-5c80-a3fa-377fa4a2160a",
+                  "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                  "quote": "The clay and millet flour in the paste act as a resist, preventing indigo from staining the cloth beneath, whilst the alum content acts a mordant for subsequent application of red dye.",
+                  "locator": "GI Journal No. 188 copy (application 1050), PDF p. 7",
+                  "context": null,
+                  "evidence": "QUOTED",
+                  "level": "PROVISIONAL"
+                }
+              ],
+              "translated": false,
+              "terms": [
+                {
+                  "text": "Gach",
+                  "termKey": "gach"
+                },
+                {
+                  "text": "gudh",
+                  "termKey": "gudh"
+                },
+                {
+                  "text": "mordant",
+                  "termKey": "mordant"
+                }
+              ],
+              "sourcesDiffer": true,
+              "differsOn": "where the alum paste is printed"
+            }
+          ]
+        }
+      ],
+      "searched": null,
+      "withdrawn": 1
+    }
+  ],
+  "sources": [
+    {
+      "id": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+      "kind": "GI_JOURNAL",
+      "title": "Geographical Indications Journal No. 188 (19 Dec 2023), G.I. Application No. 1050 - Kutch Ajrakh (journal copy)",
+      "authors": [
+        "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan",
+        "facilitated by Textiles Committee, Ministry of Textiles)"
+      ],
+      "year": 2023,
+      "doi": null,
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/1050",
+      "publisher": "Geographical Indications Registry, Chennai (IP India)",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "f0dde764-b68a-5ea6-8d1c-05ca4a7db2b7",
+      "kind": "WEB_PAGE",
+      "title": "Ajrakh process sample, IS.7:1 to 3-2007 (made by Ismail Mohammad Khatri, Ajrakhpur, 2006)",
+      "authors": [
+        "Victoria",
+        "Albert Museum"
+      ],
+      "year": 2007,
+      "doi": null,
+      "url": "https://collections.vam.ac.uk/item/O132500/",
+      "publisher": "Victoria and Albert Museum, London",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "84cc8e03-ef75-55a3-9fb6-ca8b8e872a93",
+      "kind": "WEB_PAGE",
+      "title": "Textile (two halves of an ajrakh shawl or cover), Sind, ca. 1855-1879, 5473A/(IS)",
+      "authors": [
+        "Victoria",
+        "Albert Museum"
+      ],
+      "year": 2015,
+      "doi": null,
+      "url": "https://collections.vam.ac.uk/item/O469296/",
+      "publisher": "Victoria and Albert Museum, London",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "907e2c52-14e7-5e41-9b27-9c10f70906a9",
+      "kind": "WEB_PAGE",
+      "title": "Water woes: Kutch's age-old Ajrakh craft faces its nemesis, once again",
+      "authors": [
+        "Azera Parveen Rahman"
+      ],
+      "year": 2019,
+      "doi": null,
+      "url": "https://india.mongabay.com/2019/10/water-woes-kutchs-age-old-ajrakh-craft-faces-its-nemesis-once-again/",
+      "publisher": "Mongabay India",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    },
+    {
+      "id": "4ce205e3-653f-51db-9e49-14fb3b3f2e14",
+      "kind": "WEB_PAGE",
+      "title": "Indigo in Kutch, India: Art and Science, Environment and Economics (essay in Blue Gold: The Art and Science of Indigo)",
+      "authors": [
+        "Judy Frater"
+      ],
+      "year": 2025,
+      "doi": null,
+      "url": "https://publications.mingei.org/blue-gold/essays/essay-4-fra-sc/",
+      "publisher": "Mingei International Museum, San Diego",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    }
+  ],
+  "followUps": [
+    "How is the indigo vat prepared for Kutch Ajrakh?",
+    "Which other crafts use an alum mordant?"
+  ],
+  "createdAt": "2026-11-17T10:30:00Z"
+}

@@ -2,13 +2,11 @@ import type { ReactNode } from "react";
 
 import { FactGrid, type Fact } from "@/components/editorial/FactGrid";
 import { TextLink } from "@/components/ui/TextLink";
-import { scriptOf } from "@/lib/answerLanguages";
 import type { FieldTranscript, TranscriptLine, TranscriptSpeaker } from "@/lib/fieldVoicesContract";
+import { MACHINE_TRANSLATION, voiceScript } from "@/lib/fieldVoicesView";
 import { formatClock, formatDate } from "@/lib/format";
 
-const MACHINE_LABEL = "Machine translation";
 const UNKNOWN_SPEAKER = "Speaker";
-const NASTALIQ_LANGUAGES: ReadonlySet<string> = new Set(["ur", "ks"]);
 const ROLE_LABEL: Record<NonNullable<TranscriptSpeaker["role"]>, string> = { ARTISAN: "artisan", DESIGNER: "designer", RESEARCHER: "researcher", OTHER: "speaker" };
 const MEDIUM_LABEL: Record<FieldTranscript["mediaType"], string> = { AUDIO: "Sound recording", VIDEO: "Video recording" };
 
@@ -18,12 +16,6 @@ function speakerLabel(speakers: Map<string, TranscriptSpeaker>, line: Transcript
 
 function speakerText(speaker: TranscriptSpeaker): string {
   return speaker.role ? `${speaker.label}, ${ROLE_LABEL[speaker.role]}` : speaker.label;
-}
-
-function scriptAttribute(text: string, language: string): string | undefined {
-  const script = scriptOf(text);
-  if (!script || script === "Latn") return undefined;
-  return script === "Arab" && NASTALIQ_LANGUAGES.has(language.split("-")[0]) ? "Aran" : script;
 }
 
 function recordingFacts(transcript: FieldTranscript): Fact[] {
@@ -69,13 +61,13 @@ function TranscriptRow({ line, speaker }: { line: TranscriptLine; speaker: strin
       <p className="font-ui text-label text-ink-3">
         <span className="font-semibold text-ink-2">{speaker}</span> · <span className="lining-nums tabular-nums">{line.locator}</span>
       </p>
-      <p lang={line.language} dir="auto" data-script={scriptAttribute(line.text, line.language)} className="max-w-measure font-reading text-body text-ink-1">
+      <p lang={line.language} dir="auto" data-script={voiceScript(line.text, line.language)} className="max-w-measure font-reading text-body text-ink-1">
         {line.text}
       </p>
       {line.english && line.english !== line.text ? (
         <p lang="en" className="max-w-measure font-reading text-body-sm text-ink-2">
           {line.english}
-          {line.englishSource === "MACHINE" ? <span className="ms-2 font-ui text-caption text-ink-3">{MACHINE_LABEL}</span> : null}
+          {line.englishSource === "MACHINE" ? <span className="ms-2 font-ui text-caption text-ink-3">{MACHINE_TRANSLATION}</span> : null}
         </p>
       ) : null}
     </li>
@@ -112,7 +104,7 @@ export function FieldTranscriptView({ transcript }: { transcript: FieldTranscrip
           <p lang="en" className="max-w-measure whitespace-pre-line font-reading text-body text-ink-1">
             {transcript.english}
           </p>
-          {transcript.englishSource === "MACHINE" ? <p className="font-ui text-label text-ink-3">{MACHINE_LABEL}</p> : null}
+          {transcript.englishSource === "MACHINE" ? <p className="font-ui text-label text-ink-3">{MACHINE_TRANSLATION}</p> : null}
         </Part>
       ) : null}
     </article>

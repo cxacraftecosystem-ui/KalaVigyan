@@ -12,6 +12,7 @@ from app.data.craft_master_loader import ID_NAMESPACE
 from app.models import FieldImage, FieldImageCraft, MediaRef
 from app.research.field_voices import PORTAL_PROVIDERS, PORTAL_PUBLISHERS
 from app.services.field_voices_feed import Live
+from app.services.field_voices_illustrations import link_photo_claims, photo_described
 from app.services.field_voices_images import StoredCopy
 from app.services.field_voices_items import ImageItem
 from app.services.field_voices_photos import PhotoPlan, photo_plan
@@ -90,10 +91,15 @@ async def apply_image(
     statement = insert(FieldImage).values(**keys, **values)
     await session.execute(statement.on_conflict_do_update(index_elements=[FieldImage.id], set_=values))
     await _relink(session, image_id, crafts.craft_ids)
+    await link_photo_claims(session, media_id, described=_described(item, plan), craft_ids=crafts.craft_ids)
     old_key = existing.objectKey if existing is not None else None
     if old_key is not None and old_key != stored.key and await _orphaned(session, old_key, keep=image_id):
         return AppliedImage(changed=True, orphaned_key=old_key)
     return AppliedImage(changed=True)
+
+
+def _described(item: ImageItem, plan: PhotoPlan) -> str:
+    return photo_described(item.caption, [(group.kind, group.label) for group in plan.groups])
 
 
 async def _relink(session: AsyncSession, image_id: uuid.UUID, craft_ids: tuple[uuid.UUID, ...]) -> None:
