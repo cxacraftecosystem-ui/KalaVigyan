@@ -51,8 +51,8 @@ async def test_a_second_reader_missing_the_same_block_waits_for_the_first_and_pa
     assert heard == await first
     assert (len(narrator.calls), waits) == (1, [1.0])
     assert {row.key for row in listening.ledger.rows} == {
-        "listen:00000000-0000-0000-0000-000000000001:hold",
-        "listen-refund:00000000-0000-0000-0000-000000000001",
+        "listen:00000000-0000-0000-0000-000000000001:elevenlabs:hold",
+        "listen-refund:00000000-0000-0000-0000-000000000001:elevenlabs",
     }
     assert LEASE_KEY not in listening.objects.stored
 

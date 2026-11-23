@@ -60,6 +60,8 @@ FIELD_VOICE_EXTENSIONS = ("jpg", "png")
 SCORE_MANIFEST_LEAF = "score.json"
 RIVER_TOPOLOGY_SUBJECT = "HydroRIVERS-1-0"
 NARRATION_PARTS_MAX = 99
+AUDIO_EXTENSION = "mp3"
+NARRATION_EXTENSIONS = frozenset({AUDIO_EXTENSION, "wav"})
 LESSON_FILE_WHAT = {"html": "Slides", "pptx": "Slides", "pdf": "Lesson"}
 ARTISAN_AUDIO_EXTENSIONS = {"audio/webm": "webm", "audio/ogg": "ogg", "audio/mp4": "m4a", "audio/wav": "wav"}
 ARTISAN_TURNS_MAX = 99
@@ -172,10 +174,12 @@ def media_key(owner_id: uuid.UUID, leaf: str, *, token: uuid.UUID | None = None)
     return f"{MEDIA_PREFIX}/{owner_id}/{(token or uuid.uuid4()).hex}/{_one_file_name(leaf, 'media')}"
 
 
-def narration_file_name(generated_at: datetime, part: int) -> str:
+def narration_file_name(generated_at: datetime, part: int, *, ext: str = AUDIO_EXTENSION) -> str:
     if not 1 <= part <= NARRATION_PARTS_MAX:
         raise InvalidInput(f"Narration part {part} does not fit Part-NN")
-    return _explainer_audio_name(generated_at, "Narration", f"Part-{part:02d}")
+    if ext not in NARRATION_EXTENSIONS:
+        raise InvalidInput(f"A narration part is one of {sorted(NARRATION_EXTENSIONS)}, not {ext!r}")
+    return _explainer_audio_name(generated_at, "Narration", f"Part-{part:02d}", ext)
 
 
 def narration_key(cache_id: str, leaf: str) -> str:
@@ -183,13 +187,13 @@ def narration_key(cache_id: str, leaf: str) -> str:
 
 
 def score_music_file_name(generated_at: datetime) -> str:
-    return _explainer_audio_name(generated_at, "Music", None)
+    return _explainer_audio_name(generated_at, "Music", None, AUDIO_EXTENSION)
 
 
 def score_cue_file_name(generated_at: datetime, scene: int) -> str:
     if scene < 1:
         raise InvalidInput(f"Film scene {scene} does not fit Scene-NN")
-    return _explainer_audio_name(generated_at, "Sound-Effect", f"Scene-{scene:02d}")
+    return _explainer_audio_name(generated_at, "Sound-Effect", f"Scene-{scene:02d}", AUDIO_EXTENSION)
 
 
 def score_key(cache_id: str, leaf: str) -> str:
@@ -294,11 +298,11 @@ def content_disposition(leaf: str, *, inline: bool) -> str:
     return f"{kind}; filename=\"{leaf}\"; filename*=UTF-8''{quote(leaf, safe='')}"
 
 
-def _explainer_audio_name(generated_at: datetime, what: str, sequence: str | None) -> str:
+def _explainer_audio_name(generated_at: datetime, what: str, sequence: str | None, ext: str) -> str:
     return file_name(
         entity="Explainer",
         what=what,
-        ext="mp3",
+        ext=ext,
         moment=generated_at,
         place=PlaceParts(),
         craft=None,

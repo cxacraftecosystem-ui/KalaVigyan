@@ -1,4 +1,4 @@
-import { trackMark, type ListenMark, type ListenWord } from "@/lib/listen";
+import { trackMark, type ListenMark, type TimedTrack } from "@/lib/listen";
 
 export type ListenMarks = {
   subscribe: (onChange: () => void) => () => void;
@@ -7,7 +7,7 @@ export type ListenMarks = {
 };
 
 export type ListenMarkStore = ListenMarks & {
-  follow: (words: readonly ListenWord[] | null, time: number) => void;
+  follow: (track: TimedTrack | null, time: number) => void;
   show: (mark: ListenMark | null) => void;
 };
 
@@ -36,9 +36,9 @@ export function listenMarkStore(first: ListenMark | null = null): ListenMarkStor
     },
     mark: () => mark,
     time: () => time,
-    follow: (words, at) => {
+    follow: (track, at) => {
       time = at;
-      const next = words ? trackMark(words, at) : null;
+      const next = trackMark(track, at);
       if (!sameMark(mark, next)) mark = next;
       changed();
     },

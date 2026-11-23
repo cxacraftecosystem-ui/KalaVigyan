@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "answerId": "0c5e7a1d-2b3f-4c6d-8e9f-a0b1c2d3e4f5",
   "language": "en",
+  "voice": "ELEVENLABS",
   "tracks": [
     {
       "blockId": "s2.b1",

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "answerId": "0c5e7a1d-2b3f-4c6d-8e9f-a0b1c2d3e4f5",
+  "language": "en",
+  "voice": "GEMINI",
+  "tracks": [
+    {
+      "blockId": "s2.b1",
+      "audioUrl": "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com/media/narration/81668714fdbbbc8eeea4f2347ee3f84a853dd0e0c60f905a69ec72c9d970700c/KalaVigyan_Explainer_2026-11-17_1430_Narration_Part-01.wav?X-Amz-Expires=3600",
+      "durationSeconds": 14.6,
+      "words": [],
+      "sentences": [
+        {
+          "sentenceId": "s2.b1.1",
+          "start": 0.0,
+          "end": 6.2
+        },
+        {
+          "sentenceId": "s2.b1.2",
+          "start": 6.2,
+          "end": 9.7
+        },
+        {
+          "sentenceId": "s2.b1.3",
+          "start": 9.7,
+          "end": 14.6
+        }
+      ]
+    }
+  ]
+}

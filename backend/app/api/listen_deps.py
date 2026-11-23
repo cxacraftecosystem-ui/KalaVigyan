@@ -11,14 +11,14 @@ from app.api.voice_deps import current_voice, voice_runtime
 from app.core.db import sessionmaker
 from app.core.deps import get_current_user, require
 from app.core.errors import AppError
+from app.core.managed_keys import get_secret
 from app.core.roles import Capability, can, is_uncapped
 from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
-from app.schemas.listen import ListenOffer
+from app.providers.gemini_media import GEMINI_KEY_NAME, GeminiMediaWire
 from app.services.object_store import media_bucket
-from app.voice.languages import LISTEN_LANGUAGES
-from app.voice.listen import Narrator
 from app.voice.listen_store import SqlListenStore
+from app.voice.listen_voices import ElevenLabsVoice, GeminiVoice, ListenVoice, listen_offer
 from app.voice.object_lease import LeasedObjects
 
 __all__ = [
@@ -27,7 +27,9 @@ __all__ = [
     "ListenTools",
     "listen_store",
     "listen_tools",
+    "listen_voices",
     "offered_listen",
+    "read_aloud_key",
     "throttled_voice_user",
 ]
 
@@ -40,8 +42,7 @@ NO_LISTEN: dict[str, Any] = {"languages": []}
 @dataclass(frozen=True)
 class ListenTools:
     objects: LeasedObjects
-    narrator: Narrator
-    voice_id: str
+    voices: tuple[ListenVoice, ...]
 
 
 def throttled_voice_user(
@@ -61,23 +62,35 @@ def listen_store() -> SqlListenStore:
 
 async def listen_tools(request: Request) -> ListenTools:
     objects = media_bucket()
-    voice = await current_voice()
-    if objects is None or not voice.api_key:
+    voices = await listen_voices(request) if objects is not None else ()
+    if objects is None or not voices:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, UNAVAILABLE_DETAIL)
-    return ListenTools(
-        objects=objects, narrator=voice_runtime(request).elevenlabs(voice), voice_id=voice.voice_id
-    )
+    return ListenTools(objects=objects, voices=voices)
+
+
+async def listen_voices(request: Request) -> tuple[ListenVoice, ...]:
+    runtime = voice_runtime(request)
+    voice = await current_voice()
+    found: list[ListenVoice] = []
+    if voice.api_key and await runtime.reachable(voice):
+        found.append(ElevenLabsVoice(narrator=runtime.elevenlabs(voice), voice_id=voice.voice_id))
+    key = await read_aloud_key()
+    if key:
+        found.append(GeminiVoice(reader=GeminiMediaWire(api_key=key, client=runtime.client)))
+    return tuple(found)
+
+
+async def read_aloud_key() -> str | None:
+    async with sessionmaker()() as session:
+        return await get_secret(session, GEMINI_KEY_NAME)
 
 
 async def offered_listen(request: Request, user: User = Depends(get_current_user)) -> dict[str, Any]:
     if not can(user, Capability.VOICE) or media_bucket() is None:
         return dict(NO_LISTEN)
     try:
-        voice = await current_voice()
-        reachable = bool(voice.api_key) and await voice_runtime(request).reachable(voice)
+        voices = await listen_voices(request)
     except AppError as error:
         logger.warning("listening could not be checked, Listen hidden: %s", error)
         return dict(NO_LISTEN)
-    if not reachable:
-        return dict(NO_LISTEN)
-    return ListenOffer(languages=list(LISTEN_LANGUAGES)).model_dump(mode="json", by_alias=True)
+    return listen_offer(voices).model_dump(mode="json", by_alias=True)

@@ -68,7 +68,7 @@ flowchart LR
 | [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md), [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0034](0034-images-and-terms.md) | Pictures and tappable terms | · |
-| [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | [0140](0140-voice-and-listen-kept-true.md) |
+| [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | [0140](0140-voice-and-listen-kept-true.md) and [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
 | [0036](0036-asking-screen.md) | The asking screen: dictation, an optional craft, depth by role | · |
 | [0037](0037-explainer-ui.md) | The explainer view | [0140](0140-voice-and-listen-kept-true.md) |
 | [0038](0038-phase-a-review-fixes.md) | Phase A review fixes | · |
@@ -99,7 +99,7 @@ flowchart LR
 | [0061](0061-phase-c-review-fixes.md) | Phase C review fixes | · |
 | [0062](0062-phase-d-contract.md) | Phase D contract: learning blocks, versions, alerts, lessons, exports and the map | [0067](0067-lessons-and-exports.md) and [0147](0147-time-market-and-figures-kept-true.md) |
 | [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
-| [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
+| [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md), [0143](0143-lessons-exports-and-follow-ups-kept-true.md) and [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
 | [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md) and [0147](0147-time-market-and-figures-kept-true.md) |
 | [0067](0067-lessons-and-exports.md) | Lesson packs, the explainer PDF and citation export | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
@@ -203,6 +203,7 @@ flowchart LR
 | [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
 | [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
+| [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) | Listen falls back to the Gemini voice by sentence, a shared-science node counts and pages its crafts, admins see the hidden facts, and the smoke measures the dock's bit rate | · |
 
 ## How this document is kept true
 

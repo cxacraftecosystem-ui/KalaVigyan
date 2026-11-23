@@ -8,6 +8,7 @@ Date: 2026-11-17. Status: accepted.
 | For | Read |
 |---|---|
 | What amended part of it | [0140 Voice and Listen hold their state in the bucket, bill what they hear and read the lede first](0140-voice-and-listen-kept-true.md): the lede first, hypotheses unread, the narration lease and lifecycle |
+| What gave Listen a second voice | [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md): the Gemini voice by sentence when ElevenLabs cannot read, the voice named in the script and the offer, the cache id by model and the ledger keys by voice |
 | The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
 | The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
 | Every decision, by group | [README.md](README.md) |

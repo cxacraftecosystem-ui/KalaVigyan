@@ -2,7 +2,7 @@ import { headingView, sentenceView, type AnswerLanguage, type ShownText } from "
 import type { LedeBlock } from "@/lib/explainerContract";
 import type { SectionView } from "@/lib/explainerState";
 import { blockSentences, type TextRange, type TypedBlock } from "@/lib/explainerView";
-import { trackMark, wordRanges, type ListenMark, type ListenScript, type ListenTrack } from "@/lib/listen";
+import { firstSentenceId, trackMark, wordRanges, type ListenMark, type ListenScript, type ListenTrack } from "@/lib/listen";
 
 export const FILM_SCENE_SECONDS = { step: 4, picture: 3, block: 6 } as const;
 export const PREVIOUS_RESTARTS_AFTER_SECONDS = 2;
@@ -150,7 +150,7 @@ export function filmStep(clock: FilmClock, action: FilmAction, scenes: readonly 
 
 export function filmMark(scene: FilmScene | undefined, time: number): ListenMark | null {
   const current = scene ? sceneTrack(scene, time) : null;
-  return current ? trackMark(current.track.words, time - current.start) : null;
+  return current ? trackMark(current.track, time - current.start) : null;
 }
 
 function titleCaption(scene: FilmScene, language: AnswerLanguage): FilmCaption {
@@ -164,8 +164,8 @@ function titleCaption(scene: FilmScene, language: AnswerLanguage): FilmCaption {
 export function filmCaption(scene: FilmScene, time: number, language: AnswerLanguage): FilmCaption {
   const current = sceneTrack(scene, time);
   if (!current) return titleCaption(scene, language);
-  const mark = trackMark(current.track.words, time - current.start);
-  const sentenceId = mark?.sentenceId ?? current.track.words[0].sentenceId;
+  const mark = trackMark(current.track, time - current.start);
+  const sentenceId = mark?.sentenceId ?? firstSentenceId(current.track);
   const sentence = blockSentences(scene.block).find((candidate) => candidate.id === sentenceId);
   if (!sentence) return titleCaption(scene, language);
   const shown = sentenceView(sentence, language, false);

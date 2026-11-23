@@ -183,6 +183,14 @@ test("a narrated scene is captioned with the sentence being read and its word, a
   expect(filmMark(all[0], 3)).toBeNull();
 });
 
+test("a scene the Gemini voice read is captioned with the sentence being read and no word", () => {
+  const read = checkedScript(JSON.parse(readRepo("shared", "listen.script-sentences.golden.json")), document().answerId, "en");
+  const water = filmScenes(sections(), read, hasRenderer)[2];
+  expect(filmMark(water, 7)).toEqual({ sentenceId: "s2.b1.2", words: [], wordIndex: -1 });
+  expect(filmCaption(water, 7, ENGLISH)).toMatchObject({ text: "Ajrakh printing got concentrated where extra soft water was available.", mark: null, narrated: true });
+  expect(filmCaption(water, 0, ENGLISH)).toMatchObject({ narrated: true, mark: null });
+});
+
 test("captions are in the answer language even while the page shows the English original", () => {
   const sentence = { id: "s9.b1.1", text: "लोहा पानी में है", original: "Iron is in the water", translated: true, level: "PROVISIONAL", citations: [], terms: [] };
   const words = [

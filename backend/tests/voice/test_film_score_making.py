@@ -32,7 +32,7 @@ async def narrated(objects: MemoryObjects, explainer: Explainer, seconds: dict[s
     for block in spoken_blocks(explainer, None):
         if block.block_id not in seconds:
             continue
-        cache_id = narration_cache_id(block.content_hash, language="en", voice_id=VOICE_ID)
+        cache_id = narration_cache_id(block.content_hash, language="en", voice_id=VOICE_ID, model="eleven_v4")
         word = ListenWord(sentence_id=block.sentences[0].sentence_id, text="Ajrakh", start=0.0, end=0.4)
         part = NarratedPart(
             key=narration_key(cache_id, "part.mp3"),

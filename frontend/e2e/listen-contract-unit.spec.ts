@@ -48,8 +48,32 @@ test("a script for another answer or language is refused", () => {
   expect(() => checkedScript(raw, ANSWER_ID, "hi")).toThrow(ShapeError);
 });
 
+test("a script the Gemini voice read is timed sentence by sentence and marks a sentence without a word", () => {
+  const raw = golden("listen.script-sentences.golden.json") as { tracks: Record<string, unknown>[] } & Record<string, unknown>;
+  const script = checkedScript(raw, ANSWER_ID, "en");
+  expect(script).toEqual(raw);
+  expect(script.voice).toBe("GEMINI");
+  expect(scriptDuration(script)).toBeCloseTo(14.6, 6);
+  expect(listenMark(script, { track: 0, time: 0 })).toEqual({ sentenceId: "s2.b1.1", words: [], wordIndex: -1 });
+  expect(listenMark(script, { track: 0, time: 7 })).toEqual({ sentenceId: "s2.b1.2", words: [], wordIndex: -1 });
+  expect(listenMark(script, { track: 0, time: 9.7 })?.sentenceId).toBe("s2.b1.3");
+  expect(listenMark(script, { track: 0, time: -1 })).toBeNull();
+  const [track] = raw.tracks;
+  const words = (golden("listen.script.golden.json") as { tracks: { words: unknown[] }[] }).tracks[0].words;
+  const sentences = track.sentences as unknown[];
+  for (const changed of [{ ...track, words }, { ...track, sentences: [] }, { ...track, sentences: [sentences[1], sentences[0], sentences[2]] }]) {
+    expect(() => checkedScript({ ...raw, tracks: [changed] }, ANSWER_ID, "en")).toThrow(ShapeError);
+  }
+});
+
+test("a script from a backend that names no voice still plays", () => {
+  const { voice: _voice, ...older } = golden("listen.script.golden.json");
+  expect(checkedScript(older, ANSWER_ID, "en").voice).toBeUndefined();
+});
+
 test("the config's listen offer gives the languages Listen speaks, or none", () => {
   expect(listenLanguagesOf({ languages: ["en", "hi", "ur"] })).toEqual(["en", "hi", "ur"]);
+  expect(listenLanguagesOf({ languages: ["en", "hi"], voice: "GEMINI" })).toEqual(["en", "hi"]);
   expect(listenLanguagesOf({ languages: [] })).toEqual([]);
   expect(listenLanguagesOf(undefined)).toEqual([]);
 });

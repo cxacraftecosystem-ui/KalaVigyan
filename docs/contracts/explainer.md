@@ -1853,14 +1853,17 @@ table also holds `embedding` (1536 dimensions, filled like claims, never sent) a
 The explainer UI reads Listen as below (`frontend/lib/listen.ts`); the route that serves it is
 Listen's lane (0035). `shared/listen.script.golden.json` is the script both sides check.
 
-- `/answers/config` adds `listen {languages[code]}`: the answer languages Listen can speak. The
+- `/answers/config` adds `listen {languages[code], voice?}`: the answer languages Listen can speak
+  and the voice that reads first (`docs/contracts/voice.md`, Listen). The
   Listen control is drawn only after `done`, with an answer id, in a listed language; absent or
   off the contract, it is not drawn.
 - `GET /api/answers/{answerId}/listen?language=<code>` (the asker) answers `ListenScript
-  {schemaVersion 1, answerId, language, tracks[ListenTrack] (at least one)}`, refused by the
-  client unless `answerId` and `language` are the ones asked.
+  {schemaVersion 1, answerId, language, voice?, tracks[ListenTrack] (at least one)}`, refused by
+  the client unless `answerId` and `language` are the ones asked; `voice` names who read it
+  (`ELEVENLABS` or `GEMINI`, decision 0161).
 - `ListenTrack {blockId, audioUrl (https; the private media bucket's presigned URL), durationSeconds
-  > 0, words[ListenWord] (at least one)}`, one per part of each `prose` or `process_ladder` block
+  > 0, words[ListenWord], sentences?[ListenSentence]}`, timed by its words (ElevenLabs) or, with
+  `words` empty, by its sentences (Gemini), one per part of each `prose` or `process_ladder` block
   in reading order (sections by `order`, blocks in order); a block over 2,000 characters, or with
   sentences in two languages, has several tracks with the same `blockId`, in order (decision
   0035); the client plays them one after another. `?section=<id>` reads one section.
@@ -1869,6 +1872,8 @@ Listen's lane (0035). `shared/listen.script.golden.json` is the script both side
   sentence's shown text in the answer language, found there in order from where the previous
   word of the same sentence ended (text, not character offsets, as term spans; decision 0030
   point 4). The sentence being read is highlighted, and the word too when it is found.
+- `ListenSentence {sentenceId, start, end}`: the seconds of the track one sentence fills, in reading
+  order within the track; a track timed by sentences highlights the sentence being read and no word.
 
 ## Fixtures (`shared/`)
 

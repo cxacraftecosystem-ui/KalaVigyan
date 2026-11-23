@@ -24,12 +24,14 @@ from .paid_check_steps import (
     IMAGE_USD,
     MUSIC_SECONDS,
     MUSIC_USD_PER_SECOND,
+    SPEECH_USD,
     CheckResult,
     PaidCheck,
     image_check,
     music_check,
     narration_check,
     narration_estimate,
+    speech_check,
 )
 
 __all__ = ["run", "run_checks"]
@@ -102,12 +104,16 @@ def _checks(keys: _Keys, voice_id: str, settings: Settings) -> list[PaidCheck]:
     async def image() -> CheckResult:
         return await image_check(keys.gemini(), keys.recorder)
 
+    async def speech() -> CheckResult:
+        return await speech_check(keys.gemini(), keys.recorder)
+
     music_usd = (MUSIC_USD_PER_SECOND * Decimal(str(MUSIC_SECONDS))).quantize(CENT_TENTHS, rounding=ROUND_UP)
     return [
         PaidCheck("narration_en", narration_estimate("en"), partial(narration, "en")),
         PaidCheck("narration_hi", narration_estimate("hi"), partial(narration, "hi")),
         PaidCheck("music_bed", music_usd, music),
         PaidCheck("gemini_image", IMAGE_USD, image),
+        PaidCheck("gemini_speech", SPEECH_USD, speech),
         PaidCheck("agent_turn", AGENT_TURN_USD, partial(agent_check, keys.client, settings)),
     ]
 

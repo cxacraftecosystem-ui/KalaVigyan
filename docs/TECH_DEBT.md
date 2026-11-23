@@ -217,13 +217,18 @@ Last reviewed: 2026-11-22.
 - **Clears it:** one real `AGENT` call once the spike passes, and the same check run on the page
   that mounts the dock when `VOICE_CALL_ENABLED` brings the call back.
 
-### The dock asks for a bit rate it cannot enforce
+### The dock's recorded bit rate is unmeasured in Safari
 
 - **What:** the relay recorder asks `MediaRecorder` for the session's `audioBitsPerSecond`
-  (32 kbit/s) and sends a turn at nine tenths of `maxAudioBytes`; a browser that ignores the asked
-  rate (Safari's AAC is the likely case, unverified) sends shorter turns than a minute.
-- **Clears it:** measure the recorded rate per browser in the smoke spec; if one ignores it, raise
-  that type's byte ceiling in the contract with its measured rate.
+  (32 kbit/s) and sends a turn at nine tenths of `maxAudioBytes`, so a full minute fits only at
+  36,000 bit/s or less. The browser smoke measures Chromium on every pull request
+  (`frontend/e2e/voice-rate.smoke.spec.ts`: `audio/webm` at 28,269 and 28,245 bit/s on 2026-11-23,
+  decision 0161); Safari records `audio/mp4` (AAC), and whether it keeps to the asked rate is
+  unmeasured.
+- **Waits on:** a Safari run, which no GitHub runner has (Playwright's WebKit is not Safari's media
+  stack): a person with a Mac runs the smoke spec in Safari once. If it records above 36,000 bit/s,
+  raise the `audio/mp4` byte ceiling in `docs/contracts/voice.md` and `schemas/voice.py` by its
+  measured rate.
 
 ## Science engine (decision 0015)
 
@@ -519,13 +524,19 @@ Last reviewed: 2026-11-22.
   gives each reply's characters a minute and whether the alignment spells the text. If `eleven_v4`
   is refused, set `NARRATION_MODEL` to `eleven_v4_turbo`.
 
-### Listen has no fallback voice
+### The Gemini read-aloud has not reached Gemini
 
-- **What:** PLAN 10.6 reads aloud with the Gemini voice when ElevenLabs is down; Listen is hidden
-  instead (`listen.languages` empty), because the Gemini voice gives no word timings.
-- **Why left:** highlighting needs timings; a fallback without them is a second Listen.
-- **Clears it:** a Gemini read-aloud that highlights by sentence only, if the owner wants Listen
-  while ElevenLabs is down.
+- **What:** Listen's fallback voice (`GeminiMediaWire.read_aloud`, decision 0161) follows the
+  speech page of the Gemini documentation read on 2026-11-23: `POST /v1beta/interactions` with
+  `gemini-3.8-flash-tts`, the voice in `generation_config.speech_config`, and a RIFF WAV of 24 kHz
+  mono 16-bit PCM in the last `audio` block of the `model_output` step. No request has reached
+  Gemini, so that shape, whether the `Api-Revision` header the media wire sends is accepted, the
+  real speaking rate behind the 1,000-characters-a-minute hold, and whether a cited sentence's
+  angle brackets are read as text rather than as an inline speech tag are unverified.
+- **Waits on:** the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154),
+  whose `gemini_speech` step reads one sentence and parses it as Listen does; commit its
+  `speech_completed.json` as a fixture of `backend/tests/media/test_gemini_speech.py`. A refusal
+  there names what to change in `providers/gemini_media.py`.
 
 ## Sectioned composition (decision 0032)
 

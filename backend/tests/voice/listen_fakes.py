@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+import io
 import uuid
+import wave
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.core.errors import ExternalFailure
+from app.providers.base import ProviderError
 from app.providers.elevenlabs import TTS_BITS_PER_SECOND, TimedSpeech
 from app.providers.quota import LedgerEntry
 from app.research.explainer import Explainer
 from app.services.object_store import PresignedGet
 from app.voice.listen import ListenAsk, ListenDeps, ListenHold
+from app.voice.listen_voices import ElevenLabsVoice, GeminiVoice, ListenVoice
 
 from ..contracts.golden import golden_json
 
@@ -20,6 +24,7 @@ LISTENED_AT = datetime(2026, 11, 17, 9, 0, tzinfo=UTC)
 LEARNER = uuid.UUID("66ceb1a0-fce2-5527-b3c8-c9c4507c60b9")
 SECONDS_PER_CHARACTER = 0.05
 BYTES_PER_SECOND = TTS_BITS_PER_SECOND // 8
+SPEECH_RATE = 24_000
 
 
 def golden_explainer(**changes: Any) -> Explainer:
@@ -32,6 +37,16 @@ def uniform_speech(text: str, step: float = SECONDS_PER_CHARACTER) -> TimedSpeec
     ends = tuple((index + 1) * step for index in range(len(text)))
     audio = b"\xff" * round(len(text) * step * BYTES_PER_SECOND)
     return TimedSpeech(audio=audio, starts=starts, ends=ends)
+
+
+def spoken_wav(text: str, step: float = SECONDS_PER_CHARACTER, *, channels: int = 1, width: int = 2) -> bytes:
+    body = io.BytesIO()
+    with wave.open(body, "wb") as written:
+        written.setnchannels(channels)
+        written.setsampwidth(width)
+        written.setframerate(SPEECH_RATE)
+        written.writeframes(bytes(round(len(text) * step * SPEECH_RATE) * channels * width))
+    return body.getvalue()
 
 
 @dataclass
@@ -87,6 +102,18 @@ class Narrations:
 
 
 @dataclass
+class Readings:
+    calls: list[dict[str, str]] = field(default_factory=list)
+    failing: str | None = None
+
+    async def read_aloud(self, text: str, *, voice: str) -> bytes:
+        self.calls.append({"text": text, "voice": voice})
+        if self.failing is not None and self.failing in text:
+            raise ProviderError("Gemini answered 503", kind="unavailable", retryable=True, service="gemini")
+        return spoken_wav(text)
+
+
+@dataclass
 class MemoryLedger:
     allowance: int | None = 600
     used: int = 0
@@ -113,14 +140,20 @@ class MemoryLedger:
 class Listening:
     objects: MemoryObjects = field(default_factory=MemoryObjects)
     narrator: Narrations = field(default_factory=Narrations)
+    reader: Readings = field(default_factory=Readings)
     ledger: MemoryLedger = field(default_factory=MemoryLedger)
 
-    def deps(self) -> ListenDeps:
+    def elevenlabs(self) -> ElevenLabsVoice:
+        return ElevenLabsVoice(narrator=self.narrator, voice_id=VOICE_ID)
+
+    def gemini(self) -> GeminiVoice:
+        return GeminiVoice(reader=self.reader)
+
+    def deps(self, *voices: ListenVoice) -> ListenDeps:
         return ListenDeps(
             ledger=self.ledger,
             objects=self.objects,
-            narrator=self.narrator,
-            voice_id=VOICE_ID,
+            voices=voices or (self.elevenlabs(),),
             clock=lambda: LISTENED_AT,
         )
 

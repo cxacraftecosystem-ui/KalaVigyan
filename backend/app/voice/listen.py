@@ -9,25 +9,22 @@ from datetime import datetime
 from functools import partial
 from typing import Protocol
 
-from app.core.errors import AppError, Refused
-from app.providers.elevenlabs import NARRATION_MODEL, TimedSpeech, speech_seconds
+from app.core.errors import AppError, ExternalFailure, NotConfigured, Refused
 from app.providers.quota import LedgerEntry, seconds_until_next_day
 from app.research.explainer import Explainer
 from app.schemas.listen import LISTEN_SCHEMA_VERSION, ListenScript, ListenTrack
 from app.services.naming import content_disposition, narration_file_name, narration_key
 
+from .listen_voices import ListenVoice
 from .narration import (
     NarrationPart,
     SpokenBlock,
     estimated_seconds,
     narration_cache_id,
     narration_parts,
-    part_duration,
-    part_words,
     spoken_blocks,
 )
 from .narration_cache import (
-    AUDIO_TYPE,
     NarratedPart,
     NarrationManifest,
     NarrationObjects,
@@ -47,7 +44,6 @@ __all__ = [
     "ListenHold",
     "ListenLedger",
     "ListenRefused",
-    "Narrator",
     "listen_script",
 ]
 
@@ -58,6 +54,7 @@ NARRATION_LINK_SECONDS = 3600
 LISTEN_LEDGER_REF = "Answer"
 QUOTA_MESSAGE = "Not enough listening time is left today."
 NOTHING_MESSAGE = "There is nothing to read aloud here."
+VOICE_NAME = "LISTEN_VOICE"
 
 
 class ListenRefused(Refused):
@@ -79,18 +76,11 @@ class ListenLedger(Protocol):
     async def record(self, entry: LedgerEntry) -> None: ...
 
 
-class Narrator(Protocol):
-    async def narration(
-        self, text: str, *, voice_id: str, language: str, previous_text: str = "", next_text: str = ""
-    ) -> TimedSpeech: ...
-
-
 @dataclass(frozen=True)
 class ListenDeps:
     ledger: ListenLedger
     objects: LeasedObjects
-    narrator: Narrator
-    voice_id: str
+    voices: tuple[ListenVoice, ...]
     clock: Callable[[], datetime]
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
 
@@ -121,8 +111,26 @@ async def listen_script(ask: ListenAsk, deps: ListenDeps) -> ListenScript:
     blocks = spoken_blocks(ask.explainer, ask.section_id)
     if not blocks:
         raise ListenRefused("nothing", NOTHING_MESSAGE)
+    voices = [voice for voice in deps.voices if voice.speaks(ask.language)]
+    if not voices:
+        raise NotConfigured(VOICE_NAME, f"no voice reads {ask.language} aloud")
+    for voice in voices[:-1]:
+        try:
+            return await _voiced(ask, deps, voice, blocks)
+        except ExternalFailure as failure:
+            if failure.service != voice.service:
+                raise
+            logger.warning("Listen reads with the next voice, since %s failed: %s", voice.name, failure)
+    return await _voiced(ask, deps, voices[-1], blocks)
+
+
+async def _voiced(
+    ask: ListenAsk, deps: ListenDeps, voice: ListenVoice, blocks: list[SpokenBlock]
+) -> ListenScript:
     ids = [
-        narration_cache_id(block.content_hash, language=ask.language, voice_id=deps.voice_id)
+        narration_cache_id(
+            block.content_hash, language=ask.language, voice_id=voice.voice_id, model=voice.model
+        )
         for block in blocks
     ]
     found = await asyncio.gather(
@@ -133,7 +141,7 @@ async def listen_script(ask: ListenAsk, deps: ListenDeps) -> ListenScript:
         cache_id: block for cache_id, block in zip(ids, blocks, strict=True) if cache_id not in manifests
     }
     if missing:
-        manifests |= await _made(ask, deps, missing)
+        manifests |= await _made(ask, deps, voice, missing)
     now = deps.clock()
     tracks = [
         track
@@ -144,14 +152,16 @@ async def listen_script(ask: ListenAsk, deps: ListenDeps) -> ListenScript:
         schema_version=LISTEN_SCHEMA_VERSION,
         answer_id=ask.explainer.answer_id,
         language=ask.language,
+        voice=voice.name,
         tracks=tracks,
     )
 
 
 class _Synthesis:
-    def __init__(self, ask: ListenAsk, deps: ListenDeps) -> None:
+    def __init__(self, ask: ListenAsk, deps: ListenDeps, voice: ListenVoice) -> None:
         self.ask = ask
         self.deps = deps
+        self.voice = voice
         self.seconds = 0
         self._gate = asyncio.Semaphore(LISTEN_CONCURRENCY)
 
@@ -161,8 +171,8 @@ class _Synthesis:
         manifest = NarrationManifest(
             schema_version=1,
             cache_id=cache_id,
-            model=NARRATION_MODEL,
-            voice_id=self.deps.voice_id,
+            model=self.voice.model,
+            voice_id=self.voice.voice_id,
             language=self.ask.language,
             content_hash=block.content_hash,
             parts=made,
@@ -171,35 +181,30 @@ class _Synthesis:
         return manifest
 
     async def _part(self, cache_id: str, parts: list[NarrationPart], index: int) -> NarratedPart:
-        part = parts[index]
         async with self._gate:
-            speech = await self.deps.narrator.narration(
-                part.text,
-                voice_id=self.deps.voice_id,
-                language=part.language,
-                previous_text=parts[index - 1].text if index else "",
-                next_text=parts[index + 1].text if index + 1 < len(parts) else "",
-            )
-        self.seconds += speech_seconds(len(speech.audio))
-        key = narration_key(cache_id, narration_file_name(self.deps.clock(), index + 1))
-        await self.deps.objects.put(key, speech.audio, content_type=AUDIO_TYPE)
+            spoken = await self.voice.spoken(parts, index)
+        self.seconds += spoken.billed_seconds
+        leaf = narration_file_name(self.deps.clock(), index + 1, ext=self.voice.extension)
+        key = narration_key(cache_id, leaf)
+        await self.deps.objects.put(key, spoken.audio, content_type=self.voice.audio_type)
         return NarratedPart(
             key=key,
-            language=part.language,
-            duration_seconds=part_duration(speech),
-            words=part_words(part, speech),
+            language=parts[index].language,
+            duration_seconds=spoken.duration_seconds,
+            words=spoken.words,
+            sentences=spoken.sentences,
         )
 
 
 async def _made(
-    ask: ListenAsk, deps: ListenDeps, missing: dict[str, SpokenBlock]
+    ask: ListenAsk, deps: ListenDeps, voice: ListenVoice, missing: dict[str, SpokenBlock]
 ) -> dict[str, NarrationManifest]:
     found = await _made_elsewhere(deps, missing)
     ours = {cache_id: block for cache_id, block in missing.items() if cache_id not in found}
     if not ours:
         return found
     try:
-        return found | await _paid(ask, deps, ours)
+        return found | await _paid(ask, deps, voice, ours)
     finally:
         await _released(deps.objects, ours)
 
@@ -230,37 +235,37 @@ async def _released(objects: LeasedObjects, ours: dict[str, SpokenBlock]) -> Non
 
 
 async def _paid(
-    ask: ListenAsk, deps: ListenDeps, missing: dict[str, SpokenBlock]
+    ask: ListenAsk, deps: ListenDeps, voice: ListenVoice, missing: dict[str, SpokenBlock]
 ) -> dict[str, NarrationManifest]:
     characters = sum(len(part.text) for block in missing.values() for part in narration_parts(block))
     now = deps.clock()
     hold = await deps.ledger.hold(
-        ask.entry(estimated_seconds(characters), listen_hold_key(ask.request_id)), now
+        ask.entry(estimated_seconds(characters), listen_hold_key(ask.request_id, voice.service)), now
     )
     if hold.refused:
         raise ListenRefused("quota", QUOTA_MESSAGE, retry_after=seconds_until_next_day(now))
-    synthesis = _Synthesis(ask, deps)
+    synthesis = _Synthesis(ask, deps, voice)
     try:
         made = await asyncio.gather(
             *(synthesis.manifest(cache_id, block) for cache_id, block in missing.items()),
             return_exceptions=True,
         )
     finally:
-        await _settled(ask, deps.ledger, hold, synthesis.seconds)
+        await _settled(ask, deps.ledger, hold, synthesis.seconds, voice.service)
     failure = next((outcome for outcome in made if isinstance(outcome, BaseException)), None)
     if failure is not None:
         raise failure
     return {manifest.cache_id: manifest for manifest in made if isinstance(manifest, NarrationManifest)}
 
 
-async def _settled(ask: ListenAsk, ledger: ListenLedger, hold: ListenHold, billed: int) -> None:
+async def _settled(ask: ListenAsk, ledger: ListenLedger, hold: ListenHold, billed: int, voice: str) -> None:
     unused = hold.held - billed
     if unused > 0:
-        await ledger.record(ask.entry(-unused, listen_refund_key(ask.request_id)))
+        await ledger.record(ask.entry(-unused, listen_refund_key(ask.request_id, voice)))
     elif unused < 0:
         extra = capped_seconds(-unused, hold.remaining_after)
         if extra:
-            await ledger.record(ask.entry(extra, listen_settle_key(ask.request_id)))
+            await ledger.record(ask.entry(extra, listen_settle_key(ask.request_id, voice)))
 
 
 def _tracks(
@@ -279,4 +284,5 @@ def _tracks(
             audio_url=link.url,
             duration_seconds=part.duration_seconds,
             words=part.words,
+            sentences=part.sentences,
         )

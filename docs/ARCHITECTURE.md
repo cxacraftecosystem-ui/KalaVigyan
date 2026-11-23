@@ -106,7 +106,7 @@ The diagram is the stack from the top down; the edges that may really be importe
 | Layer | Package | What it holds |
 |---|---|---|
 | entry points | `main.py`, `api/` (`router.py`, `routes/<area>.py`), `scripts/` | the app, the HTTP routes, and the scripts (seeds, sync, coverage job) |
-| voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058) |
+| voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035), read by the Gemini voice by sentence when ElevenLabs cannot (0161); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058) |
 | media | `media/` | stage illustrations and clips: claim set, prompt, bundle, MP4 and PNG checks, the job routes' steps, the kv-worker queue and its SQL; `worker.py` runs it as kv-worker (decision 0018) |
 | adapters | `providers/` | model adapters and their key checks, the model catalogue, AI router, spend rules and settings, the quota ledger, ElevenLabs |
 | domain | `services/` | crafts, knowledge view, access roster, credentials, keys, routing, live-research write-back and the coverage job (decision 0011) |
@@ -416,6 +416,11 @@ sequenceDiagram
    and then the manifest, and settles the hold to the audio's seconds.
 4. The answer is one track per part: a one-hour presigned link and the words with their times,
    which the explainer UI highlights (`frontend/lib/listen.ts`).
+5. When ElevenLabs is not offered (no key, or its probe fails) or fails while making the audio,
+   the same steps run with the Gemini voice (`voice/listen_voices.py`, `providers/gemini_media.py`
+   `read_aloud`): a sentence per request, the WAVs joined per part and timed by sentence, its own
+   cache, lease and hold; the script names the voice and the UI highlights the sentence being read
+   (decision 0161).
 
 ## How a film gets its score (decision 0058)
 

@@ -16,13 +16,23 @@ from app.research.explainer import Explainer
 from app.schemas.listen import ListenScript
 from app.voice.availability import HIDDEN_VOICE
 from app.voice.listen import ListenHold
+from app.voice.listen_voices import ElevenLabsVoice, GeminiVoice, ListenVoice
 from app.voice.runtime import VoiceRuntime, VoiceSettings
 
-from .listen_fakes import LEARNER, VOICE_ID, MemoryLedger, MemoryObjects, Narrations, golden_explainer
+from .listen_fakes import (
+    LEARNER,
+    VOICE_ID,
+    MemoryLedger,
+    MemoryObjects,
+    Narrations,
+    Readings,
+    golden_explainer,
+)
 
 ANSWER = golden_explainer().answer_id
 PATH = f"/api/answers/{ANSWER}/listen"
 LANGUAGES = ["en", "hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or", "pa", "as", "ur"]
+READ_ALOUD_LANGUAGES = LANGUAGES[:-1]
 
 
 @dataclass
@@ -42,13 +52,20 @@ class MemoryListenStore:
 
 class Client:
     def __init__(
-        self, *, role: str = "STUDENT", ledger: MemoryLedger | None = None, failing: str | None = None
+        self,
+        *,
+        role: str = "STUDENT",
+        ledger: MemoryLedger | None = None,
+        failing: str | None = None,
+        reader: Readings | None = None,
     ):
         app = create_app()
         self.store = MemoryListenStore(ledger=ledger or MemoryLedger())
         self.store.explainers[(ANSWER, LEARNER)] = golden_explainer()
         self.narrator = Narrations(failing=failing)
-        tools = listen_deps.ListenTools(objects=MemoryObjects(), narrator=self.narrator, voice_id=VOICE_ID)
+        voices: tuple[ListenVoice, ...] = (ElevenLabsVoice(narrator=self.narrator, voice_id=VOICE_ID),)
+        voices += () if reader is None else (GeminiVoice(reader=reader),)
+        tools = listen_deps.ListenTools(objects=MemoryObjects(), voices=voices)
         user = User(id=LEARNER, name="Meera Rao", email="meera@example.org", role=role)
         app.dependency_overrides[get_current_user] = lambda: user
         app.dependency_overrides[listen_deps.listen_store] = lambda: self.store
@@ -106,6 +123,16 @@ def test_a_provider_failure_is_503_without_its_details() -> None:
     assert response.json()["detail"] == "Listening isn't available right now. Try again later."
 
 
+def test_when_elevenlabs_fails_the_route_answers_in_the_gemini_voice_by_sentence() -> None:
+    reader = Readings()
+    response = Client(failing="Presence of iron", reader=reader).http.get(PATH, params={"section": "s2"})
+    assert response.status_code == 200
+    script = ListenScript.model_validate(response.json())
+    assert script.voice == "GEMINI" and [track.words for track in script.tracks] == [[]]
+    assert [s.sentence_id for s in script.tracks[0].sentences] == ["s2.b1.1", "s2.b1.2", "s2.b1.3"]
+    assert len(reader.calls) == 3
+
+
 def test_listen_is_limited_to_thirty_presses_in_ten_minutes_except_for_a_master_admin() -> None:
     student, master = Client(), Client(role="MASTER_ADMIN", ledger=MemoryLedger(allowance=None))
     assert {student.http.get(PATH, params={"section": "s2"}).status_code for _ in range(30)} == {200}
@@ -114,7 +141,13 @@ def test_listen_is_limited_to_thirty_presses_in_ten_minutes_except_for_a_master_
 
 
 def config_client(
-    monkeypatch: pytest.MonkeyPatch, *, bucket: bool, key: str | None, role: str = "STUDENT"
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    bucket: bool,
+    key: str | None,
+    role: str = "STUDENT",
+    read_aloud: str | None = None,
+    elevenlabs_status: int = 200,
 ) -> TestClient:
     async def voice() -> VoiceSettings:
         return VoiceSettings(
@@ -129,11 +162,15 @@ def config_client(
         )
 
     monkeypatch.setattr(listen_deps, "media_bucket", lambda: MemoryObjects() if bucket else None)
+
+    async def read_aloud_key() -> str | None:
+        return read_aloud
+
     monkeypatch.setattr(listen_deps, "current_voice", voice)
+    monkeypatch.setattr(listen_deps, "read_aloud_key", read_aloud_key)
     app = create_app()
-    app.state.voice_runtime = VoiceRuntime(
-        client=httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, json={})))
-    )
+    answer = httpx.MockTransport(lambda request: httpx.Response(elevenlabs_status, json={}))
+    app.state.voice_runtime = VoiceRuntime(client=httpx.AsyncClient(transport=answer))
     user = User(id=LEARNER, name="Meera Rao", email="meera@example.org", role=role)
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[knowledge.offered_voice] = lambda: dict(HIDDEN_VOICE)
@@ -148,7 +185,22 @@ def test_the_config_offers_listen_in_every_answer_language_when_it_can_work(
         .get("/api/answers/config")
         .json()
     )
-    assert body["listen"] == {"languages": LANGUAGES}
+    assert body["listen"] == {"languages": LANGUAGES, "voice": "ELEVENLABS"}
+
+
+@pytest.mark.parametrize(
+    "key", [None, "test-only-elevenlabs-key"], ids=["no ElevenLabs key", "ElevenLabs down"]
+)
+def test_the_config_offers_the_gemini_voice_s_languages_when_elevenlabs_cannot_read(
+    monkeypatch: pytest.MonkeyPatch, key: str | None
+) -> None:
+    client = config_client(
+        monkeypatch, bucket=True, key=key, read_aloud="test-only-gemini-key", elevenlabs_status=503
+    )
+    assert client.get("/api/answers/config").json()["listen"] == {
+        "languages": READ_ALOUD_LANGUAGES,
+        "voice": "GEMINI",
+    }
 
 
 @pytest.mark.parametrize(
