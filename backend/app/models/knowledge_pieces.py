@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, created_at, one_of, subset_of, updated_at, uuid_pk
 from app.models.component_kinds import PIECE_KINDS
-from app.models.crafts import EMBEDDING_DIMENSIONS
+from app.models.crafts import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL_CHARS
 from app.models.enums import (
     DISCIPLINES,
     EXPLAINER_DEPTHS,
@@ -50,6 +50,7 @@ class KnowledgePiece(Base):
     sourceIds: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False)
     contentHash: Mapped[str] = mapped_column(String(64), nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIMENSIONS))
+    embeddingModel: Mapped[str | None] = mapped_column(String(EMBEDDING_MODEL_CHARS))
     createdFromAnswerId: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("Answer.id", ondelete="SET NULL")
     )
