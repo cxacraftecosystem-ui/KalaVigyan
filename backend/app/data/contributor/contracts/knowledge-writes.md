@@ -692,7 +692,13 @@ compared one) it names in whole words (its name, aliases, native names or GI pla
 another catalogued craft it names instead (by its full name, a longer alias, a native-script
 alias or a one-word alias that is neither an ordinary English word, such as casting, nor a word
 three or more crafts' names share; decision 0144), and nowhere when it names two of the compared crafts,
-several other crafts, or a place outside India or another culture's practice. Only after every
+several other crafts, or a place outside India or another culture's practice as where the practice is.
+A place abroad named only as a material's origin, as where goods went or were found, or as the
+present country of a historical site of undivided India the text names (Badakhshan's lapis at
+Ajanta, carnelian found in Sudan, Chanhu-daro in Pakistan) refuses nothing, so the next level is
+read, and a sentence it leaves unnamed is held rather than given to the family (decision 0159). The
+craft researched is never named by an ordinary English word of its own name (casting for Metal
+Casting). Only after every
 level does a fact naming nothing go to its craft family's science (the shared concept named as
 the category, which a craft's scope reads, decision 0122) when it is chemistry, physics or
 materials. A refused sentence is in the write-back's `skipped` list with its reason, which the
@@ -706,8 +712,11 @@ shown to a reader) whatever the `RESEARCH` switch, with a `ReviewEvent` by `live
 whose note names the reason and the suggested craft. It waits in the review queue as a researched
 fact of that craft; it keeps no claim on the answer's sentence and refreshes no page. A
 reviewer's one decision files it: approve files it under the suggested craft, approve with
-`craft` files it under another (review-queue.md, Decisions), reject drops it. A held sentence that
-another sentence of the same answer files is one filed fact.
+`craft` files it under another, approve with `family` files it under that family's science
+(review-queue.md, Decisions), reject drops it; the Review page shows the hold's reason. A held
+sentence that another sentence of the same answer files is one filed fact, and one a later answer
+files under the craft it was held for leaves the hold at the switch's status, with a `ReviewEvent`
+by `live_research` (decision 0159).
 
 **Family science is its family's** (decision 0136). A family-science write-back carries its
 family's category (`ClaimWriteBack.categorySlug`): its dedupe key is the category's, so the same

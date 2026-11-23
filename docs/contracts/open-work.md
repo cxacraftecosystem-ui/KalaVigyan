@@ -65,7 +65,7 @@ stateDiagram-v2
 | MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`: `list_open_work`, `my_work`, `reserve_tasks`, `steward_craft`) and `api/mcp_page_tools.py` (`PAGE_TOOLS`: `edit_draft`, `preview_page`, `propose_page`, with `mcp_page_arguments.py` and `mcp_page_texts.py`), registered in `api/mcp_tools.py`; each names its group in `_meta["kalavigyan/group"]` |
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
 | Source tools (`search_sources`, `read_source`, `lookup`) | `api/mcp_lookup_tools.py` (`LOOKUP_TOOLS`), `services/source_lookup*.py`, limits `core/rate_limit.LOOKUP_LIMITS` (`knowledge-api.md`, Source tools) |
-| The contract resources and the index | `data/contributor/contracts/<name>.md`, copies of `docs/contracts/<name>.md`; `data/contributor/index.md`; read by `data/skill_library.py` |
+| The contract resources and the index | `data/contributor/contracts/<name>.md`, copies of `docs/contracts/<name>.md`; `data/contributor/index.md`, written from the registry by `tools/mcp_index_build.py` (`api/mcp_index.index_text`: every tool, prompt and resource by its title); read by `data/skill_library.py` |
 | HTTP routes | `api/routes/open_work.py`; `api/routes/page_proposals.py` (bundles and previews, `api/page_proposal_deps.py`) |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
 | The references, the datasets skill and the interactives skill | `data/contributor/references/<name>.md`, `data/contributor/kalavigyan-datasets/SKILL.md` (from `.claude/skills/kalavigyan-datasets`) and `data/contributor/kalavigyan-interactives/` (from `.claude/skills/kalavigyan-interactives`; both listed in `skill_library.SKILL_FILES`, the one registry of served skills), read by `data/skill_library.py`, served at `frontend/public/skills/references/`, `frontend/public/skills/kalavigyan-datasets/` and `frontend/public/skills/kalavigyan-interactives/` |
@@ -303,6 +303,15 @@ anonymised by rules (`research/open_work_gap_privacy.anonymised`):
   (Mr, Mrs, Ms, Miss, Dr, Shri, Sri, Smt, Kumari, Prof, Ustad, Pandit, Begum, Madam; श्री, श्रीमती,
   डॉ, कुमारी, सुश्री, उस्ताद), and two or more capitalised words in a row (a sentence's first word
   aside) unless every word is in a craft, category, family, state or district name (`[name]`).
+
+Then, in the nightly step only, never at request time, the questions the rules kept are screened for
+names (decision 0159, `services/question_names.screen_names` over `research/question_names`): the
+cheapest model route (`AiTask.UNDERSTAND`) reads up to 40 questions a call, as data, and lists every
+person's name each holds, a lone first name included, and whether it asks about a person. A question
+about a person is dropped; each name it lists is masked (`[name]`) where the rules' text still holds
+it; a name the question does not hold drops the question, since it cannot be checked. A question the
+screen could not read (a failed call, a malformed reply, a key missing from it) opens no work that night
+and waits, unchanged, for the next (`held` and `namesError` in the night's `answerGaps` report).
 
 The answers stay private as before; both tables have row level security and no grants to the
 public roles.
@@ -768,9 +777,10 @@ applies. After editing a reference, copy it to its served places.
 **Every tool taught (round 7).** `tests/mcp/test_contributor_kit.py` also fails when a tool of
 `api/mcp_tools.TOOLS` is not named in the contributor skill, and holds the skill's source-tool
 allowance table equal to `core/rate_limit.LOOKUP_LIMITS`; `tests/mcp/test_skill_references.py`
-fails when the curation skill stops naming a source tool, when the index stops naming exactly the
-server's tools, prompts and resources, one line each, or when a contract resource differs from
-`docs/contracts`. After editing one of the five contracts, copy it to `data/contributor/contracts/`.
+fails when the curation skill stops naming a source tool, when the index is not the one
+`api/mcp_index.index_text` writes from the server's tools, prompts and resources (their titles, one line
+each; run `tools/mcp_index_build.py` after adding one, decision 0159), or when a contract resource
+differs from `docs/contracts`. After editing one of the five contracts, copy it to `data/contributor/contracts/`.
 
 ## Around open work
 

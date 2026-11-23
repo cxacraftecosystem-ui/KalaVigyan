@@ -404,7 +404,9 @@ already meets every item; the checker catches some, the critic the rest.
   final URL reported; one request per host at a time with 1.5 s between requests to a host; a
   response over 40 MiB is refused, never truncated.
 - HTML through the fetcher's own trafilatura extraction (`app.fetcher.extract`: scripts, styles
-  and hidden elements dropped; capped at 200,000 characters and marked truncated), PDF through
+  and hidden elements dropped), capped at curation's own `reading.TEXT_MAX_CHARS` (8,000,000
+  characters, passed as `extract`'s `max_chars`; the live fetcher keeps 200,000) and marked truncated
+  past it, PDF through
   pypdf (`app.fetcher.pdf.pdf_text`, up to 2,000 pages), plain text as is. A server's wrong
   content type is corrected by sniffing (`%PDF-`, a leading `<`).
 - When the live page refuses (an HTTP error, a failed connection, no extractable text), the
@@ -416,7 +418,7 @@ already meets every item; the checker catches some, the critic the rest.
   table inside it, at least two rows with two or more filled cells, and no cell over 1,000
   characters. Each row the extracted text does not already hold is added after it as one line,
   cells separated by ` | ` as the extraction writes the tables it keeps (`| Status | Pre
-  Examination |`), within the same 200,000-character cap. A page without such a table reads
+  Examination |`), within the same cap. A page without such a table reads
   exactly as before.
 - The text is normalised once (`research/quotes.normalise_quote_lines`): Unicode NFKC, soft
   hyphens removed, hyphenated line breaks joined, curly quotes and dashes folded to ASCII,

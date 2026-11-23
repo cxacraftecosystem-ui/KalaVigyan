@@ -103,7 +103,7 @@ async def approve(
     session: AsyncSession = Depends(get_session),
 ) -> QueueDecision:
     ref = decisions.ItemRef(kind, item_id)
-    moved_from = await filed_owners(session, kind, item_id, body.craft)
+    moved_from = await filed_owners(session, kind, item_id, body.filed_under)
     decided = await _decided(session, decisions.approve_item(session, ref, user, body, now=_now()))
     await refresh_pages(moved_from)
     await embed_decided(session, router_embedder(Principal(user_id=user.id, role=user.role)), decided)

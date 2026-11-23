@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 
+from app.api.mcp_index import index_text
 from app.api.mcp_prompts import PROMPTS
 from app.api.mcp_resources import RESOURCES
 from app.api.mcp_tools import TOOLS, ToolContext, answer
@@ -234,3 +235,12 @@ def test_the_index_names_every_tool_prompt_and_resource_once_with_one_line_each(
         assert len(named) == len(set(named)), section
         assert sorted(named) == sorted(offered[section]), section
     assert server_index().startswith("# The KalaVigyan MCP server\n\n")
+
+
+def test_the_index_is_the_one_the_registry_writes() -> None:
+    assert server_index() == index_text(), "run tools/mcp_index_build.py"
+    assert f"- `lookup`: {TOOLS['lookup'].title}." in index_names_block("Tools")
+
+
+def index_names_block(section: str) -> str:
+    return server_index().split(f"\n## {section}\n")[1].split("\n## ")[0]

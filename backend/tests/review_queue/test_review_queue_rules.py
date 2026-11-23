@@ -38,6 +38,8 @@ from app.research.review_queue import (
     selected_kinds,
 )
 from app.research.review_queue_components import closest_components
+from app.services.claim_writer import HELD_NOTE, held_note
+from app.services.write_back_crafts import HELD_OTHER_PLACE
 
 ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE")
 NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
@@ -293,3 +295,25 @@ def test_each_item_names_its_kind_by_the_queue_it_belongs_to() -> None:
         )
     ]
     assert kinds == list(ALL_KINDS)
+
+
+def test_an_approval_that_files_a_fact_elsewhere_also_moves_an_approved_fact() -> None:
+    assert fact_move_problem(APPROVE, "APPROVED", "PROVISIONAL", refiled=True) is None
+    assert fact_move_problem(APPROVE, "IN_REVIEW", "PROVISIONAL", refiled=True) is None
+    assert (
+        fact_move_problem(APPROVE, "APPROVED", "PROVISIONAL") == "A fact that is approved cannot be approved."
+    )
+    assert fact_move_problem(APPROVE, "RETRACTED", "PROVISIONAL", refiled=True) == (
+        "A fact that is retracted cannot be approved."
+    )
+    assert QueueApproval(family="Mud-Based-Craft-Category").filed_under == "Mud-Based-Craft-Category"
+    assert QueueApproval(craft="Khurja-Pottery").filed_under == "Khurja-Pottery"
+    assert QueueApproval().filed_under is None
+
+
+def test_a_held_write_back_s_note_gives_its_reason_and_suggested_craft() -> None:
+    reason = HELD_OTHER_PLACE.format(places="Afghanistan")
+    note = "ANSWER write-back, answer 1" + HELD_NOTE.format(reason=reason, craft="Ajanta-Painting")
+    assert held_note(note) == (reason, "Ajanta-Painting")
+    assert held_note("ANSWER write-back, answer 1") is None
+    assert held_note(None) is None

@@ -1,3 +1,4 @@
+import json
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -6,10 +7,12 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import ExternalFailure
 from app.models import Answer, AnswerGap, AnswerVerdict, TaskReservation
 from app.research.open_work import OpenTask, Viewer, WorkFilters
 from app.research.open_work_gaps import FieldReading
 from app.research.sections import AnswerPlans
+from app.research.structured import StructuredReply
 from app.services.answer_gap_refresh import refresh_answer_gaps
 from app.services.open_work import list_open_work
 from app.services.task_reservations import claim_task
@@ -219,3 +222,39 @@ async def test_a_gap_no_one_asked_within_ninety_days_lapses(session: AsyncSessio
     assert (report.lapsed, report.open) == (1, 0)
     gap = await gap_of(session, "Why is qelmorant boiled twice?")
     assert (gap.state, gap.askers, gap.closedAt) == ("LAPSED", 0, later)
+
+
+class Screener:
+    def __init__(self, people: set[str], *, failing: bool = False) -> None:
+        self.people = people
+        self.failing = failing
+
+    async def __call__(self, *, system: str, user: str, schema: object) -> StructuredReply:
+        if self.failing:
+            raise ExternalFailure("the model is away", service="model")
+        screened = [
+            {"key": q["key"], "people": [p for p in self.people if p in q["question"]], "aboutAPerson": False}
+            for q in json.loads(user)["questions"]
+        ]
+        return StructuredReply(text=json.dumps({"questions": screened}), degraded=False)
+
+
+async def test_the_nightly_names_screen_masks_a_lone_first_name(session: AsyncSession) -> None:
+    await asked(session, Question("Why does Ramesh boil qelmorant twice?", FIRST, 1))
+    screened = await refresh_answer_gaps(session, None, now=NOW, names=Screener({"Ramesh"}))
+    assert (screened.grouped.dropped, screened.grouped.held, screened.grouped.opened) == (0, 0, 1)
+    (task,) = await gap_tasks(session)
+    assert task.needed.startswith('Readers asked "Why does [name] boil qelmorant twice?"')
+
+
+async def test_questions_the_screen_could_not_read_wait_for_the_next_night(session: AsyncSession) -> None:
+    await asked(session, Question("Why does Ramesh boil qelmorant twice?", FIRST, 1))
+    held = await refresh_answer_gaps(session, None, now=NOW, names=Screener(set(), failing=True))
+    assert (held.grouped.held, held.grouped.opened, held.as_dict()["namesError"]) == (
+        1,
+        0,
+        "the model is away",
+    )
+    assert await gap_tasks(session) == []
+    again = await refresh_answer_gaps(session, None, now=NOW, names=Screener({"Ramesh"}))
+    assert (again.grouped.candidates, again.grouped.opened) == (1, 1)

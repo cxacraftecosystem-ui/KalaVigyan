@@ -9,7 +9,7 @@ from curation_support import SOURCES, FakeHttp, fetched, pdf_with_text
 
 from curation.fetching import rendered
 from curation.polite import FetchFailed, PoliteHttp
-from curation.reading import ReadFailed, content_type_of, read_source, source_text
+from curation.reading import TEXT_MAX_CHARS, ReadFailed, content_type_of, read_source, source_text
 from curation.wayback import latest_snapshot, latest_snapshot_query, raw_snapshot_url
 
 LIVE = "https://example.org/test/resist"
@@ -178,3 +178,10 @@ def test_polite_http_waits_between_requests_to_one_host() -> None:
         http.get("https://other.example.org/c")
         http.get("https://example.org/d")
     assert slept == [1.0]
+
+
+def test_a_long_plain_text_source_is_read_past_the_live_fetcher_s_cap() -> None:
+    body = ("Indigo is reduced in the vat. " * 10_000).encode("utf-8")
+    _, text, truncated = source_text(fetched(LIVE, body))
+    assert len(text) > 290_000 and not truncated
+    assert TEXT_MAX_CHARS > len(text) > 200_000

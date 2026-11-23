@@ -70,7 +70,7 @@ READ_DESCRIPTION = (
 LOOKUP_DESCRIPTION = (
     "Look up a compound in PubChem as KalaVigyan's science engine does: its record (CID, formula, molecular "
     "weight, IUPAC name, InChIKey, SMILES), its GHS hazards as PubChem's attributed sources report them, and "
-    "the name and synonyms KalaVigyan holds; or Wikidata items for a place, a plant or a craft: each item's "
+    "PubChem's synonyms and the name and synonyms KalaVigyan holds; or Wikidata items for a place, a plant or a craft: each item's "
     "label, statements (a plant's taxon name, a place's coordinates and area), CC0 licence and grade. Give a "
     "name (up to three items) or an id. subjects gives what KalaVigyan holds for each record by the key a "
     "component proposal names it with: a compound's and a concept's id, a craft's slug, a district's lgd place. "

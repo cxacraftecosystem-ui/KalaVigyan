@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import session_scope
 from app.research.embedding import TextEmbedder
 from app.research.fetcher import Fetcher
+from app.research.structured import StructuredModel
 from app.sources.fetcher_client import FetcherClient
 from app.sources.wayback_save import WaybackSaver
 
@@ -56,6 +57,7 @@ class UpkeepTools:
     monographs: Sequence[str]
     load_monograph: MonographLoader
     embed: TextEmbedder | None = None
+    names: StructuredModel | None = None
 
 
 def upkeep_tools(
@@ -65,6 +67,7 @@ def upkeep_tools(
     monographs: Sequence[str],
     load: MonographLoader,
     embed: TextEmbedder | None = None,
+    names: StructuredModel | None = None,
 ) -> UpkeepTools:
     return UpkeepTools(
         fetcher=FetcherClient(fetcher_url, client, record=web_fetch_recorder(session_scope)),
@@ -72,6 +75,7 @@ def upkeep_tools(
         monographs=tuple(monographs),
         load_monograph=load,
         embed=embed,
+        names=names,
     )
 
 
@@ -129,7 +133,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report.pages)
     await rebuild_documents(session, report=report.pages)
     report.field_work = await refresh_field_work(session, now=now)
-    report.answer_gaps = await refresh_answer_gaps(session, tools.embed, now=now)
+    report.answer_gaps = await refresh_answer_gaps(session, tools.embed, now=now, names=tools.names)
     report.shared_terms = await refresh_shared_terms(session, now=now)
     report.hidden = await count_hidden_facts(session, now=now)
     return report

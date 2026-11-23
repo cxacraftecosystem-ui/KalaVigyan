@@ -1,0 +1,1448 @@
+{
+ "schemaVersion": 1,
+ "about": "Historical sites and cultures of undivided India that lie outside India today, by which a live-research write-back naming one of them with its present country (Chanhu-daro, Pakistan) is read as the subcontinent's history, not as practice abroad (decision 0159). Sites are the Wikidata items that are part of, or of the culture of, the Indus Valley Civilization (Q42534) or Gandhara (Q213651) in Pakistan, Afghanistan or Bangladesh, and the archaeological sites (Q839954) and ancient cities (Q15661340) of Pakistan and Bangladesh, with their English labels and aliases, read by the query below on 2026-11-23. A name shorter than four letters, made only of ordinary English words (english_words.scowl.txt), already listed, or only the item's id (no English label) is left out. Cultures are the two with their Wikidata labels and aliases (IVC, under four letters, left out); Gandhara's countries are its Wikidata description's (north-west Pakistan and north-east Afghanistan). Wikidata is CC0. Re-vendored by running the query again, never edited by hand.",
+ "source": {
+  "name": "Wikidata",
+  "licence": "CC0-1.0",
+  "url": "https://query.wikidata.org/",
+  "retrieved": "2026-11-23",
+  "query": "SELECT ?item ?itemLabel ?countryLabel (GROUP_CONCAT(DISTINCT ?alias; separator=\"|\") AS ?aliases) WHERE {\n  {\n    VALUES ?culture { wd:Q42534 wd:Q213651 }\n    VALUES ?country { wd:Q843 wd:Q889 wd:Q902 }\n    ?item wdt:P361|wdt:P2596 ?culture ; wdt:P17 ?country .\n  } UNION {\n    VALUES ?kind { wd:Q839954 wd:Q15661340 }\n    VALUES ?country { wd:Q843 wd:Q902 }\n    ?item wdt:P31/wdt:P279* ?kind ; wdt:P17 ?country .\n  }\n  OPTIONAL { ?item skos:altLabel ?alias . FILTER(LANG(?alias) = \"en\") }\n  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". ?item rdfs:label ?itemLabel . ?country rdfs:label ?countryLabel . }\n}\nGROUP BY ?item ?itemLabel ?countryLabel\nORDER BY ?itemLabel"
+ },
+ "cultures": [
+  {
+   "name": "Indus Valley Civilization",
+   "otherNames": [
+    "Harappan Civilization"
+   ],
+   "countries": [
+    "Pakistan"
+   ],
+   "wikidata": "Q42534"
+  },
+  {
+   "name": "Gandhara",
+   "otherNames": [],
+   "countries": [
+    "Pakistan",
+    "Afghanistan"
+   ],
+   "wikidata": "Q213651"
+  }
+ ],
+ "sites": [
+  {
+   "name": "Agrapuri Vihar",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724619"
+  },
+  {
+   "name": "Alhaj Zamir Khan Jame Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q122442051"
+  },
+  {
+   "name": "Anand Bihar",
+   "otherNames": [
+    "Anandbihar"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q13056967"
+  },
+  {
+   "name": "Ancient Jami Mosque, Rajapur Upazila",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q82863223"
+  },
+  {
+   "name": "Ancient Mosque Adjacent House of Begum Rokeya",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724483"
+  },
+  {
+   "name": "Archaeological remains at Uchai Village",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724715"
+  },
+  {
+   "name": "Archaeological sites in Barishal Division",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q76505468"
+  },
+  {
+   "name": "Archaeological sites in Dhaka Division",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q82864520"
+  },
+  {
+   "name": "Arifail Shrine",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q38079954"
+  },
+  {
+   "name": "Atowari Imambara",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724516"
+  },
+  {
+   "name": "Bairagir Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q63213510"
+  },
+  {
+   "name": "Balagajir Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q63213506"
+  },
+  {
+   "name": "Balihar Rajbari",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724215"
+  },
+  {
+   "name": "Bhimer Panti",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27459148"
+  },
+  {
+   "name": "Bhitagarh",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q4901839"
+  },
+  {
+   "name": "Bibi Begni Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724401"
+  },
+  {
+   "name": "Bibi Chini Mosque",
+   "otherNames": [
+    "Bibi Chini Historical Shahi Mosque"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q31724132"
+  },
+  {
+   "name": "Bordeshwari Temple",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724524"
+  },
+  {
+   "name": "Borot Bhayna",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q16346081"
+  },
+  {
+   "name": "Chandi Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724582"
+  },
+  {
+   "name": "Chaprakot Mound",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27126763"
+  },
+  {
+   "name": "Charpatra Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q29838798"
+  },
+  {
+   "name": "Chor Chakravorty’s Mound",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27231673"
+  },
+  {
+   "name": "Collectorate Bhaban",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724336"
+  },
+  {
+   "name": "Colonel Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q56085884"
+  },
+  {
+   "name": "Darashbari Madrasha",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q126325987"
+  },
+  {
+   "name": "Dargah of Shah Ismail Gaji",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q26981425"
+  },
+  {
+   "name": "Dasa Vuja Temple",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27215418"
+  },
+  {
+   "name": "Egaro Shiv Temple",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27215228"
+  },
+  {
+   "name": "Fatehjongpur Fort",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q122725521"
+  },
+  {
+   "name": "Fulchouki Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724438"
+  },
+  {
+   "name": "Galua Paka Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724137"
+  },
+  {
+   "name": "Gauḍa",
+   "otherNames": [
+    "Gaur",
+    "Gour",
+    "Jannatabad",
+    "Lakhnauti"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q1496277"
+  },
+  {
+   "name": "Gokul Medh",
+   "otherNames": [
+    "Behula Lakshindarer Basar Ghar",
+    "Behular Basar Ghar"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q25588540"
+  },
+  {
+   "name": "Golakdham Temple",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27231671"
+  },
+  {
+   "name": "Gopalganj Twin Temple",
+   "otherNames": [
+    "Gopalgonj Temple"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q19891608"
+  },
+  {
+   "name": "Gorar Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q138732335"
+  },
+  {
+   "name": "Gosai Akhra",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27216295"
+  },
+  {
+   "name": "Gourarong Jomidar Bari",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q64343361"
+  },
+  {
+   "name": "Group of Megalithic Tombs",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q26789805"
+  },
+  {
+   "name": "House of Begum Rokeya",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724435"
+  },
+  {
+   "name": "House of Nihar Ranjan Gupta",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27215430"
+  },
+  {
+   "name": "House of Sir Prafulla Chandra Roy",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27215707"
+  },
+  {
+   "name": "Itakhola Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q16345035"
+  },
+  {
+   "name": "Jagaddala Mahavihara",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q6122067"
+  },
+  {
+   "name": "Jhaudia Shahi Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27215340"
+  },
+  {
+   "name": "Jhewari",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q96049700"
+  },
+  {
+   "name": "Kadirbox Mondal Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27212047"
+  },
+  {
+   "name": "Kamalapur Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724129"
+  },
+  {
+   "name": "Kamalpur Battlefield",
+   "otherNames": [
+    "Dhanua Kamalpur Battlefield",
+    "Dhanua Kamalpur Memorial",
+    "Kamalpur War Memorial"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q141829952"
+  },
+  {
+   "name": "Karapur Miah Bari Mosque",
+   "otherNames": [
+    "Korapur Mia Bari Mosque",
+    "Miah Bari Mosque"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q25587967"
+  },
+  {
+   "name": "Keshtha Khepar Math, Puthia",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27216109"
+  },
+  {
+   "name": "Khalishpur Nilkuthi Bhaban",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27215274"
+  },
+  {
+   "name": "Khan Mohammad Mirdha Mosque",
+   "otherNames": [
+    "Khan Mohammad Mridha Mosque",
+    "Khan Mohammad Mirza Mosque"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q2667438"
+  },
+  {
+   "name": "Khanbari Old Jami Mosque Complex",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q76648704"
+  },
+  {
+   "name": "Kodla Math",
+   "otherNames": [
+    "Kodla Moth"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q20824023"
+  },
+  {
+   "name": "Kotila Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q13057582"
+  },
+  {
+   "name": "Krishna Temple (Magura)",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27215249"
+  },
+  {
+   "name": "Krishnapur Gobinda Temple, Puthia",
+   "otherNames": [
+    "Krishna pur Govinda Temple, Puthia",
+    "Krishnopur Gobindo Mondir, Puthia",
+    "Krishnopur Govinda Mondir, Puthia",
+    "Krishnopur Govinda Temple, Puthia",
+    "Krishnopur Govindo Mondir, Puthia"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q27216220"
+  },
+  {
+   "name": "Laldighi Temple",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27231656"
+  },
+  {
+   "name": "Lotikot Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724363"
+  },
+  {
+   "name": "Mahasthangarh",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q3085127"
+  },
+  {
+   "name": "Mahilara Sarkar Math",
+   "otherNames": [
+    "Sarkar Math (Monastery), Sarkar bari Math, Radha-Krishna Math, Bakla math, “helano math” and “the leaning Tower of Mahilara”"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q31724140"
+  },
+  {
+   "name": "Mainamati",
+   "otherNames": [
+    "Moynamoti",
+    "Maynamati"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q6736254"
+  },
+  {
+   "name": "Majidbaria Shahi Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q76633918"
+  },
+  {
+   "name": "Mangalkot",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724751"
+  },
+  {
+   "name": "Mithapukur Bara Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27098211"
+  },
+  {
+   "name": "Momin Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q3906655"
+  },
+  {
+   "name": "Mosjidkur Mosque",
+   "otherNames": [
+    "after the partition of India in 1947",
+    "The mosque was discovered"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q27215504"
+  },
+  {
+   "name": "Nasrat Gazi Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724627"
+  },
+  {
+   "name": "Nateshwar Deul",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q101413636"
+  },
+  {
+   "name": "New Shalban Vihara",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q111849376"
+  },
+  {
+   "name": "Nidaria Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724498"
+  },
+  {
+   "name": "Paharpur",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q96050749"
+  },
+  {
+   "name": "Palace of Parshuram",
+   "otherNames": [
+    "Parshuram Palace"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q25588508"
+  },
+  {
+   "name": "Palace of Raja Harish Chandra, Savar",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q25587362"
+  },
+  {
+   "name": "Panam City",
+   "otherNames": [
+    "Panam Nagar",
+    "Panam Nagor",
+    "Panam Nogor"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q13058532"
+  },
+  {
+   "name": "Pathagar Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724673"
+  },
+  {
+   "name": "Patharghata",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27216027"
+  },
+  {
+   "name": "Pundranagar",
+   "otherNames": [
+    "Paundravardhanapur",
+    "Puṇḍavardhanapura"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q7260091"
+  },
+  {
+   "name": "Qasba Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724128"
+  },
+  {
+   "name": "Ramsagar Temple",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q27231672"
+  },
+  {
+   "name": "Rayerkathi Jomidar Bari",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q64861170"
+  },
+  {
+   "name": "Reza Khoda Mosque",
+   "otherNames": [
+    "Reja Khoda Mosque"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q27044949"
+  },
+  {
+   "name": "Rohanpur Octagonal Tomb",
+   "otherNames": [
+    "Rohanpur Gombuj"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q25587690"
+  },
+  {
+   "name": "Rudrakar Matha",
+   "otherNames": [
+    "Rudrakar Abbey"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q97497457"
+  },
+  {
+   "name": "Rupban Mura",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q26962476"
+  },
+  {
+   "name": "Saat Masjid",
+   "otherNames": [
+    "Sat Gambuj Mosque"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q7395716"
+  },
+  {
+   "name": "Sat Gambuj Mosque Tomb",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q82869059"
+  },
+  {
+   "name": "Saturia Zamindar Bari",
+   "otherNames": [
+    "Mia Bari"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q31724845"
+  },
+  {
+   "name": "Shahjadpur Dargah Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q31724612"
+  },
+  {
+   "name": "Shahzadpur Kachharibari",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q24896853"
+  },
+  {
+   "name": "Shalban Vihara",
+   "otherNames": [
+    "Shalban Bihar"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q7487152"
+  },
+  {
+   "name": "Sham Shundor Temple",
+   "otherNames": [
+    "Moth Bari"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q27215673"
+  },
+  {
+   "name": "Shita Coat Bihar, Nawabganj",
+   "otherNames": [
+    "Sitakot Vihara"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q7499134"
+  },
+  {
+   "name": "Shrirampur Mosque",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q76529966"
+  },
+  {
+   "name": "Sonaikundi Nilkuthi",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q126326748"
+  },
+  {
+   "name": "Sonargaon",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q3350313"
+  },
+  {
+   "name": "Ujirpur Mound",
+   "otherNames": [
+    "Ujirpur Dibi"
+   ],
+   "country": "Bangladesh",
+   "wikidata": "Q56158811"
+  },
+  {
+   "name": "Wari-Bateshwar ruins",
+   "otherNames": [],
+   "country": "Bangladesh",
+   "wikidata": "Q7969421"
+  },
+  {
+   "name": "Akra",
+   "otherNames": [
+    "Akra mounds"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q6665783"
+  },
+  {
+   "name": "Alam Bridge inscriptions",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q18109512"
+  },
+  {
+   "name": "Alexandria of Hyphases",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q43183628"
+  },
+  {
+   "name": "Alexandria in Orietai",
+   "otherNames": [
+    "Alexandria Orietai",
+    "Alexandria Rhambakia"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q11904922"
+  },
+  {
+   "name": "Alexandria on the Indus",
+   "otherNames": [
+    "Alexandria ad Indum",
+    "Alexandria on the Acesines"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q3410224"
+  },
+  {
+   "name": "Ali Murad Mound",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q51445191"
+  },
+  {
+   "name": "Allahdino",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q4730348"
+  },
+  {
+   "name": "Amb Temples",
+   "otherNames": [
+    "Amb Shareef",
+    "Amb Sharif",
+    "Amb temple complex"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q40889216"
+  },
+  {
+   "name": "Amlukdara Stupa",
+   "otherNames": [
+    "Amluk Dara stupa"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q25379339"
+  },
+  {
+   "name": "Amri",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q477620"
+  },
+  {
+   "name": "Asota Stonehenge - Swabi",
+   "otherNames": [
+    "Asota  stone circle",
+    "Asota Sharif Stones",
+    "Asota Stonehenge",
+    "Stone circle Asota"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q65535130"
+  },
+  {
+   "name": "Aziz Dheri",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q88078046"
+  },
+  {
+   "name": "Badalpur Buddhist stupa and monastery",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q66134821"
+  },
+  {
+   "name": "Baho Dheri",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q111936541"
+  },
+  {
+   "name": "Banbhore",
+   "otherNames": [
+    "Bhambhore"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q491993"
+  },
+  {
+   "name": "Barbarikon",
+   "otherNames": [
+    "Barbarei"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q807754"
+  },
+  {
+   "name": "Barikot Ghundai",
+   "otherNames": [
+    "ancient Barikot",
+    "ancient Bazira",
+    "Bazira",
+    "Beira",
+    "Ghundai"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q100371614"
+  },
+  {
+   "name": "Bhamala Stupa",
+   "otherNames": [
+    "Bhamala Buddhist Complex",
+    "Bhamala Complex"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q18110458"
+  },
+  {
+   "name": "Bhir Mound",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q854989"
+  },
+  {
+   "name": "Bijnot Fort",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q30624443"
+  },
+  {
+   "name": "Brahmanabad (Mansura, Sindh)",
+   "otherNames": [
+    "Mansura",
+    "Brahmanabad"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q6751906"
+  },
+  {
+   "name": "Chāñhu-daro",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q1062208"
+  },
+  {
+   "name": "Danyore Rock Inscriptions",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q18111546"
+  },
+  {
+   "name": "Dharmarajika Stupa",
+   "otherNames": [
+    "Great Stupa of Taxila"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q5269314"
+  },
+  {
+   "name": "Drigh Bala",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q29421569"
+  },
+  {
+   "name": "Gandava",
+   "otherNames": [
+    "Gandawah",
+    "Qandabil"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q6722564"
+  },
+  {
+   "name": "Ganeriwala",
+   "otherNames": [
+    "Ganweriwala"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q3095220"
+  },
+  {
+   "name": "Giri complex of monuments",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q66134819"
+  },
+  {
+   "name": "Gondrani",
+   "otherNames": [
+    "Gundriani",
+    "Shehr-e-Roghan"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q15221857"
+  },
+  {
+   "name": "Gorkhatri",
+   "otherNames": [
+    "Gor Khatri",
+    "Gor Khuttree",
+    "Gorkhatree"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q5586577"
+  },
+  {
+   "name": "Great Bath, Mohenjo-daro",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q3346415"
+  },
+  {
+   "name": "Harappa",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q185562"
+  },
+  {
+   "name": "Hund",
+   "otherNames": [
+    "Udabhandapura"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q3695597"
+  },
+  {
+   "name": "Indus Valley",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q10535281"
+  },
+  {
+   "name": "Jamal Garhi",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q6127550"
+  },
+  {
+   "name": "Jandial",
+   "otherNames": [
+    "Jandial complex"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q28163477"
+  },
+  {
+   "name": "Jhukar-Jo-Daro",
+   "otherNames": [
+    "Jhukar mound"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q52084093"
+  },
+  {
+   "name": "Jinnan Wali Dheri",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q6202692"
+  },
+  {
+   "name": "Kalawan group of buildings",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q66134818"
+  },
+  {
+   "name": "Kargah Buddha",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q18126603"
+  },
+  {
+   "name": "Keno Daas",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q18126724"
+  },
+  {
+   "name": "Khader Mohra (Akhuri)",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q66134817"
+  },
+  {
+   "name": "Khanpur Cave",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q66134639"
+  },
+  {
+   "name": "Kharkai monestary",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q42794795"
+  },
+  {
+   "name": "Kili Ghul Mohammad",
+   "otherNames": [
+    "Kile Gul Mohammad"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q107547379"
+  },
+  {
+   "name": "Killi Kechi Beg",
+   "otherNames": [
+    "Kechi Beg"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q125577359"
+  },
+  {
+   "name": "Kot Bala",
+   "otherNames": [
+    "Balakot"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q6433728"
+  },
+  {
+   "name": "Kot Diji",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q1017084"
+  },
+  {
+   "name": "Lakhmir Mound",
+   "otherNames": [
+    "Lakhmir-Ji-Mari",
+    "Lakhshmir Ji Mari"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q53459043"
+  },
+  {
+   "name": "Lakhueen-jo-daro",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q6479625"
+  },
+  {
+   "name": "Lalchak mounds",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q66134823"
+  },
+  {
+   "name": "Lohum Jo Daro",
+   "otherNames": [
+    "Loham Jo Daro",
+    "Lohamjodaro"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q96390704"
+  },
+  {
+   "name": "Loriyan Tangai",
+   "otherNames": [
+    "Lorian Tangai"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q52791921"
+  },
+  {
+   "name": "Lurewala",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q29594087"
+  },
+  {
+   "name": "Makli Necropolis",
+   "otherNames": [
+    "Islamic necropolis",
+    "Makli Hill Necropolis"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q155043"
+  },
+  {
+   "name": "Mankiala Stupa",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q25379332"
+  },
+  {
+   "name": "Mansehra Rock Edicts",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q6751573"
+  },
+  {
+   "name": "Mehrgarh",
+   "otherNames": [
+    "Mehrgahr",
+    "Merhgahr",
+    "Merhgarh"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q242148"
+  },
+  {
+   "name": "Minnagara",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q1937313"
+  },
+  {
+   "name": "Mohenjo-daro",
+   "otherNames": [
+    "Mound of Dead Men"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q5725"
+  },
+  {
+   "name": "Mohenjo-Daro Seals",
+   "otherNames": [
+    "Seals from the Indus Valley",
+    "Seals, Mohenjo-daro"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q96749601"
+  },
+  {
+   "name": "Moomal Ji Mari",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q96393851"
+  },
+  {
+   "name": "Mughal Minar",
+   "otherNames": [
+    "Mughali Tower at Jutial",
+    "Taj Mughal Shikari",
+    "Taj Mughal tower"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q18128259"
+  },
+  {
+   "name": "Nandana Fort",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q6963180"
+  },
+  {
+   "name": "Nausharo",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q2039702"
+  },
+  {
+   "name": "Nicaea",
+   "otherNames": [
+    "Alexandria Nicaea"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q10265962"
+  },
+  {
+   "name": "Noorpur Stupas",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q18128797"
+  },
+  {
+   "name": "Patala",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q132450512"
+  },
+  {
+   "name": "Pirak",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q4363252"
+  },
+  {
+   "name": "Pushkalavati",
+   "otherNames": [
+    "Peukelaotis",
+    "Shaikhan Dheri"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q625407"
+  },
+  {
+   "name": "Ranigat",
+   "otherNames": [
+    "Rani Gat",
+    "Rani Gat - Buddhist Ruins",
+    "Rani Gatt"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q7293050"
+  },
+  {
+   "name": "Ranikot Fort",
+   "otherNames": [
+    "Ranni Kot Fort",
+    "Rannikot Fort",
+    "The Great Wall of Sindh"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q2131024"
+  },
+  {
+   "name": "Rehman Dheri",
+   "otherNames": [
+    "Rahman Dheri"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q4393874"
+  },
+  {
+   "name": "Rigvedic rivers",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q3478959"
+  },
+  {
+   "name": "Riwat",
+   "otherNames": [
+    "Riwat culture"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q3938071"
+  },
+  {
+   "name": "Riwat Site 55",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q48784855"
+  },
+  {
+   "name": "Sagala",
+   "otherNames": [
+    "Sangala",
+    "Euthymedeia"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q1069204"
+  },
+  {
+   "name": "Saidu stupa, Swat",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q40795218"
+  },
+  {
+   "name": "Sanghao",
+   "otherNames": [
+    "Sanghao Caves"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q17113866"
+  },
+  {
+   "name": "Sarai Khola",
+   "otherNames": [
+    "Sarai Khola Site"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q25539804"
+  },
+  {
+   "name": "Saraikala",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q66134815"
+  },
+  {
+   "name": "Seri Bahlol",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q1511531"
+  },
+  {
+   "name": "Shahbaz Garhi",
+   "otherNames": [
+    "Shahbazgarhi"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q7461477"
+  },
+  {
+   "name": "Shaji-ki-Dheri",
+   "otherNames": [
+    "Kanishka Stupa"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q28163493"
+  },
+  {
+   "name": "Sharada Peeth",
+   "otherNames": [
+    "Sharda Fort",
+    "Sharda Peeth",
+    "Sharda Temple",
+    "Sharda University"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q3765487"
+  },
+  {
+   "name": "Shatial",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q15277023"
+  },
+  {
+   "name": "Sheri Khan Tarakai",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q7494845"
+  },
+  {
+   "name": "Shingardara stupa",
+   "otherNames": [
+    "Shingar Dara stupa"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q25379338"
+  },
+  {
+   "name": "Sialkot Fort",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q7506675"
+  },
+  {
+   "name": "Siraj-ji-Takri",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q7529907"
+  },
+  {
+   "name": "Sirkap",
+   "otherNames": [
+    "Taxila - Sirkap"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q1340954"
+  },
+  {
+   "name": "Skardu Fort",
+   "otherNames": [
+    "Karpachu Fort",
+    "Kharphocho Fort"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q1438714"
+  },
+  {
+   "name": "Sokhta Koh",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q1568926"
+  },
+  {
+   "name": "Sphola Stupa",
+   "otherNames": [
+    "Khyber Stupa"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q28223488"
+  },
+  {
+   "name": "Sutkagan Dor",
+   "otherNames": [
+    "Sutkagen Dor"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q2369920"
+  },
+  {
+   "name": "Takht-i-Bahi",
+   "otherNames": [
+    "Takht-i-Bhai"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q117623"
+  },
+  {
+   "name": "Talti",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q29644034"
+  },
+  {
+   "name": "Taxila",
+   "otherNames": [
+    "Mint of Taxila"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q156093"
+  },
+  {
+   "name": "Taxila - Sirsukh",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q69132225"
+  },
+  {
+   "name": "tomb of Bibi Jawindi",
+   "otherNames": [
+    "Bibi Jawindi's tomb"
+   ],
+   "country": "Pakistan",
+   "wikidata": "Q7818612"
+  },
+  {
+   "name": "Tombs of Talpur Mirs",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q7818706"
+  },
+  {
+   "name": "Wadapind",
+   "otherNames": [],
+   "country": "Pakistan",
+   "wikidata": "Q24906695"
+  }
+ ]
+}

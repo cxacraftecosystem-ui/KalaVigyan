@@ -1,3 +1,5 @@
+import { isReaderCraft } from "@/lib/craftCatalogue";
+import type { CraftCatalogue } from "@/lib/craftCatalogueContract";
 import { roleLabel } from "@/lib/permissions";
 import {
   QUEUE_KINDS,
@@ -5,7 +7,9 @@ import {
   REASON_MIN,
   REVIEW_ORIGINS,
   type DeliveredFact,
+  type Filing,
   type GateCheck,
+  type HeldWriteBack,
   type Proposer,
   type QueueAction,
   type QueueItem,
@@ -17,6 +21,8 @@ import {
 } from "@/lib/reviewQueueContract";
 
 export const EVERY_KIND = "ALL";
+export const FILE_UNDER_CRAFT = "craft:";
+export const FILE_UNDER_FAMILY = "family:";
 export const NO_FILTERS: ReviewFilters = { kind: null, craft: null, origin: null };
 
 export const KIND_LABELS: Record<QueueKind, string> = {
@@ -179,4 +185,28 @@ export function factNumbersLine(claimIds: readonly string[], numbers: ReadonlyMa
 export function deliveredFactLine(number: number, fact: DeliveredFact): string {
   const level = fact.level ? ` · ${codeLabel(fact.level)}` : "";
   return `Fact ${number}${level} · ${fact.shown ? "shown on the page" : "held from the page"}`;
+}
+
+export type FilingOption = { value: string; label: string; hint?: string; group: string };
+
+export function heldLine(held: HeldWriteBack): string {
+  return `Held for a reviewer: it ${held.reason}.`;
+}
+
+export function filingOptions(catalogue: CraftCatalogue): FilingOption[] {
+  const crafts = catalogue.crafts
+    .filter(isReaderCraft)
+    .map((craft) => ({ value: `${FILE_UNDER_CRAFT}${craft.slug}`, label: craft.displayName, hint: craft.familyLabel ?? undefined, group: "Crafts" }));
+  const families = catalogue.categories.map((category) => ({
+    value: `${FILE_UNDER_FAMILY}${category.slug}`,
+    label: `${category.label ?? category.name}, family science`,
+    group: "Family science"
+  }));
+  return [...crafts, ...families];
+}
+
+export function filingOf(value: string): Filing | null {
+  if (value.startsWith(FILE_UNDER_CRAFT)) return { craft: value.slice(FILE_UNDER_CRAFT.length) };
+  if (value.startsWith(FILE_UNDER_FAMILY)) return { family: value.slice(FILE_UNDER_FAMILY.length) };
+  return null;
 }

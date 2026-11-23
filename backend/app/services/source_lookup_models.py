@@ -144,6 +144,7 @@ class CompoundRecord(ContractModel):
     held: bool
     held_name: str | None = None
     synonyms: list[str] = Field(default_factory=list)
+    pubchem_synonyms: list[str] = Field(default_factory=list)
     hazards: Hazards | None = None
 
 
