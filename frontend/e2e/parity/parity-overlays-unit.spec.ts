@@ -1,7 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 
-import { hideOverlays, overlayFreeShot, showOverlays } from "./parityOverlays";
+import { clearedShot, clearOverlays } from "./parityOverlays";
 
 const HELD = `<!doctype html><html><body style="margin:0">
 <nav id="rail" style="position:sticky;top:0;z-index:1;height:40px">Rail</nav>
@@ -22,10 +22,6 @@ const UNDER_RAIL = `<!doctype html><html><body style="margin:0">
 <div style="height:2000px"></div>
 </body></html>`;
 
-async function visibility(page: Page, id: string): Promise<string> {
-  return page.evaluate((found) => getComputedStyle(document.getElementById(found) as Element).visibility, id);
-}
-
 async function redPixels(image: Buffer): Promise<number> {
   const { data } = await sharp(image).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   let count = 0;
@@ -33,26 +29,30 @@ async function redPixels(image: Buffer): Promise<number> {
   return count;
 }
 
-test("a capture hides the sticky and fixed elements that lie over the figure, keeps those beside it, its own and those that hold it, and gives them back", async ({ page }) => {
+test("a capture scrolls its element up to the top, then down until the sticky and fixed bars over its top edge clear it, and names what it cleared and what still lies over it", async ({ page }) => {
   await page.setViewportSize({ width: 400, height: 300 });
   await page.setContent(HELD);
-  await page.evaluate(() => window.scrollTo(0, 100));
   const figure = await page.$("#fig");
   if (!figure) throw new Error("the page holds no figure");
-  expect((await hideOverlays(figure)).hidden.map((found) => found.split(" ")[0])).toEqual(["rail", "badge"]);
-  expect(await Promise.all(["rail", "aside", "badge", "holder", "inner"].map((id) => visibility(page, id)))).toEqual(["hidden", "visible", "hidden", "visible", "visible"]);
-  await showOverlays(figure);
-  expect(await Promise.all(["rail", "badge"].map((id) => visibility(page, id)))).toEqual(["visible", "visible"]);
+  const place = await clearOverlays(figure);
+  expect(place.cleared).toEqual(["rail"]);
+  expect(place.over).toEqual(["badge"]);
+  expect(place.scroll).toBe(0);
+  expect(place.clip).toEqual({ x: 100, y: 40, width: 200, height: 600 });
+  expect(await figure.evaluate((element) => element.getBoundingClientRect().top)).toBe(40);
 });
 
-test("a figure taller than the screen is captured without the sticky rail that lies over it", async ({ page }) => {
+test("a figure taller than the screen is captured without the sticky rail that lies over it in a plain capture", async ({ page }) => {
   await page.setViewportSize({ width: 400, height: 300 });
   await page.setContent(UNDER_RAIL);
   const figure = page.locator("#fig");
   const plain = await figure.screenshot({ animations: "disabled" });
   expect(await redPixels(plain), "the rail lies over the plain capture").toBeGreaterThan(0);
-  const shot = await overlayFreeShot(figure, 5000);
+  const handle = await figure.elementHandle();
+  if (!handle) throw new Error("the page holds no figure");
+  const shot = await clearedShot(page, handle, { timeout: 5000, scale: "css" });
   if (!shot.image) throw new Error("the figure was not captured");
+  expect(await sharp(shot.image).metadata()).toMatchObject({ width: 400, height: 600 });
   expect(await redPixels(shot.image), "the rail's red in the figure's capture").toBe(0);
-  expect(shot.hidden.map((found) => found.split(" ")[0])).toEqual(["nav"]);
+  expect(shot.place?.cleared).toEqual(["nav"]);
 });

@@ -1,59 +1,44 @@
-import type { ElementHandle, Locator } from "@playwright/test";
+import type { ElementHandle, Page, PageScreenshotOptions } from "@playwright/test";
 
-export const OVERLAY_MARK = "data-parity-overlay";
+export type ShotOptions = Pick<PageScreenshotOptions, "timeout" | "scale" | "type" | "quality">;
+export type Clip = { x: number; y: number; width: number; height: number };
+export type ClearedPlace = { clip: Clip; cleared: string[]; over: string[]; scroll: number };
+export type ClearedShot = { image: Buffer | null; place: ClearedPlace | null };
 
-export type OverlayFreeShot = { image: Buffer | null; hidden: string[]; place: string };
-export type HiddenOverlays = { hidden: string[]; place: string };
+const EDGE = 1e-3;
 
-export async function hideOverlays(target: ElementHandle<Element>): Promise<HiddenOverlays> {
-  return target.evaluate((element, mark) => {
-    if (!document.getElementById(mark)) {
-      const style = document.createElement("style");
-      style.id = mark;
-      style.textContent = `[${mark}], [${mark}] * { visibility: hidden !important; }`;
-      document.head.append(style);
-    }
-    const box = element.getBoundingClientRect();
-    const overlays = [...document.body.querySelectorAll("*")].filter((other) => {
-      if (element.contains(other) || other.contains(element)) return false;
-      const position = getComputedStyle(other).position;
-      if (position !== "sticky" && position !== "fixed") return false;
-      const rect = other.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0 && rect.left < box.right && rect.right > box.left && rect.top < box.bottom && rect.bottom > box.top;
-    });
-    for (const overlay of overlays) overlay.setAttribute(mark, "");
-    const named = (overlay: Element) => {
-      const rect = overlay.getBoundingClientRect();
-      const classes = typeof overlay.className === "string" ? overlay.className.trim().split(/\s+/).filter(Boolean).slice(0, 2).join(".") : "";
-      return `${overlay.id || overlay.tagName.toLowerCase()}${classes ? `.${classes}` : ""} ${getComputedStyle(overlay).position} ${rect.top.toFixed(2)}+${rect.height.toFixed(2)}`;
+export async function clearOverlays(target: ElementHandle<Element>): Promise<ClearedPlace> {
+  return target.evaluate((element, edge) => {
+    const overlays = (box: DOMRect) =>
+      [...document.body.querySelectorAll("*")].filter((other) => {
+        if (element.contains(other) || other.contains(element)) return false;
+        const position = getComputedStyle(other).position;
+        if (position !== "sticky" && position !== "fixed") return false;
+        const rect = other.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.left < box.right && rect.right > box.left && rect.top < box.bottom && rect.bottom > box.top;
+      });
+    const named = (other: Element) => {
+      const classes = typeof other.className === "string" ? other.className.trim().split(/\s+/).filter(Boolean).slice(0, 2).join(".") : "";
+      return `${other.id || other.tagName.toLowerCase()}${classes ? `.${classes}` : ""}`;
     };
-    return { hidden: overlays.map(named), place: `scroll ${window.scrollY.toFixed(2)} top ${box.top.toFixed(3)} height ${box.height.toFixed(2)}` };
-  }, OVERLAY_MARK);
+    element.scrollIntoView({ block: "start", inline: "nearest", behavior: "instant" });
+    const start = element.getBoundingClientRect();
+    const covering = overlays(start).filter((other) => other.getBoundingClientRect().top <= start.top);
+    const clear = Math.max(0, ...covering.map((other) => other.getBoundingClientRect().bottom - start.top));
+    window.scrollBy({ top: -clear, behavior: "instant" });
+    const box = element.getBoundingClientRect();
+    const x = box.left + window.scrollX;
+    const y = box.top + window.scrollY;
+    const left = Math.floor(x + edge);
+    const top = Math.floor(y + edge);
+    const clip = { x: left, y: top, width: Math.ceil(x + box.width - edge) - left, height: Math.ceil(y + box.height - edge) - top };
+    return { clip, cleared: covering.map(named), over: overlays(box).map(named), scroll: window.scrollY };
+  }, EDGE);
 }
 
-export async function showOverlays(target: ElementHandle<Element>): Promise<void> {
-  await target.evaluate((_, mark) => {
-    for (const overlay of document.querySelectorAll(`[${mark}]`)) overlay.removeAttribute(mark);
-  }, OVERLAY_MARK);
-}
-
-export async function withoutOverlays<T>(target: ElementHandle<Element>, capture: () => Promise<T>): Promise<T> {
-  await hideOverlays(target);
-  try {
-    return await capture();
-  } finally {
-    await showOverlays(target);
-  }
-}
-
-export async function overlayFreeShot(target: Locator, timeout: number): Promise<OverlayFreeShot> {
-  await target.scrollIntoViewIfNeeded({ timeout }).catch(() => undefined);
-  const element = await target.elementHandle({ timeout }).catch(() => null);
-  if (!element) return { image: null, hidden: [], place: "" };
-  const { hidden, place } = await hideOverlays(element);
-  try {
-    return { image: await target.screenshot({ animations: "disabled", timeout }).catch(() => null), hidden, place };
-  } finally {
-    await showOverlays(element);
-  }
+export async function clearedShot(page: Page, target: ElementHandle<Element>, options: ShotOptions): Promise<ClearedShot> {
+  const place = await clearOverlays(target).catch(() => null);
+  if (!place || place.clip.width <= 0 || place.clip.height <= 0) return { image: null, place };
+  const image = await page.screenshot({ ...options, clip: place.clip, fullPage: true, animations: "disabled" }).catch(() => null);
+  return { image, place };
 }

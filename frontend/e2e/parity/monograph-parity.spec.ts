@@ -9,7 +9,7 @@ import { passPreviewProtection } from "../production/preview";
 import { borrowedCases, pagesToVisit, subjectPages } from "./parityBorrowed";
 import { driftSteps, heightDifferences, sectionHeights, type DriftReport } from "./parityDrift";
 import { chapterIds, lineDiff, pixelDifference, type PixelDifference } from "./parityMeasure";
-import { overlayFreeShot } from "./parityOverlays";
+import { clearedShot, type ClearedPlace, type ClearedShot } from "./parityOverlays";
 import { alignPhase } from "./parityPhase";
 import { fullSizePictures } from "./parityPictures";
 import { placeBorrows, placeFacts, strayBorrows } from "./parityPlaces";
@@ -54,6 +54,11 @@ function report(name: string, body: unknown): void {
   const folder = join(REPORT_DIR, test.info().project.name);
   mkdirSync(folder, { recursive: true });
   writeFileSync(join(folder, name), Buffer.isBuffer(body) ? body : JSON.stringify(body, null, 1));
+}
+
+async function chapterShot(page: Page, selector: string): Promise<ClearedShot> {
+  const element = await page.locator(selector).first().elementHandle({ timeout: SHOT_TIMEOUT_MS }).catch(() => null);
+  return element ? clearedShot(page, element, { timeout: SHOT_TIMEOUT_MS }) : { image: null, place: null };
 }
 
 async function bothPages(context: BrowserContext): Promise<{ approved: Page; rendered: Page }> {
@@ -101,7 +106,7 @@ test("every chapter of the React page looks as the approved page does", async ({
   report("offsets.json", offsets);
   report("drift.json", await driftReports(approved, rendered, offsets));
   const layers: Record<string, { approved: string[]; rendered: string[] }> = {};
-  const overlays: Record<string, { approved: string[]; rendered: string[] }> = {};
+  const overlays: Record<string, { approved: ClearedPlace | null; rendered: ClearedPlace | null }> = {};
   for (const id of ids) {
     const selector = `[id="${id}"]`;
     if (!(await rendered.locator(selector).count())) {
@@ -109,12 +114,12 @@ test("every chapter of the React page looks as the approved page does", async ({
       continue;
     }
     if (!(await approved.locator(selector).first().isVisible())) continue;
-    const shotBefore = await overlayFreeShot(approved.locator(selector).first(), SHOT_TIMEOUT_MS);
+    const shotBefore = await chapterShot(approved, selector);
     const before = shotBefore.image;
     if (!before) continue;
-    const shotAfter = await overlayFreeShot(rendered.locator(selector).first(), SHOT_TIMEOUT_MS);
+    const shotAfter = await chapterShot(rendered, selector);
     const after = shotAfter.image;
-    overlays[id] = { approved: [shotBefore.place, ...shotBefore.hidden], rendered: [shotAfter.place, ...shotAfter.hidden] };
+    overlays[id] = { approved: shotBefore.place, rendered: shotAfter.place };
     if (!after) {
       differences[id] = "missing";
       continue;

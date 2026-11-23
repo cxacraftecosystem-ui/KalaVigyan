@@ -92,10 +92,11 @@ with the approved static page at 360, 834 and 1440 in light and dark, text, chap
 citation and figure, then every component borrowed from Kutch Ajrakh on the pages that place it
 (decision 0151: the run after a deploy compares all of it, so a change to the approved page fails
 the release), and keeps `text.json`, `pixels.json`, `interactions.json` and the differing chapters'
-screenshots as its artifact. Each capture of a chapter, figure or borrowed component hides, on both
-pages alike, the sticky and fixed elements that lie over it once it is scrolled into view without
-holding it or sitting in it (the chapter rail, the app bar), so a rail that lies over a figure at
-one width is not counted as the figure.
+screenshots as its artifact. Each capture of a chapter, figure or borrowed component scrolls it to
+the top of the screen and back down until the sticky and fixed bars over its top edge (the chapter
+rail, the menu bar) clear it, on both pages alike, then takes its region of the page, so a rail
+that lies over a figure at one width is not counted as the figure; `overlays.json` names what each
+capture cleared and what still lay over it.
 
 ## Connection budget
 
