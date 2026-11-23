@@ -7,9 +7,19 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Chunk, Claim, ClaimSource, Craft, FieldImage, FieldRecording, FieldVoiceStream, Source
+from app.models import (
+    Chunk,
+    Claim,
+    ClaimSource,
+    Concept,
+    Craft,
+    FieldImage,
+    FieldRecording,
+    FieldVoiceStream,
+    Source,
+)
 from app.research.explainer import Explainer
-from app.research.retrieval import SIGNED_IN_CHUNK_ACLS
+from app.research.retrieval import EVERY_CHUNK_KINDS, OPEN_CHUNK_ACLS
 from app.retrieval.statements import CraftScope, chunk_conditions
 from app.services.field_voices_items import FeedPerson
 from app.services.field_voices_ledger import rekey_people, rekeyed
@@ -37,6 +47,7 @@ pytestmark = pytest.mark.db
 
 KEPT_QUOTE = "We grind the alum with tamarind seed"
 CUT_QUOTE = "the paste must rest overnight"
+ASKED = "How do you prepare the mordant"
 EDITED_ENGLISH = "We grind the alum with tamarind seed. Call me on [number]."
 STALE = timedelta(days=8)
 INTERVIEW = "907e2c52-14e7-5e41-9b27-9c10f70906a9"
@@ -51,7 +62,7 @@ async def visible_claims(session: AsyncSession, craft: Craft) -> set[uuid.UUID]:
 
 async def field_chunks(session: AsyncSession, craft: Craft) -> set[uuid.UUID]:
     scope = CraftScope(craft_id=craft.id, sub_category_id=craft.subCategoryId)
-    conditions = chunk_conditions(scope, mode="HYBRID", acls=SIGNED_IN_CHUNK_ACLS)
+    conditions = chunk_conditions(scope, mode="HYBRID", acls=OPEN_CHUNK_ACLS, kinds=EVERY_CHUNK_KINDS)
     rows = await session.scalars(
         select(Chunk.id).join(Source).where(*conditions, Source.kind == "FIELD_TESTIMONY")
     )
@@ -147,7 +158,68 @@ async def test_an_edited_turn_drops_the_claim_its_edit_removed_and_repoints_the_
         )
         assert cite is not None and cite.chunkId in after
         chunk = await session.get(Chunk, cite.chunkId)
-        assert chunk is not None and chunk.acl == "PUBLIC" and KEPT_QUOTE in chunk.text
+        assert (
+            chunk is not None
+            and (chunk.acl, chunk.kind) == ("PUBLIC", "PASSAGE")
+            and KEPT_QUOTE in chunk.text
+        )
+
+
+async def test_an_edit_drops_a_claim_whose_words_only_a_transcript_window_holds() -> None:
+    async with rolled_back() as session:
+        store = KeptStore()
+        await synced(session, store)
+        craft, recording, kept = await quoted(session)
+        windowed = await window_cited_claim(session, craft, recording.sourceId, ASKED)
+
+        def edited(change: dict[str, Any]) -> None:
+            change["transcript"]["segments"][1]["english"] = EDITED_ENGLISH
+
+        page = page_of("transcripts", "all", "fr-t-3", [recorded_recording(edited)])
+        assert (await ledger_for(session, store).apply_page(page, {})).live == 1
+        windows = await session.scalars(
+            select(Chunk.text).where(Chunk.sourceId == recording.sourceId, Chunk.kind == "WINDOW")
+        )
+        assert any(ASKED in text for text in windows.all())
+        assert await count(session, Claim, Claim.id == windowed) == 0
+        assert await count(session, Claim, Claim.id == kept) == 1
+
+
+async def window_cited_claim(
+    session: AsyncSession, craft: Craft, source_id: uuid.UUID, quote: str
+) -> uuid.UUID:
+    rows = await session.scalars(
+        select(Chunk).where(Chunk.sourceId == source_id, Chunk.kind == "WINDOW").order_by(Chunk.ordinal)
+    )
+    window = next(chunk for chunk in rows if quote in chunk.text)
+    assert window.acl == "PUBLIC"
+    concept = Concept(craftId=craft.id, type="PROCESS_STAGE", name="Mordant question")
+    session.add(concept)
+    await session.flush()
+    claim = Claim(
+        subjectType="CONCEPT",
+        subjectId=concept.id,
+        predicate="states",
+        text=f"The researcher asks: {quote}.",
+        evidenceLevel="PROVISIONAL",
+        origin="LIVE_RESEARCH",
+        status="APPROVED",
+    )
+    session.add(claim)
+    await session.flush()
+    session.add(
+        ClaimSource(
+            claimId=claim.id,
+            sourceId=source_id,
+            chunkId=window.id,
+            locator=window.locator,
+            quote=quote,
+            quoteCheck="PASS",
+            relation="DIRECT",
+        )
+    )
+    await session.flush()
+    return claim.id
 
 
 def long_recording(change: dict[str, Any]) -> None:

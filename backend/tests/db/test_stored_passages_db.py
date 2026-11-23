@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Chunk, Claim, ClaimSource, Source
 from app.research.composition import ComposedAnswer, ComposedSection, ComposedSentence, QuotedSpan
 from app.research.evidence_pack import EvidencePack
-from app.research.retrieval import RESEARCHER_CHUNK_ACL, SIGNED_IN_CHUNK_ACLS, ChunkHit, KnowledgeHits
+from app.research.retrieval import OPEN_CHUNK_ACLS, RESEARCHER_CHUNK_ACL, ChunkHit, KnowledgeHits
 from app.retrieval.hybrid import StoredKnowledgeSearch
 from app.retrieval.indexing import replace_source_chunks
 from app.services.craft_resolver import CraftIndexStore
@@ -166,7 +166,7 @@ async def test_an_answer_keeps_a_sentence_citing_a_stored_passage_as_a_claim_of_
 async def test_a_voice_turn_writes_its_passage_back_before_it_is_cited(session: AsyncSession) -> None:
     chunk = await chunk_of(session, OPEN_BOOK)
     passages = SqlTurnPassages(
-        sessions_of(session), index=CraftIndexStore(), embed=FixedEmbedder(), acls=SIGNED_IN_CHUNK_ACLS
+        sessions_of(session), index=CraftIndexStore(), embed=FixedEmbedder(), acls=OPEN_CHUNK_ACLS
     )
     turn = PassageTurn(craft=ZELVAR, mode="HYBRID", concept_id=ALUM_CONCEPT, passages=(hit_of(chunk),))
     written = await passages.written(turn, said(chunk, "Answer"))

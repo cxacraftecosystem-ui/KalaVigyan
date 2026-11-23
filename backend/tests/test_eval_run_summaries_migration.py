@@ -8,7 +8,7 @@ CREATED = migration("0001_initial_schema")
 
 
 def test_it_follows_round_7s_head() -> None:
-    assert (STEP.revision, STEP.down_revision) == ("0094_eval_run_summaries", "0093_staged_reviews_refreshes")
+    assert (STEP.revision, STEP.down_revision) == ("0094_eval_run_summaries", "0097_chunk_kinds")
 
 
 def test_it_reuses_the_eval_run_table_the_first_schema_made_and_no_code_wrote() -> None:

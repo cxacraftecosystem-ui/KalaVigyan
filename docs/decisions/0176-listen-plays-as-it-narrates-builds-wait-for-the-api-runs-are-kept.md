@@ -109,7 +109,8 @@ reports) and `docs/contracts/retrieval.md` (Evaluation).
    no secret is added. Between a push and GitHub creating its run (seconds) the gate cannot see the
    push; the deploy workflows' gate has the same window between its check and Vercel's clone.
 8. **Each finished run keeps its summary in `EvalRun`.** The first schema's unused table is reused,
-   not a second one made: migration `0094_eval_run_summaries` adds `fresh` (default false) and
+   not a second one made: migration `0094_eval_run_summaries` (after `0097_chunk_kinds`, round 7's
+   head when it merged) adds `fresh` (default false) and
    `floorsHeld` (null when the floors were not compared), allows `suite` only `ANSWERS`,
    `RETRIEVAL` and `RELEASE_CHECK`, and indexes `(suite, finishedAt)`. `eval_answers` and
    `eval_retrieval` (weekly and `--release`) store kind, start and finish, the release commit, the

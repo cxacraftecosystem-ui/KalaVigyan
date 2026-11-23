@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
 from app.models import Chunk, Claim, ClaimSource, Concept, Craft, FieldRecording, FieldVoiceStream
-from app.research.retrieval import PUBLIC_CHUNK_ACL
+from app.research.retrieval import PASSAGE_CHUNK_KIND, PUBLIC_CHUNK_ACL
 from app.services.field_voices_feed import FieldVoicesPage, parse_page
 from app.services.field_voices_ledger import SqlFieldVoicesLedger
 from app.services.field_voices_reader import field_voices_reader
@@ -122,7 +122,7 @@ async def stored_recording(session: AsyncSession, media_id: str = "fr-media-1") 
 async def public_chunk(session: AsyncSession, source_id: uuid.UUID, quote: str) -> Chunk:
     rows = await session.scalars(
         select(Chunk)
-        .where(Chunk.sourceId == source_id, Chunk.acl == PUBLIC_CHUNK_ACL)
+        .where(Chunk.sourceId == source_id, Chunk.acl == PUBLIC_CHUNK_ACL, Chunk.kind == PASSAGE_CHUNK_KIND)
         .order_by(Chunk.ordinal)
     )
     found = next((chunk for chunk in rows if quote in chunk.text), None)

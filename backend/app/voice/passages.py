@@ -15,7 +15,7 @@ from app.research.composition import ComposedAnswer, ComposeRequest
 from app.research.crafts import QUESTION_MAX_CHARS, CraftRef
 from app.research.evidence_pack import EvidencePack
 from app.research.planning import Facet, FacetCoverage, RetrievalPlan
-from app.research.retrieval import ChunkHit, KnowledgeHits, KnowledgeQuery, chunk_acls_for
+from app.research.retrieval import EVERY_CHUNK_KINDS, ChunkHit, KnowledgeHits, KnowledgeQuery, chunk_acls_for
 from app.research.vocabulary import CANONICAL_LANGUAGE
 from app.research.write_back import FoundBy
 from app.services.answer_events import CitedClaims, joined_claims
@@ -74,6 +74,7 @@ def stored_query(craft: CraftRef, english: str, *, mode: str, role: str) -> Know
         mode=mode,
         passages=mode in PASSAGE_MODES,
         chunk_acls=chunk_acls_for(role),
+        chunk_kinds=EVERY_CHUNK_KINDS,
         limit=PACK_CANDIDATES,
     )
 
