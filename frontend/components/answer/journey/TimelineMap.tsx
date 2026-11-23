@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { useFilmScene } from "@/components/answer/FilmScene";
-import { TimelineEntries, TimelineSlider } from "@/components/answer/journey/TimelineEntries";
+import { TimelineEntries, TimelineSlider, TimelineUndatedList } from "@/components/answer/journey/TimelineEntries";
 import { TimelinePins } from "@/components/answer/journey/TimelinePins";
 import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import { INDIA_BOUNDS } from "@/components/map/indiaBounds";
@@ -30,6 +30,7 @@ export function TimelineMapView({ block, at, onChoose }: { block: TimelineMapBlo
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
         {stops.length > 1 ? <TimelineSlider entries={entries} stops={stops} at={shown} onChoose={onChoose} /> : null}
         <TimelineEntries block={block} entries={entries} placed={placed} year={year} />
+        {block.undated && block.undated.length > 0 ? <TimelineUndatedList block={block} undated={block.undated} placed={placed} /> : null}
       </div>
     </div>
   );

@@ -1,0 +1,207 @@
+{
+  "version": 1,
+  "floors": {
+    "duplicateAccuracy": 0.8,
+    "distinctKept": 0.85,
+    "noveltyAccuracy": 0.8
+  },
+  "duplicate": [
+    {
+      "key": "sanganer-monsoon-effects",
+      "field": "CLIMATE",
+      "candidate": "The same blog says monsoon humidity, cloudy skies and frequent rain significantly increase drying times, so drying that takes a few hours in summer can take a day or longer in the monsoon.",
+      "held": "A clothing brand's blog says many hand block printing workshops in Jaipur, Sanganer and Bagru slow down during the monsoon.",
+      "label": "DISTINCT",
+      "why": "Two effects of the monsoon, a slower workshop and a longer drying time, can both be true.",
+      "origin": "Sanganeri contribution of 2026-11-22, flagged DIFFERS and cleared by the lead; texts completed from the gate's reasons"
+    },
+    {
+      "key": "sanganer-hari-sarana-drying",
+      "field": "CLIMATE",
+      "candidate": "In Sanganer, the pre-printing treatment called Hari Sarana, ending with the cloth spread on the ground to dry, takes 3-5 days depending on the weather.",
+      "held": "The same blog says monsoon humidity, cloudy skies and frequent rain significantly increase drying times, so drying that takes a few hours in summer can take a day or longer in the monsoon.",
+      "label": "DISTINCT",
+      "why": "A whole pre-printing treatment and the drying of printed cloth are two stages with their own durations.",
+      "origin": "Sanganeri contribution of 2026-11-22, flagged DIFFERS and cleared by the lead; texts completed from the gate's reasons"
+    },
+    {
+      "key": "sanganer-dhawai-beside-madder",
+      "field": "BOTANY",
+      "candidate": "The GI application states that alizarine and dhawai ka phool (Fordia Floribun<la, as the scan spells it) are mixed for a reddish shade.",
+      "held": "The GI application states the red alizarine bath is prepared from madder (Rubia tirctoria, Rubia manjista), which gives alizarine and purpurin, and that synthetic alizarine replaced it when madder ran short.",
+      "label": "DISTINCT",
+      "why": "Dhawai flower mixed for a reddish shade is a further red beside madder, not another account of the madder bath.",
+      "origin": "Sanganeri contribution of 2026-11-22, flagged DIFFERS and cleared by the lead; texts completed from the gate's reasons"
+    },
+    {
+      "key": "sanganer-oldenlandia-beside-madder",
+      "field": "BOTANY",
+      "candidate": "The GI application's dye table lists Oldenlandia umbellata, Indian Madar, as a source of red (alizarine).",
+      "held": "The GI application states the red alizarine bath is prepared from madder (Rubia tirctoria, Rubia manjista), which gives alizarine and purpurin, and that synthetic alizarine replaced it when madder ran short.",
+      "label": "DISTINCT",
+      "why": "A dye table can list a further source of red beside madder.",
+      "origin": "Sanganeri contribution of 2026-11-22, flagged DIFFERS and cleared by the lead; texts completed from the gate's reasons"
+    },
+    {
+      "key": "sanganer-two-findings-of-one-study",
+      "field": "GEOLOGY",
+      "candidate": "In a study published online on 03.02.2014, eleven groundwater samples from various locations of Sanganer were found polluted by wastewater soaking into the ground.",
+      "held": "A study published online on 03.02.2014 says heavy metals in Sanganer's dyeing and printing wastewater decrease downstream as they accumulate in the soil and in crops.",
+      "label": "DISTINCT",
+      "why": "Polluted groundwater and metals settling in soil and crops are two findings of one study.",
+      "origin": "Sanganeri contribution of 2026-11-22, flagged DIFFERS and cleared by the lead; texts completed from the gate's reasons"
+    },
+    {
+      "key": "sanganer-bleeding-and-drying",
+      "field": "CLIMATE",
+      "candidate": "The blog adds that if printed fabric does not dry properly in damp weather, the moisture increases the risk of colours bleeding into one another.",
+      "held": "The same blog says monsoon humidity, cloudy skies and frequent rain significantly increase drying times, so drying that takes a few hours in summer can take a day or longer in the monsoon.",
+      "label": "DISTINCT",
+      "why": "Bleeding colours and longer drying are two consequences of damp weather.",
+      "origin": "Sanganeri contribution of 2026-11-22, judged DISTINCT by the gate; texts completed from the gate's reasons"
+    },
+    {
+      "key": "sanganer-bench-and-fist",
+      "field": "PHYSICS",
+      "candidate": "Ritu Kumar, quoted in the GI application, describes printing on a low bench covered with a thick pad of several layers of heavy cloth beneath the fabric.",
+      "held": "Sanganer printers press the block hard with the fist on the back of its handle so that the colour's imprint is even.",
+      "label": "DISTINCT",
+      "why": "The padded bench and the blow of the fist are two parts of one printing set-up.",
+      "origin": "Sanganeri contribution of 2026-11-22, judged DISTINCT by the gate; texts completed from the gate's reasons"
+    },
+    {
+      "key": "sanganer-ames-test-and-unevaluated-dyes",
+      "field": "HEALTH",
+      "candidate": "In a 2007 Ames test with Salmonella typhimurium strain TA 100, 11 of 12 textile dyes from Sanganer were positive for mutagenicity, Red 12 B being the exception.",
+      "held": "A 2007 study states that most textile dyes used by Sanganer's hand block dyeing and printing industries have not been evaluated for their health impact.",
+      "label": "DISTINCT",
+      "why": "The study tested twelve dyes because most had never been evaluated; both statements hold.",
+      "origin": "Sanganeri contribution of 2026-11-22, judged DISTINCT by the gate; texts completed from the gate's reasons"
+    },
+    {
+      "key": "indigo-dip-count",
+      "field": "PROCESS",
+      "candidate": "Ajrakh cloth is dipped in the indigo vat three times before it is washed.",
+      "held": "Ajrakh cloth goes into the indigo vat four times before it is washed.",
+      "label": "DIFFERS",
+      "why": "One vat, one stage, one count: three and four dips cannot both be the count.",
+      "origin": "constructed for the evaluation"
+    },
+    {
+      "key": "madder-boil-length",
+      "field": "PROCESS",
+      "candidate": "Bagru printers boil the cloth in the madder bath for about one hour.",
+      "held": "Bagru printers boil the cloth in the madder bath for about four hours.",
+      "label": "DIFFERS",
+      "why": "The same bath at the same stage cannot last about one hour and about four hours.",
+      "origin": "constructed for the evaluation"
+    },
+    {
+      "key": "resist-before-or-after-dip",
+      "field": "PROCESS",
+      "candidate": "The lime and gum resist is printed on Ajrakh cloth after its first indigo dip.",
+      "held": "The lime and gum resist is printed on Ajrakh cloth before its first indigo dip.",
+      "label": "DIFFERS",
+      "why": "One printing of the resist cannot come both before and after the first dip.",
+      "origin": "constructed for the evaluation"
+    },
+    {
+      "key": "alum-fixes-madder-reworded",
+      "field": "CHEMISTRY",
+      "candidate": "On cotton, the madder red is fixed by an alum mordant.",
+      "held": "Alum used as a mordant fixes the madder red on cotton.",
+      "label": "SAME",
+      "why": "The same fact in other words.",
+      "origin": "constructed for the evaluation"
+    },
+    {
+      "key": "fist-on-the-handle-reworded",
+      "field": "PHYSICS",
+      "candidate": "To print evenly, Sanganer printers strike the back of the block's handle hard with the fist.",
+      "held": "Sanganer printers press the block hard with the fist on the back of its handle so that the colour's imprint is even.",
+      "label": "SAME",
+      "why": "The same fact in other words.",
+      "origin": "constructed from the Sanganeri contribution of 2026-11-22"
+    }
+  ],
+  "novelty": [
+    {
+      "key": "sanganer-indigofera",
+      "field": "BOTANY",
+      "candidate": "The GI application states indigo blue (nil) is extracted from nil plants (Indigofera tinctoria), but nowadays synthetic indigo granules are used.",
+      "held": [
+        "The GI application lists neel (indigo) among the dyes of Sanganer's blue.",
+        "Indigo is insoluble in water, while its reduced form, leucoindigo, dissolves."
+      ],
+      "label": "ADDS",
+      "why": "The plant's name and the synthetic granules used now are in neither held fact.",
+      "origin": "Sanganeri contribution of 2026-11-22, refused with adds false while its reason said the details are new; held texts summarised from the gate's reason"
+    },
+    {
+      "key": "sanganer-bench-padding",
+      "field": "PHYSICS",
+      "candidate": "Ritu Kumar, quoted in the GI application, describes printing on a low bench covered with a thick pad of several layers of heavy cloth beneath the fabric.",
+      "held": [
+        "Sanganer printers press the block hard with the fist on the back of its handle so that the colour's imprint is even."
+      ],
+      "label": "ADDS",
+      "why": "The low bench and its padding are new details.",
+      "origin": "Sanganeri contribution of 2026-11-22, judged adds by the gate"
+    },
+    {
+      "key": "sanganer-steaming-fixes-colour",
+      "field": "PHYSICS",
+      "candidate": "After printing, Sanganer fabric is steamed in special boilers, washed and dried, and then ironed, which further fixes the colour.",
+      "held": [
+        "Sanganer printers press the block hard with the fist on the back of its handle so that the colour's imprint is even."
+      ],
+      "label": "ADDS",
+      "why": "Steaming, washing and ironing after printing are new steps.",
+      "origin": "Sanganeri contribution of 2026-11-22, judged adds by the gate"
+    },
+    {
+      "key": "sanganer-unlabelled-dyes",
+      "field": "HEALTH",
+      "candidate": "The 12 dyes obtained at random from the local Sanganer market for the 2007 study carried no information on their constituents, purity or hazardous nature.",
+      "held": [
+        "A 2007 study states that most textile dyes used by Sanganer's hand block dyeing and printing industries have not been evaluated for their health impact."
+      ],
+      "label": "ADDS",
+      "why": "The missing labels on the market dyes are a new detail.",
+      "origin": "Sanganeri contribution of 2026-11-22, judged adds by the gate"
+    },
+    {
+      "key": "neel-already-held",
+      "field": "BOTANY",
+      "candidate": "Neel, that is indigo, is one of the dyes Sanganer printers use for blue.",
+      "held": [
+        "The GI application lists neel (indigo) among the dyes of Sanganer's blue."
+      ],
+      "label": "NOT_ADDS",
+      "why": "The held fact already names neel as a blue dye of Sanganer.",
+      "origin": "constructed for the evaluation"
+    },
+    {
+      "key": "alum-mordant-already-held",
+      "field": "CHEMISTRY",
+      "candidate": "Ajrakh printers use alum as a mordant to fasten the colours.",
+      "held": [
+        "Alum is used as a mordant to fasten the colours."
+      ],
+      "label": "NOT_ADDS",
+      "why": "The held fact says the same.",
+      "origin": "constructed for the evaluation"
+    },
+    {
+      "key": "dyes-colour-cloth-too-general",
+      "field": "CHEMISTRY",
+      "candidate": "Dyes are substances that give their colour to cloth when it is dipped in them.",
+      "held": [
+        "Alum is used as a mordant to fasten the colours."
+      ],
+      "label": "NOT_ADDS",
+      "why": "Too general to teach a reader anything about the craft.",
+      "origin": "constructed for the evaluation"
+    }
+  ]
+}

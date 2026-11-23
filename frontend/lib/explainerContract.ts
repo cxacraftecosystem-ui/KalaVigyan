@@ -23,9 +23,11 @@ import {
   climateRiskBlockShape,
   marketGiBlockShape,
   measureBlockShape,
+  quantitiesBlockShape,
   type ClimateRiskBlock,
   type MarketGiBlock,
-  type MeasureBlock
+  type MeasureBlock,
+  type QuantitiesBlock
 } from "@/lib/explainerInsight";
 import {
   compareBlockShape,
@@ -77,7 +79,7 @@ import {
   type MordantBathBlock,
   type SignatureBlock
 } from "@/lib/explainerSignature";
-import { boolean, integer, list, matching, nullable, object, oneOf, optional, ShapeError, tagged, text, type Shape } from "@/lib/shape";
+import { boolean, integer, list, matching, nullable, object, oneOf, optional, positive, ShapeError, tagged, text, type Shape } from "@/lib/shape";
 import type { AnswerSentence, Citation, EvidenceLevel, SourceRef } from "@/lib/types";
 
 export { DISCIPLINES, type Discipline };
@@ -113,9 +115,10 @@ export const BLOCK_KINDS = [
   "mordant_bath",
   "lost_wax",
   "firing",
+  "quantities",
   "component"
 ] as const;
-export const BUILT_BLOCK_KINDS = ["prose", "process_ladder", "images", "region_story", "map_layer", "expert_view", "seasons", "supply_map", "reaction_player", "material_card", "molecule_3d", "compare", "concept_graph", "climate_risk", "measure", "market_gi", "simulation", "what_if", "zoom_story", "timeline_map", "component"] as const;
+export const BUILT_BLOCK_KINDS = ["prose", "process_ladder", "images", "region_story", "map_layer", "expert_view", "seasons", "supply_map", "reaction_player", "material_card", "molecule_3d", "compare", "concept_graph", "climate_risk", "measure", "market_gi", "quantities", "simulation", "what_if", "zoom_story", "timeline_map", "component"] as const;
 export const BUILT_FIGURE_KINDS = ["indigo_vat", "mordant_bath", "lost_wax", "firing"] as const satisfies readonly (typeof SIGNATURE_KINDS)[number][];
 export const WORKING_SECTION_STATES = ["RESEARCHING", "WRITING", "CHECKING"] as const;
 export const FINAL_SECTION_STATES = ["READY", "EMPTY"] as const;
@@ -187,6 +190,7 @@ export type BlockByKind = {
   measure: MeasureBlock;
   market_gi: MarketGiBlock;
   climate_risk: ClimateRiskBlock;
+  quantities: QuantitiesBlock;
   indigo_vat: IndigoVatBlock;
   mordant_bath: MordantBathBlock;
   lost_wax: LostWaxBlock;
@@ -205,6 +209,7 @@ export type ExplainerSection = {
   state: FinalSectionState;
   blocks: ExplainerBlock[];
   searched: string | null;
+  withdrawn?: number;
 };
 export type Understood = { crafts: CraftLink[]; candidates: CraftLink[]; depth: Depth; language: string; basis?: UnderstandingBasis };
 export type LedeBlock = BlockEnvelope<"lede"> & { headline: string; sentences: ExplainerSentence[]; figure: SignatureBlock | null };
@@ -307,6 +312,7 @@ export const BLOCK_SHAPES: { readonly [K in TypedBlockKind]: Shape<BlockByKind[K
   measure: measureBlockShape,
   market_gi: marketGiBlockShape,
   climate_risk: climateRiskBlockShape,
+  quantities: quantitiesBlockShape,
   indigo_vat: indigoVatBlockShape,
   mordant_bath: mordantBathBlockShape,
   lost_wax: lostWaxBlockShape,
@@ -347,7 +353,8 @@ export const explainerSectionShape: Shape<ExplainerSection> = object<ExplainerSe
   order: integer,
   state: oneOf(FINAL_SECTION_STATES),
   blocks: list(explainerBlockShape),
-  searched: nullable(text)
+  searched: nullable(text),
+  withdrawn: optional(positive)
 });
 
 export const explainerShape: Shape<Explainer> = object<Explainer>({

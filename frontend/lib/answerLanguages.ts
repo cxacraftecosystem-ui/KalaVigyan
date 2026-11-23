@@ -1,4 +1,5 @@
-import { list, matching, object, oneOf, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { interfaceWordsShape, type InterfaceWord } from "@/lib/interfaceWords";
+import { list, matching, object, oneOf, optional, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
 import type { AnswerSection, AnswerSentence } from "@/lib/types";
 
 export type TextDirection = "ltr" | "rtl";
@@ -11,6 +12,7 @@ export type AnswerLanguage = {
   autonym: string;
   script: string;
   direction: TextDirection;
+  words?: InterfaceWord[];
 };
 
 export type TextAttributes = { lang?: string; dir: TextDirection | "auto" };
@@ -48,7 +50,8 @@ export const answerLanguageShape: Shape<AnswerLanguage> = object<AnswerLanguage>
   label: text,
   autonym: text,
   script: matching(/^[A-Z][a-z]{3}$/, "a script code"),
-  direction: oneOf(["ltr", "rtl"] as const)
+  direction: oneOf(["ltr", "rtl"] as const),
+  words: optional(interfaceWordsShape)
 });
 
 export function answerLanguagesOf(raw: unknown): AnswerLanguage[] {

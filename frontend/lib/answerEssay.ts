@@ -3,7 +3,8 @@ import type { ExplainerSentence, MediaRef } from "@/lib/explainerBlockBase";
 import type { LadderStage } from "@/lib/explainerContract";
 import type { SectionView } from "@/lib/explainerState";
 import { blockSentences, blockSourceIds, type TypedBlock } from "@/lib/explainerView";
-import { countNoun, formatDate, listText } from "@/lib/format";
+import { countNoun, listText } from "@/lib/format";
+import { ENGLISH_PROVENANCE, filled, PROVENANCE_ENGLISH, wordedDate, type ProvenanceWord, type ProvenanceWords, type Worded } from "@/lib/interfaceWords";
 import { marginNotes, type CitingSentence, type MarginNote } from "@/lib/marginNotes";
 import type { AnswerSentence, SourceReliability, SourceRef } from "@/lib/types";
 
@@ -17,15 +18,16 @@ export const QUESTION_CUT_AT = 80;
 
 const GRADES: readonly SourceReliability[] = ["A", "B", "C", "D"];
 
-export function answerProvenance(sources: readonly Pick<SourceRef, "reliability">[]): AnswerProvenance {
+export function answerProvenance(sources: readonly Pick<SourceRef, "reliability">[], words: Pick<ProvenanceWords, "oneSource" | "sources"> = PROVENANCE_ENGLISH): AnswerProvenance {
   const grades = GRADES.map((grade) => ({ grade, count: sources.filter((source) => source.reliability === grade).length })).filter((grade) => grade.count > 0);
   const graded = grades.map((grade) => `${grade.count} graded ${grade.grade}`);
   const named = countNoun(sources.length, "source");
-  return { sources: `Drawn from ${named}`, grades, spoken: graded.length > 0 ? `Reliability of the ${named}: ${listText(graded)}` : "" };
+  const drawn = filled(sources.length === 1 ? words.oneSource : words.sources, { count: sources.length });
+  return { sources: drawn, grades, spoken: graded.length > 0 ? `Reliability of the ${named}: ${listText(graded)}` : "" };
 }
 
-export function answeredOn(createdAt: string | null | undefined): string | null {
-  return createdAt ? `Answered ${formatDate(createdAt)}` : null;
+export function answeredOn(createdAt: string | null | undefined, worded: Worded<ProvenanceWord> = ENGLISH_PROVENANCE): string | null {
+  return createdAt ? filled(worded.words.answered, { date: wordedDate(createdAt, worded.language) }) : null;
 }
 
 export function sentenceMark(sentence: Pick<AnswerSentence, "level" | "citations">): SentenceMark {

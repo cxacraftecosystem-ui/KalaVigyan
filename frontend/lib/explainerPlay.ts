@@ -66,13 +66,16 @@ export type ZoomLevel = {
   compound: ZoomCompound | null;
 };
 export type ZoomStoryBlock = BlockEnvelope<"zoom_story"> & { levels: ZoomLevel[]; datasets: RegionDataset[]; boundaryCaption: string | null };
-export type TimelinePlace = { name: string; wikidataId: string | null; latitude: number | null; longitude: number | null };
+export type TimelinePlace = { name: string; wikidataId: string | null; latitude: number | null; longitude: number | null; districtLgd?: number };
 export type TimelinePoint = { place: number; yearFrom: number; yearTo: number; sentence: ExplainerSentence };
 export type TimelineRoute = { start: number; end: number; yearFrom: number; yearTo: number; sentence: ExplainerSentence };
-export type TimelineMapBlock = BlockEnvelope<"timeline_map"> & {
+export type TimelineUndated = { place: number | null; sentence: ExplainerSentence };
+export type TimelineMapBlock = Omit<BlockEnvelope<"timeline_map">, "version"> & {
+  version: 1 | 2;
   places: TimelinePlace[];
   points: TimelinePoint[];
   routes: TimelineRoute[];
+  undated?: TimelineUndated[];
   datasets: RegionDataset[];
   boundaryCaption: string;
 };
@@ -174,14 +177,22 @@ export const zoomStoryBlockShape: Shape<ZoomStoryBlock> = object<ZoomStoryBlock>
 
 export const timelineMapBlockShape: Shape<TimelineMapBlock> = object<TimelineMapBlock>({
   ...envelope("timeline_map"),
+  version: oneOf([1, 2] as const),
   places: list(
-    object<TimelinePlace>({ name: text, wikidataId: nullable(WIKIDATA_ID), latitude: nullable(number), longitude: nullable(number) }),
+    object<TimelinePlace>({
+      name: text,
+      wikidataId: nullable(WIKIDATA_ID),
+      latitude: nullable(number),
+      longitude: nullable(number),
+      districtLgd: optional(integer)
+    }),
     1
   ),
   points: list(object<TimelinePoint>({ place: integer, yearFrom: integer, yearTo: integer, sentence: explainerSentenceShape })),
   routes: list(
     object<TimelineRoute>({ start: integer, end: integer, yearFrom: integer, yearTo: integer, sentence: explainerSentenceShape })
   ),
+  undated: optional(list(object<TimelineUndated>({ place: nullable(integer), sentence: explainerSentenceShape }), 1)),
   datasets: list(datasetShape, 1),
   boundaryCaption: text
 });

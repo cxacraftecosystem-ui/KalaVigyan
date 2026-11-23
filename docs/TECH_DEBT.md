@@ -295,20 +295,24 @@ Last reviewed: 2026-11-22.
 
 ## Voice backend (decision 0017)
 
-### Voice in other languages is checked by text only (decision 0025)
+### Voice in other languages is not yet heard or read by its speakers (decisions 0025, 0157)
 
-- **What:** voice offers all thirteen answer languages from the ElevenLabs documentation, not from
-  calls. Scribe's published accuracy is Scribe v2's, and Urdu's band is moderate (25-50% word error),
-  so an Urdu question may often be misheard. The fixed spoken phrases in `voice/phrases.py` were
-  written by the lane and not read by native speakers. In `AGENT` nothing yet tells the agent a
-  session's language: the token takes none and client overrides are off, so the agent hears in its
-  own language until `language_detection` switches; the presets are not provisioned.
-- **Why left:** no provider call with a real key from the laptop, and no native reviewers in reach.
-- **Clears it:** the spike records one relay turn per language and one agent call in Hindi; a
-  native reader per language signs off the phrase table; if Urdu misses too often, drop `ur` from
-  `STT_LANGUAGE_CODES` (voice then stops offering it) or try `scribe_v3` with Hindi as a
-  `secondary_language_codes` hint; the spike decides whether the agent gets an `agent.language`
-  override or one agent per language.
+- **What:** what a test can check is checked for every offered language: a relay turn sends Scribe
+  and speech their codes and speaks the language's source word, and every phrase whose English says
+  no carries its language's negation (decision 0157, item 7). No call with a real key has run in a
+  language other than English, and Scribe's published accuracy is Scribe v2's: Urdu's band is
+  moderate (25-50% word error), so an Urdu question may often be misheard. The spoken phrases (the
+  `voice.*` entries of `backend/app/data/interface_words/`) were written by the voice lane and no
+  native speaker has reviewed them. In `AGENT` nothing yet tells the agent a session's language: the
+  token takes none and client overrides are off, so the agent hears in its own language until
+  `language_detection` switches; the presets are not provisioned.
+- **Why left:** a recorded turn needs the owner's ElevenLabs key, and a review needs a reader of
+  each language.
+- **Clears it:** a reader of each language records a review on the `voice.*` entries of its file,
+  correcting any phrase first (decision 0157, item 5); the spike records one relay turn per language
+  and one agent call in Hindi; if Urdu misses too often, drop `ur` from `STT_LANGUAGE_CODES` (voice
+  then stops offering it) or try `scribe_v3` with Hindi as a `secondary_language_codes` hint; the
+  spike decides whether the agent gets an `agent.language` override or one agent per language.
 
 ### An agent call cannot be hung up from our side
 
@@ -345,21 +349,25 @@ Last reviewed: 2026-11-22.
 
 ## Science engine (decision 0015)
 
-### Reactions and readings cover three crafts
+### Seeded crafts without a cited reaction, a firing stage or a stated temperature
 
-- **What:** the science seed has reactions and condition readings for Kutch Ajrakh, Bagh and
-  Machilipatnam only; Bagru, Sanganeri and Akola stages get materials but no reactions or
-  readings. Nothing proposes species for new claims (no researcher form, no enrichment step),
-  so reactions grow only through `app/data/science_seed.json`. Kaolinite dehydroxylation has
-  no reaction: the terracotta seed is sub-category mechanism chains, not a craft process with
-  a `FIRE` stage. Stage concepts without an upstream ordinal (Akola mud soaking and paste
-  preparation, Machilipatnam and Sanganeri block carving) get no stage, although `PRECEDES`
-  edges could place them. No seed claim states a temperature or pH, so no seeded reading is
-  checked against an envelope yet.
-- **Why left:** each reaction and reading is curated against its quote; a model proposal path
-  needs the review queue and a writer that calls `science/reactions.check_reaction`.
-- **Clears it:** a writer for proposed species (researcher form and enrichment), balanced only
-  through `check_reaction`; a terracotta craft process; ordering stages by `PRECEDES`.
+- **What:** reactions now come from the science seed (Kutch Ajrakh, Bagh, Machilipatnam) and
+  from the curated dossiers of nine crafts (those three, Bagru, Sanganeri, Bastar Dhokra, Agates
+  of Cambay, Firozabad Glass, Cane and Bamboo, through `services/curation_structure`). What is
+  left: Dabu (its dossier holds no reaction) and Akola stages have materials and tools but no
+  reaction, because no source the seed or a dossier holds states one; no craft has a process with a `FIRE` stage, so kaolinite dehydroxylation has no
+  reaction (the terracotta seed is sub-category mechanism chains); stage concepts without an
+  upstream ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block
+  carving) get no stage although `PRECEDES` edges could place them; and no seed claim states a
+  temperature or pH, so no seeded reading is checked against an envelope.
+- **Why left:** reactions and readings are written only as a cited quote states them; the
+  sources still to find are a GI application or a chemistry paper on Dabu mud resist and on
+  Akola's mud and indigo work, a curated clay craft's firing schedule, and a dyeing source
+  stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP server
+  (`search_sources`, `read_source`, then `propose_structure` for a reaction).
+- **Clears it:** a dossier or seed reaction for Dabu and Akola from such a source, a curated clay
+  craft with a `FIRE` stage and its stated temperature, and `claim_seed.stage_rows` ordering a
+  stage by its `PRECEDES` edges when no ordinal is stated.
 
 ### Out-of-envelope readings are not in a review queue
 
@@ -367,56 +375,40 @@ Last reviewed: 2026-11-22.
   exists, so they are only shown with their status.
 - **Clears it:** the review-queue lane lists readings whose `envelope_check` is `OUTSIDE`.
 
-### The science seed never deletes
-
-- **What:** science rows are upserted by derived id, so a reaction, condition or reading removed
-  from `science_seed.json` stays in the database.
-- **Clears it:** delete seeded science rows whose derived id is no longer in the plan, in the
-  same transaction as the upsert.
-
-### One kind and role per material
-
-- **What:** a seeded material has one curated `MaterialKind` and one `MaterialRole` for every
-  stage that uses it, and tools (`TOOL` concepts) are not stage materials.
-- **Clears it:** take the role per stage from the source when a stage uses a material
-  differently, and show tools once the contract has a place for them.
-
-### Kaolinite constant differs from PLAN 7
-
-- **What:** PLAN 7 gives kaolinite dehydroxylation as 450–600 °C; the cited revision says it
-  begins at 550–600 °C, which is the constant.
-- **Clears it:** cite a scholarly thermal-analysis source and set the constant to what it says.
-
 ## Answers in Indian languages (decision 0023)
 
-### Translations are checked for figures, not for meaning
+### The read-back check is not yet calibrated by readers
 
-- **What:** `research/translation.translation_problems` proves that numbers, formulas, mhchem,
-  units and the script survive a translation and that no link or personal data was added; it does
-  not prove the sentence still says the same thing. A unit or number written in words in the
-  target language fails the check and the sentence falls back to English.
-- **Why left:** a meaning check needs a second model call per answer and a judge to calibrate.
-- **Clears it:** run the known-answer questions of PLAN 0 in Hindi and Tamil on the box, have a
-  speaker of each read the answers, and add a back-translation check if they find drift.
+- **What:** a translation is read back into English and refused when its reading loses a figure,
+  a negation or a hedge, adds one, or keeps fewer than half the English's terms (decision 0157,
+  item 1). That half is the quote overlap floor, chosen without a reader: no speaker of Hindi or
+  Tamil has yet judged which sentences drifted, so the check may refuse a faithful sentence (it
+  then shows in English) or keep a drifted one whose reading happens to share the English words.
+- **Why left:** the calibration needs a reader of each language.
+- **Clears it:** a reader of Hindi and one of Tamil read a known-answer answer in their language
+  (the production E2E's Known Answers report gives each translated sentence beside its English;
+  the Tamil one is asked on the site), and for every sentence they record, as a case in
+  `backend/tests/research/test_translation_meaning.py`, the English, their own literal English of
+  the translation and whether it kept the meaning; `READ_BACK_TERMS_KEPT_MIN` is then set so the
+  check decides every recorded case as its reader did.
 
-### Verified headings and follow-ups stay English
+### Interface words in other languages wait for their readers
 
-- **What:** a Verified answer in another language translates only its claim sentences; the
-  section headings and the templated follow-ups are the app's English labels, and the
-  not-enough-evidence message, errors and status lines are English in every mode.
-- **Why left:** translating them would cost a model call on every Verified answer, including one
-  whose claims are all cached; UI strings stay English.
-- **Clears it:** keep translated labels per language as reviewed data (not model output) and send
-  them with the stream.
-
-### Multilingual answers not yet seen running
-
-- **What:** the language picker, the Noto Sans faces, right-to-left Urdu and the English toggle are
-  checked by typecheck, lint and unit specs; no browser has drawn them, and no TRANSLATE call has
-  run against a provider. Migration 0007 seeds the TRANSLATE routes and has run only offline.
-- **Why left:** nothing runs on the laptop; the batch deploys once.
-- **Clears it:** after the deploy, ask one Hindi and one Urdu question in each mode and look at the
-  answer on a phone and a laptop.
+- **What:** the fixed words of the answer screen (the provenance rail and the actions), a stored
+  answer's headings and follow-ups and the status lines are shown in an answer language only from
+  a reviewed entry of `backend/app/data/interface_words/` (decision 0157, items 3 to 6). The Hindi
+  and Urdu essay words are sourced from the Kutch Ajrakh monograph and the Urdu board (جواب, ماخذوں
+  سے, محفوظ کریں, اس جواب کا حوالہ دیں and the rest) but no entry is reviewed yet, "Saved",
+  "Saving", "Removing" and one source have no source, and the other languages, the headings, the
+  follow-ups and the status lines have no entries. The not-enough-evidence message and the errors
+  are composed in English and have no entries at all. A craft's name stays as it is written in
+  English, as the monograph writes it.
+- **Why left:** a reviewed word needs a reader of its language; approving a design is not
+  reviewing its words (the board and the monograph disagree on two Urdu words).
+- **Clears it:** a reader of each language supplies the missing words and records a review on
+  each entry they approve (decision 0157, item 5), the Urdu reader first, choosing between the
+  board's and the monograph's readings; then the templates of the not-enough-evidence message and
+  the errors join the lists the same way.
 
 ## Media backend (decision 0018)
 
@@ -810,89 +802,19 @@ Last reviewed: 2026-11-22.
 
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
-### The reaction player shows no conditions or reaction energies
+### The zoom story reads the craft's matter on its own
 
-- **What:** version 1 of `ReactionStep` (decision 0042) has no conditions or ΔH, so the player
-  shows species, equations and levels only; the Process tab still shows each reaction's cited
-  conditions and ΔH.
-- **Why left:** the kind's fields were fixed by decision 0042 and the matter renderers are built
-  against them in parallel; a field change is a new version.
-- **Clears it:** a version 2 step carrying the reaction view's cited conditions and `deltaH`, with
-  its renderer, fixture and both sides' tests.
-
-### A material card cites no PubChem record for its formula
-
-- **What:** a card shows a formula and CID only from a compound linked to its PubChem record, but
-  version 1 of `MaterialCardBlock` has no source field, so the record is not in the explainer's
-  sources; the CID itself is the reader's link to the record.
-- **Why left:** the kind's fields are fixed (decision 0042).
-- **Clears it:** a version 2 card with the compound's record `sourceId`, cited like the molecule.
-
-### Each matter builder reads the craft's matter again
-
-- **What:** the reaction, card and molecule builders each call `craft_matter`, so a chemistry
-  section reads the craft's process rows three times and a materials section twice.
-- **Why left:** builders share nothing but `BuilderTools`; the reads are short and need no lock.
-- **Clears it:** a per-answer matter read held by the builder tools and shared by the builders.
-
-### Cards and molecules can repeat across a chemistry and a materials section
-
-- **What:** a builder sees one section, so an answer with both a `CHEMISTRY` and a `MATERIALS`
-  section can show the same material's card or the same molecule in both.
-- **Why left:** the registry contract gives a builder its own section only.
-- **Clears it:** `BuildAsk` carrying the blocks earlier sections were given, or a per-answer
-  record of shown materials and compounds.
-
-### A missing 3D conformer is never asked again
-
-- **What:** `ConformerCache` keeps PubChem's "no 3D conformer" for good, so a conformer PubChem
-  adds later is not seen until the object is deleted.
-- **Why left:** PubChem computes conformers only for small, rigid, single-component molecules;
-  a compound refused once is very unlikely to gain one.
-- **Clears it:** re-ask a kept miss whose `checkedAt` is older than a few months.
-
-### The compound lookup holds its session across PubChem calls
-
-- **What:** `link_compounds` keeps one database session open while it asks PubChem for each
-  pending compound (decision 0040's rule is never to wait on HTTP with a connection held).
-- **Why left:** it is a nightly script with its own engine and a handful of compounds, not the
-  answer path; its database test drives it with one transaction.
-- **Clears it:** read the pending compounds, look them up with no session open, then write the
-  links in a second short session; adapt `tests/db/test_compound_lookup_db.py`.
-
-### Card local names come from the glossary only
-
-- **What:** a card's `localNames` are its term's; a local name a cited claim states (for example
-  "locally known as kachika") but the glossary lacks is not shown.
-- **Why left:** the glossary is the one home of names; a name read from free text needs the same
-  checks the glossary seed applies.
-- **Clears it:** the glossary seed adding local names stated in claims about the term's concept.
+- **What:** the reaction, card, molecule, what-if, supply-map and generated-explainer builders
+  share one read of the craft's matter per answer (`BuildAsk.matter`, decision 0152); the zoom
+  story builder (`services/journey_builders.ZoomStoryBuilder`) still calls `craft_matter` itself,
+  so an answer whose chemistry or materials section shows a zoom reads the rows once more.
+- **Why left:** `journey_builders.py` belonged to the time, market and figures lane in round 7's
+  debt round, so this lane left it.
+- **Clears it:** `ZoomStoryBuilder.build` reading `await ask.matter.read(self._tools.sessions,
+  craft)`, with `tests/journey/test_zoom_story.py` patching `app.services.craft_matter` as
+  `tests/matter/test_matter_reads.py` does.
 
 ## Expert panel (decision 0046)
-
-### One failing take sentence drops the view, with no regenerate
-
-- **What:** prose gets one regenerate for failing sentences; a panel take does not, so a view with
-  one unquoted or unsupported sentence is not shown at all.
-- **Why left:** the panel is optional work inside a 90 s wait (decision 0099).
-- **Clears it:** one regenerate of the failing seats' takes when the wait and the headroom allow.
-
-### Experts differ only on claims stored on one concept
-
-- **What:** "one subject" is the claims' stored concept, so two claims on different concepts that
-  disagree about one fact (or a claim about a concept edge) are never shown as a difference.
-- **Why left:** the concept is the only stored subject; a model's word that two claims concern one
-  thing is not evidence.
-- **Clears it:** the concept graph of feature 7 (shared-science explorer) linking concepts that
-  name one thing, read as one subject.
-
-### Reused expert views keep the seats that stored them
-
-- **What:** a stored panel is reused with its section (one reuse set), so a later question that
-  seated other experts sees the earlier answer's seats.
-- **Why left:** dropping a view would break its mirrored difference; the set is reused whole.
-- **Clears it:** reuse a set's views only for seats the new understanding seats, removing the
-  differences and agreements that name a dropped seat.
 
 ### The reading share does not steer queries
 
@@ -906,32 +828,14 @@ Last reviewed: 2026-11-22.
 
 ### The panel call has not met Claude Sonnet yet
 
-- **What:** the prompt and schema were checked against the portable schema rules and recorded
-  replies only.
-- **Why left:** nothing runs against production models from the laptop.
-- **Clears it:** the phase B known-answer question in production (Kutch Ajrakh, Expert, history)
-  showing an "Experts differ" card, and Usage showing the panel's spend per answer.
-
-## Matter and expert renderers (decision 0049)
-
-### Matter renderers not yet seen running
-
-- **What:** typecheck, lint and server-rendered unit specs check the player, the cards, the panel
-  and the molecule's frame, not a browser: the 3Dmol.js chunk under a Next build, its first draw,
-  the reveal turn, Explore on touch screens, the transparent canvas in dark mode, and the cast's
-  `archive` tone in dark mode are unverified.
-- **Clears it:** once the kinds are built, the production E2E asks a Kutch Ajrakh chemistry
-  question at 1440, 834 and 390 px, with screenshots of the player playing and paused, a card, the
-  molecule before and after Explore, and reduced motion on.
-
-### 3Dmol.js keeps two listeners after a molecule is gone
-
-- **What:** a 3Dmol.js viewer adds a `mouseup` and `touchend` listener on `document.body` and a
-  `resize` listener on `window` that it never removes; disposing a scene clears the models, loses
-  the WebGL context and removes the canvas, but those listeners stay until the page unloads.
-- **Why left:** the library has no teardown for them, and an explainer draws at most one molecule
-  per section.
-- **Clears it:** a 3Dmol.js release with a viewer teardown, called from `MoleculeScene.dispose`.
+- **What:** the seat, retake and difference calls are tested on their route (the builder compose
+  model, `answer_routes.BUILDER_TUNING`, Claude Sonnet 5.5 on the answer's headroom;
+  `tests/experts/test_panel_retakes.py`) and against recorded replies, but no production answer
+  has been read for its views and an "Experts differ" card.
+- **Why left:** it needs a paid production run, which only the lead dispatches.
+- **Clears it:** the production questions run dispatched with `questions=true`: its Expert answer
+  carries a note of the panel's views and Experts differ pairs (`e2e/production/expertPanel.ts`),
+  read with the `COMPOSE` spend of that answer in Usage.
 
 ## Curation tooling (decision 0051)
 
@@ -1157,7 +1061,8 @@ Last reviewed: 2026-11-22.
   run time needs a rule the plan does not have.
 - **Clears it:** an owner rule for derived figures (for example, only products of a data value and
   an input step the data object names), then that runtime guard in `lib/sandboxFrame`'s prelude
-  posting a refusal that `SandboxFrame` turns into hiding the block.
+  posting a refusal that `SandboxFrame` turns into hiding the block. Waits on the owner's rule
+  (checked again on 2026-11-22: the static check covers code numerals since decision 0061).
 
 ### Chromium ignores the frame policy's webrtc directive
 
@@ -1171,26 +1076,6 @@ Last reviewed: 2026-11-22.
   directive's support is the browsers'.
 - **Clears it:** nothing in this repository; drop the screens walk's exception once Chromium
   recognises the directive.
-
-### Years are read by pattern
-
-- **What:** `research/timeline.years_named` reads any four-digit numeral from 1000 to 2099 as a
-  year; the timeline builder offers `years_offered`, which drops a numeral followed by a plural
-  lowercase noun ("1500 artisans", decision 0057), but a count before a singular or irregular
-  noun ("1500 people", "1200 men") is still offered. Relative dates ("400 years ago") name none,
-  so such claims never date a point.
-- **Why left:** the history claims held state dates as years, ranges and centuries.
-- **Clears it:** a short list of irregular counted nouns, or curation storing a claim's dates.
-
-### Timeline places are placed by exact Wikidata label only
-
-- **What:** places are placed with the supply origins' rule (decision 0047), so a spelling that is
-  no item's label or alias stays unplaced (Ajrakhpur, Dhamadka), "Sindh" has three exact items none
-  described by the claim's words, and "Kutch" matches only a family name, which has no
-  coordinates. The fixture places only Fustat.
-- **Why left:** a wrong pin is worse than none, and the rule is shared with supply maps.
-- **Clears it:** the place register (decision 0047's entry) or a Wikidata id stored on the
-  claim's place by curation.
 
 ## Generated explainers (decision 0055)
 
@@ -1233,14 +1118,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
 
-### One answer can show the same what-if in two sections
-
-- **What:** builders see only their own section, so a process and a chemistry section that both
-  name madder can each show the red-dye what-if.
-- **Why left:** the registry has no answer-wide view of what other sections built.
-- **Clears it:** an answer-level set of inputs already shown passed to the builders, or the
-  what-if kept to the first section that names its stage.
-
 ## Zoom story and timeline map (decision 0057)
 
 ### No open-access paper figure is searched for the fibre level
@@ -1265,15 +1142,6 @@ Last reviewed: 2026-11-22.
   may never open; the lists hold the words the stored pictures use.
 - **Clears it:** the glossary's terms tagged with a zoom level, or a vision check of the top
   candidate per level within the answer's headroom.
-
-### Undated history claims are not on the timeline
-
-- **What:** the plan lists undated or unplaced claims without a point; version 1 of the timeline
-  (decision 0054) gives every point and route a span of years, so an undated history claim is not
-  offered at all. Unplaced places are listed without a pin.
-- **Why left:** the version-1 fields are fixed and a reinterpretation is not allowed.
-- **Clears it:** a version 2 of `timeline_map` with an `undated` list of cited sentences and
-  their place, built with lane 0060's renderer.
 
 ## ElevenLabs music, sound effects, image and video (decision 0058)
 
@@ -1385,18 +1253,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a step in the production E2E that opens Film on a known-answer question, checks
   the caption and the played bar advance, and closes it with Escape; then delete this entry.
 
-## Phase C review fixes (decision 0061)
-
-### The phase C kinds have not met production
-
-- **What:** `simulation`, `what_if`, `zoom_story` and `timeline_map` joined the built kinds on
-  both sides; no production answer has built one yet, and the first generated explainer will be
-  the production E2E's indigo question.
-- **Why left:** nothing is deployed from a lane (owner rule).
-- **Clears it:** after the deploy, dispatch E2E production with `questions=true`; the Indigo row
-  passing (or noting that no concept was chosen) and a materials and a history answer showing a
-  zoom and a timeline clear this entry.
-
 ## Phase D contract (decision 0062)
 
 ### No stored source states a regional unit conversion yet
@@ -1407,10 +1263,12 @@ Last reviewed: 2026-11-22.
   regional path is built and tested on hand-written quotes (decision 0066).
 - **Why left:** a regional value has to come from a source a curator verifies; inventing one would
   break O5.
-- **Clears it:** a dossier claim quoting a regional table (a district gazetteer or a state's
-  weights-and-measures record) as an equality ("a seer of Kachchh weighs ... kg") that names the
-  district or state by its LGD register spelling; then the review adds a `REGIONAL` row to the
-  fixture from that claim.
+- **Clears it:** curation only; the code path is built, and since decision 0147 the region may
+  be named by its register spelling or any other name `data/district_other_names.json` lists
+  ("a seer of Kutch" now names Kachchh). For Kutch Ajrakh: a dossier claim quoting the weights and
+  measures table of the Kutch district gazetteer (Gujarat State Gazetteers, Kutch District, 1971,
+  or the Gazetteer of the Bombay Presidency, Cutch, 1880) as an equality ("a seer ... weighs ...
+  kg", "a gaj is ... m"); then the review adds a `REGIONAL` row to the fixture from that claim.
 
 ### The phase D fixture shows no price and no Kutch Ajrakh sign of imitation
 
@@ -1450,27 +1308,25 @@ Last reviewed: 2026-11-22.
   the master list knows only by its state of practice is not listed for any district.
 - **Why left:** placing a state-level craft in every district of the state would be a claim no
   source makes.
-- **Clears it:** cited locations for more crafts (curation adds them district by district).
+- **Clears it:** curation only; the code path reads any cited district or point location. For
+  each GI craft the master list places by state alone, a dossier place naming its district from
+  the GI journal's "geographical area" passage or the district gazetteer, starting with the GI
+  crafts no dossier covers yet (Tharu embroidery, Kutch embroidery, Kasuti embroidery and the
+  other GI rows of `craft_master_list.json` without a dossier).
 
 ## Local measures, and market and GI (decision 0066)
 
-### A region is named only by its register spelling
+### A price stated with several years, places or prices needs a curated row
 
-- **What:** a regional factor holds only where its quote or claim names an LGD register district
-  or state as the register spells it, so "a seer of Kutch" gives no region and converts nothing.
-- **Why left:** no alias table of district names exists; guessing that "Kutch" is Kachchh would
-  be a place no source names in the register's terms.
-- **Clears it:** a reviewed alias list per district in `app/data` (Kutch, Kachchh), read by
-  `stated_names.register_places_named` for every region reader at once.
-
-### Prices come only from curated rows
-
-- **What:** a price is shown only from a `CraftPrice` row (a curated dossier's `market.prices`);
-  seed and answer claims that state a price are not shown, because nothing records their date and
-  place apart from the text.
-- **Why left:** reading a date and a place out of free text would choose among several; the
-  contract names the curated rows as the source.
-- **Clears it:** the curation run adds `market.prices` for each craft whose sources state one.
+- **What:** without curated rows, a price is read from a cited claim of the craft only when the
+  claim states exactly one price, one year and one LGD district (decision 0147,
+  `market_store.stated_price_offer`); a claim stating two prices, a range of years or two places
+  ("a cotton bandhani cost Rs. 10 to Rs. 50 and a georgette one Rs. 50 to Rs. 250") shows none.
+  19 prices in 12 dossiers are curated today.
+- **Why left:** choosing among several dates or places in one sentence would be a guess.
+- **Clears it:** curation only: `market.prices` rows for those claims, starting with the crafts
+  whose GI journal or gazetteer prices state several items (Kutch Bandhani, Tikuli Painting,
+  Uttarakhand Ringal Craft), each row naming its date and place.
 
 ### GI fields are read by their labels
 
@@ -1478,19 +1334,22 @@ Last reviewed: 2026-11-22.
   and government claims ("application 183", "Certificate Date 11-05-2011", "Journal Number 37");
   a claim phrased otherwise adds nothing, and two claims stating different values give no status.
 - **Why left:** the registry offers no open API, and a curated record replaces the reading.
-- **Clears it:** curated GI records for every GI craft (the curation run), after which the label
-  reader serves only crafts without a dossier.
+- **Clears it:** curation only: a `market.gi` record for each GI craft (21 of the master list's
+  209 GI crafts have one), read from its GI journal and registry pages as the 21 are, starting with
+  Tharu Embroidery, Kutch Embroidery, Kasuti Embroidery, Sandur Lambani Embroidery and Toda
+  Embroidery; the label reader then serves only crafts without a dossier.
 
-### Imitation and per are fixed word lists
+### Imitation is a fixed word list
 
 - **What:** a sign of imitation must name one of the listed words (fake, imitation, counterfeit,
   spurious, knock-off, passed off, screen-printed, machine-made, power loom, mill-made);
-  "duplicate", "copies" and "substitute" are left out because they also name other things. A
-  price's `per` is read only after "per" or "/", so "Rs 1,500 a metre" shows no per.
-- **Why left:** a model choosing either would spend on every economics section; the lists err
-  toward showing less.
-- **Clears it:** a dossier field naming the claims that are signs of imitation, read first, and
-  a reviewed list of per words.
+  "duplicate", "copies" and "substitute" are left out because they also name other things. (A
+  price's `per` is read after "per", "a", "an" or "/" since decision 0147.)
+- **Why left:** a model choosing would spend on every economics section; the list errs toward
+  showing less; a dossier field needs a stored column the curated import writes, and the import
+  belongs to the curated-import lane, which was running in the same tree.
+- **Clears it:** a dossier `market.imitation` list of claim ids (each citing a GI journal), stored
+  by the curated import and read before the word list by `services/market_builder`.
 
 ## Climate and risk, and ask the map (decision 0065)
 
@@ -1607,101 +1466,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** each scholarly adapter fills `container_title` from the field above (Europe PMC and
   Semantic Scholar too, which retires `JOURNAL_AS_PUBLISHER_ADAPTERS`); sources stored before keep
   no journal until a script reads their DOIs again.
-
-## Phase D review (decision 0070)
-
-### The curation checks a curated GI date only by its year, and a price's date not at all
-
-- **What:** `curation/entity_rules._gi_messages` (decision 0053) accepts a curated `filedOn` or
-  `registeredOn` whose year a quote states, even when no quote states its day or month, and a
-  curated price's `date` (`curation/records.Price`) is not checked against its claim's quotes. The
-  market builder cuts such a date to the precision its quotes state before showing it, and drops
-  a price whose quotes state none (`research/stated_dates.stated_precision`), so no unstated day
-  reaches a screen, but the curation check does not report the record.
-- **Why left:** the curation and importer files belong to lane 0053, which was running in the same
-  tree.
-- **Clears it:** the curation rules check each GI and price date with `stated_dates.states_date`
-  at its own precision and report a record whose day, month or year no quote states.
-
-## Frontend audit exceptions
-
-### Field voices are stored and served, but not drawn on the craft page
-
-- **What:** the craft page carries `voices`, `fieldPhotos` and `fieldVoicesTotal`, and the list
-  route pages them (decision 0091), but no component draws "In the artisan's words" or "From the
-  workshops" yet; only the signed-in reading page `/voices/<id>` exists.
-- **Why left:** the answer and craft components were being edited by another lane in the same
-  batch.
-- **Clears it:** a Voices part and a gallery on the craft page, each with its first page and
-  "Show all N" through `fetchFieldVoices`, and "Read the full interview" linking `/voices/<id>`.
-
-### The expert panel's artisan seat quotes only transcript chunks that back a stored claim
-
-- **What:** since decision 0099 the artisan seat speaks from field transcript chunks (`PUBLIC` and
-  `SIGNED_IN`), but only through a stored claim whose citation quotes the chunk; a chunk no claim
-  cites is not quoted. It reads with the public reading ACLs, not the asker's own (a researcher's
-  `RESEARCHER` chunks are not read), and it does not read KalaVigyan testimony (decision 0083).
-- **Why left:** an `expert_view` sentence cites stored claims only, and the builder writes no
-  claims; field quotes become claims through the live write-back.
-- **Clears it:** the builder writing back a quoted claim for each chunk it would quote, and the
-  asker's ACLs on `BuildAsk`.
-
-### The seat search and the artisan's transcript read have no database test
-
-- **What:** `seat_search.stored_seat_search` and `artisan_seat.stored_voices` past the retriever
-  (the `ClaimSource`, `FieldSegment` and `FieldRecording` reads) are covered by unit tests with
-  injected searches only; no test runs them against Postgres.
-- **Why left:** the change was bounded to unit tests; database tests run only on GitHub Actions.
-- **Clears it:** a `tests/db` test that stores a field recording, its chunks and a quoting claim,
-  and checks the artisan's sentence, name, craft and district.
-
-### Field images are not illustration candidates of their crafts' claims
-
-- **What:** the field voices contract makes each stored field image an illustration candidate of
-  its crafts' claims (`MediaRefClaim`, relevance `TEXT` from its caption and labels). No field voices
-  module writes `MediaRefClaim` rows, so field images show only in the craft page's gallery, never
-  beside a sentence (decision 0091, point 12).
-- **Why left:** choosing which claims a photograph illustrates needs the caption-to-claim matching
-  of the media lane, and the gallery already shows every image credited.
-- **Clears it:** `field_voices_image_store` links each image's `MediaRef` to the visible claims of
-  its crafts whose text its caption or labels match, and the cascade deletes those rows with it.
-
-### A partly withdrawn explainer section shows no "quote withdrawn" note
-
-- **What:** `services/field_voices_readback.py` drops the sentences and blocks of a stored explainer
-  that cite a withdrawn or stale field interview when the explainer is read. A section left empty
-  says so ("A field interview this section quoted is no longer shown."), but a section that keeps
-  other sentences shows no note that one was taken out, as the contract asks.
-- **Why left:** the explainer contract has a count of removed quotes only on `artisan_voice`, which
-  is not a built section block; a note on any section is a new field in `docs/contracts/explainer.md`
-  and its web shape, owned by the answer lane.
-- **Clears it:** a `withdrawn` count on `ExplainerSection` (and the web shape), set by the readback
-  and shown under the section.
-
-### The field voices order check does not span runs
-
-- **What:** `field_voices_sync` refuses a page whose first change is not after the last change of
-  the page before it in the same view and run, but keeps no last (`updatedAt`, `id`) between runs;
-  the first page of a run is checked only within itself.
-- **Why left:** a run resumes at the portal's signed cursor, which already names the last change
-  read; storing the stamp beside it needs two more columns per view and a reset on every re-read.
-- **Clears it:** `FieldVoiceStream` keeps the last stamp and id of each view, cleared with the cursor,
-  and `_read` starts from them.
-
-## The design system migration (decision 0092)
-
-### The voice call screen still mounts the retired source dialog
-
-- **What:** citation clusters open their own popover or sheet (`editorial/SourcePanel.tsx`), so no
-  citation opens `components/answer/SourceDialog` any more. Only the voice call screen still wires
-  it: `components/voice/VoiceCallBody.tsx` mounts `SourceDialog` and builds `openedSource` in an
-  `onOpen` it hands `VoiceTranscript`, which no citation calls.
-- **Why left:** the voice screens were another lane's files while decision 0141 cleared the rest
-  (the evidence badge folded into `EvidenceTag`, `CitationLookup.onOpen` and `TermSheet`'s
-  `onOpenCitation` deleted).
-- **Clears it:** drop the `onOpen`, `openedSource` and `SourceDialog` wiring from `VoiceCallBody`
-  and `VoiceTranscript`, then delete `components/answer/SourceDialog.tsx` and
-  `e2e/source-dialog-unit.spec.ts`.
 
 ## Public transcripts and share links (decision 0097)
 
@@ -1910,16 +1674,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a kit fix shown to the owner at 360 and proven by Monograph parity; the owner's
   ruling on the illustrations' labels; the lead's paid run.
 
-### Small differences from the boards left after round 6
-
-- **What:** the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
-- **Why left:** the interface words of each answer language belong to the languages lane. The Urdu
-  board gives five of the essay's interface words (جواب, ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا
-  حوالہ دیں) but not "Saved", the other answer languages or a craft's name in Urdu, which may not be
-  transliterated by us.
-- **Clears it:** the languages lane's sourced list of interface words for each answer language,
-  approved by the owner; then the copy table follows.
-
 ## Round 7 (2026-11-20)
 
 ### Live research write-backs skipped the candidate gates
@@ -1986,113 +1740,141 @@ Last reviewed: 2026-11-22.
 
 ### Leftovers of the design-conformance lane
 
-- **What:** an answer sentence flagged Sources differ opens both readings under the sentence, not in
-  a details element after its paragraph as SYSTEM.md draws it, and its summary cannot name what the
-  sources differ on, because the payload carries only `sourcesDiffer` and the citations (a flagged
-  claim stores no "about"). A drawing stored without server variants (the kind fixtures on
-  `/design/kinds`) shows a sunk placeholder until it hydrates. Decision 0141 renamed the board's
-  ribbon buttons, put the token set's hash in the themed picture ETag and added high contrast to
-  the capture run.
-- **Why left:** the sentence's own drawing is `components/answer/ExplainerSentence.tsx`, the voice
-  lane's file while decision 0141 ran, and a flagged claim has no stored subject to name; the
-  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
-  and the page bundles them instead of asking the server, which adds the variants.
-- **Clears it:** store what two readings differ on with the flag (the write-back marks it), carry
-  it with the readings on the sentence, draw `SourcesDifferNote` after the paragraph in the host
-  components (`LadderStageCard`, `CitedText` and the other callers) and only the tag in
-  `ExplainerSentence`; serve the kind preview's specs through the backend, which adds the four
-  variants with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
-
-### A stopped release leaves the live code on the migrated database
-
-- **What:** a release migrates the shared database before its retrieval check, so when the check
-  stops it (2026-11-22, decision 0132) the live release runs on the new schema. That release's
-  models read the `AiProvider` and `AiTask` columns as closed lists and raise `LookupError` on a
-  value added after it ('VOYAGE', 'RERANK'), which broke the admin route-order save until the next
-  release; and the recipe stamp of migration 0061 hid every vector not yet renewed from its vector
-  search until the renewal finished. Found when the round 7 release was stopped; left because the
-  fix is a release discipline, not a change to one file.
-- **Clears it:** keep every migration readable by the release before it (an added enum value is
-  read as unknown rather than refused, a renamed stamp keeps the old one current until the switch),
-  with a database test that loads every table through the previous release's models after
-  `alembic upgrade head`; or run the retrieval check on the new tree before migrating where the
-  schema allows.
+- **What:** the Sources differ readings open in a `<details>` after their paragraph and the claim
+  stores what they differ on (`Claim.differsOn`, decision 0156), but three seams are open. An
+  answer sentence never receives it, because `knowledge_view.ClaimView` carries no `differs_on`
+  (`section_blocks.explainer_sentence` reads it through `DIFFERS_ON_FIELD`), so answers show a plain
+  "Sources differ" summary; a flag the write-back's duplicate judge sets stores no subject, because
+  the judge names none; and the matter and what-if hosts (`components/answer/matter/
+  ReactionStepList.tsx`, `StepDetail.tsx`, `components/answer/play/WhatIfLab.tsx`) draw a flagged
+  sentence's tag without its readings. A drawing stored without server variants (the kind fixtures
+  on `/design/kinds`) shows a sunk placeholder until it hydrates.
+- **Why left:** `knowledge_view.py`, the gates and judges and the matter hosts were other lanes'
+  files while decision 0156 ran; the fixtures are delivered specs, which may not carry `themes`
+  (`component_specs_general_delivery`), and the page bundles them instead of asking the server,
+  which adds the variants.
+- **Clears it:** `ClaimView.differs_on: str | None` filled from `Claim.differsOn` in `cited_view`;
+  the duplicate judge naming what two facts differ on and passing it as
+  `candidate_writes.mark_sources_differ(..., about=)`; `SentencesDiffer` after the paragraph in the
+  three hosts; serve the kind preview's specs through the backend, which adds the four variants
+  with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### The fused order is weak on paraphrased English questions
 
-- **What:** on the production knowledge base on 2026-11-22 (release db09b9e7) the fused first-stage
-  order scored recall at 5 of 0.414 and a mean reciprocal rank of 0.296 on the 58 generated English
-  questions, which reword their fact, against 1.000 and 0.855 reranked. The full-text and
-  named-concept rankings find words the question shares with many of the craft's facts and outvote
-  the vector ranking, which places the expected fact in its first three for 52 of 55 such questions.
-  Answers read the reranked order, but a failed rerank, and any search that does not ask for
-  reranking, gets the fused one; the floors (decision 0133) only hold it where it stands
-  (`releaseSample` fused recall at 5 0.38).
-- **Why left:** the evaluation had to measure what answers read first; changing the fusion is a
-  ranking change of its own, measured on the same sets.
-- **Clears it:** weight the vector ranking in the fusion, or fuse by weights learned on the
-  hand-written and generated sets, measured on the generated English questions in the fused order
-  without lowering the hand-written ones; then raise the fused floors.
+- **What:** on release db09b9e7 the fused first-stage order scored recall at 5 of 0.414 and a mean
+  reciprocal rank of 0.296 on the 58 generated English questions, against 1.000 and 0.855 reranked,
+  because the full-text and named-concept rankings outvote the vector ranking. Decision 0151 weighs
+  each claim ranking by `backend/app/data/eval/fusion.json` and adds `eval_retrieval --fusion`, which
+  scores 60 weightings read-only and picks the best on the generated English questions that does not
+  lower the hand-written ones; the committed file still weighs the three rankings equally, and the
+  fused floors stand where they were (`releaseSample` fused recall at 5 0.38).
+- **Why left:** the weights must be measured on the production knowledge base, which only the lead
+  reaches.
+- **Clears it:** after the release that carries decision 0151, the lead runs
+  `eval_retrieval --fusion --out /tmp/fusion.json` on the box (RUNBOOK, Fusion weights), commits the
+  picked file and raises the fused floors to its numbers less 0.05.
+
+### Kutch Ajrakh's approved page does not yet carry the ground figure
+
+- **What:** the API places the "why here" ground figure in Kutch Ajrakh's why chapter
+  (`services/monograph_generated_why_here.with_why_here`), and the owner approved it on 2026-11-23
+  (decision 0151), but the approved static page (`frontend/public/monographs/kutch-ajrakh`, built
+  from `backend/app/data/monographs/Kutch-Ajrakh`) does not carry it. The Monograph parity run, which
+  since decision 0151 compares the text and chapters after every deploy, reports the figure's 137
+  lines (run 45049769331) and the headings below it, which sit a fraction of a pixel lower.
+- **Why left:** the approved page draws a component from its fragment, and the figure's fragment
+  must be the markup the React view draws from production's ground data, captured in a browser,
+  then built with `build_monograph`; this lane's machine runs neither a browser nor the build.
+- **Clears it:** capture the drawn `.kv-why-here` figure from `/crafts/Kutch-Ajrakh/monograph` as
+  `fragments/kutch-ajrakh__geography__why-here.html`, add its component (kind `why_here`, its spec
+  from the served document) to `content.json` and its slot to the why chapter of the template, run
+  `python -m app.scripts.build_monograph` and `--document Kutch-Ajrakh --out
+  ../shared/monograph.document.golden.json`, and after the deploy `load_monograph` on the box; the
+  parity run then passes with the figure on both pages.
+
+### The MCP call's client name is filled by a trigger for the release before
+
+- **What:** migration `0075_mcp_call_name_filled` adds a `BEFORE INSERT` trigger on `McpToolCall`
+  that fills a missing `clientName` from the grant's client, because production's release records
+  MCP calls without it while migration 0074 made it required. The rule then has two homes:
+  `services/oauth_bearer.record_tool_call` and the trigger.
+- **Why left:** the trigger is needed only while the release before 0074 can still serve the
+  migrated database (decision 0151).
+- **Clears it:** in the first release after the one that carries 0074, drop the trigger and
+  `kv_fill_mcp_client_name()` in a migration; the release-before check passes once the release
+  before maps the column.
+
+### Goldens that do not yet show every field
+
+- **What:** 177 fields of 38 models the web is served (the craft page's field voices, field photos,
+  contributed plates, AI media and searched parts, the people and component blocks, groundwater,
+  monthly rain and dataset references, a source's journal name, a translated sentence's original,
+  a reaction step's ΔH)
+  appear in no golden in `shared/`, so the web's strict parse of the goldens does not test them.
+  `backend/tests/contracts/unshown_fields.json` lists them; `test_golden_fields.py` fails on any
+  other unshown field, so every field added since decision 0151 is shown (but for the step's ΔH of
+  decision 0152, which no source a golden is built from states), and on a listed field that is
+  shown, so the list only shrinks.
+- **Why left:** the craft page goldens are the Kutch Ajrakh dossier and Farrukhabad Prints as the
+  preview builds them, and neither has field voices, contributed or AI pictures, people blocks or a
+  journal paper; showing them needs inputs for those builders, a change of its own.
+- **Clears it:** give the preview builders inputs that carry each part (a recorded voice and field
+  photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
+  missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
 
 ### The question writer keeps few of the facts it samples
 
 - **What:** generation run 44993519051 sampled 727 facts and dropped 580 questions because they
-  reused their fact's distinctive words (more than `UNAVOIDABLE_MAX`, or terms not listed as
-  unavoidable), so the generated set holds 169 questions, 58 in English, where its sampling allows
-  several times more, and crafts with few facts are scored on very few questions.
-- **Why left:** the rule keeps the questions honest paraphrases, which is what makes the set
-  measure retrieval rather than word matching; loosening it was not part of making the evaluation
-  score what answers read.
-- **Clears it:** ask the writer again, once, for the facts whose question was dropped as copied,
-  naming the words it reused, or count a reused stem only when the fact has a synonym the writer
-  could have used; measure the kept share and the fused order's scores on the new questions.
+  reused their fact's distinctive words, so the generated set holds 169 questions, 58 in English.
+  Decision 0151 asks the writer once more for each such fact, naming the words it reused, and
+  reports `asked`, `keptEnglish`, `keptShare`, `askedAgain` and `rewritten`; the committed set was
+  written before it.
+- **Why left:** a generation run spends money on production and is the lead's to dispatch.
+- **Clears it:** dispatch `eval-questions.yml` after the release that carries decision 0151, commit
+  the set, compare its `keptShare` with run 44993519051's, and score the new questions in the fused
+  order with `eval_retrieval --fusion`.
 
-### The stuck-page unit spec can time out under load
+### The quantities table has not been measured by the judge
 
-- **What:** `frontend/e2e/stuck-page-unit.spec.ts` ("a page whose script never yields is caught")
-  timed out once after 1.2 minutes on main at `098739f` and passed on the rerun; it had passed on
-  the same commit minutes before.
-- **Clears it:** give the spinning page's catch a bound of its own well inside the test timeout, or
-  run that spec alone in its project with a longer timeout.
-
-### Numbers in prose without a table or figure
-
-- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65). The Ajrakh
-  indigo answer (bed43e9f), the Jaipur safe-handling answer (af3f7ac2) and the Bandhani tie-and-dye
-  answer (4978c466) each scored 1: dip times, kiln temperatures, tying days and lengths are given
-  only in prose, though the rubric counted 6 to 18 figure blocks in them. The measure block converts
-  only local units, and the judge's message gives a count of figures per field, not which numbers
-  they show.
-- **Why left:** a new table kind and the judge's wording of figures are changes of their own; the
-  sentence-once lane changes neither the blocks built nor the judge's criteria.
-- **Clears it:** build a cited quantities table for a section whose facts state three or more
-  numbers (metric units too, each row its stated words, the sentence said once as decision 0134
-  draws it), and name each figure's kind and the quantities it shows in the judge's message;
-  measure the figures part on the same questions.
+- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65); the Ajrakh
+  indigo (bed43e9f), Jaipur safe-handling (af3f7ac2) and Bandhani tie-and-dye (4978c466) answers
+  scored 1 because dip times, kiln temperatures, tying days and lengths were only in prose.
+  Decision 0147 built the `quantities` table for a section whose facts state three or more
+  quantities and names each figure's kind and quantities in the judge's message, and re-based the
+  rubric floor to the lowest mean the shown-sentence count can give (0.82); no run has measured
+  either since.
+- **Why left:** answer-quality spends money and only the lead dispatches it (owner rule).
+- **Clears it:** the lead runs answer-quality on the same questions after the release, records the
+  figures part of those three answers, and raises `rubricMean` in
+  `backend/app/data/eval/floors.json` to the run's mean less 0.05, rounded down.
 
 ### Leftovers of the sentence-once lane
 
-- **What:** the rubric's `cited` part counts every copy of a sentence a block carries
-  (`field_sentences`), so a supply map whose five links share a sentence counts five cited
-  sentences for its field while the judge reads one (decision 0134). A market block can show one
-  claim in its GI record and again beside a price. A ladder stage's Sources differ readings are not
-  checked against the stage sentences. The supply heading lowers a later material name only when a
-  block sentence writes its first word in lower case, so a name met only at a sentence's start
-  keeps its capital.
-- **Why left:** the lane kept the judge's criteria and scores unchanged; the others are rare, and
-  the case rule needs the payload to say which names are proper names.
-- **Clears it:** count `shown_field_sentences` in `answer_measures` and `consulted_fields` and
-  re-base the rubric floor in the same change; keep price claims out of the GI sentences in
-  `services/market_builder`; carry each material's sentence-case name from the glossary.
+- **What:** a ladder stage's Sources differ readings are not checked against the stage
+  sentences, so a reading may repeat a sentence the stage says. The supply heading lowers a later
+  material name only when a block sentence writes its first word in lower case, so a name met only
+  at a sentence's start keeps its capital ("Indigo and Alum"). (The rubric's shown-sentence count
+  and the market block's GI and price sentences were cleared by decision 0147.)
+- **Why left:** both are rare; the glossary holds no sentence-case name (its labels are title case
+  for seeded and curated terms alike), so the payload cannot yet say which names are proper names.
+- **Clears it:** `explainerView.stagesSaidOnce` leaves out a differ reading a stage sentence says;
+  curation gives each glossary term its sentence-case name (a `Term` field the import fills), the
+  supply builder carries it on `SupplyLink.material`, and `namesText` keeps a later name as carried.
 
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 
 - **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a was asked what gives Khurja's glazes their
-  blue and turquoise colours and named no oxide. Cobalt and copper oxides are the usual ones, but the
-  research found no source saying so for Khurja.
-- **Why left:** finding the source is research and curation, not code.
-- **Clears it:** curate Khurja Pottery's glaze chemistry from a source that names its colourants (the
-  GI application, a ceramics institute's study of Khurja glazes), and let the planner search for the
+  blue and turquoise colours and named no oxide. An open-source search on 2026-11-23 found none that
+  names them for Khurja: the GI record (application 178) lists a statement of case of 2009 and a reply
+  of 2013 as PDFs the text fetcher does not reach; the RIPA Khurja leaflet names only cupric oxide for
+  the hand-painted designs and is all rights reserved; khurjaceramic.com (a maker's site) says
+  "cobalt for blue" without a licence; the cobalt and copper account of blue and turquoise (imp-art.org)
+  is about Jaipur blue pottery.
+- **Why left:** the colourant must come from a source that names it for Khurja and can be cited, and
+  Khurja Pottery's facts are written through the MCP server, not a dossier.
+- **Clears it:** open the two statement-of-case PDFs of application 178 at search.ipindia.gov.in in a
+  browser, read the glaze and colour section, and propose its sentence (cobalt, copper, or whatever it
+  names) through `propose_facts` with `supply_source` for the PDF; let the planner search for the
   colourant by its element names when a question asks what gives a colour.
 
 ### Write-backs filed before decision 0135
@@ -2124,8 +1906,9 @@ Last reviewed: 2026-11-22.
 - **What:** a held write-back (decision 0136) waits in the review queue as a `DRAFT` researched fact
   of its suggested craft. Its reason is only in its `ReviewEvent` note and the filing report, and the
   Review page cannot file it under another craft, though the approve route takes `craft`.
-- **Why left:** the web app's `FactReview` shape refuses unknown fields, so a new field in the queue
-  item would break the page, and frontend files were another lane's this round.
+- **Why left:** the web's unit specs parse the queue strictly (the production build ignores an
+  unknown field since decision 0151), so the field and its shape land together, and frontend files
+  were another lane's this round.
 - **Clears it:** add `held {reason, suggestedCraft}` to `FactReview` and to `lib/reviewQueueContract.ts`
   in one change, and a craft picker beside Approve that sends `craft`.
 
@@ -2138,6 +1921,17 @@ Last reviewed: 2026-11-22.
   the queue anyway.
 - **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
   `ReviewEvent` by `live_research`.
+
+### The count of hidden facts has no admin screen
+
+- **What:** the nightly count of approved facts a signed-out reader cannot see, by craft and reason
+  (decision 0149), is in the night's report and at `GET /api/coverage/hidden-facts` for admins, but
+  no admin screen shows it.
+- **Why left:** the contributions-visible lane built the count, its route and the failing night;
+  the admin screens belong to the design-system work, and a screen needs the kalavigyan-design
+  review of a new admin card.
+- **Clears it:** a card on the admin settings page that reads the route and lists each craft's
+  hidden facts by reason, with the unexplained ones first, and a unit spec of its shape.
 
 ## How this document is kept true
 

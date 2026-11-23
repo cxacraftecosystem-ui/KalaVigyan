@@ -6,8 +6,8 @@ from .migration_scripts import migration
 STEP = migration("0079_shared_export_files")
 
 
-def test_it_follows_the_mcp_activity_migration() -> None:
-    assert (STEP.revision, STEP.down_revision) == ("0079_shared_export_files", "0074_mcp_activity")
+def test_it_follows_the_head_of_round_7s_chain() -> None:
+    assert (STEP.revision, STEP.down_revision) == ("0079_shared_export_files", "0072_quantities_kind")
 
 
 def test_it_creates_the_table_the_model_holds() -> None:

@@ -59,10 +59,12 @@ function PlaceLinks({ placed }: { placed: readonly PlacedPlace[] }) {
         <li key={place.index} className="inline-flex min-w-0 items-center gap-1.5">
           <span className={PIN_DISC}>{place.pin}</span>
           <span className="min-w-0 break-words text-ink-1">{place.name}</span>
-          <a href={wikidataUrl(place.wikidataId)} target="_blank" rel="noopener noreferrer" className="kv-link font-ui text-caption">
-            Wikidata
-            <span className="sr-only"> for {place.name} (opens in a new tab)</span>
-          </a>
+          {place.wikidataId ? (
+            <a href={wikidataUrl(place.wikidataId)} target="_blank" rel="noopener noreferrer" className="kv-link font-ui text-caption">
+              Wikidata
+              <span className="sr-only"> for {place.name} (opens in a new tab)</span>
+            </a>
+          ) : null}
         </li>
       ))}
     </ul>

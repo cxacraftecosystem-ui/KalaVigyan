@@ -9,6 +9,7 @@ Date: 2026-11-16. Status: accepted. Supersedes item 12 of decision 0017.
 | For | Read |
 |---|---|
 | What it supersedes in part | [0017 Voice backend: sessions, the custom LLM, the relay path and upkeep](0017-voice-backend.md): item 12, the languages voice offers |
+| What amended it | [0157 A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data](0157-translations-read-back-and-reviewed-interface-words.md): item 5, the fixed phrases kept as reviewed data |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

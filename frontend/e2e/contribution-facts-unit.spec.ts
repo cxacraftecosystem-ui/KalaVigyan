@@ -123,6 +123,8 @@ test("what the gates said reads as published, waiting or refused", () => {
     message: "Published."
   };
   expect(parseShape(proposalReplyShape, reply)).toEqual(reply);
+  const placed = { ...reply, readers: { shown: false, reason: "HELD", pageUrl: "https://kalavigyan.example/crafts/Kutch-Ajrakh", chapter: "chem", field: "CHEMISTRY", inProse: false, writeTask: null } };
+  expect(parseShape(proposalReplyShape, placed)).toEqual(placed);
   expect(replyHeadline(reply)).toBe("Published and approved");
   expect(replyHeadline({ ...reply, approvedAtOnce: false })).toBe("Published, waiting for a reviewer's check");
   expect(replyHeadline({ ...reply, outcome: "WAITING" })).toBe("Received: it waits for a reviewer");

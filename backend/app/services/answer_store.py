@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.composer.composer import ModelComposer
 from app.composer.translation import ModelTranslator
+from app.composer.translation_meaning import ReadBackTranslator
 from app.core.errors import InvalidInput
 from app.core.logging import current_request_id
 from app.core.shielded import ShieldedWork
@@ -325,4 +326,5 @@ def build_answer_enrichment(
 def build_answer_translation(
     sessions: async_sessionmaker[AsyncSession], *, model: StructuredModel
 ) -> AnswerTranslation:
-    return AnswerTranslation(translator=ModelTranslator(model=model), cache=SqlTranslationCache(sessions))
+    translator = ReadBackTranslator(translator=ModelTranslator(model=model), model=model)
+    return AnswerTranslation(translator=translator, cache=SqlTranslationCache(sessions))

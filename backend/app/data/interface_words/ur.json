@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "language": "ur",
+  "words": [
+    {
+      "key": "essay.provenance",
+      "english": "Answer",
+      "text": "جواب",
+      "source": "The Urdu answer on the design board (docs/design/master-board.html), part of design system 1.1, which the owner approved on 2026-11-18; the Urdu answer panel of the Kutch Ajrakh monograph gives the same words",
+      "review": null
+    },
+    {
+      "key": "essay.provenance",
+      "english": "Drawn from {count} sources",
+      "text": "{count} ماخذوں سے",
+      "source": "The Urdu answer on the design board (docs/design/master-board.html), part of design system 1.1, which the owner approved on 2026-11-18",
+      "note": "The Kutch Ajrakh monograph's Urdu panel writes “44 ذرائع سے” instead; the reader chooses one.",
+      "review": null
+    },
+    {
+      "key": "essay.provenance",
+      "english": "Answered {date}",
+      "text": "جواب دیا گیا {date}",
+      "source": "The Urdu answer panel of the Kutch Ajrakh monograph (backend/app/data/monographs/Kutch-Ajrakh/fragments/kutch-ajrakh__overview__answer-in-hindi-and-urdu.html)",
+      "note": "The board writes “17 نومبر 2026 کو مرتب”, compiled on, which is not what answered says.",
+      "review": null
+    },
+    {
+      "key": "essay.actions",
+      "english": "Save",
+      "text": "محفوظ کریں",
+      "source": "The Urdu answer on the design board (docs/design/master-board.html), part of design system 1.1, which the owner approved on 2026-11-18; the Urdu answer panel of the Kutch Ajrakh monograph gives the same words",
+      "review": null
+    },
+    {
+      "key": "essay.actions",
+      "english": "Cite this answer",
+      "text": "اس جواب کا حوالہ دیں",
+      "source": "The Urdu answer on the design board (docs/design/master-board.html), part of design system 1.1, which the owner approved on 2026-11-18; the Urdu answer panel of the Kutch Ajrakh monograph gives the same words",
+      "review": null
+    },
+    {
+      "key": "voice.filler",
+      "english": "Let me check the sources... ",
+      "text": "ایک لمحہ، مآخذ دیکھتے ہیں... ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noEvidence",
+      "english": "I found no cited answer to that about {craft} yet.",
+      "text": "{craft} کے بارے میں اس کا حوالہ سمیت جواب ابھی نہیں ملا۔",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noCraft",
+      "english": "Which craft do you mean? Name it and ask again.",
+      "text": "آپ کس دستکاری کی بات کر رہے ہیں؟ اس کا نام بتائیے۔",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.unsaid",
+      "english": "I could not prepare that answer just now. Please ask again.",
+      "text": "ابھی یہ جواب تیار نہیں ہو سکا۔ دوبارہ پوچھیے۔",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is all the voice time for today.",
+      "text": "آج کی بات چیت کا وقت پورا ہو گیا۔",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is the end of this call.",
+      "text": "یہ بات چیت یہیں ختم ہوتی ہے۔",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Source",
+      "text": "ماخذ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Sources",
+      "text": "مآخذ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    }
+  ]
+}

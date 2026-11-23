@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "language": "pa",
+  "words": [
+    {
+      "key": "voice.filler",
+      "english": "Let me check the sources... ",
+      "text": "ਇੱਕ ਪਲ, ਸਰੋਤ ਵੇਖਦੇ ਹਾਂ... ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noEvidence",
+      "english": "I found no cited answer to that about {craft} yet.",
+      "text": "{craft} ਬਾਰੇ ਇਸ ਦਾ ਸਰੋਤ ਸਮੇਤ ਜਵਾਬ ਅਜੇ ਨਹੀਂ ਮਿਲਿਆ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noCraft",
+      "english": "Which craft do you mean? Name it and ask again.",
+      "text": "ਤੁਸੀਂ ਕਿਹੜੀ ਦਸਤਕਾਰੀ ਦੀ ਗੱਲ ਕਰ ਰਹੇ ਹੋ? ਉਸ ਦਾ ਨਾਮ ਦੱਸੋ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.unsaid",
+      "english": "I could not prepare that answer just now. Please ask again.",
+      "text": "ਹੁਣੇ ਇਹ ਜਵਾਬ ਤਿਆਰ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਦੁਬਾਰਾ ਪੁੱਛੋ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is all the voice time for today.",
+      "text": "ਅੱਜ ਦਾ ਗੱਲਬਾਤ ਦਾ ਸਮਾਂ ਪੂਰਾ ਹੋ ਗਿਆ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is the end of this call.",
+      "text": "ਇਹ ਗੱਲਬਾਤ ਇੱਥੇ ਹੀ ਖ਼ਤਮ ਹੁੰਦੀ ਹੈ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Source",
+      "text": "ਸਰੋਤ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Sources",
+      "text": "ਸਰੋਤ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    }
+  ]
+}

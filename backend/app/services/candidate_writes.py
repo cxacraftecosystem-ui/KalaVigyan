@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import CandidateCheck, Claim
@@ -38,7 +38,9 @@ async def checks_of(session: AsyncSession, claim_id: uuid.UUID) -> list[Candidat
     return sorted(rows, key=lambda row: GATES.index(row.gate))
 
 
-async def mark_sources_differ(session: AsyncSession, claim_id: uuid.UUID) -> list[uuid.UUID]:
+async def mark_sources_differ(
+    session: AsyncSession, claim_id: uuid.UUID, *, about: str | None = None
+) -> list[uuid.UUID]:
     check = await session.scalar(
         select(CandidateCheck).where(
             CandidateCheck.claimId == claim_id,
@@ -49,5 +51,8 @@ async def mark_sources_differ(session: AsyncSession, claim_id: uuid.UUID) -> lis
     differ = list(check.relatedClaimIds) if check is not None else []
     if not differ:
         return []
-    await session.execute(update(Claim).where(Claim.id.in_([claim_id, *differ])).values(sourcesDiffer=True))
+    named = {"differsOn": func.coalesce(Claim.differsOn, about.strip())} if about and about.strip() else {}
+    await session.execute(
+        update(Claim).where(Claim.id.in_([claim_id, *differ])).values(sourcesDiffer=True, **named)
+    )
     return differ

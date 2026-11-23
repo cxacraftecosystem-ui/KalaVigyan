@@ -48,9 +48,19 @@ CLAIM_UPDATE_COLUMNS = (
     "version",
     "sensitivity",
     "sourcesDiffer",
+    "differsOn",
     "field",
 )
-COMPARED = ("subjectId", "text", "evidenceLevel", "status", "sensitivity", "sourcesDiffer", "field")
+COMPARED = (
+    "subjectId",
+    "text",
+    "evidenceLevel",
+    "status",
+    "sensitivity",
+    "sourcesDiffer",
+    "differsOn",
+    "field",
+)
 
 
 @dataclass(frozen=True)
@@ -64,6 +74,7 @@ class StoredClaim:
     sensitivity: str
     sources_differ: bool
     field: str | None
+    differs_on: str | None = None
 
     def compared(self) -> dict[str, Any]:
         return {
@@ -73,6 +84,7 @@ class StoredClaim:
             "status": self.status,
             "sensitivity": self.sensitivity,
             "sourcesDiffer": self.sources_differ,
+            "differsOn": self.differs_on,
             "field": self.field,
         }
 
@@ -207,6 +219,7 @@ async def _stored_where(session: AsyncSession, chosen: ColumnElement[bool]) -> d
         Claim.sensitivity,
         Claim.sourcesDiffer,
         Claim.field,
+        Claim.differsOn,
     ).where(chosen)
     return {row[0]: StoredClaim(*row) for row in (await session.execute(statement)).tuples()}
 

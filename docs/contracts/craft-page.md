@@ -252,6 +252,12 @@ monograph").
   blocks in the chapter of their discipline (`DISCIPLINE_CHAPTERS`): OVERVIEW and DESIGN to
   `glance`; PROCESS and HEALTH to `made`; CHEMISTRY, PHYSICS, MATERIALS and BOTANY to `chem`;
   GEOGRAPHY, GEOLOGY, CLIMATE and ECOLOGY to `why`; HISTORY to `history`; ECONOMICS to `market`.
+- On a curated page a fact the dossier does not hold (a contributor's, or one an answer wrote back)
+  is in a chapter only when an item cites it, and otherwise in `claims` alone. Readers see the
+  craft's monograph document, which takes this page as its structure and lists every such fact no
+  curated sentence or figure cites under its own field, in the chapter that field belongs to
+  (`coverage_chapters.FIELD_CHAPTERS`; `monograph-document.md`, Facts no section cites; decision
+  0158). These chapters do not list it, so the payload's shape is unchanged.
 
 ### Answer blocks on the page, built without a question
 

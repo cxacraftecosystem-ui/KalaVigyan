@@ -19,6 +19,7 @@ from app.services import journey_builders
 from app.services.block_builders import BLOCK_BUILDERS
 from app.services.builder_evidence import fact_sentence
 from app.services.journey_builders import TimelineMapBuilder
+from app.services.place_register import KnownPoints
 from app.services.supply_links import OriginPlace
 from app.services.supply_places import named_places
 from app.services.timeline_story import timeline_block, timeline_entries, timeline_offer
@@ -75,6 +76,10 @@ def boundary(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     return found
 
 
+async def nothing_known(craft: str | None, names: Any) -> KnownPoints:
+    return KnownPoints()
+
+
 def places_from(adapter: Any) -> Any:
     async def finder() -> Any:
         return adapter
@@ -124,7 +129,9 @@ async def test_the_builder_draws_the_fixture_s_timeline_from_recorded_wikidata(
 ) -> None:
     model = timeline_model()
     adapter, _ = wikidata_adapter(recorded_places())
-    built = await TimelineMapBuilder(journey_tools(model), places=places_from(adapter)).build(history_ask())
+    built = await TimelineMapBuilder(
+        journey_tools(model), places=places_from(adapter), known=nothing_known
+    ).build(history_ask())
     (block,) = built.blocks
     assert block.model_dump(mode="json", by_alias=True) == renamed(golden_timeline(), TIMELINE, "s4.timeline")
     assert built.sources == {}
@@ -191,6 +198,13 @@ def test_a_numeral_that_counts_is_not_offered_as_a_year() -> None:
     )
 
 
+def test_a_numeral_before_an_irregular_counted_noun_is_not_offered_as_a_year() -> None:
+    texts = ["About 1500 people, 1200 men and 1100 children printed there by 1890."]
+    assert {(1500, 1500), (1200, 1200), (1100, 1100)} <= years_named(texts)
+    assert years_offered(texts) == {(1890, 1890)}
+    assert years_offered(["The workshop opened in 1956 as a cooperative."]) == {(1956, 1956)}
+
+
 async def test_undated_statements_ask_no_model_and_build_nothing(boundary: dict[str, Any]) -> None:
     (fustat, *_) = timeline_claims()
     quoted = fustat.citations[0].model_copy(
@@ -212,7 +226,9 @@ async def test_no_boundary_row_builds_no_timeline(boundary: dict[str, Any]) -> N
 
 async def test_a_failed_place_lookup_lists_every_place_without_a_pin(boundary: dict[str, Any]) -> None:
     adapter, _ = wikidata_adapter({WIKIDATA_API: Reply("wikidata_entity_missing.json", status=503)})
-    built = await TimelineMapBuilder(journey_tools(), places=places_from(adapter)).build(history_ask())
+    built = await TimelineMapBuilder(journey_tools(), places=places_from(adapter), known=nothing_known).build(
+        history_ask()
+    )
     (block,) = built.blocks
     assert [place.latitude for place in block.places] == [None] * 5
 

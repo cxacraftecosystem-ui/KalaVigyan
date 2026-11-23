@@ -19,9 +19,10 @@ __all__ = [
     "READY",
     "TEXT_KINDS",
     "ConsultedField",
+    "FieldFigure",
     "FieldSentence",
     "consulted_fields",
-    "field_sentences",
+    "field_figures",
     "shown_field_sentences",
 ]
 
@@ -45,6 +46,13 @@ class FieldSentence:
     sentence: AnswerSentence
 
 
+@dataclass(frozen=True)
+class FieldFigure:
+    field: str
+    kind: str
+    quantities: tuple[str, ...]
+
+
 def consulted_fields(explainer: Explainer) -> list[ConsultedField]:
     shown = [section for section in explainer.sections if section.state == READY]
     order = {discipline: rank for rank, discipline in enumerate(DISCIPLINES)}
@@ -52,12 +60,13 @@ def consulted_fields(explainer: Explainer) -> list[ConsultedField]:
     return [_consulted(discipline, [s for s in shown if s.discipline == discipline]) for discipline in fields]
 
 
-def field_sentences(explainer: Explainer) -> list[FieldSentence]:
+def field_figures(explainer: Explainer) -> list[FieldFigure]:
     return [
-        FieldSentence(section.discipline, sentence)
+        FieldFigure(section.discipline, block.kind, _quantities(block.shown_labels()))
         for section in explainer.sections
         if section.state == READY
-        for sentence in _sentences(section)
+        for block in section.blocks
+        if block.kind in FIGURE_KINDS
     ]
 
 
@@ -86,4 +95,8 @@ def _consulted(discipline: str, sections: Sequence[ExplainerSection]) -> Consult
 
 def _sentences(section: ExplainerSection) -> Iterator[AnswerSentence]:
     for block in section.blocks:
-        yield from block.cited_sentences()
+        yield from block.shown_sentences()
+
+
+def _quantities(labels: Sequence[str]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(label for label in labels if any(char.isdigit() for char in label)))

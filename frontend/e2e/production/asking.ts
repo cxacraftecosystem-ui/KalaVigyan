@@ -13,6 +13,7 @@ import {
   type WaitOutcome
 } from "./answers";
 import { settle } from "./capture";
+import { answerLanguageProblems, translatedProblems } from "./languageChecks";
 import { CRAFT_SLUG, riversLoaded } from "./run";
 import { readSandboxFrames, watchSandboxFrames, type SandboxWatch } from "./sandboxWatch";
 import { glanceAtTaps, pageNow, readTaps } from "./streamTap";
@@ -101,7 +102,8 @@ export async function askKnownAnswer(page: Page, question: KnownAnswerQuestion):
   try {
     const record = await asked(page, question, watch);
     const options = { riversLoaded: riversLoaded() };
-    record.problems.push(...answerProblems(record, question, options));
+    record.problems.push(...answerProblems(record, question, options), ...translatedProblems(record, question));
+    if (record.endedWith === "done") record.problems.push(...(await answerLanguageProblems(page, question)));
     record.notes.push(...knownAnswerOutcome(record, question, options).notes);
     return record;
   } finally {

@@ -9,6 +9,7 @@ import { askKnownAnswer } from "./asking";
 import { NetworkQuiet, captureScreen, readyForCapture, sightProblems, type Captured } from "./capture";
 import { clip } from "./checks";
 import { proveExports, type ExportProof } from "./exportProof";
+import { answerLanguageProblems } from "./languageChecks";
 import { proveLessonPack } from "./lessonProof";
 import { ANSWER_WIDTHS, QUESTIONS_SCHEME, QUESTIONS_WIDTH, SCHEMES, contextOptions, runLabel } from "./matrix";
 import { passPreviewProtection } from "./preview";
@@ -68,7 +69,9 @@ async function answerViews(browser: Browser, page: Page, records: readonly Answe
           await run.visit(`Question ${record.label}`, explainerHref(record.answerId), async () => {
             await expect(view.getByTestId("answer-view")).toBeVisible({ timeout: ANSWER_VIEW_TIMEOUT_MS });
             const essay = await essayOutcome(view);
-            return [...savedLedeProblems(record.lede, await view.getByTestId("answer-lede").getByTestId("answer-sentence").count()), ...essay];
+            const lede = savedLedeProblems(record.lede, await view.getByTestId("answer-lede").getByTestId("answer-sentence").count());
+            const asked = KNOWN_ANSWER_QUESTIONS.find((question) => question.label === record.label);
+            return [...lede, ...essay, ...(asked ? await answerLanguageProblems(view, asked) : [])];
           });
         }
         run.write();
@@ -81,7 +84,7 @@ async function answerViews(browser: Browser, page: Page, records: readonly Answe
   return problems;
 }
 
-test("four known-answer questions: the mordant in English and Hindi and Kachchh's water at Detailed depth, and indigo's generated explainer at Expert depth", async ({ page, browser }) => {
+test("seven known-answer questions: the mordant in English, Hindi and Urdu, Kachchh's water, the cloth's materials and its history at Detailed depth, and indigo's generated explainer at Expert depth", async ({ page, browser }) => {
   test.skip(!questionsRequested(), "Dispatch with questions=true to ask the known-answer questions.");
   test.setTimeout(QUESTIONS_TIMEOUT_MS);
   await passPreviewProtection(page.context(), baseUrl(), previewBypassToken());

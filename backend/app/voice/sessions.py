@@ -11,6 +11,7 @@ from app.core.errors import AppError, Refused
 from app.core.roles import Capability, can
 from app.providers.quota import remaining_today, seconds_until_next_day
 from app.research.crafts import CraftRef
+from app.research.retrieval import chunk_acls_for
 from app.schemas.voice import (
     MAX_SESSION_SECONDS,
     MAX_TURNS,
@@ -96,7 +97,7 @@ async def start_session(
     await settle_own_calls(ask.user.id, store, runtime.elevenlabs(voice))
     remaining = await _checked_room(ask.user, store, voice, now)
     if craft is not None:
-        await runtime.packs.get(craft, ask.mode, store.pack)
+        await runtime.packs.get(craft, ask.mode, chunk_acls_for(ask.user.role), store.pack)
     record = await _created(
         ask, store, craft=craft, remaining=remaining, transport=voice.transport or "", now=now
     )

@@ -11,6 +11,7 @@ from app.services.candidate_gates import later_gates
 from app.services.write_back_gates import write_back_later_gates
 
 from ..knowledge_writes.fakes import JUDGE_MODEL, STATEMENT, FakeEmbedder, FakeHeldFacts, FakeJudge, held
+from ..knowledge_writes.judge_replies import compared
 
 VECTOR = [1.0] + [0.0] * (EMBEDDING_DIMENSIONS - 1)
 KNOWN = Candidate(ref="c1", statement=STATEMENT, field="PROCESS")
@@ -18,8 +19,8 @@ NEW = Candidate(ref="c2", statement="Ajrakh printers wash the cloth in running w
 NEAR = held("near", "Ajrakh cloth goes into the vat four times.", 0.95)
 COMPARED = {
     "comparisons": [
-        {"candidate": "c1", "held": str(NEAR.id), "relation": "SAME", "reason": "Both count four dips."},
-        {"candidate": "c2", "held": str(NEAR.id), "relation": "DISTINCT", "reason": "Washing is not dyeing."},
+        compared("c1", NEAR.id, "SAME", "Both count four dips."),
+        compared("c2", NEAR.id, "DISTINCT", "Washing is not dyeing."),
     ]
 }
 

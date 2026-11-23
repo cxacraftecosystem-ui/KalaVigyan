@@ -58,6 +58,7 @@ FIGURE_TITLES: Mapping[str, str] = MappingProxyType(
         "concept_graph": "Science {craft} shares with other crafts",
         "zoom_story": "{craft} from {top} down to {bottom}",
         "measure": "Stated measures in metric units",
+        "quantities": "Quantities the sources state",
         "key_facts": "Key facts",
         "indigo_vat": "The indigo vat",
         "mordant_bath": "The mordant bath",
@@ -65,7 +66,7 @@ FIGURE_TITLES: Mapping[str, str] = MappingProxyType(
         "firing": "The firing",
     }
 )
-TABLE_KINDS = frozenset({"market_gi", "measure", "key_facts"})
+TABLE_KINDS = frozenset({"market_gi", "measure", "quantities", "key_facts"})
 FIELD = re.compile(r"\{(\w+)\}")
 
 

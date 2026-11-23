@@ -35,12 +35,19 @@ test("every page lets pictures load from https sites, so a move to the ask page 
   expect(rules.map((rule) => rule.source)).toEqual(["/:path*", APPROVED_MONOGRAPHS]);
 });
 
+function pictureTags(text: string): string[] {
+  return [...text.matchAll(/<(img|Image)\b/g)].map((found) => text.slice(found.index ?? 0, text.indexOf("/>", found.index ?? 0)));
+}
+
 test("every component that draws a picture from the web sends no referrer to its site", () => {
+  const plate = pictureTags(readFileSync(join(COMPONENTS, "editorial", "Plate.tsx"), "utf8"));
+  expect(plate.length).toBeGreaterThan(0);
+  for (const tag of plate) expect(tag).toContain('referrerPolicy="no-referrer"');
   const drawing = componentFiles(COMPONENTS).filter((file) => /\.imageUrl\b/.test(readFileSync(file, "utf8")));
   for (const file of drawing) {
     const text = readFileSync(file, "utf8");
-    const starts = [...text.matchAll(/<(img|Image)\b/g)].map((found) => found.index ?? 0);
-    expect(starts.length, file).toBeGreaterThan(0);
-    for (const start of starts) expect(text.slice(start, text.indexOf("/>", start)), file).toContain('referrerPolicy="no-referrer"');
+    const tags = pictureTags(text);
+    expect(tags.length > 0 || /<Plate\b/.test(text), file).toBe(true);
+    for (const tag of tags) expect(tag, file).toContain('referrerPolicy="no-referrer"');
   }
 });

@@ -212,6 +212,7 @@ ADMIN_ROUTES = {
     ("GET", "/api/knowledge/contribution-costs"),
     ("GET", "/api/site/build"),
     ("POST", "/api/site/build"),
+    ("GET", "/api/coverage/hidden-facts"),
     ("PUT", "/api/pages/{kind}/{slug}/layout"),
     ("PUT", "/api/contributions/images/{contribution_id}/file"),
     ("GET", "/api/contributions/images/mine"),

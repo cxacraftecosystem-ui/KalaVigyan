@@ -50,6 +50,7 @@ __all__ = [
     "HeldFacts",
     "LaterGates",
     "NoveltyFailure",
+    "asked_judges",
     "candidate_text",
     "candidate_vectors",
     "first_gates",
@@ -214,7 +215,7 @@ async def _duplicates(
     compared: dict[str, list[FactComparison]] = {}
     model = None
     if asks and judging.ladder:
-        compared, model = await _asked(
+        compared, model = await asked_judges(
             judging.ladder, comparison_request(asks), lambda reply: parsed_comparisons(reply, asks)
         )
     found: dict[str, GateOutcome] = {}
@@ -271,7 +272,9 @@ async def _novelty_verdicts(
     judging: _Judging, asks: Sequence[JudgeAsk]
 ) -> tuple[dict[str, NoveltyVerdict], str | None]:
     try:
-        return await _asked(judging.ladder, novelty_request(asks), lambda reply: parsed_novelty(reply, asks))
+        return await asked_judges(
+            judging.ladder, novelty_request(asks), lambda reply: parsed_novelty(reply, asks)
+        )
     except AppError as error:
         if judging.novelty_failure != NOVELTY_LEFT_UNJUDGED:
             raise
@@ -281,7 +284,7 @@ async def _novelty_verdicts(
         return {}, None
 
 
-async def _asked[T](
+async def asked_judges[T](
     ladder: Sequence[StructuredModel], request: JudgeRequest, parse: Callable[[dict[str, Any]], T]
 ) -> tuple[T, str | None]:
     failure: ExternalFailure | None = None

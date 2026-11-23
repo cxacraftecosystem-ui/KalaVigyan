@@ -1,65 +1,32 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { createServer, type Server } from "node:http";
 
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
-import { fragmentDocumentText, goldenText, nativeComponents } from "./monographNative";
-import { anchorPlans, mainLines, markAnchors, nativeDocumentPath, openedPage, pageAnswers, type AnchorPlan } from "./monographNativeBrowser";
+import { nativeComponents } from "./monographNative";
+import { anchorPlans, mainLines, markAnchors, openedPage, pageAnswers, type AnchorPlan } from "./monographNativeBrowser";
 import { lineDiff, pixelDifference, type PixelDifference } from "./parity/parityMeasure";
 import { alignPhase } from "./parity/parityPhase";
 import { restingVat } from "./parity/parityRest";
 import { selfHostedFaces, servedFaces } from "./parity/parityStyles";
 import { contextOptions, DESKTOP, SCHEMES, SMALL_PHONE, TABLET, type Scheme, type Width } from "./production/matrix";
+import { FRAGMENT_VERSION, smokeApiAddress } from "./smokeApi";
 
 const APPROVED = "/monographs/kutch-ajrakh/index.html";
 const NATIVE = "/crafts/Kutch-Ajrakh/monograph";
-const FRAGMENT_VERSION = 2;
 const FRAGMENTS = `/crafts/Kutch-Ajrakh/v${FRAGMENT_VERSION}`;
 const PIXEL_TOLERANCE = 0.02;
 const SHOT_TIMEOUT_MS = 10_000;
 const RUN_TIMEOUT_MS = 15 * 60_000;
 const WIDTHS: readonly Width[] = [SMALL_PHONE, TABLET, DESKTOP];
 const SMOKE_PROJECT = "desktop";
-const LOCAL_API = /^http:\/\/(127\.0\.0\.1|localhost):\d+$/;
 const REACT_FAILURE = /Minified React error|hydrat/i;
 
 type Shot = PixelDifference | "missing" | "hidden";
 type Pages = { approved: Page; native: Page; fragments: Page; errors: string[] };
 type Run = { key: string; width: Width; scheme: Scheme };
 
-let api: Server | null = null;
-
-function apiAddress(): URL | null {
-  const origin = process.env.API_ORIGIN ?? process.env.NEXT_PUBLIC_API_URL ?? "";
-  return LOCAL_API.test(origin) ? new URL(origin) : null;
-}
-
-async function servedApi(address: URL): Promise<Server> {
-  const native = goldenText();
-  const fragments = fragmentDocumentText(FRAGMENT_VERSION);
-  const server = createServer((request, response) => {
-    const [path, query = ""] = (request.url ?? "").split("?");
-    if (request.method === "GET" && path === nativeDocumentPath()) {
-      response.writeHead(200, { "content-type": "application/json", "content-language": "en" });
-      response.end(new URLSearchParams(query).get("version") === String(FRAGMENT_VERSION) ? fragments : native);
-      return;
-    }
-    request.socket.destroy();
-  });
-  await new Promise<void>((resolve, reject) => server.once("error", reject).listen(Number(address.port), address.hostname, resolve));
-  return server;
-}
-
-test.beforeAll(async () => {
-  const address = apiAddress();
-  test.skip(test.info().project.name !== SMOKE_PROJECT || address === null, "runs once, against the local build with its API at a local address");
-  if (address) api = await servedApi(address);
-});
-
-test.afterAll(async () => {
-  const server = api;
-  api = null;
-  if (server) await new Promise<void>((resolve) => server.close(() => resolve()));
+test.beforeAll(() => {
+  test.skip(test.info().project.name !== SMOKE_PROJECT || smokeApiAddress() === null, "runs once, against the local build with its API at a local address");
 });
 
 function differs(shot: Shot): boolean {

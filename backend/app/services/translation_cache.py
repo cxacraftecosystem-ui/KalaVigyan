@@ -9,12 +9,17 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models import ClaimTranslation
+from app.research.translation_meaning import TRANSLATION_CHECKS_EDITION
 
-__all__ = ["SqlTranslationCache", "source_sha256"]
+__all__ = ["SqlTranslationCache", "checked_source_sha256", "source_sha256"]
 
 
 def source_sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def checked_source_sha256(text: str) -> str:
+    return source_sha256(f"{TRANSLATION_CHECKS_EDITION}\n{text}")
 
 
 class SqlTranslationCache:
@@ -30,14 +35,21 @@ class SqlTranslationCache:
         async with self._sessions() as session:
             rows = (await session.execute(query)).all()
         return {
-            row.claimId: row.text for row in rows if row.sourceSha256 == source_sha256(texts[row.claimId])
+            row.claimId: row.text
+            for row in rows
+            if row.sourceSha256 == checked_source_sha256(texts[row.claimId])
         }
 
     async def remember(self, language: str, entries: Mapping[uuid.UUID, tuple[str, str]]) -> None:
         if not entries:
             return
         values = [
-            {"claimId": claim_id, "language": language, "sourceSha256": source_sha256(source), "text": text}
+            {
+                "claimId": claim_id,
+                "language": language,
+                "sourceSha256": checked_source_sha256(source),
+                "text": text,
+            }
             for claim_id, (source, text) in entries.items()
         ]
         statement = insert(ClaimTranslation).values(values)

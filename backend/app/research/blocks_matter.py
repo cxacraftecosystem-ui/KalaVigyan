@@ -25,6 +25,7 @@ __all__ = [
     "ReactionPlayerBlock",
     "ReactionStep",
     "StepColour",
+    "StepEnergy",
 ]
 
 
@@ -47,6 +48,11 @@ class StepColour(ContractModel):
         return self
 
 
+class StepEnergy(ContractModel):
+    kj_per_mol: float
+    claim_id: str = Field(min_length=1)
+
+
 class ReactionNote(ContractModel):
     reaction_id: uuid.UUID
     sentence: ExplainerSentence
@@ -67,6 +73,13 @@ class ReactionStep(ContractModel):
     colours: list[StepColour] = Field(default_factory=list, exclude_if=empty)
     formula_basis: Literal[*FORMULA_BASES] | None = Field(default=None, exclude_if=absent)
     formula_sources: list[str] = Field(default_factory=list, exclude_if=empty)
+    delta_h: StepEnergy | None = Field(default=None, exclude_if=absent)
+
+    @model_validator(mode="after")
+    def _energy_from_a_cited_claim(self) -> Self:
+        if self.delta_h is not None and self.delta_h.claim_id not in {c.claim_id for c in self.citations}:
+            raise ValueError(f"reaction {self.reaction_id} states its ΔH only from a claim it cites")
+        return self
 
     @model_validator(mode="after")
     def _formulas_from_compound_records(self) -> Self:
@@ -159,10 +172,13 @@ class MaterialCardBlock(BlockBase):
     local_names: list[str]
     facts: list[ExplainerSentence] = Field(min_length=1)
     handling: list[ExplainerSentence]
+    source_id: str | None = Field(default=None, min_length=1, exclude_if=absent)
 
     @model_validator(mode="after")
     def _values_from_stored_rows(self) -> Self:
         require_facts(f"material card {self.id}", [*self.facts, *self.handling])
+        if self.source_id is not None and self.pubchem_cid is None:
+            raise ValueError(f"material card {self.id} cites a compound record only with its PubChem id")
         if (self.material_kind or self.role) and self.material_id is None:
             raise ValueError(f"material card {self.id} shows a kind or role only from its stored material")
         if (self.formula or self.pubchem_cid) and self.compound_id is None:
@@ -175,6 +191,10 @@ class MaterialCardBlock(BlockBase):
         if len(set(folded)) != len(folded) or any(not name.strip() for name in self.local_names):
             raise ValueError(f"material card {self.id} lists each local name once")
         return self
+
+    def direct_source_ids(self) -> Iterator[str]:
+        if self.source_id is not None:
+            yield self.source_id
 
     def shown_labels(self) -> list[str]:
         return [self.name, *self.local_names]

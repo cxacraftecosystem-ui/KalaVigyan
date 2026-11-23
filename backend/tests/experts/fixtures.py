@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.composer.expert_takes import RETAKE_SYSTEM_PROMPT
 from app.models import Source
 from app.research.planning import PlanRequest
 from app.research.sections import SectionSpec
@@ -145,19 +146,31 @@ class PanelModel:
     views: Mapping[str, dict[str, Any]]
     differences: Sequence[dict[str, str]] = ()
     calls: list[dict[str, Any]] = field(default_factory=list)
+    retakes: Mapping[str, dict[str, Any]] = field(default_factory=dict)
 
     async def __call__(self, *, system: str, user: str, schema: Mapping[str, Any]) -> StructuredReply:
         self.calls.append({"system": system, "user": user, "schema": schema})
         if "differences" in schema["properties"]:
             return StructuredReply(text=json.dumps({"differences": list(self.differences)}), degraded=False)
-        view = self.views.get(asked_seat(user), {"take": []})
+        seat = asked_seat(user)
+        view = self.views.get(seat, {"take": []})
+        if system == RETAKE_SYSTEM_PROMPT:
+            view = self.retakes.get(seat, view)
         return StructuredReply(
             text=json.dumps({k: v for k, v in view.items() if k != "seat"}), degraded=False
         )
 
     @property
     def seat_calls(self) -> list[dict[str, Any]]:
-        return [call for call in self.calls if "take" in call["schema"]["properties"]]
+        return [
+            call
+            for call in self.calls
+            if "take" in call["schema"]["properties"] and call["system"] != RETAKE_SYSTEM_PROMPT
+        ]
+
+    @property
+    def retake_calls(self) -> list[dict[str, Any]]:
+        return [call for call in self.calls if call["system"] == RETAKE_SYSTEM_PROMPT]
 
     @property
     def difference_calls(self) -> list[dict[str, Any]]:
@@ -175,5 +188,14 @@ def asked_seats(user: str) -> list[str]:
     ]
 
 
-def panel_model(views: Sequence[dict[str, Any]], differences: Sequence[dict[str, str]] = ()) -> PanelModel:
-    return PanelModel({view["seat"]: view for view in views}, list(differences))
+def panel_model(
+    views: Sequence[dict[str, Any]],
+    differences: Sequence[dict[str, str]] = (),
+    *,
+    retakes: Sequence[dict[str, Any]] = (),
+) -> PanelModel:
+    return PanelModel(
+        {view["seat"]: view for view in views},
+        list(differences),
+        retakes={view["seat"]: view for view in retakes},
+    )

@@ -18,6 +18,7 @@ __all__ = [
     "ClaimText",
     "Illustration",
     "choose_images",
+    "illustrated_claims",
     "illustration",
     "topic_words",
 ]
@@ -50,7 +51,11 @@ class ChosenImage:
 def illustration(
     candidate: ImageCandidate, claims: Sequence[ClaimText], *, leave_out: str
 ) -> Illustration | None:
-    shown = content_stems(candidate.described) - content_stems(leave_out)
+    return illustrated_claims(candidate.described, claims, leave_out=leave_out)
+
+
+def illustrated_claims(described: str, claims: Sequence[ClaimText], *, leave_out: str) -> Illustration | None:
+    shown = content_stems(described) - content_stems(leave_out)
     ranked: list[tuple[int, int, uuid.UUID]] = []
     for position, claim in enumerate(claims):
         shared = len(shown & content_stems(claim.text))

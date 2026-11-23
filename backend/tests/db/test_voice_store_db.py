@@ -7,19 +7,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.db import get_engine
-from app.models import Answer, ConsentRecord, Conversation, QuotaLedger, User
+from app.models import Answer, Claim, ConsentRecord, Conversation, QuotaLedger, User
 from app.research.crafts import CraftRef
+from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, chunk_acls_for
+from app.services.claim_seed import seed_id
 from app.voice.records import AnswerRecord, SessionRecord, TurnHold, TurnSave
 from app.voice.seconds import ledger_entry, refund_key
 from app.voice.store import SqlVoiceStore
 
 from ..voice.fakes import session as voice_session
+from .closed_quotes import CLOSED_QUOTE, quote_closed, store_closed_sources
 
 pytestmark = pytest.mark.db
 
 NOW = datetime.now(UTC).replace(microsecond=0)
 AJRAKH = CraftRef(slug="Kutch-Ajrakh", name="Kutch Ajrakh", path="/crafts/Kutch-Ajrakh")
 ALUM = "Alum is used as a mordant to fasten the colours."
+CLOSED_FACT = "Alum from a closed monograph brightens the madder red in the second bath."
 Stores = tuple[SqlVoiceStore, AsyncSession]
 
 
@@ -212,11 +216,38 @@ async def test_consent_is_read_by_version(store: Stores) -> None:
 
 async def test_the_claim_pack_holds_the_seeded_cited_claims(store: Stores) -> None:
     voice, _ = store
-    pack = await voice.pack(AJRAKH, "HYBRID")
+    pack = await voice.pack(AJRAKH, "HYBRID", SIGNED_IN_CHUNK_ACLS)
     alum = [view for view in pack.cited.views.values() if view.text == ALUM]
     assert alum and alum[0].citations
     assert all(cite["sourceId"] in pack.cited.sources for view in alum for cite in view.citations)
     assert pack.craft == AJRAKH and pack.mode == "HYBRID"
+
+
+async def test_a_student_s_pack_cites_a_closed_page_without_its_words_and_a_researcher_s_quotes_it(
+    store: Stores,
+) -> None:
+    voice, session = store
+    await store_closed_sources(session)
+    fact = Claim(
+        id=uuid.uuid4(),
+        subjectType="CONCEPT",
+        subjectId=seed_id("concept", "ie:ajrakh.material.alum"),
+        predicate="states",
+        text=CLOSED_FACT,
+        evidenceLevel="PROVISIONAL",
+        origin="LIVE_RESEARCH",
+    )
+    session.add(fact)
+    await session.flush()
+    await quote_closed(session, [fact.id])
+    await session.commit()
+    student = await voice.pack(AJRAKH, "HYBRID", chunk_acls_for("STUDENT"))
+    researcher = await voice.pack(AJRAKH, "HYBRID", chunk_acls_for("RESEARCHER"))
+    assert [(c["quote"], c["evidence"]) for c in student.cited.views[fact.id].citations] == [
+        (None, "INFERRED")
+    ]
+    assert [c["quote"] for c in researcher.cited.views[fact.id].citations] == [CLOSED_QUOTE]
+    assert CLOSED_QUOTE not in repr(student.cited)
 
 
 @pytest.mark.usefixtures("allowances_an_owner_might_set")

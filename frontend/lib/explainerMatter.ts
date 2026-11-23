@@ -9,14 +9,17 @@ import {
   type ExplainerSentence,
   type LadderCondition
 } from "@/lib/explainerBlockBase";
+import { formatMeasure } from "@/lib/measure";
 import { MATERIAL_KINDS, MATERIAL_ROLES, REACTION_KINDS, reactionSpeciesShape, type ReactionSpecies } from "@/lib/scienceContract";
-import { boolean, integer, list, nullable, object, oneOf, optional, text, type Shape } from "@/lib/shape";
+import { boolean, integer, list, nullable, number, object, oneOf, optional, text, type Shape } from "@/lib/shape";
 import type { Citation, EvidenceLevel } from "@/lib/types";
 
 export const MOLECULE_CONFORMER_PATH = (pubchemCid: number) => `/molecules/${pubchemCid}/conformer`;
 export const COLOUR_WORDS = ["RED", "BLUE", "BLACK", "WHITE", "GREEN", "YELLOW", "BROWN", "GREY", "PINK", "PURPLE", "ORANGE", "MAROON"] as const;
 export const COLOUR_SIDES = ["BEFORE", "AFTER"] as const;
 export const FORMULA_BASES = ["STATED", "COMPOUND_RECORD"] as const;
+export const REACTION_ENERGY_LABEL = "Reaction energy";
+export const REACTION_ENERGY_UNIT = "kJ/mol";
 
 export type StepColour = {
   side: (typeof COLOUR_SIDES)[number];
@@ -24,6 +27,8 @@ export type StepColour = {
   stated: string;
   citations: Citation[];
 };
+export type StepEnergy = { kjPerMol: number; claimId: string };
+export type ShownEnergy = { text: string; citations: Citation[] };
 export type ReactionNote = { reactionId: string; sentence: ExplainerSentence };
 export type ReactionStep = {
   reactionId: string;
@@ -40,6 +45,7 @@ export type ReactionStep = {
   colours?: StepColour[];
   formulaBasis?: (typeof FORMULA_BASES)[number];
   formulaSources?: string[];
+  deltaH?: StepEnergy;
 };
 export type ReactionPlayerBlock = BlockEnvelope<"reaction_player"> & { steps: ReactionStep[]; notes?: ReactionNote[] };
 export type MaterialCardBlock = BlockEnvelope<"material_card"> & {
@@ -55,6 +61,7 @@ export type MaterialCardBlock = BlockEnvelope<"material_card"> & {
   localNames: string[];
   facts: ExplainerSentence[];
   handling: ExplainerSentence[];
+  sourceId?: string;
 };
 export type Molecule3dBlock = BlockEnvelope<"molecule_3d"> & {
   compoundId: string;
@@ -66,6 +73,15 @@ export type Molecule3dBlock = BlockEnvelope<"molecule_3d"> & {
 
 export function stepCitations(step: ReactionStep): Citation[] {
   return [...step.citations, ...(step.conditions ?? []).flatMap((condition) => condition.citations), ...(step.colours ?? []).flatMap((colour) => colour.citations)];
+}
+
+export function stepEnergy(step: ReactionStep): ShownEnergy | null {
+  const deltaH = step.deltaH;
+  if (!deltaH) return null;
+  const citations = step.citations.filter((citation) => citation.claimId === deltaH.claimId);
+  if (citations.length === 0) return null;
+  const sign = deltaH.kjPerMol > 0 ? "+" : "";
+  return { text: `ΔH = ${sign}${formatMeasure(deltaH.kjPerMol, REACTION_ENERGY_UNIT)}`, citations };
 }
 
 export function reactionNotes(block: ReactionPlayerBlock, reactionId: string): ExplainerSentence[] {
@@ -97,7 +113,8 @@ export const reactionPlayerBlockShape: Shape<ReactionPlayerBlock> = object<React
         )
       ),
       formulaBasis: optional(oneOf(FORMULA_BASES)),
-      formulaSources: optional(list(text, 1))
+      formulaSources: optional(list(text, 1)),
+      deltaH: optional(object<StepEnergy>({ kjPerMol: number, claimId: text }))
     }),
     1
   ),
@@ -117,7 +134,8 @@ export const materialCardBlockShape: Shape<MaterialCardBlock> = object<MaterialC
   wikidataId: nullable(WIKIDATA_ID),
   localNames: list(text),
   facts: list(explainerSentenceShape, 1),
-  handling: list(explainerSentenceShape)
+  handling: list(explainerSentenceShape),
+  sourceId: optional(text)
 });
 
 export const molecule3dBlockShape: Shape<Molecule3dBlock> = object<Molecule3dBlock>({

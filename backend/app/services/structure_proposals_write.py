@@ -127,7 +127,9 @@ async def _insert_concept(
 async def _records(session: AsyncSession, craft_id: uuid.UUID, item: Any, claim_id: uuid.UUID | None) -> None:
     if item.kind == CONFLICT:
         await session.execute(
-            update(Claim).where(Claim.id.in_(list(item.claim_ids))).values(sourcesDiffer=True)
+            update(Claim)
+            .where(Claim.id.in_(list(item.claim_ids)))
+            .values(sourcesDiffer=True, differsOn=item.about)
         )
     if item.kind == GI_RECORD and claim_id is not None:
         await _gi(session, craft_id, item, claim_id)

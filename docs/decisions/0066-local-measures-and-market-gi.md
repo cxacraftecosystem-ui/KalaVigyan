@@ -11,6 +11,7 @@ only as precisely as their quotes state them).
 |---|---|
 | What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): GI and price dates are shown only as precisely as their quotes state them |
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
+| Regions read by other names, `per` after a or an, prices from a single-price claim, a priced claim kept out of the GI record | [decision 0147](0147-time-market-and-figures-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

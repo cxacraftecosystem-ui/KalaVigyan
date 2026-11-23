@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "language": "or",
+  "words": [
+    {
+      "key": "voice.filler",
+      "english": "Let me check the sources... ",
+      "text": "ଗୋଟିଏ ମୁହୂର୍ତ୍ତ, ଉତ୍ସଗୁଡ଼ିକ ଦେଖୁଛି... ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noEvidence",
+      "english": "I found no cited answer to that about {craft} yet.",
+      "text": "{craft} ବିଷୟରେ ଏହାର ଉତ୍ସ ସହିତ ଉତ୍ତର ଏପର୍ଯ୍ୟନ୍ତ ମିଳିନାହିଁ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noCraft",
+      "english": "Which craft do you mean? Name it and ask again.",
+      "text": "ଆପଣ କେଉଁ ହସ୍ତଶିଳ୍ପ ବିଷୟରେ କହୁଛନ୍ତି? ତାହାର ନାମ କୁହନ୍ତୁ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.unsaid",
+      "english": "I could not prepare that answer just now. Please ask again.",
+      "text": "ବର୍ତ୍ତମାନ ଏହି ଉତ୍ତର ପ୍ରସ୍ତୁତ ହୋଇପାରିଲା ନାହିଁ। ପୁଣି ପଚାରନ୍ତୁ।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is all the voice time for today.",
+      "text": "ଆଜିର କଥାବାର୍ତ୍ତା ସମୟ ସରିଗଲା।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is the end of this call.",
+      "text": "ଏହି କଥାବାର୍ତ୍ତା ଏଠାରେ ଶେଷ ହେଉଛି।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Source",
+      "text": "ଉତ୍ସ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Sources",
+      "text": "ଉତ୍ସଗୁଡ଼ିକ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    }
+  ]
+}

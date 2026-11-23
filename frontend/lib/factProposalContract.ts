@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import type { Discipline } from "@/lib/explainerBlockBase";
 import { gateReportShape, type GateReport, type OpenTask } from "@/lib/ownProposalsContract";
-import { boolean, list, object, oneOf, parseShape, text, type Shape } from "@/lib/shape";
+import { boolean, list, nullable, object, oneOf, optional, parseShape, text, type Shape } from "@/lib/shape";
 
 export const FACTS_PATH = "/knowledge/facts";
 export const FACT_SUBJECT_KINDS = ["craft", "category"] as const;
@@ -31,6 +31,16 @@ export type FactDraft = {
   sources: SourceDraft[];
 };
 
+export type ReaderPlace = {
+  shown: boolean;
+  reason: string | null;
+  pageUrl: string | null;
+  chapter: string | null;
+  field: string | null;
+  inProse: boolean;
+  writeTask: string | null;
+};
+
 export type ProposalReply = {
   schemaVersion: 1;
   outcome: ProposalOutcome;
@@ -43,7 +53,18 @@ export type ProposalReply = {
   differsFrom: string[];
   gates: GateReport[];
   message: string;
+  readers?: ReaderPlace;
 };
+
+const readerPlaceShape: Shape<ReaderPlace> = object<ReaderPlace>({
+  shown: boolean,
+  reason: nullable(text),
+  pageUrl: nullable(text),
+  chapter: nullable(text),
+  field: nullable(text),
+  inProse: boolean,
+  writeTask: nullable(text)
+});
 
 export const proposalReplyShape: Shape<ProposalReply> = object<ProposalReply>({
   schemaVersion: oneOf([1] as const),
@@ -56,7 +77,8 @@ export const proposalReplyShape: Shape<ProposalReply> = object<ProposalReply>({
   sourcesDiffer: boolean,
   differsFrom: list(text),
   gates: list(gateReportShape),
-  message: text
+  message: text,
+  readers: optional(readerPlaceShape)
 });
 
 export function emptyQuote(): QuoteDraft {

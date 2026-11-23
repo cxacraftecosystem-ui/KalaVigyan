@@ -28,6 +28,7 @@ from app.models.crafts import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL_CHARS
 QUOTE_MAX_CHARS = 300
 CONTAINER_TITLE_CHARS = 300
 FIELD_COLUMN_CHARS = 16
+DIFFERS_ON_CHARS = 300
 
 
 class Source(Base):
@@ -171,6 +172,7 @@ class Claim(Base):
     createdByKind: Mapped[str] = mapped_column(e.ActorKind, nullable=False, server_default="SYSTEM")
     sensitivity: Mapped[str] = mapped_column(e.Sensitivity, nullable=False, server_default="OPEN")
     sourcesDiffer: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_text("false"))
+    differsOn: Mapped[str | None] = mapped_column(String(DIFFERS_ON_CHARS))
     field: Mapped[str | None] = mapped_column(String(FIELD_COLUMN_CHARS))
     fields: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=sql_text("ARRAY[]::text[]")
