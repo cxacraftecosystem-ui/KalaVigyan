@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any
+from typing import Any, overload
 
 from app.research.structure_proposals import (
     ALTERNATIVE,
@@ -132,7 +132,19 @@ def current_value(page: OwnerPage, item: Any) -> str | None:
     return None
 
 
-def placed_page[P: (CuratedPage, CuratedCategoryPage)](page: P, item: Any, entry: PlacedEntry) -> P:
+@overload
+def placed_page(page: CuratedPage, item: Any, entry: PlacedEntry) -> CuratedPage: ...
+
+
+@overload
+def placed_page(page: CuratedCategoryPage, item: Any, entry: PlacedEntry) -> CuratedCategoryPage: ...
+
+
+@overload
+def placed_page(page: OwnerPage, item: Any, entry: PlacedEntry) -> OwnerPage: ...
+
+
+def placed_page(page: OwnerPage, item: Any, entry: PlacedEntry) -> OwnerPage:
     place = _PLACES.get(item.kind)
     changed: dict[str, Any] = {} if place is None else place(page, item, entry)
     if (
@@ -304,7 +316,7 @@ def _key(entry: PlacedEntry) -> str:
     return entry.key
 
 
-_TARGETS: Mapping[str, Callable[[CuratedPage, Any], str | None]] = MappingProxyType(
+_TARGETS: Mapping[str, Callable[[Any, Any], str | None]] = MappingProxyType(
     {
         STAGE_AFTER: _stage_problem,
         STAGE_WHY: _stage_problem,
@@ -316,7 +328,7 @@ _TARGETS: Mapping[str, Callable[[CuratedPage, Any], str | None]] = MappingProxyT
         ALTERNATIVE: _alternative_problem,
     }
 )
-_PLACES: Mapping[str, Callable[[CuratedPage, Any, PlacedEntry], dict[str, Any]]] = MappingProxyType(
+_PLACES: Mapping[str, Callable[[Any, Any, PlacedEntry], dict[str, Any]]] = MappingProxyType(
     {
         STAGE_AFTER: _after,
         STAGE_WHY: _why,

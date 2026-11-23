@@ -127,7 +127,7 @@ Script = Annotated[str, Field(min_length=SCRIPT_CHARS, max_length=SCRIPT_CHARS)]
 
 
 class StructureSubject(ContractModel):
-    kind: Literal["craft", "category"] = CRAFT_SUBJECT
+    kind: Literal["craft", "category"] = "craft"
     slug: str = Field(min_length=1, max_length=SLUG_MAX_CHARS, pattern=r"^[A-Za-z0-9-]+$")
 
 

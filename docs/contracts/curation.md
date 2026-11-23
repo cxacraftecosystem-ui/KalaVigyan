@@ -184,7 +184,12 @@ neither: order is set only when a source states the sequence, and no two stages 
 
 - `materials` (`M..`): `name`; `kind` (stored `MATERIAL_KINDS`); `role` (stored `MATERIAL_ROLES`
   other than `TOOL`); `localNames[]`; `botanicalName` for plants; `pubchemCid` only for a
-  well-defined substance, checked against PubChem's own record; `claimIds`.
+  well-defined substance, checked against PubChem's own record; `claimIds`; `alternatives[]`
+  (`{materialId, claimId}`, decision 0169): another material of the dossier that can stand in for
+  this one, as the claim states it, each named once and never the material itself. The import
+  writes each as a `CONTRASTS_WITH` `ConceptEdge` from this material's concept to the other's,
+  carrying the claim as its `claimId` (`curation_structure.alternative_rows`, synced on re-import),
+  and the what-if reads such an edge as it reads a stated contrast, so no text is read for it.
 - `tools` (`T..`): `name`, `localNames[]`, `claimIds`.
 - `reactions` (`R..`), only when a source states them: `kind` (stored `REACTION_KINDS`);
   `stageId`; `reactants[]` and `products[]` (`{name, formula?}`, one or more each); `claimIds`.

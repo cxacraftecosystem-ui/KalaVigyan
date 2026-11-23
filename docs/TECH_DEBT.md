@@ -529,24 +529,6 @@ Last reviewed: 2026-11-22.
 
 ## What-if lab (decision 0056)
 
-### Alternatives are read from English words beside each other
-
-- **What:** a stored text relates two materials only when an alternative word (`or`, `instead`,
-  `replaced`, `superseded`, ...) stands within three words between their names
-  (`research/alternatives`); "Alizarin, first synthesised in 1868, superseded madder" and "now
-  alizarine has taken its place" relate nothing, and texts in other languages are not read. A
-  material is named only by its stored name and glossary surfaces, so the seed's "Indian madder"
-  is not named by a plain "madder".
-- **Why left:** a wider gap joins co-ingredients ("clay, millet flour, gum and alum or lime"),
-  which must never be offered as alternatives; the seed's contrast relations and the curated
-  dossiers' "madder or al root" cover the crafts held. The what-if inputs already read stored
-  `CONTRASTS_WITH` relations (`what_if_offers._contrasted`); what is missing is a curated way to
-  write them: the dossier schema and its generator (`tools/curation`) and structure proposals
-  belonged to the MCP and monograph lanes in round 7's debt round (checked 2026-11-23, decision
-  0160).
-- **Clears it:** a material's alternatives in the dossier (and in `propose_structure`), imported
-  as `CONTRASTS_WITH` concept edges with their cited claim, so no text has to be read.
-
 ### Temperatures and water sources are not offered as inputs
 
 - **What:** inputs are only a stage's stored materials. A temperature (a stage condition's
@@ -885,18 +867,16 @@ Last reviewed: 2026-11-22.
 
 ## Round 6 (2026-11-20)
 
-### Structure proposals: what they do not reach yet
+### Review cards not yet seen in a browser
 
-- **What:** a category page takes no structure proposals (crafts and families only; decision 0108),
-  and the STRUCTURE review card has not been seen in a browser. (An approved glossary term's shared
-  entry and an approved reaction's science row are written at approval since decision 0162.)
-- **Why left:** a category proposal needs a subject kind and a nullable craft beside a category on
-  `StructureProposal` (a migration), the category page's own placing and claim markers
-  (`CuratedCategoryClaim`), and the review queue's STRUCTURE listing and MCP `propose_structure`, which
-  were the MCP and contributors lane's files while the monograph follow-up lane ran; the capture needs a
-  signed-in browser on a release carrying that lane's review card.
-- **Clears it:** category structure end to end (contract, migration, writer, export, queue, tool) and
-  a signed-in capture of the review screen.
+- **What:** the review page's STRUCTURE card (a category's proposal and an alternative among them,
+  decision 0169), its READINGS card and its LAYERS card are covered by unit specs of their shapes and
+  lines only; no one has seen them drawn at the acceptance widths in light and dark.
+- **Why left:** the capture needs a Professor's and an Admin's signed-in browser on a release that
+  carries these cards and a waiting item of each kind; production holds no reading outside its range
+  and no map layer proposal yet.
+- **Clears it:** a signed-in capture of `/admin/review` with one item of each kind at 360 and 1440,
+  light and dark, against the design system's boards.
 
 ### Defects the production E2E suite found in round 6
 
@@ -943,14 +923,6 @@ Last reviewed: 2026-11-22.
   swaps its type), and the kit stylesheet is the owner-approved page's.
 - **Clears it:** the owner's or lead's choice of the faces to preload and of a kit stylesheet split
   by chapter, then the change proven by Monograph parity and Lighthouse at 360.
-
-### No MCP path for a new map layer's dataset
-
-- **What:** a contributor can deliver a `general_map_layer` for one page, but a new layer of the
-  site's own maps (groundwater, a soil series) is added only in `etl/geo` or `tools/maplayers` in the
-  repository, as the datasets skill says.
-- **Clears it:** a dataset proposal over MCP that carries the source, licence, version and the
-  simplified geometry, checked by the same rules before an engineer ships it.
 
 ### The geo ETL stays on Python 3.14
 

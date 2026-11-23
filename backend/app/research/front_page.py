@@ -121,7 +121,8 @@ def front_page(text: str) -> FrontPage:
         authors = _authors(lines[at])
         if authors:
             return FrontPage(journal, published, authors, _title(lines[start:at]))
-    return FrontPage(journal, published)
+    after_journal = lines[start] if found is not None and start < len(lines) else None
+    return FrontPage(journal, published, title=_title([after_journal]) if after_journal else None)
 
 
 def _starts_with_word(folded: str, name: str) -> bool:

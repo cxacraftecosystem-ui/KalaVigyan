@@ -53,7 +53,7 @@ class StructureOwner:
 
     @property
     def subject(self) -> StructureSubject:
-        return StructureSubject(kind=self.kind, slug=self.slug)
+        return StructureSubject.model_validate({"kind": self.kind, "slug": self.slug})
 
     def page_url(self, site: str) -> str:
         return f"{site}/{'categories' if self.is_category else 'crafts'}/{self.slug}"

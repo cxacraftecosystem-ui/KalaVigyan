@@ -56,6 +56,13 @@ def test_a_title_cased_line_of_ordinary_words_is_not_an_author() -> None:
     )
 
 
+def test_without_an_authors_line_the_line_after_the_journal_is_the_title_never_the_journal() -> None:
+    text = "Journal of Craft Studies March 2019\nMordants of the western coast\nAbstract: Alum and iron are\n"
+    assert front_page(text) == FrontPage(
+        journal="Journal of Craft Studies", published="2019-03", title="Mordants of the western coast"
+    )
+
+
 def test_a_dated_line_names_no_journal_without_a_periodical_word_and_a_month_before_the_year() -> None:
     assert front_page("Received: June 1, 2005\nAccepted on dyes\n") == FrontPage()
     assert front_page("Review of dyes, June 1, 2005\n") == FrontPage()

@@ -97,7 +97,7 @@ async def approve(session: AsyncSession, people: People, proposal_id: uuid.UUID)
     return row
 
 
-async def test_a_category_s_glossary_term_waits_for_review_and_is_written_into_its_page(
+async def test_a_category_s_glossary_term_waits_for_review_under_its_category(
     seeded: tuple[AsyncSession, People],
 ) -> None:
     session, people = seeded
@@ -122,6 +122,14 @@ async def test_a_category_s_glossary_term_waits_for_review_and_is_written_into_i
         "category",
         f"/categories/{CATEGORY_SLUG}",
     )
+
+
+async def test_an_approved_category_term_is_a_curated_fact_of_the_category_with_no_craft(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, people = seeded
+    await with_category_page(session)
+    result = await proposed(session, people.researcher, TERM, **ON_THE_CATEGORY)
     row = await approve(session, people, result.proposal_id)
     assert (row.status, row.craftId, row.categoryId, row.claimId) == (
         "APPROVED",

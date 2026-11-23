@@ -154,7 +154,8 @@ Each item has `id`, `kind`, `origin`, `submittedAt`, `craft {slug, name, path}` 
   `entryCount` and `changes [{ref, change (ADDED, CHANGED, REMOVED), before, after}]`: the proposal
   against the current layout, entry by entry, in reading order (chapter, then place), each side a
   `PageLayoutEntry` (`research/layout_proposals.layout_changes`).
-- `structure`: `kind`, `subject {kind, slug}`, `subjectName`, `pageUrl` (the craft page's path),
+- `structure`: `kind`, `subject {kind craft | category, slug}`, `subjectName`, `pageUrl` (the craft's
+  or category's page path; a category's item has `craft` `null`),
   `target` ("Stage P03, Mordanting", "Material M02, Indigo" or `null`), `current` (what the page holds
   now for a stage's after or why or a material's botanical name, else `null`), `item` (as proposed,
   `knowledge-writes.md`), `statement`, `field`, `note`, `taskKey`, `sources` (as a fact's, graded by

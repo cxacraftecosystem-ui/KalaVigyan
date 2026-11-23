@@ -432,14 +432,15 @@ version.
 
 ## Structure proposals (round 6; debt "Structure still enters by bulk import")
 
-The parts of a curated craft or family page that are not plain facts can be proposed one at a time,
-each with the fact that states it, and pass the same gates; they wait in the review queue as kind
-`STRUCTURE`, and approval writes them into the page index (`CuratedCraft.page`) and the rows the craft
-page, the generated documents and the dossier export read. A craft without a curated page is refused
-(422): its structure arrives with its first dossier.
+The parts of a curated craft, family or category page that are not plain facts can be proposed one
+at a time, each with the fact that states it, and pass the same gates; they wait in the review queue
+as kind `STRUCTURE`, and approval writes them into the page index (`CuratedCraft.page`, or
+`CuratedCategory.page` for a category) and the rows the page, the generated documents and the dossier
+export read. A craft or category without a curated page is refused (422): its structure arrives with
+its first dossier.
 
-`StructureProposal` (schema version 1, camelCase): `subject {kind craft, slug}` (a craft or family by
-slug, merges followed), `item` (one of the kinds below, by `kind`), `field`, `statement` (20 characters
+`StructureProposal` (schema version 1, camelCase): `subject {kind craft | category, slug}` (a craft or
+family by slug, merges followed, or a category by slug; decision 0169), `item` (one of the kinds below, by `kind`), `field`, `statement` (20 characters
 and up, at most 600 because it becomes a dossier sentence; no personal data), `sources` (1 to 5, each
 named once: `{url, title, licence?, language (a language tag such as en or gu-Gujr), quotes [{text,
 locator}]}`, every quote with its locator), `taskKey?` (a field or corroboration task of the same page
@@ -457,13 +458,22 @@ statement, sources or task.
 | `CONFLICT` | `about`, `claimIds` (2 to 6 facts of the page's dossier) | none: no new fact |
 | `OPEN_QUESTION` | `question`, `settledBy?` | the craft's concept for `field` |
 | `GI_RECORD` | any of `applicationNumber`, `certificateNumber`, `filedOn`, `registeredOn`, `journalIssue`, `proprietors`, `authorisedUserCount` (at least one) | the craft's concept for `field` |
+| `ALTERNATIVE` | `materialKey`, `alternativeKey` (another material of the page that can stand in for it) | the material's concept |
 
-**Refused before any check (422, or a tool error):** a malformed body; an unknown craft or one with no
-curated page; an item the dossier's own models refuse (`services/structure_proposals_dossier.py` builds
+**A category page** keeps no stages, materials, native names or GI record of its own (the category
+import stores none), so a category subject takes `REACTION` without a `stageKey`, `GLOSSARY_TERM`,
+`OPEN_QUESTION` and `CONFLICT` only; any other item is refused by the model (422). Its facts are the
+category's curated facts (`CuratedCategoryClaim`, keys after the category's highest `C` key), its
+concepts carry no craft, a glossary term writes no `TermCraft`, an open question joins with no
+sub-categories, and a conflict names facts the category's dossier holds.
+
+**Refused before any check (422, or a tool error):** a malformed body; an unknown craft or category or
+one with no curated page; an item the dossier's own models refuse (`services/structure_proposals_dossier.py` builds
 the dossier part: language and script patterns, sentence and name lengths, the why fields); an item that
 does not fit the page (`structure_proposals_page.target_problem`): an unknown stage or material, a native
 name the page already gives in that language, a glossary term or an open question it already holds, a
-conflict naming a fact outside the page's claim order or one it already shows.
+conflict naming a fact outside the page's claim order (a category's: its curated facts) or one it
+already shows, an alternative naming a material the page does not hold or one it already gives.
 
 **Checks, in order** (`StructureCheck {check, passed, reasons[]}`; a refusal stops the run):
 
@@ -501,7 +511,10 @@ the item still fits the page (409 otherwise, and the proposal can only be reject
   fact, as the import writes it, and the entry's `reactionId`), a botanical name with its fact added to
   the material's, a glossary term (also its shared glossary entry: the `Term` keyed by the term's slug,
   its `TermCraft` and `TermConcept` links, the entry's `termKey` and the term's stored English summary;
-  decision 0162), a conflict (both facts marked `sourcesDiffer`, with its `about` as their `differsOn`), an open question; a GI record writes `CraftGiRecord`
+  decision 0162), a conflict (both facts marked `sourcesDiffer`, with its `about` as their `differsOn`), an open question, an alternative
+  (on the material's `alternatives` with its fact, and a `CONTRASTS_WITH` `ConceptEdge` from the
+  material's concept to the alternative's carrying the fact as its `claimId`, id
+  `curated_id(slug, alternative, <material>, <alternative>)`, as the import writes it); a GI record writes `CraftGiRecord`
   (the parts given replace, proprietors and facts are added); a concept missing for the fact is created
   as the import would (`curation:<slug>:craft:<FIELD>` or `curation:<slug>:W<nn>`);
 - the proposal is `APPROVED` with the reviewer, the time, the note and `claimId`, audited
@@ -514,7 +527,9 @@ fact's quotes to the dossier's own source rows.
 `StructureProposalResult {schemaVersion 1, outcome STORED | WRITTEN | REFUSED, proposalId, status,
 kind, subject, claimId, checks[], pageUrl, message}`. A refused proposal is a 200 whose checks say why.
 
-Table `StructureProposal` (migration `0047_structure_proposals`): `proposerId`, `craftId`, `kind`,
+Table `StructureProposal` (migration `0047_structure_proposals`; `categoryId` and a nullable `craftId`,
+exactly one set, and the `ALTERNATIVE` kind since `0092_readings_layers_categories`): `proposerId`,
+`craftId`, `categoryId`, `kind`,
 `item` (JSONB), `field`, `statement`, `sources` (JSONB: each with its quotes, language and the kept
 `sourceId`), `checks` (JSONB), `taskKey`, `note`, `origin` (`CONTRIBUTION`, `AGENT`), `status`
 (`PENDING`, `APPROVED`, `REJECTED`, `REFUSED`), `reviewedById`, `reviewedAt`, `reviewNote`, `claimId`,
@@ -526,8 +541,9 @@ row level security on and no grants to the public roles.
 
 MCP `propose_structure` (`api/mcp_structure_tools.py`, in `STRUCTURE_TOOLS`), scope `contribute`,
 `readOnlyHint false`, arguments `{proposal: StructureProposal}`, origin `AGENT`; refusals are tool
-errors. Approving a structure proposal, at once or from the queue, refreshes the craft's signed-out
-pages (`review-queue.md`, Refreshing signed-out pages).
+errors. Approving a structure proposal, at once or from the queue, refreshes the craft's or the
+category's signed-out pages (`review-queue.md`, Refreshing signed-out pages). A page bundle
+(`propose_page`) carries a craft's structure only; a category's is proposed on its own.
 
 ## Source proposals (round 7)
 

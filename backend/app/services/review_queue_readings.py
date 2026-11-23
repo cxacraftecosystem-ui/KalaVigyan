@@ -26,7 +26,6 @@ from app.research.crafts import CraftRef
 from app.research.open_work import QueueStanding
 from app.research.review_queue import READINGS, QueueDecision, QueueEntry, QueueKey, ReadingQueueItem
 from app.research.review_queue_readings import ReadingReview, reading_origin
-from app.schemas.science import CONDITION_UNITS
 from app.science.reading_checks import ReadingCheck, enveloped, reading_check
 from app.science.units import Bounds
 
@@ -233,7 +232,7 @@ def _review(reading: OutsideReading, sources: list[Any]) -> ReadingReview:
     return ReadingReview(
         stated=reading.row.stated,
         quantity=reading.quantity,
-        unit=CONDITION_UNITS[reading.quantity],
+        unit=reading.check.unit,
         min=reading.check.bounds.low,
         max=reading.check.bounds.high,
         envelope_min=envelope.min,

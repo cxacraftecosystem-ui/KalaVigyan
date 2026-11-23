@@ -88,8 +88,12 @@ async def _relationships(session: AsyncSession, concept_ids: list[uuid.UUID]) ->
         ConceptEdge.claimId.is_not(None), *touching
     )
     rows = [*(await session.execute(stated)).tuples().all(), *(await session.execute(curated)).tuples().all()]
-    found = {(claim_id, relation, frozenset({src, dst})) for claim_id, relation, src, dst in rows}
-    return [Relationship(*each) for each in sorted(found, key=lambda each: (str(each[0]), each[1]))]
+    found = {
+        Relationship(claim_id, relation, frozenset({src, dst}))
+        for claim_id, relation, src, dst in rows
+        if claim_id is not None
+    }
+    return sorted(found, key=lambda each: (str(each.claim_id), each.relation))
 
 
 async def _concept_claims(

@@ -1001,7 +1001,8 @@ Registered in `BLOCK_BUILDERS` from `services/what_if_builder.py` (`PROCESS`, `C
 - **Inputs.** The craft's process rows (`craft_matter`) group each stage's materials by role; a
   group is offered only when a section sentence names one of its materials (`first_naming`).
   Two materials of a group are alternatives when a fact-level `CONTRASTS_WITH` relation claim joins
-  their concepts, or when a stored text names both with an alternative word within three words
+  their concepts, or a `CONTRASTS_WITH` edge carries a fact-level claim as its `claimId` (a dossier's
+  or an approved structure proposal's material alternative, `curation.md`; decision 0169), or when a stored text names both with an alternative word within three words
   between them (`research/alternatives.alternatives_named`; a comma list joins a run, as in
   "madder, al or alizarin"). The texts are the stage's name and the fact-level claims of the stage,
   of every material used at it, of the options' concepts and of the section. Each joined part of
