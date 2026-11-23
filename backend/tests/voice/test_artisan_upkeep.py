@@ -126,7 +126,8 @@ async def test_a_transcript_that_does_not_open_is_reported_and_the_rest_of_the_u
     store = LapsedStore()
     unreadable, quiet = uuid.UUID(int=41), uuid.UUID(int=42)
     store.conversations[unreadable] = conversation(
-        id=unreadable, transcript=sealed(said(1, SOAK), key=TranscriptCipher(EARLIER_KEY))
+        id=unreadable,
+        transcript=sealed(asked(0, "How do you begin?"), said(1, SOAK), key=TranscriptCipher(EARLIER_KEY)),
     )
     store.conversations[quiet] = conversation(id=quiet, transcript=sealed(asked(0, "How do you begin?")))
     report = await run_artisan_upkeep(upkeep(store, FakeModel([])), now=NOW)
