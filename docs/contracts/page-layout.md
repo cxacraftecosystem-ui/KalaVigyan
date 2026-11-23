@@ -157,6 +157,15 @@ What it holds (`MonographDocument`, `docs/decisions/0106`):
   page's source keys and its citation key prefixed `<monograph, lower case>:`. The registering
   monograph is the `monograph` the component's stored payload names. A component with neither is
   left out of the page.
+- **Kin crafts** (decision 0180): for a craft, a `related_crafts` component in the `kin` chapter,
+  labelled `<slug>/kin/related-crafts`, from the page's relatives (`craft_page_family.
+  family_relatives`, the same sub-family) that have a cited lede sentence whose claims are all
+  public: each kin craft's name, page, states, GI and monograph marks, the material terms both
+  crafts name in the glossary (`TermCraft` on both, a `MATERIAL` concept through `TermConcept`, at
+  most six, `monograph_generated_kin.shared_materials`) and its lede sentence as a held `p` unit
+  `kin-<n>` cited like any other, with the family line for its swatch. The spec is the declared form
+  of `related_crafts` (`research/kin_crafts.KinCraftsSpec`, with `head`); Kutch Ajrakh's authored
+  form keeps its own view. No kin sentence, no component.
 - **Order**: by chapter, the hero with the masthead, then each chapter's pictures (hero and opener
   first), its text by field, then its components; then the page's layout record as above.
 - **Data**: `content.data["page-layout"]` is the layout record the page was ordered by, so a

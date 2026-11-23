@@ -28,6 +28,7 @@ from app.models import (
 from app.research.crafts import CraftRef
 from app.research.retrieval import RESTRICTED_SENSITIVITY, VISIBLE_SENSITIVITY
 from app.services.citation_tiers import reading_acl
+from app.services.group_names import craft_group_names
 from app.services.knowledge_view import craft_ref
 
 from .place import LocationFacts, media_place
@@ -120,11 +121,13 @@ async def craft_facts(session: AsyncSession, crafts: Sequence[Craft]) -> dict[uu
         await session.execute(statement)
     ).all():
         located[craft_id].append(LocationFacts(str(location_id), precision, label, level, district, state))
+    groups = await craft_group_names(session, [craft.id for craft in crafts])
     facts: dict[uuid.UUID, CraftFacts] = {}
     for craft in crafts:
         place, names = media_place(located[craft.id], list(craft.stateOfPractice or []))
         ref = CraftRef.model_validate(craft_ref(craft))
-        facts[craft.id] = CraftFacts(craft.id, ref, craft.status == ACTIVE_CRAFT, place, names)
+        active = craft.status == ACTIVE_CRAFT
+        facts[craft.id] = CraftFacts(craft.id, ref, active, place, names, groups.get(craft.id, ()))
     return facts
 
 

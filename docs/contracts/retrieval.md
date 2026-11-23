@@ -423,7 +423,14 @@ quote matcher does (`quotes.LINE_BREAK_HYPHEN`: `mor-` and `dant` on the next li
 `mordant`), so a quote the gate found in a document is found in its passages too.
 
 The Wood Handbook is cited by the inferential-system seed (FPL-GTR-190, 2010) by chapter title,
-with no quote; the repository holds no text of that edition, so it has no passages.
+with no quote. The five chapters it cites are vendored as `tools/curation/fetch.py` read them
+(`app/data/source_texts/fpl-gtr-190/`: `source.json` names the seed source, each chapter's address,
+its Wayback copy, its retrieval date and the SHA-256 of its text; decision 0181), and
+`data/source_texts.vendored_texts` refuses a chapter whose text is not the one read. A seed source with
+a vendored text takes its pages as its passages instead of its quotes: each page from its printed label
+(`4-2`, the next label greater than the last) to the next, chunked by `chunk_text`, located
+`Chapter <n>, <title>, p. <page>, para <n>`, `PUBLIC`, language `en`
+(`claim_seed_passages.vendored_chunks`), stored by the same rule as quoted passages.
 
 ## Evaluation
 
@@ -677,7 +684,6 @@ route, so the misspelt and partial names that need the semantic step are scored 
 
 ## Not built
 
-- Wood Handbook passages wait for the cited edition's text.
 - Generated questions in another language are searched as asked, with no English rendering, and
   the report does not split the generated set by language.
 

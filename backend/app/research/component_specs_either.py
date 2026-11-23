@@ -8,6 +8,7 @@ from pydantic import BaseModel, Discriminator, RootModel, Tag
 
 from .base import ContractModel
 from .component_specs_data import ChartSpec, FactTableSpec, TimelineSpec
+from .component_specs_data_lists import RelatedCraftsSpec
 from .component_specs_data_maps import MapLayerSpec
 from .component_specs_general import (
     GENERAL_CHART,
@@ -20,6 +21,7 @@ from .component_specs_general import (
     GeneralTimelineSpec,
     is_declared,
 )
+from .kin_crafts import KIN_KIND, KinCraftsSpec
 
 __all__ = [
     "AUTHORED",
@@ -29,6 +31,7 @@ __all__ = [
     "ChartKindSpec",
     "FactTableKindSpec",
     "MapLayerKindSpec",
+    "RelatedCraftsKindSpec",
     "TimelineKindSpec",
     "form_model",
     "spec_form",
@@ -86,12 +89,24 @@ class MapLayerKindSpec(
     pass
 
 
+class RelatedCraftsKindSpec(
+    RootModel[
+        Annotated[
+            Annotated[KinCraftsSpec, Tag(DECLARED)] | Annotated[RelatedCraftsSpec, Tag(AUTHORED)],
+            Discriminator(spec_form),
+        ]
+    ]
+):
+    pass
+
+
 EITHER_FORMS: Mapping[str, Mapping[str, type[ContractModel]]] = MappingProxyType(
     {
         GENERAL_CHART: MappingProxyType({DECLARED: GeneralChartSpec, AUTHORED: ChartSpec}),
         GENERAL_TABLE: MappingProxyType({DECLARED: GeneralTableSpec, AUTHORED: FactTableSpec}),
         GENERAL_TIMELINE: MappingProxyType({DECLARED: GeneralTimelineSpec, AUTHORED: TimelineSpec}),
         GENERAL_MAP_LAYER: MappingProxyType({DECLARED: GeneralMapLayerSpec, AUTHORED: MapLayerSpec}),
+        KIN_KIND: MappingProxyType({DECLARED: KinCraftsSpec, AUTHORED: RelatedCraftsSpec}),
     }
 )
 SPEC_MODELS_EITHER: Mapping[str, type[BaseModel]] = MappingProxyType(
@@ -100,6 +115,7 @@ SPEC_MODELS_EITHER: Mapping[str, type[BaseModel]] = MappingProxyType(
         GENERAL_TABLE: FactTableKindSpec,
         GENERAL_TIMELINE: TimelineKindSpec,
         GENERAL_MAP_LAYER: MapLayerKindSpec,
+        KIN_KIND: RelatedCraftsKindSpec,
     }
 )
 

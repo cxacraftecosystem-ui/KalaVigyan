@@ -864,9 +864,13 @@ order, each with its span as the texts state it (`lib/timelineView.yearSpanText`
 point and a route one sentence states are one entry with both their lines, past, current or later
 over their joint span, `entryGroups`, `groupState`), beside a slider over the distinct first years (opening at the last, so everything shows; an entry
 is past, current or later at the chosen year). Placed places are numbered in order of first use
-and link their Wikidata item; a place inside the India frame is a pin, one outside it a signpost
-at the frame's edge pointing toward it with its number and name, never another country's outline;
-a route is a line between two placed ends once its year is reached; the map carries the boundary
+and link their Wikidata item; a place inside the India frame is a pin, one outside it a pin with
+its number and name in an inset frame under the map (`components/map/AbroadInset`), drawn in the
+same projection (`projection.frameProjection`) over its own bounds (India's and every place abroad,
+4 degrees round, `abroadFrame.abroadBounds`) on the plain ground (`--sunk`) with India's outline
+only, never another country's outline, while India's frame keeps its bounds (decision 0180); a
+route is a line between two placed ends once its year is reached, also drawn in the inset when an
+end lies abroad; the map carries the boundary
 caption and the shapes row, and with nothing placed there is no map. `blockSentences` reads a
 zoom's levels and a timeline's points, then routes; `blockSourceIds` adds a zoom compound's record
 after its citations, so both join the one numbering.
@@ -1058,16 +1062,23 @@ joined both kinds to `BUILT_BLOCK_KINDS` (decision 0061), their renderers being 
   (`zoom_story.zoom_ground`) reads the craft's mapped districts with register names, the
   `DR_DISTRICT_SHAPES` row, the craft's stored fact claims whose sentence or quotes name a mapped
   district (at most 8, by lexical rank; none without the row) with their source refs, and the
-  `INLINE` pictures already kept for the offered claims (`media_ref_store.stored_pictures`).
+  `INLINE` pictures already kept for the offered claims (`media_ref_store.stored_pictures`), and
+  the craft's glossary terms tagged with a picture level (`zoom_story.level_terms`: `Term.zoomLevel`
+  `WORKSHOP`, `CLOTH` or `FIBRE` over its `TermCraft` links, decision 0180).
   Levels, each captioned by a stored fact no earlier level uses and no figure of the section
   (a card, a link, a ladder stage, anything but its prose) already states word for word, since the
   claim ledger would drop that level as said (`zoom_story.Captions.without_said`, `figure_texts`,
   decision 0175):
-  `DISTRICT`, the first mapped district a claim names; `WORKSHOP`, `CLOTH` and `FIBRE`, a picture
-  whose title or description holds that level's words (`zoom_pictures.LEVEL_WORDS`; a fibre
-  picture also a micrograph word and the craft's fibre, `fibre_named` over the fibre materials'
-  names), the kept ones first, then for missing levels one Commons and one Openverse search (the
-  section pictures' text, then the craft name; for the fibre `<fibre> fibre micrograph`), only
+  `DISTRICT`, the first mapped district a claim names; `WORKSHOP` and `CLOTH`, a picture whose
+  title or description holds that level's words (`zoom_pictures.LEVEL_WORDS`) or names, by its
+  label, an alias or a local name in any script, a glossary term of the craft tagged with that
+  level; `FIBRE`, a picture with a micrograph word that names the craft's fibre (`fibre_named` over
+  the fibre materials' names, else the label of the craft's `FIBRE`-tagged term without its last
+  scale word, `fibre_tagged`); the kept ones first, then for missing levels one Commons and one
+  Openverse search (the section pictures' text, then the craft name; for the fibre
+  `<fibre> fibre micrograph`), and for a fibre neither finds, the open paper figures
+  (`sources/images/europe_pmc_figures`, the same texts; a figure's page is its article's DOI page,
+  so its `sourceId` is the stored paper once research has stored it), only
   candidates shown inline (open licence and author), relevance as for section pictures (two shared
   content stems with a claim) or, for a fibre, a claim naming the fibre; a chosen picture is kept as
   a `MediaRef` row with its claim links; `MOLECULE`, the first compound `molecule_candidates`

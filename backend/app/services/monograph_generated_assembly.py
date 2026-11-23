@@ -32,6 +32,7 @@ from .drawing_themes import themed_spec
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings, spec_unit_keys
 from .monograph_generated_grids import StatedValue, fact_grid
+from .monograph_generated_kin import KinRead, place_kin
 from .monograph_generated_parts import RegisteredComponent, StoredSection, component_binding_of
 from .monograph_generated_pictures import PICTURE_KIND, PlateSource, plate_spec
 from .monograph_generated_structure import CHAPTER_FIELDS, BlockSpecs, PlacedStructure, placed_structure
@@ -78,6 +79,7 @@ class GeneratedParts:
     places: PlacesHeld = field(default_factory=PlacesHeld)
     ground: CraftGround | None = None
     unwritten: Mapping[str, tuple[ClaimView, ...]] = field(default_factory=dict)
+    kin: KinRead = field(default_factory=KinRead)
 
 
 @dataclass
@@ -229,6 +231,7 @@ def _components(parts: GeneratedParts, page: _Page, drawings: Drawings) -> dict[
             subjects=list(component.subjects),
         )
         by_chapter.setdefault(chapter, []).append(component.label)
+    place_kin(parts.kin, parts.subject_slug, page, by_chapter)
     return by_chapter
 
 

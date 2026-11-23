@@ -83,6 +83,7 @@ class ClaimView:
     citations: list[dict[str, Any]] = field(default_factory=list)
     sources_differ: bool = False
     closed: frozenset[str] = frozenset()
+    differs_on: str | None = None
 
     def payload(self) -> dict[str, Any]:
         return {"id": str(self.id), "text": self.text, "level": self.level, "citations": self.citations}
@@ -300,6 +301,7 @@ def cited_view(
         citations=[citation(c, claim.evidenceLevel, readable=shown[c.id]) for c in ordered],
         sources_differ=bool(claim.sourcesDiffer),
         closed=frozenset(str(c.id) for c in cites if not shown[c.id]),
+        differs_on=claim.differsOn if claim.sourcesDiffer else None,
     )
 
 

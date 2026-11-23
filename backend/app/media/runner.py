@@ -13,6 +13,7 @@ from app.core.errors import SPEND_REFUSAL_KIND, ExternalFailure, InvalidInput, R
 from app.core.logging import request_id_scope
 from app.providers.media_router import MediaAsk, MediaCall
 from app.providers.router import RouterError
+from app.research.named_groups import names_a_listed_group
 from app.schemas.media import JOB_RETRIES, JOB_TIMEOUT_SECONDS
 from app.services.craft_ai_media import page_copy_key
 from app.services.naming import MediaName, generated_media_file_name, media_key
@@ -25,6 +26,7 @@ from .records import JobRecord, NewAsset, QueueStore, StageFacts
 
 __all__ = [
     "FINAL_ROUTER_KINDS",
+    "NAMED_GROUP_REASON",
     "RETRY_DELAY_SECONDS",
     "Generator",
     "ObjectWriter",
@@ -38,6 +40,7 @@ logger = logging.getLogger(__name__)
 RETRY_DELAY_SECONDS = 15
 FINAL_ROUTER_KINDS = frozenset({"bad_request", SPEND_REFUSAL_KIND, "no_route", "unsupported"})
 BLOCKED_KIND = "refusal"
+NAMED_GROUP_REASON = "named_group"
 
 
 class Generator(Protocol):
@@ -92,6 +95,8 @@ async def _run(deps: RunnerDeps, job: JobRecord) -> str:
     stage = await deps.store.stage(job.stage_id) if job.stage_id else None
     if stage is None:
         return await _finish(deps, job, "FAILED", "stage_missing")
+    if names_a_listed_group(job.prompt, stage.craft.group_names):
+        return await _finish(deps, job, "BLOCKED", NAMED_GROUP_REASON)
     try:
         generated_media_file_name(_media_name(job, stage, deps.clock()))
     except InvalidInput:

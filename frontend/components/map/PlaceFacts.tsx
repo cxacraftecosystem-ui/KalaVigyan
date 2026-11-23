@@ -4,10 +4,12 @@ import { Droplets, Gem, Layers, Mountain, Sprout, Thermometer, Trees, type Lucid
 
 import { useCitations } from "@/components/answer/CitationContext";
 import { EvidenceTag } from "@/components/editorial/EvidenceMark";
+import { YearlySeriesRow } from "@/components/map/YearlySeriesRow";
 import { sourceHref } from "@/lib/citations";
 import { levelMark } from "@/lib/citationCluster";
 import type { PlaceBasis, RegionDataset, RegionFacet, RegionFacetName } from "@/lib/regionContract";
 import { datasetOf, FACET_LABEL, valueLabel, valueProvenance, valueReading } from "@/lib/regionView";
+import { foldedRows } from "@/lib/yearlySeries";
 
 const FACET_ICON: Record<RegionFacetName, LucideIcon> = {
   SOIL: Sprout,
@@ -51,13 +53,17 @@ export function FacetBlock({ facet, datasets }: { facet: RegionFacet; datasets: 
         {FACET_LABEL[facet.facet]}
       </h4>
       <dl className="grid gap-3">
-        {facet.values.map((value, index) => (
-          <div key={`${value.datasetCode}:${value.variable}:${value.depth ?? ""}:${value.period}:${value.stat}:${index}`} className="grid gap-0.5">
-            <dt className="font-ui text-caption text-ink-3">{valueLabel(value)}</dt>
-            <dd className="font-ui text-h4 tabular-nums lining-nums text-ink-1">{valueReading(value)}</dd>
-            <dd className="font-ui text-caption text-ink-3">{valueProvenance(value, datasetOf(datasets, value.datasetCode))}</dd>
-          </div>
-        ))}
+        {foldedRows(facet.values).map((row, index) =>
+          row.kind === "series" ? (
+            <YearlySeriesRow key={row.series.key} series={row.series} dataset={datasetOf(datasets, row.series.first.datasetCode)} />
+          ) : (
+            <div key={`${row.value.datasetCode}:${row.value.variable}:${row.value.depth ?? ""}:${row.value.period}:${row.value.stat}:${index}`} className="grid gap-0.5">
+              <dt className="font-ui text-caption text-ink-3">{valueLabel(row.value)}</dt>
+              <dd className="font-ui text-h4 tabular-nums lining-nums text-ink-1">{valueReading(row.value)}</dd>
+              <dd className="font-ui text-caption text-ink-3">{valueProvenance(row.value, datasetOf(datasets, row.value.datasetCode))}</dd>
+            </div>
+          )
+        )}
       </dl>
     </section>
   );

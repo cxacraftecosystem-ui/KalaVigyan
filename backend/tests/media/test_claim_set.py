@@ -88,6 +88,19 @@ def test_claims_naming_a_community_or_caste_never_reach_a_prompt() -> None:
     assert names_a_group("A caste of dyers") and not names_a_group("Communicating vessels")
 
 
+def test_a_claim_naming_a_listed_community_or_person_is_kept_out_and_an_ordinary_word_passes() -> None:
+    a, b, c = ids(3)
+    claims = [
+        claim(a, "The Khatris print the alum resist by hand."),
+        claim(b, "Alum fixes the red dye to the cotton."),
+        claim(c, "Ismail Mohammad Khatri washes the cloth in the river."),
+    ]
+    listed = ("Khatri", "Ismail Mohammad Khatri")
+    assert [x.id for x in claim_set(claims, acls=STUDENT, named=listed)] == [b]
+    assert {x.id for x in claim_set(claims, acls=STUDENT)} == {a, b, c}
+    assert [x.id for x in claim_set(claims, acls=STUDENT, named=("Kharif", "Bhil"))] == [a, b, c]
+
+
 def test_two_claims_are_enough_and_acls_follow_the_role() -> None:
     a, b = ids(2)
     assert not enough_claims(claim_set([claim(a, "One.")], acls=STUDENT))

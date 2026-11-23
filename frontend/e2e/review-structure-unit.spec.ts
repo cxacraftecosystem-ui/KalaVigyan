@@ -128,6 +128,21 @@ test("an alternative names a material of the page and the material that can stan
   expect((page.items[0] as StructureItem).structure.item).toEqual(alternative);
 });
 
+test("a name kept out of AI pictures is read with its kind, writes no page and is never stale for want of one", () => {
+  const named = { kind: "GROUP_NAME" as const, name: "Khatri", groupKind: "COMMUNITY" };
+  const structure = { ...REVIEW, kind: "GROUP_NAME", item: named, statement: null, field: null };
+  const page = parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...ITEM, structure }] });
+  const read = (page.items[0] as StructureItem).structure;
+  expect(read.item).toEqual(named);
+  expect(entryLines(named)).toEqual([
+    { term: "Name", value: "Khatri" },
+    { term: "Names a", value: "community" }
+  ]);
+  expect(STRUCTURE_KIND_LABELS.GROUP_NAME).toBe("Name kept out of AI pictures");
+  expect(writesLine(read)).toBe("Approving adds the name to the Kutch Ajrakh list of names kept out of AI pictures. Readers never see the list.");
+  expect(structureActions(read)).toEqual(["approve", "reject"]);
+});
+
 test("a category's structure proposal is read with its category subject and no craft", () => {
   const term = { kind: "GLOSSARY_TERM", term: "Kalamkari", meaning: "Pen work, the drawing of a dye resist by hand.", language: null, script: null };
   const structure = {

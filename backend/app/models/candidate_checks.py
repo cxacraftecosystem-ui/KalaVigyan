@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, created_at, one_of, uuid_pk
+from app.models.knowledge import DIFFERS_ON_CHARS
 
 CANDIDATE_GATES = ("QUOTES", "SOURCE", "DUPLICATE", "NOVELTY")
 GATE_COLUMN_CHARS = 16
@@ -26,6 +27,7 @@ class CandidateCheck(Base):
         ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("ARRAY[]::uuid[]")
     )
     model: Mapped[str | None] = mapped_column(String(MODEL_COLUMN_CHARS))
+    differsOn: Mapped[str | None] = mapped_column(String(DIFFERS_ON_CHARS))
     checkedAt: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     createdAt: Mapped[datetime] = created_at()
 

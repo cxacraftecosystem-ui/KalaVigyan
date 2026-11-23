@@ -1,0 +1,1374 @@
+CHAPTER 4
+Moisture Relations and Physical Properties
+of Wood
+Samuel V. Glass, Research Physical Scientist
+Samuel L. Zelinka, Materials Research Engineer
+4-1
+Wood, like many natural materials, is hygroscopic; it takes
+on moisture from the surrounding environment. Moisture
+exchange between wood and air depends on the relative humidity and temperature of the air and the current amount of
+water in the wood. This moisture relationship has an important influence on wood properties and performance. Many
+of the challenges of using wood as an engineering material
+arise from changes in moisture content or an abundance of
+moisture within the wood.
+This chapter discusses the macroscopic physical properties of wood with emphasis given to their relationship with
+moisture content. Some properties are species-dependent;
+in such cases, data from the literature are tabulated according to species. The chapter begins with a broad overview
+of wood-water relations, defining key concepts needed to
+understand the physical properties of wood.
+Wood-Moisture Relationships
+Moisture Content and Green Wood
+Many physical and mechanical properties of wood depend
+upon the moisture content of wood. Moisture content (MC)
+is usually expressed as a percentage and can be calculated
+from
+(4-1)
+where waterm is the mass of water in wood and woodm is
+the mass of the ovendry wood. Operationally, the moisture
+content of a given piece of wood can be calculated by
+(4-2)
+where wetm is the mass of the specimen at a given moisture
+content and drym is the mass of the ovendry specimen.
+Green wood is often defined as freshly sawn wood in which
+the cell walls are completely saturated with water and additional water may reside in the lumina. The moisture content of green wood can range from about 30% to more than
+200%. In green softwoods, the moisture content of sapwood
+is usually greater than that of heartwood. In green hardwoods, the difference in moisture content between heartwood and sapwood depends on the species. The average
+moisture content of green heartwood and green sapwood of
+some domestic species is given in Table 4-1. These values
+Contents
+Wood-Moisture Relationships 4-1
+Moisture Content and Green Wood 4-1
+Fiber Saturation and Maximum Moisture
+Content 4-2
+Water Vapor Sorption 4-3
+Liquid Water Absorption 4-4
+Dimensional Stability 4-5
+Density and Specific Gravity 4-7
+Thermal Properties 4-10
+Thermal Conductivity 4-10
+Heat Capacity 4-11
+Thermal Diffusivity 4-12
+Coefficient of Thermal Expansion 4-14
+Electrical Properties 4-15
+DC Electrical Properties 4-15
+AC Electrical Properties 4-16
+Friction Properties 4-17
+Nuclear Radiation Properties 4-17
+Literature Cited 4-18
+Additional References 4-19
+4-2
+are considered typical, but variation within and between
+trees is considerable. Variability of green moisture content
+exists even within individual boards cut from the same tree.
+Additional information on moisture in green lumber is given
+in Chapter 13.
+Fiber Saturation and Maximum Moisture
+Content
+Moisture can exist in wood as free water (liquid water or
+water vapor in cell lumina and cavities) or as bound water
+(held by intermolecular attraction within cell walls). The
+moisture content at which only the cell walls are completely
+saturated (all bound water) but no water exists in cell lumina
+is called the fiber saturation point, MCfs. Operationally, the
+fiber saturation point is considered as that moisture content
+above which the physical and mechanical properties of
+wood do not change as a function of moisture content. The
+fiber saturation point of wood averages about 30% moisture
+content, but in individual species and individual pieces of
+wood it can vary by several percentage points from that
+value.
+Conceptually, fiber saturation distinguishes between the two
+ways water is held in wood. However, in actuality, a more
+gradual transition occurs between bound and free water
+near the fiber saturation point. Within a piece of wood, in
+Table 4-1. Average moisture content of green wood, by species
+Moisture content
+(%)
+Moisture content
+(%)
+Species Heartwood Sapwood Species Heartwood Sapwood
+Hardwoods Softwoods
+Alder, red - 97 Baldcypress 121 171
+Apple 81 74 Cedar, eastern red 33 -
+Ash, black 95 - Cedar, incense 40 213
+Ash, green - 58 Cedar, Port-Orford 50 98
+Ash, white 46 44 Cedar, western red 58 249
+Aspen 95 113 Cedar, yellow 32 166
+Basswood, American 81 133 Douglas-fir, coast type 37 115
+Beech, American 55 72 Fir, balsam 88 173
+Birch, paper 89 72 Fir, grand 91 136
+Birch, sweet 75 70 Fir, noble 34 115
+Birch, yellow 74 72 Fir, Pacific silver 55 164
+Cherry, black 58 - Fir, white 98 160
+Chestnut, American 120 - Hemlock, eastern 97 119
+Cottonwood 162 146 Hemlock, western 85 170
+Elm, American 95 92 Larch, western 54 119
+Elm, cedar 66 61 Pine, loblolly 33 110
+Elm, rock 44 57 Pine, lodgepole 41 120
+Hackberry 61 65 Pine, longleaf 31 106
+Hickory, bitternut 80 54 Pine, ponderosa 40 148
+Hickory, mockernut 70 52 Pine, red 32 134
+Hickory, pignut 71 49 Pine, shortleaf 32 122
+Hickory, red 69 52 Pine, sugar 98 219
+Hickory, sand 68 50 Pine, western white 62 148
+Hickory, water 97 62 Redwood, old growth 86 210
+Magnolia 80 104 Spruce, black 52 113
+Maple, silver 58 97 Spruce, Engelmann 51 173
+Maple, sugar 65 72 Spruce, Sitka 41 142
+Oak, California black 76 75 Tamarack 49 -
+Oak, northern red 80 69
+Oak, southern red 83 75
+Oak, water 81 81
+Oak, white 64 78
+Oak, willow 82 74
+Sweetgum 79 137
+Sycamore, American 114 130
+Tupelo, black 87 115
+Tupelo, swamp 101 108
+Tupelo, water 150 116
+Walnut, black 90 73
+Yellow-poplar 83 106
+General Technical Report FPL-GTR-190
+4-3
+Chapter 4 Moisture Relations and Physical Properties of Wood
+one portion all cell lumina may be empty and the cell walls
+partially dried, while in another part of the same piece, cell
+walls may be saturated and lumina partially or completely
+filled with water. Even within a single cell, the cell wall may
+begin to dry before all water has left the lumen of that same
+cell.
+The moisture content at which both cell lumina and cell
+walls are completely saturated with water is the maximum
+possible moisture content. Basic specific gravity Gb (based
+on ovendry mass and green volume-see section on Density
+and Specific Gravity) is the major determinant of maximum
+moisture content. As basic specific gravity increases, the
+volume of the lumina must decrease because the specific
+gravity of wood cell walls is constant among species. This
+decreases the maximum moisture content because less room
+is available for free water. Maximum moisture content
+MCmax for any basic specific gravity can be estimated from
+(4-3)
+where the specific gravity of wood cell walls is taken as
+1.54. Maximum possible moisture content varies from 267%
+at Gb = 0.30 to 44% at Gb = 0.90. Maximum possible moisture content is seldom attained in living trees. The moisture
+content at which wood will sink in water can be calculated
+by
+(4-4)
+Water Vapor Sorption
+When wood is protected from contact with liquid water and
+shaded from sunlight, its moisture content below the fiber
+saturation point is a function of both relative humidity
+(RH) and temperature of the surrounding air. Wood in
+service is exposed to both long-term (seasonal) and shortterm (daily) changes in relative humidity and temperature of
+the surrounding air, which induce changes in wood moisture
+content. These changes usually are gradual, and short-term
+fluctuations tend to influence only the wood surface. Moisture content changes can be retarded, but not prevented,
+by protective coatings such as varnish, lacquer, or paint
+(Chap. 16). The objective of wood drying is to bring the
+moisture content close to the expected value that a finished
+product will have in service (Chap. 13).
+Equilibrium Moisture Content
+Equilibrium moisture content (EMC) is defined as that moisture content at which the wood is neither gaining nor losing
+moisture. The relationship between EMC, relative humidity,
+and temperature is shown in Figure 4-1 and Table 4-2. For
+most practical purposes, the values in Table 4-2 may be applied to wood of any species. These values have been calculated from the following equation:
+(4-5)
+where h is relative humidity (decimal) and the parameters
+W, K, K1, and K2 depend on temperature:
+For temperature T in °C,
+W = 349 + 1.29T + 0.0135T2
+K = 0.805 + 0.000736T - 0.00000273T2
+K1 = 6.27 - 0.00938T - 0.000303T2
+K2 = 1.91 + 0.0407T - 0.000293T2
+For temperature T in °F,
+W = 330 + 0.452T + 0.00415T 2
+K = 0.791 + 0.000463T - 0.000000844T2
+K1 = 6.34 + 0.000775T - 0.0000935T2
+K2 = 1.09 + 0.0284T - 0.0000904T2
+Simpson (1973) showed that this equation provides a good
+fit to EMC-RH-temperature data.
+Sorption Hysteresis
+The relationship between EMC and relative humidity at
+constant temperature is referred to as a sorption isotherm.
+The history of a wood specimen also affects its EMC; this
+is called sorption hysteresis and is shown in Figure 4-2. A
+desorption isotherm is measured by bringing wood that was
+initially wet to equilibrium with successively lower values
+of relative humidity. A resorption, or adsorption, isotherm
+is measured in the opposite direction (from the dry state
+to successively higher RH values). As wood is dried from
+the initial green condition below the fiber saturation point
+(initial desorption), the EMC is greater than in subsequent
+desorption isotherms (Spalt 1958). Furthermore, the EMC
+10 20 30 40 50 60 70 80 90
+10
+20
+30
+40
+50
+60
+70
+80
+90
+100
+Relative humidity (%)
+Temperature (oC)
+2 4 6 8 10 12 14 16 20 24
+Figure 4-1. Equilibrium moisture content of wood (labeled contours) as a function of relative humidity and
+temperature.
+4-4
+for resorption (adsorption) is lower than for desorption. The
+ratio of adsorption EMC to desorption EMC varies with
+species, RH, and temperature, with a mean value of about
+0.8 near room temperature (Stamm 1964, Skaar 1988). EMC
+values in Table 4-2 were derived primarily for Sitka spruce
+under conditions described as oscillating vapor pressure
+desorption (Stamm and Loughborough 1935), which was
+shown to represent a condition midway between adsorption
+and desorption. The tabulated EMC values thus provide a
+suitable and practical compromise for use when the direction of sorption is not always known.
+Liquid Water Absorption
+Wood products in service may be exposed to liquid water
+through a variety of mechanisms. Contact with liquid water
+can induce rapid changes in the moisture content of wood,
+in contrast to the slow changes that occur due to water vapor sorption. In addition, liquid water absorption can bring
+the moisture content of wood above fiber saturation (water
+vapor sorption alone cannot). As wood absorbs water above
+its fiber saturation point, air in the cell lumina is replaced
+by water. Absorption of liquid water may continue until the
+maximum moisture content is reached.
+The mechanism of water absorption is called capillary action or wicking. Water interacts strongly with the wood cell
+wall and forms a concave meniscus (curved surface) within
+the lumen. This interaction combined with the water-air
+surface tension creates a pressure that draws water up the
+lumina.
+The rate of liquid water absorption in wood depends on
+several factors. The rate of absorption is most rapid in the
+longitudinal direction (that is, when the transverse section or
+end grain is exposed to water). The rate at which air can escape from wood affects water absorption, as water displaces
+air in the lumina. Chapter 16 discusses the ability of surface
+finishes such as water repellents to inhibit water absorption.
+International Standard ISO 15148 (ISO 2002) describes a
+method for measuring the rate of water absorption. One surface of a specimen is partially immersed in water. To limit
+absorption to this one surface and restrict moisture transport
+to one dimension, the sides of the specimen are coated with
+a water- and vapor-tight sealant. The specimen is periodically removed, surfaces are blotted, and the specimen is
+weighed and again partially immersed in the water. The
+mass of water absorbed per unit area of specimen surface is
+plotted against the square root of time. The initial part of the
+curve is usually linear, and the slope of this linear portion
+is the water absorption coefficient Aw (kg m-2 s-1/2).
+Measured values of Aw for softwoods are in the range
+10-16 g m-2 s-1/2 in the longitudinal direction and
+1-7 g m-2 s-1/2 in the transverse directions (IEA 1991;
+Kumaran 1999, 2002).
+The liquid water diffusivity Dw (m2 s-1) is a measure of
+the rate of moisture flow (kg m-2 s-1) through a material
+Table 4-2. Moisture content of wood in equilibrium with stated temperature and relative humidity
+Temperature Moisture content (%) at various relative humidity values
+(°C (°F)) 5% 10% 15% 20% 25% 30% 35% 40% 45% 50% 55% 60% 65% 70% 75% 80% 85% 90% 95%
+1.1 (30) 1.4 2.6 3.7 4.6 5.5 6.3 7.1 7.9 8.7 9.5 10.4 11.3 12.4 13.5 14.9 16.5 18.5 21.0 24.3
+4.4 (40) 1.4 2.6 3.7 4.6 5.5 6.3 7.1 7.9 8.7 9.5 10.4 11.3 12.3 13.5 14.9 16.5 18.5 21.0 24.3
+10.0 (50) 1.4 2.6 3.6 4.6 5.5 6.3 7.1 7.9 8.7 9.5 10.3 11.2 12.3 13.4 14.8 16.4 18.4 20.9 24.3
+15.6 (60) 1.3 2.5 3.6 4.6 5.4 6.2 7.0 7.8 8.6 9.4 10.2 11.1 12.1 13.3 14.6 16.2 18.2 20.7 24.1
+21.1 (70) 1.3 2.5 3.5 4.5 5.4 6.2 6.9 7.7 8.5 9.2 10.1 11.0 12.0 13.1 14.4 16.0 17.9 20.5 23.9
+26.7 (80) 1.3 2.4 3.5 4.4 5.3 6.1 6.8 7.6 8.3 9.1 9.9 10.8 11.7 12.9 14.2 15.7 17.7 20.2 23.6
+32.2 (90) 1.2 2.3 3.4 4.3 5.1 5.9 6.7 7.4 8.1 8.9 9.7 10.5 11.5 12.6 13.9 15.4 17.3 19.8 23.3
+37.8 (100) 1.2 2.3 3.3 4.2 5.0 5.8 6.5 7.2 7.9 8.7 9.5 10.3 11.2 12.3 13.6 15.1 17.0 19.5 22.9
+43.3 (110) 1.1 2.2 3.2 4.0 4.9 5.6 6.3 7.0 7.7 8.4 9.2 10.0 11.0 12.0 13.2 14.7 16.6 19.1 22.4
+48.9 (120) 1.1 2.1 3.0 3.9 4.7 5.4 6.1 6.8 7.5 8.2 8.9 9.7 10.6 11.7 12.9 14.4 16.2 18.6 22.0
+54.4 (130) 1.0 2.0 2.9 3.7 4.5 5.2 5.9 6.6 7.2 7.9 8.7 9.4 10.3 11.3 12.5 14.0 15.8 18.2 21.5
+60.0 (140) 0.9 1.9 2.8 3.6 4.3 5.0 5.7 6.3 7.0 7.7 8.4 9.1 10.0 11.0 12.1 13.6 15.3 17.7 21.0
+65.6 (150) 0.9 1.8 2.6 3.4 4.1 4.8 5.5 6.1 6.7 7.4 8.1 8.8 9.7 10.6 11.8 13.1 14.9 17.2 20.4
+71.1 (160) 0.8 1.6 2.4 3.2 3.9 4.6 5.2 5.8 6.4 7.1 7.8 8.5 9.3 10.3 11.4 12.7 14.4 16.7 19.9
+76.7 (170) 0.7 1.5 2.3 3.0 3.7 4.3 4.9 5.6 6.2 6.8 7.4 8.2 9.0 9.9 11.0 12.3 14.0 16.2 19.3
+82.2 (180) 0.7 1.4 2.1 2.8 3.5 4.1 4.7 5.3 5.9 6.5 7.1 7.8 8.6 9.5 10.5 11.8 13.5 15.7 18.7
+87.8 (190) 0.6 1.3 1.9 2.6 3.2 3.8 4.4 5.0 5.5 6.1 6.8 7.5 8.2 9.1 10.1 11.4 13.0 15.1 18.1
+93.3 (200) 0.5 1.1 1.7 2.4 3.0 3.5 4.1 4.6 5.2 5.8 6.4 7.1 7.8 8.7 9.7 10.9 12.5 14.6 17.5
+98.9 (210) 0.5 1.0 1.6 2.1 2.7 3.2 3.8 4.3 4.9 5.4 6.0 6.7 7.4 8.3 9.2 10.4 12.0 14.0 16.9
+104.4 (220) 0.4 0.9 1.4 1.9 2.4 2.9 3.4 3.9 4.5 5.0 5.6 6.3 7.0 7.8 8.8 9.9
+110.0 (230) 0.3 0.8 1.2 1.6 2.1 2.6 3.1 3.6 4.2 4.7 5.3 6.0 6.7
+115.6 (240) 0.3 0.6 0.9 1.3 1.7 2.1 2.6 3.1 3.5 4.1 4.6
+121.1 (250) 0.2 0.4 0.7 1.0 1.3 1.7 2.1 2.5 2.9
+126.7 (260) 0.2 0.3 0.5 0.7 0.9 1.1 1.4
+132.2 (270) 0.1 0.1 0.2 0.3 0.4 0.4
+General Technical Report FPL-GTR-190
+4-5
+subjected to unit difference in moisture concentration
+(kg m-3) across unit thickness (m). An order-of-magnitude
+estimate of Dw can be made using the value of Aw as
+(4-6)
+where csat is the moisture concentration (kg m-3) in watersaturated wood (Kumaran 1999).
+Dimensional Stability
+Wood is dimensionally stable when moisture content is
+greater than the fiber saturation point. Below MCfs wood
+changes dimension as it gains moisture (swells) or loses
+moisture (shrinks), because volume of the cell wall depends
+on the amount of bound water. This shrinking and swelling
+can result in warping, checking, and splitting of the wood,
+which in turn can lead to decreased utility of wood products,
+such as loosening of tool handles, gaps in flooring, or other
+performance problems. Therefore, it is important that the
+dimensional stability be understood and considered when a
+wood product will be exposed to large moisture fluctuations
+in service.
+With respect to dimensional stability, wood is an anisotropic
+material. It shrinks (swells) most in the direction of the annual growth rings (tangentially), about half as much across
+the rings (radially), and only slightly along the grain (longitudinally). The combined effects of radial and tangential
+shrinkage can distort the shape of wood pieces because
+of the difference in shrinkage and the curvature of annual
+rings. The major types of distortion as a result of these effects are illustrated in Figure 4-3.
+Transverse and Volumetric Shrinkage
+Data have been collected to represent the average radial,
+tangential, and volumetric shrinkage of numerous domestic
+species by methods described in American Society for Testing and Materials (ASTM) D 143-Standard Test Methods for Small Clear Specimens of Timber (ASTM 2007).
+Shrinkage values, expressed as a percentage of the green
+dimension, are listed in Table 4-3. Shrinkage values collected from the world literature for selected imported species
+are listed in Table 4-4.
+The shrinkage of wood is affected by a number of variables.
+In general, greater shrinkage is associated with greater
+density. The size and shape of a piece of wood can affect
+shrinkage, and the rate of drying can affect shrinkage for
+some species. Transverse and volumetric shrinkage variability can be expressed by a coefficient of variation of approximately 15% (Markwardt and Wilson 1935).
+Longitudinal Shrinkage
+Longitudinal shrinkage of wood (shrinkage parallel to the
+grain) is generally quite small. Average values for shrinkage
+from green to ovendry are between 0.1% and 0.2% for most
+species of wood. However, certain types of wood exhibit excessive longitudinal shrinkage, and these should be avoided
+in uses where longitudinal stability is important. Reaction
+wood, whether compression wood in softwoods or tension
+wood in hardwoods, tends to shrink excessively parallel
+to the grain. Wood from near the center of trees (juvenile
+wood) of some species also shrinks excessively lengthwise.
+Reaction wood and juvenile wood can shrink 2% from green
+Chapter 4 Moisture Relations and Physical Properties of Wood
+0
+4
+8
+12
+16
+20
+24
+28
+32
+0 10 20 30 40 50 60 70 80 90 100
+Initial desorption
+Desorption
+Adsorption
+Oscillating vapor pressure desorption
+Moisture content (%)
+Relative humidity (%)
+Figure 4-2. Moisture content-relative humidity relationship for wood under adsorption and various desorption
+conditions.
+Figure 4-3. Characteristic shrinkage and distortion of
+flat, square, and round pieces as affected by direction
+of growth rings. Tangential shrinkage is about twice
+as great as radial.
+4-6
+General Technical Report FPL-GTR-190
+Table 4-3. Shrinkage values of domestic woods
+Shrinkagea (%) from green
+to ovendry moisture content
+Shrinkagea (%) from green
+to ovendry moisture content
+Species Radial Tangential Volumetric Species Radial Tangential Volumetric
+Hardwoods Oak, white-con.
+Alder, red 4.4 7.3 12.6 Chestnut 5.3 10.8 16.4
+Ash Live 6.6 9.5 14.7
+Black 5.0 7.8 15.2 Overcup 5.3 12.7 16.0
+Blue 3.9 6.5 11.7 Post 5.4 9.8 16.2
+Green 4.6 7.1 12.5 Swamp, chestnut 5.2 10.8 16.4
+Oregon 4.1 8.1 13.2 White 5.6 10.5 16.3
+Pumpkin 3.7 6.3 12.0 Persimmon, common 7.9 11.2 19.1
+White 4.9 7.8 13.3 Sassafras 4.0 6.2 10.3
+Aspen Sweetgum 5.3 10.2 15.8
+Bigtooth 3.3 7.9 11.8 Sycamore, American 5.0 8.4 14.1
+Quaking 3.5 6.7 11.5 Tanoak 4.9 11.7 17.3
+Basswood, American 6.6 9.3 15.8 Tupelo
+Beech, American 5.5 11.9 17.2 Black 5.1 8.7 14.4
+Birch Water 4.2 7.6 12.5
+Alaska paper 6.5 9.9 16.7 Walnut, black 5.5 7.8 12.8
+Gray 5.2 - 14.7 Willow, black 3.3 8.7 13.9
+Paper 6.3 8.6 16.2 Yellow-poplar 4.6 8.2 12.7
+River 4.7 9.2 13.5 Softwoods
+Sweet 6.5 9.0 15.6 Cedar
+Yellow 7.3 9.5 16.8 Yellow 2.8 6.0 9.2
+Buckeye, yellow 3.6 8.1 12.5 Atlantic white 2.9 5.4 8.8
+Butternut 3.4 6.4 10.6 Eastern redcedar 3.1 4.7 7.8
+Cherry, black 3.7 7.1 11.5 Incense 3.3 5.2 7.7
+Chestnut, American 3.4 6.7 11.6 Northern white 2.2 4.9 7.2
+Cottonwood Port-Orford 4.6 6.9 10.1
+Balsam poplar 3.0 7.1 10.5 Western redcedar 2.4 5.0 6.8
+Black 3.6 8.6 12.4 Douglas-fir,
+Eastern 3.9 9.2 13.9 Coastb 4.8 7.6 12.4
+Elm Interior northb 3.8 6.9 10.7
+American 4.2 9.5 14.6 Interior westb 4.8 7.5 11.8
+Cedar 4.7 10.2 15.4 Fir
+Rock 4.8 8.1 14.9 Balsam 2.9 6.9 11.2
+Slippery 4.9 8.9 13.8 California red 4.5 7.9 11.4
+Winged 5.3 11.6 17.7 Grand 3.4 7.5 11.0
+Hackberry 4.8 8.9 13.8 Noble 4.3 8.3 12.4
+Hickory, pecan 4.9 8.9 13.6 Pacific silver 4.4 9.2 13.0
+Hickory, true Subalpine 2.6 7.4 9.4
+Mockernut 7.7 11.0 17.8 White 3.3 7.0 9.8
+Pignut 7.2 11.5 17.9 Hemlock
+Shagbark 7.0 10.5 16.7 Eastern 3.0 6.8 9.7
+Shellbark 7.6 12.6 19.2 Mountain 4.4 7.1 11.1
+Holly, American 4.8 9.9 16.9 Western 4.2 7.8 12.4
+Honeylocust 4.2 6.6 10.8 Larch, western 4.5 9.1 14.0
+Locust, black 4.6 7.2 10.2 Pine
+Madrone, Pacific 5.6 12.4 18.1 Eastern white 2.1 6.1 8.2
+Magnolia Jack 3.7 6.6 10.3
+Cucumbertree 5.2 8.8 13.6 Loblolly 4.8 7.4 12.3
+Southern 5.4 6.6 12.3 Lodgepole 4.3 6.7 11.1
+Sweetbay 4.7 8.3 12.9 Longleaf 5.1 7.5 12.2
+Maple Pitch 4.0 7.1 10.9
+Bigleaf 3.7 7.1 11.6 Pond 5.1 7.1 11.2
+Black 4.8 9.3 14.0 Ponderosa 3.9 6.2 9.7
+Red 4.0 8.2 12.6 Red 3.8 7.2 11.3
+Silver 3.0 7.2 12.0 Shortleaf 4.6 7.7 12.3
+Striped 3.2 8.6 12.3 Slash 5.4 7.6 12.1
+Sugar 4.8 9.9 14.7 Sugar 2.9 5.6 7.9
+Oak, red Virginia 4.2 7.2 11.9
+Black 4.4 11.1 15.1 Western white 4.1 7.4 11.8
+Laurel 4.0 9.9 19.0 Redwood
+Northern red 4.0 8.6 13.7 Old growth 2.6 4.4 6.8
+Pin 4.3 9.5 14.5 Young growth 2.2 4.9 7.0
+Scarlet 4.4 10.8 14.7 Spruce
+Southern red 4.7 11.3 16.1 Black 4.1 6.8 11.3
+Water 4.4 9.8 16.1 Engelmann 3.8 7.1 11.0
+Willow 5.0 9.6 18.9 Red 3.8 7.8 11.8
+Oak, white Sitka 4.3 7.5 11.5
+Bur 4.4 8.8 12.7 Tamarack 3.7 7.4 13.6
+aExpressed as a percentage of the green dimension.
+bCoast type Douglas-fir is defined as Douglas-fir growing in the States of Oregon and Washington west of the summit of the Cascade
+Mountains. Interior West includes the State of California and all counties in Oregon and Washington east of but adjacent to the Cascade
+summit. Interior North includes the remainder of Oregon and Washington and the States of Idaho, Montana, and Wyoming.
+to ovendry. Wood with cross grain exhibits increased shrinkage along the longitudinal axis of the piece.
+Reaction wood exhibiting excessive longitudinal shrinkage
+can occur in the same board with normal wood. The
+presence of this type of wood, as well as cross grain, can
+cause serious warping, such as bow, crook, or twist, and
+cross breaks can develop in the zones of high shrinkage.
+Relationship between Moisture Content and Shrinkage
+For a sufficiently small piece of wood without moisture
+gradients, shrinkage normally begins at about the fiber saturation point and continues in a fairly linear manner until the
+wood is completely dry. However, in the normal drying of
+lumber or other large pieces, the surface of the wood dries
+first, causing a moisture gradient. When the surface MC
+drops below the fiber saturation point, it begins to shrink
+even though the interior can still be quite wet and not
+shrink. Because of moisture gradients, shrinkage of lumber
+can occur even when the average moisture content of the entire piece of lumber is above fiber saturation. With moisture
+gradients, the moisture content-shrinkage relationship is not
+linear but rather looks similar to the one in Figure 4-4. The
+exact form of the shrinkage curve with moisture gradients
+depends on several variables, principally size and shape of
+the piece, species of wood, and drying conditions used.
+Considerable variation in shrinkage occurs for any species.
+Tangential shrinkage data for Douglas-fir boards, 22 by
+140 mm (7/8 by 5-1/2 in.) in cross section, are given in
+Figure 4-5 (Comstock 1965). The material was grown in
+one locality and dried under mild conditions from green to
+near equilibrium at 32 °C (90 °F) and two different
+humidity conditions: (1) 60-65% RH and (2) 30% RH. The
+figure shows that accurately predicting the shrinkage of an
+individual piece of wood is impossible; however, the average shrinkage of a quantity of pieces can be predicted
+accurately.
+Average shrinkage data in Tables 4-3 and 4-4 can be used
+to estimate shrinkage for a particular species if a great deal
+of accuracy is not required. The following assumptions
+are made: (1) shrinkage begins at the fiber saturation point
+MCfs, and (2) dimensions decrease linearly with decreasing
+moisture content. The percent shrinkage Sx from the green
+condition to final moisture content x can be calculated from
+(4-7)
+where S0 is percent shrinkage from the green condition to
+ovendry (radial, tangential, or volumetric) from Table 4-3
+or 4-4. If MCfs is not known, 30% MC can be used as an
+approximation. Tangential values for S0 should be used for
+estimating width shrinkage of plainsawn material and radial
+values for quartersawn material. For mixed or unknown ring
+orientations, tangential values are suggested. Shrinkage values for individual pieces will vary from predicted shrinkage
+values. As noted previously, shrinkage variability is characterized by a coefficient of variation of approximately 15%.
+This applies to pure tangential or radial ring orientation and
+is probably somewhat greater in commercial lumber, where
+ring orientation is seldom aligned perfectly parallel or perpendicular to board faces. Chapter 13 contains additional
+discussion of shrinkage-moisture content relationships,
+including a method to estimate shrinkage for the relatively
+small moisture content changes of wood in service. Shrinkage assumptions for commercial lumber, which typically
+is not perfectly plainsawn or quartersawn, are discussed in
+Chapter 7.
+Density and Specific Gravity
+The density ρ of a substance is defined as the ratio of its
+mass to its volume and is expressed in the international
+system (SI) in units of kilograms per cubic meter (kg m-3),
+in the inch-pound system (I-P) in units of pounds per cubic foot (lb ft-3), or in the centimeter-gram-second system
+(CGS) in units of grams per cubic centimeter (g cm-3). The
+4-7
+Chapter 4 Moisture Relations and Physical Properties of Wood
+Figure 4-4. Typical moisture content-shrinkage
+curves.
+Figure 4-5. Variation in individual tangential shrinkage
+values of several Douglas-fir boards from one locality,
+dried from green condition.
+4-8
+Table 4-4. Shrinkage values of some woods imported into the United Statesa
+Shrinkageb from
+green to ovendry
+moisture content (%)
+Shrinkageb from
+green to ovendry
+moisture content (%)
+Species Radial
+Tangential
+Volumetric
+Locationc Species Radial Tan- gential Volu- metric Loca- tionc
+Afrormosia (Pericopsis elata) 3.0 6.4 10.7 AF Lauan, white (Pentacme contorta) 4.0 7.7 11.7 AS
+Albarco (Cariniana spp.) 2.8 5.4 9.0 AM Limba (Terminalia superba) 4.5 6.2 10.8 AF
+Andiroba (Carapa guianensis) 3.1 7.6 10.4 AM Macawood (Platymiscium spp.) 2.7 3.5 6.5 AM
+Angelin (Andira inermis) 4.6 9.8 12.5 AM Mahogany, African (Khaya spp.) 2.5 4.5 8.8 AF
+Angelique (Dicorynia guianensis) 5.2 8.8 14.0 AM Mahogany, true (Swietenia macrophylla) 3.0 4.1 7.8 AM
+Apitong (Dipterocarpus spp.) 5.2 10.9 16.1 AS Manbarklak (Eschweilera spp.) 5.8 10.3 15.9 AM
+Avodire (Turreanthus africanus) 4.6 6.7 12.0 AF Manni (Symphonia globulifera) 5.7 9.7 15.6 AM
+Azobe (Lophira alata) 8.4 11.0 17.0 AM Marishballi (Licania spp.) 7.5 11.7 17.2 AM
+Balata (Manilkara bidentata) 6.3 9.4 16.9 AM Meranti, white (Shorea spp.) 3.0 6.6 7.7 AS
+Balsa (Ochroma pyramidale) 3.0 7.6 10.8 AM Meranti, yellow (Shorea spp.) 3.4 8.0 10.4 AS
+Banak (Virola spp.) 4.6 8.8 13.7 AM Merbau (Intsia bijuga and I. palembanica) 2.7 4.6 7.8 AS
+Benge (Guibourtia arnoldiana) 5.2 8.6 13.8 AF Mersawa (Anisoptera spp.) 4.0 9.0 14.6 AS
+Bubinga (Guibourtia spp.) 5.8 8.4 14.2 AF Mora (Mora spp.) 6.9 9.8 18.8 AM
+Bulletwood (Manilkara bidentata) 6.3 9.4 16.9 AM Obeche (Triplochiton scleroxylon) 3.0 5.4 9.2 AF
+Caribbean pine (Pinus caribaea) 6.3 7.8 12.9 AM Ocota pine (Pinus oocarpa) 4.6 7.5 12.3 AM
+Cativo (Prioria copaifera) 2.4 5.3 8.9 AM Okoume (Aucoumea klaineana) 4.1 6.1 11.3 AF
+Ceiba (Ceiba pentandra) 2.1 4.1 10.4 AM Opepe (Nauclea spp.) 4.5 8.4 12.6 AF
+Cocobolo (Dalbergia retusa) 2.7 4.3 7.0 AM Ovangkol (Guibourta ehie) 4.5 8.2 12 AF
+Courbaril (Hymenaea courbaril) 4.5 8.5 12.7 AM Para-angelium (Hymenolobium excelsum) 4.4 7.1 10.2 AM
+Cuangare (Dialyanthera spp.) 4.2 9.4 12.0 AM Parana pine (Araucaria angustifolia) 4.0 7.9 11.6 AS
+Degame (Calycophyllum
+candidissimum)
+4.8 8.6 13.2 AM Pau Marfim (Balfourodendron
+riedelianum)
+4.6 8.8 13.4 AM
+Determa (Ocotea rubra) 3.7 7.6 10.4 AM Peroba de campos (Paratecoma peroba) 3.8 6.6 10.5 AM
+Ebony, East Indian (Diospyros spp.) 5.4 8.8 14.2 AS Peroba Rosa (Aspidosperma spp.) 3.8 6.4 11.6 AM
+Ebony, African (Diospyros spp.) 9.2 10.8 20.0 AF Piquia (Caryocar spp.) 5.0 8.0 13.0 AM
+Ekop (Tetraberlinia tubmaniana) 5.6 10.2 15.8 AF Pilon (Hyeronima spp.) 5.4 11.7 17.0 AM
+Gmelina (Gmelina arborea) 2.4 4.9 8.8 AS Primavera (Cybistax donnell-smithii) 3.1 5.1 9.1 AM
+Goncalo alves (Astronium graveolens) 4.0 7.6 10.0 AM Purpleheart (Peltogyne spp.) 3.2 6.1 9.9 AM
+Greenheart (Ocotea rodiaei) 8.8 9.6 17.1 AM Ramin (Gonystylus spp.) 4.3 8.7 13.4 AS
+Hura (Hura crepitans) 2.7 4.5 7.3 AM Roble (Quercus spp.) 6.4 11.7 18.5 AM
+Ilomba (Pycnanthus angolensis) 4.6 8.4 12.8 AF Roble (Tabebuia spp. Roble group) 3.6 6.1 9.5 AM
+Imbuia (Phoebe porosa) 2.7 6.0 9.0 AM Rosewood, Brazilian (Dalbergia nigra) 2.9 4.6 8.5 AM
+Ipe (Tabebuia spp.) 6.6 8.0 13.2 AM Rosewood, Indian (Dalbergia latifolia) 2.7 5.8 8.5 AS
+Iroko (Chlorophora excelsa and C. regia) 2.8 3.8 8.8 AF Rubberwood (Hevea brasiliensis) 2.3 5.1 7.4 AM
+Jarrah (Eucalyptus marginata) 7.7 11.0 18.7 AS Sande (Brosimum spp. Utile group) 4.6 8.0 13.6 AM
+Jelutong (Dyera costulata) 2.3 5.5 7.8 AS Sapele (Entandrophragma cylindricum) 4.6 7.4 14.0 AF
+Kaneelhart (Licaria spp.) 5.4 7.9 12.5 AM Sepetir (Pseudosindora spp. and Sindora spp.) 3.7 7.0 10.5 AS
+Kapur (Dryobalanops spp.) 4.6 10.2 14.8 AS Spanish-cedar (Cedrela spp.) 4.2 6.3 10.3 AM
+Karri (Eucalyptus diversicolor) 7.8 12.4 20.2 AS Sucupira (Diplotropis purpurea) 4.6 7.0 11.8 AM
+Kempas (Koompassia malaccensis) 6.0 7.4 14.5 AS Teak (Tectona grandis) 2.5 5.8 7.0 AS
+Keruing (Dipterocarpus spp.) 5.2 10.9 16.1 AS Wallaba (Eperua spp.) 3.6 6.9 10.0 AM
+Lauan, light red and red (Shorea spp.) 4.6 8.5 14.3 AS
+Lauan, dark red (Shorea spp.) 3.8 7.9 13.1 AS
+aShrinkage values were obtained from world literature and may not represent a true species average.
+bExpressed as a percentage of the green dimension.
+cAF is Africa; AM is Tropical America; AS is Asia and Oceania.
+General Technical Report FPL-GTR-190
+CGS system is convenient because of its relationship to
+specific gravity (also known as relative density). Specific
+gravity G is defined as the ratio of the density of a substance
+to the density of water ρw at a specified reference temperature, typically 4 °C (39 °F), where ρw is 1.000 g cm-3
+(1,000 kg m-3 or 62.43 lb ft-3). Therefore, a material with a
+density of 5 g cm-3 has a specific gravity of 5.
+At constant temperature, the density of materials that do
+not adsorb moisture is constant. For example, at room temperature the densities of steel, aluminum, and lead are 7.8,
+2.7, and 11.3 g cm-3, respectively. For materials that adsorb
+moisture but do not change volume, such as stone and brick,
+the density depends upon moisture content. For these materials, the density can be calculated at any moisture content
+as the ratio of mass to volume, and the relationship between
+density and moisture content is linear. Specific gravity has
+only one definition for these materials (because volume is
+constant): the ratio of ovendry density to density of water.
+In contrast to these materials, for wood, both mass and
+volume depend on moisture content. The remainder of this
+section explains the relationships between moisture content,
+volumetric shrinkage, specific gravity, and density.
+The density of ovendry wood ρ0 varies significantly between
+species. Although the ovendry density of most species falls
+between about 320 and 720 kg m-3 (20 and 45 lb ft-3), the
+range actually extends from about 160 kg m-3 (10 lb ft-3) for
+balsa to more than 1,040 kg m-3 (65 lb ft-3) for some other
+imported woods. Within a given species, ρ0 varies because
+of anatomical characteristics such as the ratio of earlywood
+to latewood and heartwood to sapwood. For a limited number of species, minerals and extractable substances may also
+affect density. A coefficient of variation of about 10% is
+considered suitable for describing the variability of ovendry
+density within common domestic species.
+Wood is used in a wide range of conditions and thus has
+a wide range of moisture content values in service. Determining the density of wood (including water) at a given
+moisture content, ρx, is often necessary for applications such
+as estimating structural loads or shipping weights. Several
+methods can be used for determining ρx, as discussed in the
+following sections. The resulting value should be considered
+an approximation because of the inherent variability in the
+properties used in calculating ρx.
+To make comparisons between species or products, a standard reference basis is desirable. Several valid choices are
+possible for wood, including ovendry density ρ0 and specific
+gravity G referenced to a particular volume basis. As shown
+in Table 4-5, the specific gravity of wood may be referenced
+to its volume at any moisture content, but in all cases G is
+based on ovendry mass. Commonly used bases for volume
+are (a) ovendry, (b) green, and (c) 12% moisture content.
+The combination of ovendry mass and ovendry volume is
+used in design specifications for wood, such as contained
+in the National Design Specification for Wood Construction (AF&PA 2005). The combination of ovendry mass and
+green volume is referred to as basic specific gravity Gb.
+Some specific gravity data are reported in Tables 5-3, 5-4,
+and 5-5 (Chap. 5) on both the green (basic) and 12% MC
+volume basis.
+Converting between Different Specific Gravity Bases
+In general, we use the symbol Gx to denote specific gravity
+based on the volume at a given moisture content x. If the
+value of Gx is known for a particular moisture content, the
+value at any other moisture content can be approximated
+using expressions for volumetric shrinkage. Explicitly, if the
+specific gravity is known at moisture content x', the value at
+x'' is
+(4-8)
+where Sx is the percent volumetric shrinkage from the green
+condition to moisture content x. In the case where basic specific gravity Gb is known, the value at any moisture content
+x below the fiber saturation point is
+(4-9)
+The shrinkage-moisture content relationship can be reasonably approximated using Table 4-3 or 4-4 and Equation
+(4-7). However, if the total volumetric shrinkage S0 is not
+known for the species of interest, it can be estimated from
+the basic specific gravity (Stamm 1964):
+(4-10)
+Using this relation, Equation (4-9) then becomes
+(4-11)
+4-9
+Chapter 4 Moisture Relations and Physical Properties of Wood
+Table 4-5. Expressions for specific gravity and
+density of wooda
+Symbol Mass basis Volume basis
+G0 Ovendry Ovendry
+Gb (basic specific gravity) Ovendry Green
+G12 Ovendry 12% MC
+Gx Ovendry x% MC
+ρ0 Ovendry Ovendry
+ρ12 12% MC 12% MC
+ρx x% MC x% MC
+a x is any chosen moisture content.
+''
+''
+''
+Methods for Calculating Density
+The density of wood (including water) at a given moisture
+content, ρx, may be determined by any of three methods:
+Method 1-Equations Using Basic Specific Gravity
+The specific gravity Gx based on volume at the moisture
+content of interest may be calculated from Equation (4-9)
+or (4-11) with basic specific gravity taken from Table 5-3,
+5-4, or 5-5 (Chap. 5). Density is then calculated by
+(4-12)
+Method 2-Equations Using Ovendry Density
+Density is given by
+( )       - -+= x x S Sx 100 100100/1 0 0ρρ (4-13)
+where Sx is calculated using Equation (4-7) and S0 is taken
+from Table 4-3 or 4-4. If S0 is not known for the particular
+species of interest, it can be estimated using the same relation as in Equation (4-10), which in terms of ovendry
+density is
+(4-14)
+Method 3-Using Figure 4-6 and Table 4-6
+Figure 4-6 depicts the relationship between specific gravity Gx and moisture content for different values of basic
+specific gravity. This figure adjusts for average dimensional
+changes that occur below the fiber saturation point (assumed to be 30% MC) and incorporates the assumptions in
+Equations (4-7), (4-10), and (4-11). The specific gravity of
+wood does not change at moisture content values above approximately 30% because the volume does not change. To
+use Figure 4-6, locate the inclined line corresponding to the
+known basic specific gravity (volume when green). From
+this point, move left parallel to the inclined lines until vertically above the target moisture content. Then read the specific gravity Gx corresponding to this point at the left-hand
+side of the graph.
+For example, to estimate the density of white ash at 12%
+moisture content, consult Table 5-3a in Chapter 5. The average basic specific gravity Gb for this species is 0.55 (volume
+when green). Using Figure 4-6, the dashed curve for
+Gb = 0.55 is found to intersect with the vertical 12%
+moisture content dashed line at a point corresponding to
+G12 = 0.605. The density of wood (including water) at this
+moisture content can then be obtained from Table 4-6 (these
+values are based on Eq. (4-12)). By interpolation, the specific gravity of 0.605 corresponds to a density at 12% MC
+of 678 kg m-3 (42.2 lb ft-3).
+Thermal Properties
+Four important thermal properties of wood are thermal conductivity, heat capacity, thermal diffusivity, and coefficient
+of thermal expansion.
+Thermal Conductivity
+Thermal conductivity k is a measure of the rate of heat flow
+(W m-2 or Btu h-1 ft-2) through a material subjected to unit
+temperature difference (K or °F) across unit thickness
+(m or in.). The thermal conductivity of common structural
+woods is much less than the conductivity of metals with
+which wood often is mated in construction. It is about two
+to four times that of common insulating materials. For example, the conductivity of structural softwood lumber
+at 12% moisture content is in the range of 0.10 to
+0.14 W m-1 K-1 (0.7 to 1.0 Btu in. h-1 ft-2 °F-1) compared
+with 216 (1,500) for aluminum, 45 (310) for steel, 0.9 (6)
+for concrete, 1 (7) for glass, 0.7 (5) for plaster, and 0.036
+(0.25) for mineral wool. Thermal resistivity is simply the
+reciprocal of the thermal conductivity. Insulating materials
+of a given thickness are commonly compared by their "Rvalue," or thermal resistance, which is simply the thermal
+resistivity times the thickness.
+The thermal conductivity of wood is affected by a number
+of basic factors: density, moisture content, extractive content, grain direction, structural irregularities such as checks
+4-10
+0.18
+0.22
+0.26
+0.30
+0.34
+0.38
+0.42
+0.46
+0.50
+0.54
+0.58
+0.62
+0.66
+0.70
+0.74
+0.78
+0.82
+0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+0.20
+0.24
+0.28
+0.32
+0.36
+0.40
+0.44
+0.48
+0.52
+0.56
+0.60
+0.64
+(volume at current moisture content)Specific gravity Gx
+Moisture content (%)
+Basic specific gravity Gb
+(volume when green)
+Figure 4-6. Relationship of specific gravity and
+moisture content.
+General Technical Report FPL-GTR-190
+and knots, fibril angle, and temperature. Thermal conductivity increases as density, moisture content, temperature,
+or extractive content of the wood increases. Thermal conductivity is nearly the same in the radial and tangential
+directions. However, conductivity along the grain has been
+reported as greater than conductivity across the grain by a
+factor of 1.5 to 2.8, with an average of about 1.8.
+For moisture contents below 25%, approximate thermal
+conductivity k across the grain can be calculated with a linear equation of the form
+k = Gx(B + Cx) + A (4-15)
+where Gx is specific gravity based on ovendry mass and volume at moisture content x (%) and A, B, and C are constants.
+For Gx > 0.3, temperatures around 24 °C (75 °F), and
+x < 25% MC, the values of the constants are as follows:
+A = 0.01864, B = 0.1941, C = 0.004064 (k in W m-1 K-1)
+A = 0.129, B = 1.34, C = 0.028 (k in Btu in. h-1 ft-2 °F-1)
+Equation (4-15) was derived from measurements made by
+several researchers on a variety of species. Table 4-7 provides average approximate conductivity values for selected
+wood species, based on Equation (4-15). However, actual
+conductivity may vary as much as 20% from the tabulated
+values.
+Although thermal conductivity measurements have been
+made at moisture content values above 25%, measurements
+have been few in number and generally lacking in accuracy.
+Therefore, we do not provide values for moisture content
+values above 25%.
+The effect of temperature on thermal conductivity is relatively minor: conductivity increases about 2% to 3% per
+10 °C (1% to 2% per 10 °F).
+Heat Capacity
+Heat capacity is defined as the amount of energy needed to
+increase one unit of mass (kg or lb) one unit in temperature
+(K or °F). The heat capacity of wood depends on the temperature and moisture content of the wood but is practically
+independent of density or species. Heat capacity of dry
+wood cp0 (kJ kg-1 K-1, Btu lb-1 °F-1) is approximately related to temperature T (K, °F) by
+cp0 = 0.1031 + 0.003867T (SI) (4-16a)
+Chapter 4 Moisture Relations and Physical Properties of Wood
+4-11
+Chapter 4 Moisture Relations and Physical Properties of Wood
+Table 4-6a. Density of wood as a function of specific gravity and moisture content (SI)
+Moisture
+content
+of wood
+(%)
+Density (kg m-3) when the specific gravity Gx is
+0.30 0.32 0.34 0.36 0.38 0.40 0.42 0.44 0.46 0.48 0.50 0.52 0.54 0.56 0.58 0.60 0.62 0.64 0.66 0.68 0.70
+0 300 320 340 360 380 400 420 440 460 480 500 520 540 560 580 600 620 640 660 680 700
+4 312 333 354 374 395 416 437 458 478 499 520 541 562 582 603 624 645 666 686 707 728
+8 324 346 367 389 410 432 454 475 497 518 540 562 583 605 626 648 670 691 713 734 756
+12 336 358 381 403 426 448 470 493 515 538 560 582 605 627 650 672 694 717 739 762 784
+16 348 371 394 418 441 464 487 510 534 557 580 603 626 650 673 696 719 742 766 789 812
+20 360 384 408 432 456 480 504 528 552 576 600 624 648 672 696 720 744 768 792 816 840
+24 372 397 422 446 471 496 521 546 570 595 620 645 670 694 719 744 769 794 818 843 868
+28 384 410 435 461 486 512 538 563 589 614 640 666 691 717 742 768 794 819 845 870 896
+32 396 422 449 475 502 528 554 581 607 634 660 686 713 739 766 792 818 845 871 898 924
+36 408 435 462 490 517 544 571 598 626 653 680 707 734 762 789 816 843 870 898 925 952
+40 420 448 476 504 532 560 588 616 644 672 700 728 756 784 812 840 868 896 924 952 980
+44 432 461 490 518 547 576 605 634 662 691 720 749 778 806 835 864 893 922 950 979 1,008
+48 444 474 503 533 562 592 622 651 681 710 740 770 799 829 858 888 918 947 977 1,006 1,036
+52 456 486 517 547 578 608 638 669 699 730 760 790 821 851 882 912 942 973 1,003 1,034 1,064
+56 468 499 530 562 593 624 655 686 718 749 780 811 842 874 905 936 967 998 1,030 1,061 1,092
+60 480 512 544 576 608 640 672 704 736 768 800 832 864 896 928 960 992 1,024 1,056 1,088 1,120
+64 492 525 558 590 623 656 689 722 754 787 820 853 886 918 951 984 1,017 1,050 1,082 1,115 1,148
+68 504 538 571 605 638 672 706 739 773 806 840 874 907 941 974 1,008 1,042 1,075 1,109 1,142 1,176
+72 516 550 585 619 654 688 722 757 791 826 860 894 929 963 998 1,032 1,066 1,101 1,135 1,170 1,204
+76 528 563 598 634 669 704 739 774 810 845 880 915 950 986 1,021 1,056 1,091 1,126 1,162 1,197
+80 540 576 612 648 684 720 756 792 828 864 900 936 972 1,008 1,044 1,080 1,116 1,152 1,188
+84 552 589 626 662 699 736 773 810 846 883 920 957 994 1,030 1,067 1,104 1,141 1,178
+88 564 602 639 677 714 752 790 827 865 902 940 978 1,015 1,053 1,090 1,128 1,166
+92 576 614 653 691 730 768 806 845 883 922 960 998 1,037 1,075 1,114 1,152 1,190
+96 588 627 666 706 745 784 823 862 902 941 980 1,019 1,058 1,098 1,137 1,176
+100 600 640 680 720 760 800 840 880 920 960 l,000 1,040 1,080 1,120 1,160 1,200
+110 630 672 714 756 798 840 832 924 966 1,008 1,050 1,092 1,134 1,176 1,218
+120 660 704 748 792 836 880 924 968 1,012 1,056 1,100 1,144 1,188 1,232
+130 690 736 782 828 874 920 966 1,012 1,058 1,104 1,150 1,196 1,242 1,288
+140 720 768 816 864 912 960 1,008 1,056 1,104 1,152 1,200 1,248 1,296
+150 750 800 850 900 950 1,000 1,050 1,100 1,150 1,200 1,250 1,300 1,350
+cp0 = 0.2605 + 0.0005132T (I-P) (4-16b)
+The heat capacity of wood that contains water is greater
+than that of dry wood. Below fiber saturation, it is the sum
+of the heat capacity of the dry wood and that of water (cpw)
+and an additional adjustment factor Ac that accounts for the
+additional energy in the wood-water bond:
+cp,x = (cp0 + cpw x/100)/(1 + x/100) + Ac (4-17)
+where x is moisture content (%). The heat capacity of water
+is about 4.18 kJ kg-1 K-1 (1.00 Btu lb-1 °F-1). The adjustment factor can be calculated from
+Ac = x(b1 + b2T + b3x) (4-18)
+with
+b1 = -0.06191, b2 = 2.36 × 10-4, b3 = -1.33 × 10-4 (T in K)
+b1 = -4.23 × 10-4, b2 = 3.12 × 10-5, b3 = -3.17 × 10-5 (T in °F)
+These formulas are valid for wood below fiber saturation
+at temperatures between 280 K (44 °F) and 420 K
+(296 °F). Representative values for heat capacity can be
+found in Table 4-8. The moisture content above fiber saturation contributes to heat capacity according to the simple rule
+of mixtures.
+Thermal Diffusivity
+Thermal diffusivity is a measure of how quickly a material
+can absorb heat from its surroundings. It is defined as the
+ratio of thermal conductivity to the product of density and
+heat capacity. Therefore, conclusions regarding its variation
+with temperature and density are often based on calculating
+the effect of these variables on heat capacity and thermal
+conductivity. Because of the low thermal conductivity and
+moderate density and heat capacity of wood, the thermal diffusivity of wood is much lower than that of other structural
+materials, such as metal, brick, and stone. A typical
+value for wood is 1.6 × 10-7 m2 s-1 (0.00025 in2 s-1),
+compared with 1 × 10-5 m2 s-1 (0.02 in2 s-1) for steel and
+1× 10-6 m2 s-1 (0.002 in2 s-1) for stone and mineral wool.
+For this reason, wood does not feel extremely hot or cold to
+the touch as do some other materials.
+4-12
+Table 4-6b. Density of wood as a function of specific gravity and moisture content (I-P)
+Moisture
+content
+of wood
+(%)
+Density (lb ft-3) when the specific gravity Gx is
+0.30 0.32 0.34 0.36 0.38 0.40 0.42 0.44 0.46 0.48 0.50 0.52 0.54 0.56 0.58 0.60 0.62 0.64 0.66 0.68 0.70
+0 18.7 20.0 21.2 22.5 23.7 25.0 26.2 27.5 28.7 30.0 31.2 32.4 33.7 34.9 36.2 37.4 38.7 39.9 41.2 42.4 43.7
+4 19.5 20.8 22.1 23.4 24.7 26.0 27.2 28.6 29.8 31.2 32.4 33.7 35.0 36.6 37.6 38.9 40.2 41.5 42.8 44.1 45.4
+8 20.2 21.6 22.9 24.3 25.6 27.0 28.3 29.6 31.0 32.3 33.7 35.0 36.4 37.7 39.1 40.4 41.8 43.1 44.5 45.8 47.2
+12 21.0 22.4 23.8 25.2 26.6 28.0 29.4 30.8 32.2 33.5 34.9 36.3 37.7 39.1 40.5 41.9 43.3 44.7 46.1 47.5 48.9
+16 21.7 23.2 24.6 26.0 27.5 29.0 30.4 31.8 33.3 34.7 36.2 37.6 39.1 40.5 42.0 43.4 44.9 46.3 47.8 49.2 50.7
+20 22.5 24.0 25.5 27.0 28.4 30.0 31.4 32.9 34.4 35.9 37.4 38.9 40.4 41.9 43.4 44.9 46.4 47.9 49.4 50.9 52.4
+24 23.2 24.8 26.3 27.8 29.4 31.0 32.5 34.0 35.6 37.1 38.7 40.2 41.8 43.3 44.9 46.4 48.0 49.5 51.1 52.6 54.2
+28 24.0 25.6 27.2 28.8 30.4 31.9 33.5 35.1 36.7 38.3 39.9 41.5 43.1 44.7 46.3 47.9 49.5 51.1 52.7 54.3 55.9
+32 24.7 26.4 28.0 29.7 31.3 32.9 34.6 36.2 37.9 39.5 41.2 42.8 44.5 46.1 47.8 49.4 51.1 52.7 54.4 56.0 57.7
+36 25.5 27.2 28.9 30.6 32.2 33.9 35.6 37.3 39.0 40.7 42.4 44.1 45.8 47.5 49.2 50.9 52.6 54.3 56.0 57.7 59.4
+40 26.2 28.0 29.7 31.4 33.2 34.9 36.7 38.4 40.2 41.9 43.7 45.4 47.2 48.9 50.7 52.4 54.2 55.9 57.7 59.4 61.2
+44 27.0 28.8 30.6 32.3 34.1 35.9 37.7 39.5 41.3 43.1 44.9 46.7 48.5 50.3 52.1 53.9 55.7 57.5 59.3 61.1 62.9
+48 27.7 29.6 31.4 33.2 35.1 36.9 38.8 40.6 42.5 44.3 46.2 48.0 49.9 51.7 53.6 55.4 57.3 59.1 61.0 62.8 64.6
+52 28.5 30.4 32.2 34.1 36.0 37.9 39.8 41.7 43.6 45.5 47.4 49.3 51.2 53.1 55.0 56.9 58.8 60.7 62.6 64.5 66.4
+56 29.2 31.2 33.1 35.0 37.0 38.9 40.9 42.8 44.8 46.7 48.7 50.6 52.6 54.5 56.5 58.4 60.4 62.3 64.2 66.2 68.1
+60 30.0 31.9 33.9 35.9 37.9 39.9 41.9 43.9 45.9 47.9 49.9 51.9 53.9 55.9 57.9 59.9 61.9 63.9 65.9 67.9 69.9
+64 30.7 32.7 34.8 36.8 38.9 40.9 43.0 45.0 47.1 49.1 51.2 53.2 55.3 57.3 59.4 61.4 63.4 65.5 67.5 69.6 71.6
+68 31.4 33.5 35.6 37.7 39.8 41.9 44.0 46.1 48.2 50.3 52.4 54.5 56.6 58.7 60.8 62.9 65.0 67.1 69.2 71.3 73.4
+72 32.2 34.3 36.5 38.6 40.8 42.9 45.1 47.2 49.4 51.5 53.7 55.8 58.0 60.1 62.3 64.4 66.5 68.7 70.8 73.0 75.1
+76 32.9 35.1 37.3 39.5 41.7 43.9 46.1 48.3 50.5 52.7 54.9 57.1 59.3 61.5 63.7 65.9 68.1 70.3 72.5
+80 33.7 35.9 38.2 40.4 42.7 44.9 47.2 49.4 51.7 53.9 56.2 58.4 60.7 62.9 65.1 67.4 69.6 71.9 74.1
+84 34.4 36.7 39.0 41.3 43.6 45.9 48.2 50.5 52.8 55.1 57.4 59.7 62.0 64.3 66.6 68.9 71.2 73.5
+88 35.2 37.5 39.9 42.2 44.6 46.9 49.3 51.6 54.0 56.3 58.7 61.0 63.3 65.7 68.0 70.4 72.7
+92 35.9 38.3 40.7 43.1 45.5 47.9 50.3 52.7 55.1 57.5 59.9 62.3 64.7 67.1 69.5 71.9 74.3
+96 36.7 39.1 41.6 44.0 46.5 48.9 51.4 53.8 56.3 58.7 61.2 63.6 66.0 68.5 70.9 73.4
+100 37.4 39.9 42.4 44.9 47.4 49.9 52.4 54.9 57.4 59.9 62.4 64.9 67.4 69.9 72.4 74.9
+110 39.3 41.9 44.6 47.2 49.8 52.4 55.0 57.7 60.3 62.9 65.5 68.1 70.8 73.4 76.0
+120 41.2 43.9 46.7 49.4 52.2 54.9 57.7 60.4 63.1 65.9 68.6 71.4 74.1 76.9
+130 43.1 45.9 48.8 51.7 54.5 57.4 60.3 63.1 66.0 68.9 71.8 74.6 77.5 80.4
+140 44.9 47.9 50.9 53.9 56.9 59.9 62.9 65.9 68.9 71.9 74.9 77.9 80.9
+150 46.8 49.9 53.0 56.2 59.3 62.4 65.5 68.6 71.8 74.9 78.0 81.1 84.2
+General Technical Report FPL-GTR-190
+4-13
+Chapter 4 Moisture Relations and Physical Properties of Wood
+Table 4-7. Thermal conductivity of selected hardwoods and softwoodsa
+Specific
+gravity
+Conductivity
+(W m-1 K-1 (Btu in. h-1 ft-2 °F-1)) Resistivity (K m W-1 (h ft2 °F Btu-1 in. -1))
+Species Ovendry 12% MC Ovendry 12% MC
+Hardwoods
+Ash
+Black 0.53 0.12 (0.84) 0.15 (1.0) 8.2 (1.2) 6.8 (0.98)
+White 0.63 0.14 (0.98) 0.17 (1.2) 7.1 (1.0) 5.8 (0.84)
+Aspen
+Big tooth 0.41 0.10 (0.68) 0.12 (0.82) 10 (1.5) 8.5 (1.2)
+Quaking 0.40 0.10 (0.67) 0.12 (0.80) 10 (1.5) 8.6 (1.2)
+Basswood, American 0.38 0.092 (0.64) 0.11 (0.77) 11 (1.6) 9.0 (1.3)
+Beech, American 0.68 0.15 (1.0) 0.18 (1.3) 6.6 (0.96) 5.4 (0.78)
+Birch
+Sweet 0.71 0.16 (1.1) 0.19 (1.3) 6.4 (0.92) 5.2 (0.76)
+Yellow 0.66 0.15 (1.0) 0.18 (1.2) 6.8 (0.98) 5.6 (0.81)
+Cherry, black 0.53 0.12 (0.84) 0.15 (1.0) 8.2 (1.2) 6.8 (0.98)
+Chestnut, American 0.45 0.11 (0.73) 0.13 (0.89) 9.4 (1.4) 7.8 (1.1)
+Cottonwood
+Black 0.35 0.087 (0.60) 0.10 (0.72) 12 (1.7) 9.6 (1.4)
+Eastern 0.43 0.10 (0.71) 0.12 (0.85) 9.8 (1.4) 8.1 (1.2)
+Elm
+American 0.54 0.12 (0.86) 0.15 (1.0) 8.1 (1.2) 6.7 (0.96)
+Rock 0.67 0.15 (1.0) 0.18 (1.3) 6.7 (0.97) 5.5 (0.80)
+Slippery 0.56 0.13 (0.88) 0.15 (1.1) 7.9 (1.1) 6.5 (0.93)
+Hackberry 0.57 0.13 (0.90) 0.16 (1.1) 7.7 (1.1) 6.4 (0.92)
+Hickory, pecan 0.69 0.15 (1.1) 0.19 (1.3) 6.6 (0.95) 5.4 (0.77)
+Hickory, true
+Mockernut 0.78 0.17 (1.2) 0.21 (1.4) 5.9 (0.85) 4.8 (0.69)
+Shagbark 0.77 0.17 (1.2) 0.21 (1.4) 5.9 (0.86) 4.9 (0.70)
+Magnolia, southern 0.52 0.12 (0.83) 0.14 (1.0) 8.4 (1.2) 6.9 (1.0)
+Maple
+Black 0.60 0.14 (0.94) 0.16 (1.1) 7.4 (1.1) 6.1 (0.88)
+Red 0.56 0.13 (0.88) 0.15 (1.1) 7.9 (1.1) 6.5 (0.93)
+Silver 0.50 0.12 (0.80) 0.14 (0.97) 8.6 (1.2) 7.1 (1.0)
+Sugar 0.66 0.15 (1.0) 0.18 (1.2) 6.8 (0.98) 5.6 (0.81)
+Oak, red
+Black 0.66 0.15 (1.0) 0.18 (1.2) 6.8 (0.98) 5.6 (0.81)
+Northern red 0.65 0.14 (1.0) 0.18 (1.2) 6.9 (1.0) 5.7 (0.82)
+Southern red 0.62 0.14 (0.96) 0.17 (1.2) 7.2 (1.0) 5.9 (0.85)
+Oak, white
+Bur 0.66 0.15 (1.0) 0.18 (1.2) 6.8 (0.98) 5.6 (0.81)
+White 0.72 0.16 (1.1) 0.19 (1.3) 6.3 (0.91) 5.2 (0.75)
+Sweetgum 0.55 0.13 (0.87 0.15 (1.1) 8.0 (1.2) 6.6 (0.95)
+Sycamore, American 0.54 0.12 (0.86) 0.15 (1.0) 8.1 (1.2) 6.7 (0.96)
+Tupelo
+Black 0.54 0.12 (0.86) 0.15 (1.0) 8.1 (1.2) 6.7 (0.96)
+Water 0.53 0.12 (0.84) 0.15 (1.0) 8.2 (1.2) 6.8 (0.98)
+Yellow-poplar 0.46 0.11 (0.75) 0.13 (0.90) 9.3 (1.3) 7.7 (1.1)
+4-14
+Table 4-7. Thermal conductivity of selected hardwoods and softwoodsa-con.
+Specific
+gravity
+Conductivity
+(W m-1 K-1 (Btu in. h-1 ft-2 °F-1)) Resistivity (K m W-1 (h ft2 °F Btu-1 in. -1))
+Species Ovendry 12% MC Ovendry 12% MC
+Softwoods
+Baldcypress 0.47 0.11 (0.76) 0.13 (0.92) 9.1 (1.3) 7.5 (1.1)
+Cedar
+Atlantic white 0.34 0.085 (0.59) 0.10 (0.70) 12 (1.7) 9.9 (1.4)
+Eastern red 0.48 0.11 (0.77) 0.14 (0.94) 8.9 (1.3) 7.4 (1.1)
+Northern white 0.31 0.079 (0.55) 0.094 (0.65) 13 (1.8) 11 (1.5)
+Port-Orford 0.43 0.10 (0.71) 0.12 (0.85) 9.8 (1.4) 8.1 (1.2)
+Western red 0.33 0.083 (0.57) 0.10 (0.68) 12 (1.7) 10 (1.5)
+Yellow 0.46 0.11 (0.75) 0.13 (0.90) 9.3 (1.3) 7.7 (1.1)
+Douglas-fir
+Coast 0.51 0.12 (0.82) 0.14 (0.99) 8.5 (1.2) 7.0 (1.0)
+Interior north 0.50 0.12 (0.80) 0.14 (0.97) 8.6 (1.2) 7.1 (1.0)
+Interior west 0.52 0.12 (0.83) 0.14 (1.0) 8.4 (1.2) 6.9 1.0)
+Fir
+Balsam 0.37 0.090 (0.63) 0.11 (0.75) 11 (1.6) 9.2 (1.3)
+White 0.41 0.10 (0.68) 0.12 (0.82) 10 (1.5) 8.5 (1.2)
+Hemlock
+Eastern 0.42 0.10 (0.69) 0.12 (0.84) 10 (1.4) 8.3 (1.2)
+Western 0.48 0.11 (0.77) 0.14 (0.94) 8.9 (1.3) 7.4 (1.1)
+Larch, western 0.56 0.13 (0.88) 0.15 (1.1) 7.9 (1.1) 6.5 (0.93)
+Pine
+Eastern white 0.37 0.090 (0.63) 0.11 (0.75) 11 (1.6) 9.2 (1.3)
+Jack 0.45 0.11 (0.73) 0.13 (0.89) 9.4 (1.4) 7.8 (1.1)
+Loblolly 0.54 0.12 (0.86) 0.15 (1.0) 8.1 (1.2) 6.7 (0.96)
+Lodgepole 0.43 0.10 (0.71) 0.12 (0.85) 9.8 (1.4) 8.1 (1.2)
+Longleaf 0.62 0.14 (0.96) 0.17 (1.2) 7.2 (1.0) 5.9 (0.85)
+Pitch 0.53 0.12 (0.84) 0.15 (1.0) 8.2 (1.2) 6.8 (0.98)
+Ponderosa 0.42 0.10 (0.69) 0.12 (0.84) 10 (1.4) 8.3 (1.2)
+Red 0.46 0.11 (0.75) 0.13 (0.90) 9.3 (1.3) 7.7 (1.1)
+Shortleaf 0.54 0.12 (0.86) 0.15 (1.0) 8.1 (1.2) 6.7 (0.96)
+Slash 0.61 0.14 (0.95) 0.17 (1.2) 7.3 (1.1) 6.0 (0.86)
+Sugar 0.37 0.090 (0.63) 0.11 (0.75) 11 (1.6) 9.2 (1.3)
+Western white 0.40 0.10 (0.67) 0.12 (0.80) 10 (1.5) 8.6 (1.2)
+Redwood
+Old growth 0.41 0.10 (0.68) 0.12 (0.82) 10 (1.5) 8.5 (1.2)
+Young growth 0.37 0.090 (0.63) 0.11 (0.75) 11 (1.6) 9.2 (1.3)
+Spruce
+Black 0.43 0.10 (0.71) 0.12 (0.85) 9.8 (1.4) 8.1 (1.2)
+Engelmann 0.37 0.090 (0.63) 0.11 (0.75) 11 (1.6) 9.2 (1.3)
+Red 0.42 0.10 (0.69) 0.12 (0.84) 10 (1.4) 8.3 (1.2)
+Sitka 0.42 0.10 (0.69) 0.12 (0.84) 10 (1.4) 8.3 (1.2)
+White 0.37 0.090 (0.63) 0.11 (0.75) 11 (1.6) 9.2 (1.3)
+aValues in this table are approximate and should be used with caution; actual conductivities may vary by as
+much as 20%. The specific gravities also do not represent species averages.
+Coefficient of Thermal Expansion
+The coefficient of thermal expansion is a measure of the
+relative change of dimension caused by temperature change.
+The thermal expansion coefficients of completely dry wood
+are positive in all directions; that is, wood expands on heating and contracts on cooling. Limited research has been carried out to explore the influence of wood property variability
+on thermal expansion. The thermal expansion coefficient of
+ovendry wood parallel to the grain appears to be independent of specific gravity and species. In tests of both
+hardwoods and softwoods, the parallel-to-grain values
+have ranged from about 3.1 to 4.5 × 10-6 K-1
+(1.7 to 2.5 × 10-6 °F-1).
+Thermal expansion coefficients across the grain (radial and
+tangential) are proportional to specific gravity. These coefficients range from about 5 to more than 10 times greater than
+the parallel-to-grain coefficients and are of more practical
+interest. The radial and tangential thermal expansion coefficients for ovendry wood, ar and at, can be approximated
+General Technical Report FPL-GTR-190
+by the following equations, over an ovendry specific gravity
+range of about 0.1 to 0.8:
+ar = (32.4G0 + 9.9)10-6 K-1 (4-19a)
+ar = (18G0 + 5.5)10-6 °F-1 (4-19b)
+at = (32.4G0 + 18.4)10-6 K-1 (4-20a)
+at = (18G0 + 10.2)10-6 °F-1 (4-20b)
+Thermal expansion coefficients can be considered independent of temperature over the temperature range of -51 to
+54 °C (-60 to 130 °F).
+Wood that contains moisture reacts differently to varying
+temperature than does nearly ovendry wood. When moist
+wood is heated, it tends to expand because of normal thermal expansion and to shrink because of loss in moisture
+content. Unless the wood is very dry initially (perhaps 3%
+or 4% moisture content or less), shrinkage caused by moisture loss on heating will be greater than thermal expansion,
+so the net dimensional change on heating will be negative.
+Wood at intermediate moisture levels (about 8% to 20%)
+will expand when first heated, and then gradually shrink to
+a volume smaller than the initial volume as the wood gradually loses water while in the heated condition.
+Even in the longitudinal (grain) direction, where dimensional change caused by moisture change is very small, such
+changes will still predominate over corresponding dimensional changes as a result of thermal expansion unless the
+wood is very dry initially. For wood at usual moisture levels, net dimensional changes will generally be negative after
+prolonged heating.
+Electrical Properties
+The electrical properties of wood depend strongly on moisture content, exhibiting changes that span almost 10 orders
+of magnitude over the range of possible moisture contents.
+Because electrical properties of wood undergo large changes
+with relatively small changes in moisture content below
+fiber saturation, electrical measurements have been used to
+accurately predict the moisture content of wood.
+4-15
+Chapter 4 Moisture Relations and Physical Properties of Wood
+The literature on electrical properties of wood has been divided into measurements of either dielectric constant or resistivity. In general, dielectric constant data were measured
+with alternating current (AC), whereas resistivity measurements used direct current (DC). In a way, this is a false
+dichotomy because the dielectric constant can be measured
+using DC signals for some materials, and the complex resistivity, which is related to impedance, can be measured from
+AC signals. Furthermore, given the AC dielectric constant,
+one can calculate the AC resistivity. The remainder of this
+section will review AC and DC measurements of the electrical properties of wood, with emphasis on clarifying the
+nomenclature that is often used in the wood literature.
+DC Electrical Properties
+Resistivity
+When an electric potential or voltage V is applied between
+two points on a conducting solid, the amount of current I
+that will flow between those points depends on the resistance R of the material. This measured resistance depends
+on the geometry of the specimen:
+A LR ρ= (4-21)
+where L is the distance the current travels, A is the crosssectional area through which the current travels, and ρ is
+a materials parameter, the resistivity with units of Ω m. In
+some situations, it is more convenient to talk about the conductivity σ, which is the reciprocal of the resistivity
+( ρσ 1≡ ).
+The resistivity of wood is a strong function of moisture content. For example, Figure 4-7 illustrates this dependence for
+slash pine (Pinus elliottii) in the longitudinal direction between 8% MC and 180% MC (Stamm 1929, 1964). As the
+moisture content of wood increases from near zero to fiber
+saturation, resistivity can decrease by a factor of over 1010
+(in comparison, the circumference of the earth at the equator is 4 × 1010 mm). Resistivity is about 1015-1016 Ω m for
+ovendry wood and 103-104 Ω m for wood at fiber saturation
+(Stamm 1964). As the moisture content increases from fiber
+saturation to complete saturation of the wood structure, the
+further decrease in resistivity is smaller, generally amounting to less than a hundredfold.
+The conductivity of wood also depends on temperature,
+grain angle, and the amount of water-soluble salts. Unlike
+conductivity of metals, the conductivity of wood increases
+with increasing temperature. Conductivity is greater along
+the grain than across the grain and slightly greater in the
+radial direction than in the tangential direction. Relative
+conductivity values in the longitudinal, radial, and tangential directions are related by the approximate ratio of
+1.0:0.55:0.50. When wood contains abnormal quantities of
+water-soluble salts or other electrolytic substances, such as
+preservative or fire-retardant treatment, or is in prolonged
+Table 4-8. Heat capacity of solid wood at selected
+temperatures and moisture contents
+Temperature Heat capacity (kJ kg-1 K-1 (Btu lb-1 °F-1))
+(K) (°C (°F)) Ovendry 5% MC 12% MC 20% MC
+280 7 (44) 1.2 (0.28) 1.3 (0.32) 1.5 (0.37) 1.7 (0.41)
+290 17 (62) 1.2 (0.29) 1.4 (0.33) 1.6 (0.38) 1.8 (0.43)
+300 27 (80) 1.3 (0.30) 1.4 (0.34) 1.7 (0.40) 1.9 (0.45)
+320 47 (116) 1.3 (0.32) 1.5 (0.37) 1.8 (0.43) 2.0 (0.49)
+340 67 (152) 1.4 (0.34) 1.6 (0.39) 1.9 (0.46) 2.2 (0.52)
+360 87 (188) 1.5 (0.36) 1.7 (0.41) 2.0 (0.49) 2.3 (0.56)
+4-16
+contact with seawater, electrical conductivity can be substantially increased.
+DC Dielectric Constant
+When an electric potential or voltage V is applied to a perfectly insulating material ( 0≡σ ) between two parallel
+plates, no current will flow and instead charge will build up
+on the plates. The amount of charge per unit voltage that
+these plates can store is called the capacitance C and
+is given by
+(4-22)
+where A and L have the same meanings as in
+Equation (4-21), ε is a unitless materials parameter,
+the DC dielectric constant, and ε0 is a universal constant, the
+permittivity of a vacuum, and is 8.854 × 10-12 F m-1. The
+DC dielectric constant is the ratio of the dielectric permittivity of the material to ε0; it is essentially a measure of the
+potential energy per unit volume stored in the material in the
+form of electric polarization when the material is in a given
+electric field. As measured by practical tests, the dielectric
+constant of a material is the ratio of the capacitance of a capacitor using the material as the dielectric to the capacitance
+of the same capacitor using free space as the dielectric.
+Because wood is not a perfect insulator ( 0≠σ at any moisture content), the DC dielectric constant of wood is not well
+defined and theoretically cannot be measured with DC techniques. Nevertheless, researchers have tried to measure this
+quantity and have found that it is difficult to measure and
+depends on experimental technique (Skaar 1988).
+AC Electrical Properties
+AC Dielectric Constant and Related Properties
+When an alternating current is applied, the dielectric
+constant can no longer be represented by a scalar, because
+response will be out of phase with the original signal. The
+AC dielectric constant is a complex number "' εεε j+=
+with real component 'ε , imaginary component "ε , and
+1-≡j Instead of presenting the real and imaginary com- ponents of the dielectric constant, it is customary in the
+wood literature to present the real component of the dielectric constant 'ε and the loss tangent, )tan(δ , defined by
+'
+")tan( ε εδ = (4-23)
+It is also customary in the wood literature to refer to the real
+component of the dielectric constant 'ε as simply "the dielectric constant" and to represent this with ε . This notation
+should not be encouraged, because it is ambiguous and also
+implies that the dielectric constant is not a complex number.
+Both 'ε and )tan(δ depend non-linearly on the frequency at
+which they are measured. The frequency dependence is related to the mechanism of conduction in wood, and this relationship between the frequency dependence and mechanism
+has been explored in the literature (James 1975, Zelinka and
+others 2007).
+At a given frequency, 'ε increases with temperature and
+moisture content. At 20 Hz, 'ε may range from about 4
+for dry wood to near 1 × 106 for wet wood; at 1 kHz, from
+about 4 when dry to about 5,000 when wet; and at 1 MHz,
+from about 3 when dry to about 100 when wet. 'ε is larger
+for polarization parallel to the grain than across the grain.
+Another parameter, the dielectric power factor pf given by
+( ) ( )22p "'
+")sin(
+εε
+εδ
++
+==f (4-24)
+is used in dielectric moisture meters (James 1988). The
+power factor of wood is large compared with that of inert
+plastic insulating materials, but some materials, for example
+some formulations of rubber, have equally large power factors. The power factor of wood varies from about 0.01 for
+dry, low-density woods to as large as 0.95 for dense woods
+at high moisture levels. The power factor is usually, but not
+always, greater for electric fields along the grain than across
+the grain.
+Because the power factor of wood is derived from 'ε and "ε
+it is also affected by frequency, moisture content, and temperature. These factors interact in such a way to cause pf
+to have maximum and minimum values at various
+combinations of these factors.
+Impedance
+Just as the AC dielectric constant was represented by a
+complex number to account for both magnitude and phase,
+the "resistance" of an AC circuit is also represented by a
+complex number called impedance, "' jZZZ += with real
+Figure 4-7. Resistivity of slash pine (Pinus elliottii)
+as a function of moisture content.
+General Technical Report FPL-GTR-190
+,
+jZ
+.
+watch period 4th line!!
+4-17
+Chapter 4 Moisture Relations and Physical Properties of Wood
+component 'Z and imaginary component "Z . Impedance is
+related to the AC dielectric constant through
+(4-25)
+where ω is the angular frequency and Cc is a geometrical
+factor needed for unit analysis and represents the capacitance of an empty cell (that is, LAC oc ε= ) (MacDonald
+and Johnson 1987). In short, this transforms the real component of the dielectric constant to the imaginary component
+of the impedance, and vice versa.
+Recently, measurements of the impedance of wood have
+been used to determine moisture gradients (Tiitta and Olkkonen 2002), better understand the mechanism of electrical
+conduction in wood (Zelinka and others 2007), and quantify
+the corrosion of metals embedded in wood (Zelinka and
+Rammer 2005).
+Friction Properties
+Figure 4-8 depicts the forces acting on an object. The
+weight of the object FW (the gravitational force acting
+downward) is opposed by the normal force FN exerted by
+the surface supporting it. The applied horizontal force F
+is opposed by the friction force Ff parallel to the surface.
+In the case in which the object is not moving but is on the
+verge of sliding across the surface, the coefficient of static
+friction sμ is defined as
+N
+fs (max) F F=μ (4-26)
+where Ff(max) is the magnitude of the maximum friction
+force and FN is the magnitude of the normal force. In the
+case in which the object is sliding across the surface at constant speed, the coefficient of kinetic friction kμ is defined
+as
+N
+fk F F=μ (4-27)
+These coefficients depend on the moisture content of the
+wood, the roughness of the wood surface, and the characteristics of the opposing surface. They vary little with species
+except for woods that contain abundant oily or waxy extractives, such as lignumvitae (see Chap. 2). The coefficients of
+friction are an important safety consideration in applications
+such as wood decks, stairs, and sloped surfaces such as roof
+sheathing.
+On most materials, the coefficients of friction for wood increase continuously as the moisture content of the wood increases from ovendry to fiber saturation, then remain about
+constant as the moisture content increases further until considerable free water is present. When the surface is flooded
+with water, the coefficients of friction decrease.
+Coefficients of static friction are generally greater than those
+of kinetic friction, and the latter depend somewhat on the
+speed of sliding. Coefficients of kinetic friction vary only
+slightly with speed when the wood moisture content is less
+than about 20%; at high moisture content, the coefficient of
+kinetic friction decreases substantially as speed increases.
+Coefficients of kinetic friction for smooth, dry wood against
+hard, smooth surfaces commonly range from 0.3 to 0.5;
+at intermediate moisture content, 0.5 to 0.7; and near fiber
+saturation, 0.7 to 0.9.
+Nuclear Radiation Properties
+Several techniques using high-energy radiation can be used
+to measure density and moisture content of wood. Radiation
+passing through matter is reduced in intensity according to
+the relationship
+)exp(0 zII μ-= (4-28)
+where I is the reduced intensity of the beam at depth z in the
+material, I0 is the incident intensity of a beam of radiation,
+and μ, the linear absorption coefficient of the material, is the
+fraction of energy removed from the beam per unit depth
+traversed. When density is a factor of interest in energy absorption, the linear absorption coefficient is divided by the
+density of the material to derive the mass absorption coefficient. The absorption coefficient of a material varies with
+the type and energy of radiation.
+The linear absorption coefficient of wood for g radiation is
+known to vary directly with moisture content and density
+and inversely with the g ray energy. As an example, the irradiation of ovendry yellow-poplar with 0.047-MeV g rays
+yields linear absorption coefficients ranging from about
+0.065 to about 0.11 cm-1 over the ovendry specific gravity
+range of about 0.33 to 0.62. An increase in the linear absorption coefficient of about 0.01 cm-1 occurs with an increase
+in moisture content from ovendry to fiber saturation. Absorption of g rays in wood is of practical interest, in part for
+measuring the density of wood.
+The interaction of wood with b radiation is similar in
+character to that with g radiation, except that the absorption
+coefficients are larger. The linear absorption coefficient of
+FW
+FN
+FFf
+Figure 4-8. Diagram depicting the forces acting on an
+object in contact with a surface.
+4-18
+wood with a specific gravity of 0.5 for a 0.5-MeV b ray is
+about 3.0 cm-1. The result of the larger coefficient is that
+even very thin wood products are virtually opaque to b rays.
+The interaction of neutrons with wood is of interest because
+wood and the water it contains are compounds of hydrogen,
+and hydrogen has a relatively large probability of interaction
+with neutrons. Higher energy neutrons lose energy much
+more quickly through interaction with hydrogen than with
+other elements found in wood. Lower energy neutrons that
+result from this interaction are thus a measure of the hydrogen density of the specimen. Measurement of the lower
+energy level neutrons can be related to the moisture content
+of the wood.
+When neutrons interact with wood, an additional result is
+the production of radioactive isotopes of the elements present in the wood. The radioisotopes produced can be identified by the type, energy, and half-life of their emissions, and
+the specific activity of each indicates the amount of isotope
+present. This procedure, called neutron activation analysis,
+provides a sensitive nondestructive method of analysis for
+trace elements.
+Discussions in this section assume moderate radiation levels
+that leave the wood physically unchanged. However, very
+large doses of g rays or neutrons can cause substantial degradation of wood. The effect of large radiation doses on
+mechanical properties of wood is discussed in Chapter 5.
+Literature Cited
+AF&PA. 2005. National design specification for wood
+construction. ANSI/AF&PA NDS-2005. Washington, DC:
+American Forest & Paper Association, American Wood
+Council. 174 p.
+ASTM. 2007. Standard test methods for small clear specimens of timber. ASTM Standard D143, 1994 (2007). West
+Conshohocken, PA: ASTM International.
+Comstock, G.L. 1965. Shrinkage of coast-type Douglas-fir
+and old-growth redwood boards. Res. Pap. FPL 30. Madison, WI: U.S. Department of Agriculture, Forest Service,
+Forest Products Laboratory. 20 p.
+IEA. 1991. Catalogue of material properties. In: International Energy Agency, Annex XIV: Condensation and Energy.
+Leuven, Belgium: Katholieke Universiteit Leuven, Laboratory for Building Physics. Report Annex XIV, Vol. 3.
+ISO. 2002. Hygrothermal performance of building materials and products-determination of water absorption coefficient by partial immersion. International Standard ISO
+15148:2002. Geneva, Switzerland: International Organization for Standardization.
+James, W.L. 1975. Dielectric properties of wood and hardboard: variation with temperature, frequency, moisture
+content, and grain orientation. Res. Pap. FPL-RP-245.
+Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 32 p.
+James, W.L. 1988. Electric moisture meters for wood. Gen.
+Tech. Rep. FPL-GTR-6. Madison, WI: U.S. Department of
+Agriculture, Forest Service, Forest Products Laboratory.
+17 p.
+Kumaran, M.K. 1999. Moisture diffusivity of building materials from water absorption measurements. Journal of Thermal Envelope and Building Science. 22: 349-355.
+Kumaran, M.K. 2002. A thermal and moisture transport
+property database for common building and insulating materials. Final Report, ASHRAE Research Project 1018-RP.
+Atlanta, GA: American Society of Heating, Refrigerating
+and Air-Conditioning Engineers, Inc.
+MacDonald, J.R.; Johnson, W.B. 1987. Fundamentals of impedance spectroscopy. In: MacDonald, J.R., ed. Impedance
+spectroscopy emphasizing solid materials and systems. New
+York, NY: John Wiley & Sons: 1-26.
+Markwardt, L.J.; Wilson, T.R.C. 1935. Strength and related
+properties of woods grown in the United States. Tech. Bull.
+No. 479. Washington, DC: U.S. Department of Agriculture.
+Simpson, W.T. 1973. Predicting equilibrium moisture content of wood by mathematical models. Wood and Fiber.
+5(1): 41-49.
+Skaar, C. 1988. Wood-water relations. New York: SpringerVerlag. 283 p.
+Spalt, H.A. 1958. The fundamentals of water vapor sorption
+by wood. Forest Products Journal. 8(10): 288-295.
+Stamm, A.J. 1929. The fiber-saturation point of wood as obtained from electrical conductivity measurements. Industrial
+and Engineering Chemistry, Analytical Edition. 1(2): 94-97.
+Stamm, A.J. 1964. Wood and Cellulose Science. New York:
+Ronald Press. 549 p.
+Stamm, A.J.; Loughborough, W.K. 1935. Thermodynamics of the swelling of wood. Journal of Physical Chemistry.
+39(1): 121-132.
+Tiitta, M.; Olkkonen, H. 2002. Electrical impedance spectroscopy device for measurement of moisture gradients in
+wood. Review of Scientific Instruments. 73(8): 3093-3100.
+Zelinka, S.L.; Rammer, D.R. 2005. The use of electrochemical impedance spectroscopy (EIS) to measure the corrosion
+of metals in contact with wood. TMS Letters. 2(1): 15-16.
+Zelinka, S.L.; Stone, D.S.; Rammer, D.R. 2007. Equivalent
+circuit modeling of wood at 12% moisture content. Wood
+Fiber Science. 39(4): 556-565.
+General Technical Report FPL-GTR-190
+4-19
+Chapter 4 Moisture Relations and Physical Properties of Wood
+Additional References
+ASHRAE. 2009. 2009 ASHRAE Handbook-fundamentals.
+Atlanta, GA: American Society of Heating, Refrigerating
+and Air-Conditioning Engineers, Inc.
+Beall, F.C. 1968. Specific heat of wood-further
+research required to obtain meaningful data. Res. Note
+FPL-RN-0184. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 8 p.
+Kleuters, W. 1964. Determining local density of wood by
+beta ray method. Forest Products Journal. 14(9): 414.
+Kollman, F.F.P.; Côté, W.A., Jr. 1968. Principles of wood
+science and technology I-solid wood. New York: SpringerVerlag. 592 p.
+Kubler, H.; Liang, L.; Chang, L.S. 1973. Thermal expansion
+of moist wood. Wood and Fiber. 5(3): 257-267.
+Kukachka, B.F. 1970. Properties of imported tropical
+woods. Res. Pap. FPL-RP-125. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 67 p.
+Lin, R.T. 1967. Review of dielectric properties of wood and
+cellulose. Forest Products Journal. 17(7): 61.
+McKenzie, W.M.; Karpovich, H. 1968. Frictional behavior
+of wood. Munich: Wood Science Technology. 2(2): 138.
+Murase, Y. 1980. Frictional properties of wood at high sliding speed. Journal of the Japanese Wood Research Society.
+26(2): 61-65.
+Panshin, A.J.; deZeeuw, C. 1980. Textbook of wood technology. New York: McGraw-Hill. Vol. 1, 4th ed.
+Simpson, W.T., ed. 1991. Dry kiln operator's manual. Agric.
+Handb. AH-188. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 274 p.
+Simpson, W.T. 1993. Specific gravity, moisture content,
+and density relationships for wood. Gen. Tech. Rep.
+FPL-GTR-76. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 13 p.
+Steinhagen, H.P. 1977. Thermal conductive properties of
+wood, green or dry, from -40° to +100°C: a literature review. Gen. Tech. Rep. FPL-GTR-9. Madison, WI: U.S.
+Department of Agriculture, Forest Service, Forest Products
+Laboratory. 10 p.
+TenWolde, A.; McNatt, J.D.; Krahn, L. 1988. Thermal properties of wood panel products for use in buildings. ORNL/
+Sub/87-21697/1. Oak Ridge, TN: Oak Ridge National
+Laboratory. 38 p.
+Weatherwax, R.C.; Stamm, A.J. 1947. The coefficients of
+thermal expansion of wood and wood products. Transactions of American Society of Mechanical Engineers.
+69(44): 421-432.

@@ -15,6 +15,7 @@ from .candidate_verdicts import (
     NEW_DETAILS_MAX,
     ComparedFacts,
     comparison_relation,
+    differs_about,
     novelty_adds,
     novelty_reason,
     relation_reason,
@@ -169,7 +170,8 @@ def parsed_comparisons(reply: Mapping[str, Any], asks: Sequence[JudgeAsk]) -> di
             compared = item.compared()
             relation = comparison_relation(compared)
             reason = relation_reason(compared, relation, item.reason)
-            answered[pair] = FactComparison(held=item.held, relation=relation, reason=reason)
+            about = differs_about(compared, relation)
+            answered[pair] = FactComparison(held=item.held, relation=relation, reason=reason, about=about)
     missing = asked - set(answered)
     if missing:
         raise ExternalFailure(

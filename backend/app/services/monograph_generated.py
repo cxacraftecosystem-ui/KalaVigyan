@@ -20,6 +20,7 @@ from .knowledge_view import ClaimView
 from .monograph_generated_assembly import GeneratedParts, assembled_document
 from .monograph_generated_drawings import Drawings
 from .monograph_generated_grids import stated_values
+from .monograph_generated_kin import subject_kin
 from .monograph_generated_parts import (
     StoredSection,
     subject_components,
@@ -77,14 +78,16 @@ async def generated_parts(
     visible, rows = await with_delivered_claims(session, components, *found)
     visible, rows = {**visible, **unwritten.views()}, {**rows, **unwritten.sources}
     sources = {str(key): stored_source(knowledge_view.source_ref(row)) for key, row in rows.items()}
+    record = await subject_record(session, subject)
+    kin = await subject_kin(session, subject, record.kicker)
     return GeneratedParts(
         subject_kind=subject.kind,
         subject_slug=subject.slug,
         page_url=page_url(subject),
-        record=await subject_record(session, subject),
+        record=record,
         sections=tuple(with_listed_fields(sections, unwritten.by_field)),
-        visible=visible,
-        sources={**sources, **additions.sources},
+        visible={**kin.visible, **visible},
+        sources={**kin.sources, **sources, **additions.sources},
         components=components,
         pictures=additions.pictures(await subject_pictures(session, subject)),
         layout=additions.layout if additions.layout is not None else await layout_of(session, subject),
@@ -94,6 +97,7 @@ async def generated_parts(
         places=await subject_places(session, subject),
         ground=await subject_ground(session, subject.id) if subject.kind == CRAFT else None,
         unwritten=unwritten.by_field,
+        kin=kin,
     )
 
 

@@ -132,7 +132,8 @@ is unchanged; the client keeps the name `RegionDataset` (`datasetShape`).
   holds (percentiles, uncertainty bounds, deeper soil, monthly normals, yearly values, the other
   cover classes, river measures and per-commodity mineral counts) is left to the map: the map's
   district panel (`GET /api/map/districts/{districtLgd}`, `docs/contracts/learning.md`) lists every
-  value of its soil, climate, water and terrain facets, and the layers draw each headline series
+  value of its soil, climate, water and terrain facets, each yearly series folded into one row with a
+  sparkline and its table, and the layers draw each headline series
   across India. With the full load a district place sends about 30 values instead of about 300.
   No web screen reads this route since the tabbed craft page was retired; the production parity
   check reads its places.

@@ -5,6 +5,8 @@ import pytest
 
 from app.core.errors import InvalidInput
 from app.media.prompt import (
+    NAMED_CLAIM,
+    NAMED_HINT,
     REQUESTED_OUTPUT,
     alt_text,
     billed_units,
@@ -70,6 +72,29 @@ def test_a_style_hint_the_contract_refuses_never_reaches_a_prompt(hint: str) -> 
 def test_a_stage_name_that_names_a_group_is_left_out() -> None:
     prompt = build_prompt("IMAGE", "Printing by the Khatri community", CLAIMS, style_hint=None, model=MODEL)
     assert "Stage:" not in prompt.text and "Khatri" not in prompt.text
+
+
+def test_a_stage_name_naming_a_listed_community_is_left_out_and_an_unlisted_one_stays() -> None:
+    stage_name = "Printing at the Khatri workshops"
+    listed = build_prompt("IMAGE", stage_name, CLAIMS, style_hint=None, model=MODEL, named=("Khatri",))
+    assert "Stage:" not in listed.text and "Khatri" not in listed.text
+    other = build_prompt("IMAGE", stage_name, CLAIMS, style_hint=None, model=MODEL, named=("Maldhari",))
+    assert f"Stage: {stage_name}." in other.text
+
+
+def test_a_style_hint_naming_a_listed_person_is_refused_and_an_ordinary_hint_passes() -> None:
+    named = ("Ismail Mohammad Khatri",)
+    with pytest.raises(InvalidInput, match=NAMED_HINT):
+        build_prompt(
+            "IMAGE", "Pa", CLAIMS, style_hint="as ismail mohammad khatri prints", model=MODEL, named=named
+        )
+    calm = build_prompt("IMAGE", "Pa", CLAIMS, style_hint="warm morning light", model=MODEL, named=named)
+    assert "warm morning light" in calm.text
+
+
+def test_a_prompt_whose_facts_name_a_listed_name_is_refused_as_a_last_guard() -> None:
+    with pytest.raises(InvalidInput, match=NAMED_CLAIM):
+        build_prompt("IMAGE", "Pa", CLAIMS, style_hint=None, model=MODEL, named=("tamarind-seed",))
 
 
 def test_the_prompt_hash_is_sha256_of_the_documented_material() -> None:

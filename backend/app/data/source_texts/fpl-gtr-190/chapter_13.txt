@@ -1,0 +1,1325 @@
+CHAPTER 13
+Drying and Control of Moisture Content
+and Dimensional Changes
+Richard Bergman, Research Forest Products Technologist
+13-1
+Contents
+Determination of Moisture Content 13-1
+Oven-Drying Method 13-2
+Electrical Method 13-2
+Recommended Moisture Content 13-3
+Timbers 13-3
+Lumber 13-3
+Glued Wood Products 13-3
+Drying of Wood 13-5
+Air Drying 13-6
+Accelerated Air Drying and Pre-Drying 13-6
+Kiln Drying 13-6
+Drying Mechanism 13-6
+Drying Stresses 13-7
+Dry Kilns 13-8
+Kiln Schedules 13-8
+Drying Defects 13-9
+Moisture Content of Dried Lumber 13-11
+Moisture Control during Transit and Storage 13-13
+Plywood and Structural Items 13-14
+Finish and Factory Lumber 13-14
+Dimensional Changes in Wood 13-15
+Estimation Using Dimensional Change
+Coefficient 13-15
+Calculation Based on Green Dimensions 3-17
+Design Factors Affecting Dimensional Change 13-17
+Framing Lumber in House Construction 13-17
+Heavy Timber Construction 13-18
+Interior Finish 13-18
+Flooring 13-18
+Wood Care and Installation during
+Construction 13-18
+Lumber and Trusses 13-18
+Exterior Trim and Millwork 13-19
+Finished Flooring 13-19
+Interior Trim 13-19
+Plastering 13-19
+Literature Cited 13-19
+In the living tree, wood contains large quantities of water.
+As green wood dries, most of the water is removed. The
+moisture remaining in the wood tends to come to equilibrium with the relative humidity of the surrounding air. Correct
+drying, handling, and storage of wood will minimize moisture content changes that might occur after drying when the
+wood is in service. If moisture content is controlled within
+reasonable limits by such methods, major problems from
+dimensional changes can usually be avoided.
+The discussion in this chapter is concerned with moisture
+content determination, recommended moisture content values, drying methods, methods of calculating dimensional
+changes, design factors affecting such changes in structures,
+and moisture content control during transit, storage, and
+construction. Data on green moisture content, fiber saturation point, shrinkage, and equilibrium moisture content
+are given with information on other physical properties in
+Chapter 4.
+Wood in service is always undergoing slight changes in
+moisture content. These changes that result from daily
+humidity changes are often small and usually of no consequence. Changes that occur because of seasonal variation,
+although gradual, tend to be of more concern. Protective
+coatings can retard dimensional changes in wood but do not
+prevent them. In general, no significant dimensional changes
+will occur if wood is fabricated or installed at a moisture
+content corresponding to the average atmospheric conditions to which it will be exposed. When incompletely dried
+material is used in construction, some minor dimensional
+changes can be tolerated if the proper design is used.
+Determination of Moisture Content
+The amount of moisture in wood is ordinarily expressed as a
+percentage of wood mass when oven-dried. Four methods of
+determining moisture content are covered in ASTM D 4442
+(ASTM 2007). Two of these-the oven-drying and the electrical methods-are described in this chapter.
+The oven-drying method has been the most universally
+accepted method for determining moisture content, but it
+is slow and necessitates cutting the wood. In addition, the
+oven-drying method may give values slightly greater than
+true moisture content with woods containing volatile extrac13-2
+tives. The electrical method is rapid, does not require cutting
+the wood, and can be used on wood installed in a structure.
+However, considerable care must be taken to use and interpret the results correctly. Use of the electrical method is
+generally limited to moisture content values less than 30%.
+Oven-Drying Method
+In the oven-drying method, specimens are taken from representative boards or pieces of a quantity of lumber. With
+lumber, obtain the specimens at least 500 mm (20 in.) from
+the end of the pieces. They should be free from knots and
+other irregularities, such as bark and pitch pockets. Specimens from lumber should be full cross sections and 25 mm
+(1 in.) long. Specimens from larger items may be representative sectors of such sections or subdivided increment borer
+or auger chip samples. Convenient amounts of chips and
+particles can be selected at random from larger batches, with
+care taken to ensure that the sample is representative of the
+batch. Select veneer samples from four or five locations in a
+sheet to ensure that the sample average will accurately indicate the average of the sheet.
+To prevent drying or uptake of moisture, weigh each specimen immediately. If the specimen cannot be weighed immediately, place it in a plastic bag or tightly wrapped in
+metal foil to protect it from moisture change until it can be
+weighed. After weighing, place the specimen in an oven
+heated to 101 to 105 °C (214 to 221 °F), and keep it there
+until no appreciable weight change occurs in 4-h weighing
+intervals. A lumber section 25 mm (1 in.) along the grain
+will reach a constant weight in 12 to 48 h. Smaller specimens will take less time. The constant or oven-dry mass
+and the (original) mass of the specimen when cut are used
+to determine the percentage of moisture content (MC) using
+the formula
+(13-1)
+Electrical Method
+The electrical method of determining the moisture content
+of wood uses the relationships between moisture content
+and measurable electrical properties of wood, such as conductivity (or its inverse, resistivity), dielectric constant, or
+power-loss factor. These properties vary in a definite and
+predictable way with changing moisture content, but correlations are not perfect. Therefore, moisture determinations
+using electrical methods are always subject to some uncertainty.
+Electric moisture meters are available commercially and
+are based on each of these properties and identified by the
+property measured. Conductance-type (or resistance) meters measure moisture content in terms of the direct current
+conductance of the specimen. Dielectric-type meters are of
+two types. Those based principally on dielectric constant are
+called capacitance or capacitive admittance meters; those
+based on loss factor are called power-loss meters.
+The principal advantages of the electrical method compared
+with the oven-drying method are speed and convenience.
+Only a few seconds are required for the determination, and
+the piece of wood being tested is not cut or damaged, except
+for driving electrode needle points into the wood when using conductance-type meters. Thus, the electrical method is
+adaptable to rapid sorting of lumber on the basis of moisture
+content, measuring the moisture content of wood installed in
+a building, or establishing the moisture content of a quantity
+of lumber or other wood items, when used in accordance
+with ASTM D 4442.
+For conductance meters, needle electrodes (pins) of various
+lengths are driven into the wood. The two general types of
+electrodes are insulated and uninsulated. Uninsulated electrodes will sense the lowest resistance (highest conductance)
+along their length, thus highest moisture content level.
+Moisture gradients between the surface and the interior can
+lead to confusion; therefore, insulating the electrode except
+the tip is useful to show moisture gradients. If the wood is
+wetter near the center than the surface, which is typical for
+drying wood, the reading will correspond to the depth of the
+tip of the insulated electrodes. If a meter reading increases
+as the electrodes are being driven in, then the moisture gradient is typical. In this case, drive the pins about one-fifth to
+one-fourth the thickness of the wood to reflect the average
+moisture content of the entire piece. Dried or partially dried
+wood sometimes regains moisture in the surface fibers from
+rewetting therefore the surface moisture content is greater
+than that of the interior. An example of this is when dried
+wood is rained on. In this case, the meter with the uninsulated pins will read the higher moisture content surface, possibly causing a significant deviation from the average moisture content. To guard against this problem, electrodes with
+insulated shanks have been developed. They measure moisture content of only the wood at the tips of the electrodes.
+Dielectric-type meters are fitted with surface contact electrodes designed for the type of specimen material being tested. The electric field from these electrodes penetrates well
+into the specimen, but with a strength that decreases rapidly
+with depth of penetration. For this reason, the surface layers
+of the specimen influence the readings of dielectric (pinless) meters predominantly, and the meter reading may not
+adequately represent the material near the core if there is a
+large moisture content gradient.
+To obtain accurate moisture content values, use each instrument in accordance with its manufacturer's instructions.
+The electrodes should be appropriate for the material
+being tested and properly oriented according to the meter
+manufacturer's instructions. Take the readings after inserting
+General Technical Report FPL-GTR-190
+13-3
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+the electrode. Apply a species correction supplied with the
+instrument when appropriate. Make temperature corrections
+if the temperature of the wood differs considerably from
+the temperature of calibration used by the manufacturer.
+Approximate corrections for conductance-type (resistance)
+meters are made by adding or subtracting about 0.5% for
+each 5.6 °C (10 °F) the wood temperature differs from the
+calibration temperature. Add the correction factors to the
+readings for temperatures less than the calibration temperature and subtract from the readings for temperatures greater
+than the calibration temperature. Temperature corrections
+for older dielectric meters are rather complex and are best
+made from published charts (James 1988). Newer dielectric meters perform this temperature calibration internally,
+although newer dielectric meters require a specific gravity
+adjustment.
+Although some meters have scales that go up to 120%, the
+range of moisture content that can be measured reliably
+is 4% to about 30% for commercial dielectric meters and
+about 6% to 30% for resistance meters. The precision of the
+individual meter readings decreases near the limits of these
+ranges. Readings greater than 30% must be considered only
+qualitative. When the meter is properly used on a quantity
+of lumber dried to a constant moisture content below fiber
+saturation, the average moisture content from the corrected
+meter readings should be within 1% of the true average.
+Recommended Moisture Content
+Install wood at the moisture content levels that the wood
+will experience in service. This minimizes the seasonal
+variation in moisture content, thus dimensional changes,
+after installation, avoiding problems such as floor buckling
+or cracks in furniture. The in-service moisture content of
+exterior wood (siding, wood trim) primarily depends on
+the outdoor relative humidity and exposure to rain or sun.
+The in-service moisture content of interior wood primarily depends on indoor relative humidity, which in turn is a
+complex function of moisture sources, ventilation rate, dehumidification (for example, air conditioning), and outdoor
+humidity conditions.
+Recommended values for interior wood presented in this
+chapter are based on measurements in well-ventilated buildings without unusual moisture sources and without air conditioning. In air-conditioned buildings, moisture conditions
+depend largely on the proper sizing of the air-conditioning
+equipment. Installing wood in basements or over a crawl
+space may experience moisture contents greater than the
+range given. Wood in insulated walls or roofs and attics may
+experience moisture contents greater or less than the range.
+Nevertheless, the recommended values for installation provide a useful guideline.
+Timbers
+Ideally, dry solid timbers to the average moisture content
+the material will reach in service. Although this optimum is
+possible with lumber less than 76 mm (3 in.) thick, it is seldom practical to obtain fully dried timbers, thick joists, and
+planks. When thick solid members are used, some shrinkage
+of the assembly should be expected. In the case of builtup assemblies, such as roof trusses, it may be necessary to
+tighten bolts or other fastenings occasionally to maintain
+full bearing of the connectors as the members shrink.
+Lumber
+Match the recommended moisture content of wood as closely as is practical to the equilibrium moisture content (EMC)
+conditions in service. Table 13-1 shows the EMC conditions
+in outdoor exposure in various U.S. cities for each month.
+The EMC data are based on the average relative humidity
+and temperature data (30 or more years) available from the
+National Climatic Data Center of the National Oceanic and
+Atmospheric Administration. The relative humidity data are
+the averages of the morning and afternoon values. In most
+cases, these values are representative of the EMC attained
+by the wood. However, in some locations, early morning
+relative humidity may occasionally reach 100%. Under
+these conditions, condensation may occur on the wood
+surface, therefore surface fibers will exceed the EMC. The
+moisture content requirements are more exacting for finished lumber and wood products used inside heated and airconditioned buildings than those for lumber used outdoors
+or in unheated buildings. For various areas of the United
+States, the recommended moisture content values
+for wood used inside heated buildings are shown in Figure 13-1. Values and tolerances for both interior and exterior uses of wood in various forms are given in Table 13-2.
+If the average moisture content is within 1% of that recommended and all pieces fall within the individual limits, the
+entire lot is probably satisfactory (Simpson 1998).
+General commercial practice is to kiln dry wood for some
+products, such as flooring and furniture, to a slightly lower
+moisture content than service conditions demand. This
+anticipates a moderate increase in moisture content during
+processing, transportation, and construction. This practice is
+intended to ensure uniform distribution of moisture among
+the individual pieces. Common grades of softwood lumber
+and softwood dimension lumber are not normally dried to
+the moisture content values indicated in Table 13-2. Dry
+lumber, as defined in the American Softwood Lumber Standard, has a maximum moisture content of 19%. Some industry grading rules provide for an even lower maximum. For
+example, to be grade marked KD 15, the maximum moisture
+content permitted is generally 15%.
+Glued Wood Products
+When veneers are bonded with cold-setting adhesives
+to make plywood, they take up comparatively large
+13-4
+General Technical Report FPL-GTR-190
+Table 13-1. Equilibrium moisture content for outside conditions in several U.S. locations prior to 1997
+Equilibrium moisture contenta (%)
+State City Jan. Feb. Mar. Apr. May June July Aug. Sept. Oct. Nov. Dec.
+AK Juneau 16.5 16.0 15.1 13.9 13.6 13.9 15.1 16.5 18.1 18.0 17.7 18.1
+AL Mobile 13.8 13.1 13.3 13.3 13.4 13.3 14.2 14.4 13.9 13.0 13.7 14.0
+AZ Flagstaff 11.8 11.4 10.8 9.3 8.8 7.5 9.7 11.1 10.3 10.1 10.8 11.8
+AZ Phoenix 9.4 8.4 7.9 6.1 5.1 4.6 6.2 6.9 6.9 7.0 8.2 9.5
+AR Little Rock 13.8 13.2 12.8 13.1 13.7 13.1 13.3 13.5 13.9 13.1 13.5 13.9
+CA Fresno 16.4 14.1 12.6 10.6 9.1 8.2 7.8 8.4 9.2 10.3 13.4 16.6
+CA Los Angeles 12.2 13.0 13.8 13.8 14.4 14.8 15.0 15.1 14.5 13.8 12.4 12.1
+CO Denver 10.7 10.5 10.2 9.6 10.2 9.6 9.4 9.6 9.5 9.5 11.0 11.0
+DC Washington 11.8 11.5 11.3 11.1 11.6 11.7 11.7 12.3 12.6 12.5 12.2 12.2
+FL Miami 13.5 13.1 12.8 12.3 12.7 14.0 13.7 14.1 14.5 13.5 13.9 13.4
+GA Atlanta 13.3 12.3 12.0 11.8 12.5 13.0 13.8 14.2 13.9 13.0 12.9 13.2
+HI Honolulu 13.3 12.8 11.9 11.3 10.8 10.6 10.6 10.7 10.8 11.3 12.1 12.9
+ID Boise 15.2 13.5 11.1 10.0 9.7 9.0 7.3 7.3 8.4 10.0 13.3 15.2
+IL Chicago 14.2 13.7 13.4 12.5 12.2 12.4 12.8 13.3 13.3 12.9 14.0 14.9
+IN Indianapolis 15.1 14.6 13.8 12.8 13.0 12.8 13.9 14.5 14.2 13.7 14.8 15.7
+IA Des Moines 14.0 13.9 13.3 12.6 12.4 12.6 13.1 13.4 13.7 12.7 13.9 14.9
+KS Wichita 13.8 13.4 12.4 12.4 13.2 12.5 11.5 11.8 12.6 12.4 13.2 13.9
+KY Louisville 13.7 13.3 12.6 12.0 12.8 13.0 13.3 13.7 14.1 13.3 13.5 13.9
+LA New Orleans 14.9 14.3 14.0 14.2 14.1 14.6 15.2 15.3 14.8 14.0 14.2 15.0
+ME Portland 13.1 12.7 12.7 12.1 12.6 13.0 13.0 13.4 13.9 13.8 14.0 13.5
+MA Boston 11.8 11.6 11.9 11.7 12.2 12.1 11.9 12.5 13.1 12.8 12.6 12.2
+MI Detroit 14.7 14.1 13.5 12.6 12.3 12.3 12.6 13.3 13.7 13.5 14.4 15.1
+MN Minneapolis-St. Paul 13.7 13.6 13.3 12.0 11.9 12.3 12.5 13.2 13.8 13.3 14.3 14.6
+MS Jackson 15.1 14.4 13.7 13.8 14.1 13.9 14.6 14.6 14.6 14.1 14.3 14.9
+MO St. Louis 14.5 14.1 13.2 12.4 12.8 12.6 12.9 13.3 13.7 13.1 14.0 14.9
+MT Missoula 16.7 15.1 12.8 11.4 11.6 11.7 10.1 9.8 11.3 12.9 16.2 17.6
+NE Omaha 14.0 13.8 13.0 12.1 12.6 12.9 13.3 13.8 14.0 13.0 13.9 14.8
+NV Las Vegas 8.5 7.7 7.0 5.5 5.0 4.0 4.5 5.2 5.3 5.9 7.2 8.4
+NV Reno 12.3 10.7 9.7 8.8 8.8 8.2 7.7 7.9 8.4 9.4 10.9 12.3
+NM Albuquerque 10.4 9.3 8.0 6.9 6.8 6.4 8.0 8.9 8.7 8.6 9.6 10.7
+NY New York 12.2 11.9 11.5 11.0 11.5 11.8 11.8 12.4 12.6 12.3 12.5 12.3
+NC Raleigh 12.8 12.1 12.2 11.7 13.1 13.4 13.8 14.5 14.5 13.7 12.9 12.8
+ND Fargo 14.2 14.6 15.2 12.9 11.9 12.9 13.2 13.2 13.7 13.5 15.2 15.2
+OH Cleveland 14.6 14.2 13.7 12.6 12.7 12.7 12.8 13.7 13.8 13.3 13.8 14.6
+OK Oklahoma City 13.2 12.9 12.2 12.1 13.4 13.1 11.7 11.8 12.9 12.3 12.8 13.2
+OR Pendleton 15.8 14.0 11.6 10.6 9.9 9.1 7.4 7.7 8.8 11.0 14.6 16.5
+OR Portland 16.5 15.3 14.2 13.5 13.1 12.4 11.7 11.9 12.6 15.0 16.8 17.4
+PA Philadelphia 12.6 11.9 11.7 11.2 11.8 11.9 12.1 12.4 13.0 13.0 12.7 12.7
+SC Charleston 13.3 12.6 12.5 12.4 12.8 13.5 14.1 14.6 14.5 13.7 13.2 13.2
+SD Sioux Falls 14.2 14.6 14.2 12.9 12.6 12.8 12.6 13.3 13.6 13.0 14.6 15.3
+TN Memphis 13.8 13.1 12.4 12.2 12.7 12.8 13.0 13.1 13.2 12.5 12.9 13.6
+TX Dallas-Ft. Worth 13.6 13.1 12.9 13.2 13.9 13.0 11.6 11.7 12.9 12.8 13.1 13.5
+TX El Paso 9.6 8.2 7.0 5.8 6.1 6.3 8.3 9.1 9.3 8.8 9.0 9.8
+UT Salt Lake City 14.6 13.2 11.1 10.0 9.4 8.2 7.1 7.4 8.5 10.3 12.8 14.9
+VA Richmond 13.2 12.5 12.0 11.3 12.1 12.4 13.0 13.7 13.8 13.5 12.8 13.0
+WA Seattle-Tacoma 15.6 14.6 15.4 13.7 13.0 12.7 12.2 12.5 13.5 15.3 16.3 16.5
+WI Madison 14.5 14.3 14.1 12.8 12.5 12.8 13.4 14.4 14.9 14.1 15.2 15.7
+WV Charleston 13.7 13.0 12.1 11.4 12.5 13.3 14.1 14.3 14.0 13.6 13.0 13.5
+WY Cheyenne 10.2 10.4 10.7 10.4 10.8 10.5 9.9 9.9 9.7 9.7 10.6 10.6
+aEMC values were determined from the average of 30 or more years of relative humidity and temperature data available from the
+National Climatic Data Center of the National Oceanic and Atmospheric Administration.
+quantities of moisture. To keep the final moisture content
+low and to minimize the need for re-drying the plywood,
+the initial moisture content of the veneer should be as low
+as practical. However, dry veneer is brittle and difficult to
+handle without damage, so the minimum practical moisture
+content is about 4%. Freshly glued plywood intended for
+interior service should be dried to the moisture content values given in Table 13-2.
+Hot-pressed plywood and other board products, such as
+particleboard and hardboard, usually do not have the same
+moisture content as lumber. The high temperatures used in
+hot presses cause these products to assume a lower moisture
+content for a given relative humidity. Because this lower
+equilibrium moisture content varies widely, depending on
+the specific type of hot-pressed product, it is recommended
+that such products be conditioned at 30% to 40% relative
+humidity for interior use and 65% for exterior use.
+Lumber used in the manufacture of large laminated members should be dried to a moisture content slightly less than
+the moisture content expected in service. This is done so
+that the moisture adsorbed from the adhesive will not cause
+the moisture content of the product to exceed the service
+value. The range of moisture content between laminations
+assembled into a single member should not exceed 5 percentage points.
+Although laminated members are often massive and respond
+rather slowly to changes in environmental conditions, it is
+desirable to follow the recommendations in Table 13-2 for
+moisture content at time of installation.
+Drying of Wood
+Drying is required for wood to be used in most products.
+Dried lumber has many advantages over green lumber for
+producers and consumers. Removal of excess water reduces
+weight, thus shipping and handling costs. Proper drying
+reduces shrinking and swelling of wood while in use to
+manageable amounts under all but extreme conditions of
+relative humidity or rewetting such as flooding. As wood
+dries, most of its strength properties increase, as well as its
+electrical and thermal insulating properties. Properly dried
+lumber can be cut to precise dimensions and machined more
+easily and efficiently; wood parts can be more securely fitted
+and fastened together with nails, screws, bolts, and adhesives; warping, splitting, checking, and other harmful effects
+of uncontrolled drying are largely eliminated; and paint,
+varnish, and other finishes are more effectively applied and
+maintained. Wood must be relatively dry before gluing or
+treating with decay-preventing and fire-retardant chemicals.
+The key to successful and efficient drying is control of the
+drying process. Timely application of optimum or at least
+adequate temperature, relative humidity, and air circulation
+conditions is critical. Uncontrolled drying leads to drying
+defects that can adversely affect the serviceability and economics of the product. The usual strategy is to dry as fast as
+the particular species, thickness, and end-product requirements allow without damaging the wood. Slower drying can
+be uneconomical and can introduce the risk of stain.
+13-5
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+Figure 13-1. Recommended average moisture content for interior use of wood products in various
+areas of the United States.
+Table 13-2. Recommended moisture content values for various wood products at time of
+installation
+Recommended moisture content (%) for areas in the United States
+Most areas of the
+United States
+Dry
+southwestern areaa
+Damp, warm
+coastal areaa
+Use of wood Averageb
+Individual
+pieces Averageb
+Individual
+pieces Averageb
+Individual
+pieces
+Interior: woodwork, flooring,
+furniture, wood trim
+8 6-10 6 4-9 11 8-13
+Exterior: siding, wood trim,
+sheathing, laminated timbers
+12 9-14 9 7-12 12 9-14
+aMajor areas are indicated in Figure 13-1.
+bTo obtain a realistic average, test at least 10% of each item. If the quantity of a given item is small, make several tests.
+For example, in an ordinary dwelling containing 60 floor joists, at least six tests should be made on joists selected at
+random.
+Softwood lumber intended for framing in construction is
+usually targeted for drying to an average moisture content
+of 15%, not to exceed 19%. Softwood lumber for many appearance grade uses is dried to a lower moisture content of
+10% to 12% and to 7% to 9% for furniture, cabinets, and
+millwork. Hardwood lumber for framing in construction, although not in common use, should also be dried to an average moisture content of 15%, not to exceed 19%. Hardwood
+lumber for furniture, cabinets, and millwork is usually dried
+to 6% to 8% moisture content.
+Lumber drying is usually accomplished by some combination of air drying, accelerated air drying or pre-drying, and
+kiln drying. Wood species, initial moisture content, lumber
+thickness, economics, and end use are often the main factors
+in determining the details of the drying process.
+Air Drying
+The main purpose of air drying lumber is to evaporate as
+much of the water as possible before end use or prior to
+kiln-drying. Air drying lumber down to 20% to 25% moisture content prior to kiln-drying is common. Sometimes,
+depending on a mill's scheduling, air drying may be cut
+short at a higher moisture content before the wood is sent
+to the dry kiln. Air drying saves energy costs and reduces
+required dry kiln capacity. Limitations of air drying are generally associated with uncontrolled drying. The drying rate
+is very slow during the cold winter months. At other times,
+hot, dry winds may increase degrade and volume losses as
+a result of severe surface checking and end splitting. End
+coating may alleviate end checking and splitting. Warm,
+humid periods with little air movement may encourage
+the growth of fungal stains, as well as aggravate chemical
+stains. Another limitation of air drying is the high cost of
+carrying a large inventory of high value lumber for extended
+periods. Air drying time to 20% to 25% moisture content
+varies widely, depending on species, thickness, location, and
+the time of year the lumber is stacked. Some examples of
+extremes for 25-mm- (1-in.-) thick lumber are 15 to 30 days
+for some of the low-density species, such as pine, spruce,
+red alder, and soft maple, stacked in favorable locations and
+favorable times of the year; 200 to 300 days for slow-drying
+species, such as sinker hemlock and pine, oak, and birch, in
+northern locations and stacked at unfavorable times of the
+year. Details of important air-drying considerations, such as
+lumber stacking and air drying yard layout, are covered in
+Air Drying of Lumber: A Guide to Industry Practices (Rietz
+and Page 1971).
+Accelerated Air Drying and Pre-Drying
+The limitations of air drying have led to increased use of
+technology that reduces drying time and introduces some
+control into drying (green) wood. Accelerated air drying
+involves the use of fans to force air through lumber piles
+in a shed. This protects the lumber from the elements and
+improves air circulation compared with air drying, thus
+improving quality. Heat is sometimes added to reduce the
+relative humidity and slightly increase the shed temperature
+to aid drying. Pre-dryers take this acceleration and control
+a step further by providing control of both temperature and
+relative humidity and providing forced air circulation in a
+completely enclosed compartment. Typical conditions in
+a pre-dryer are 27 to 38 °C (80 to 100 °F) and 65% to
+85% relative humidity.
+Kiln Drying
+In kiln drying, higher temperatures and faster air circulation
+are used to significantly increase the drying rate. Specific
+kiln schedules have been developed to control temperature
+and relative humidity in accordance with the moisture content and stress situation within the wood, thus minimizing
+shrinkage-caused defects (Boone and others 1988).
+Drying Mechanism
+Water in wood normally moves from high to low zones of
+moisture content, which means that the surface of the wood
+must be drier than the interior if moisture is to be removed.
+Drying can be broken down into two phases: movement of
+water from the interior to the wood surface and evaporation
+of water from the surface. The surface fibers of most species
+reach moisture equilibrium with the surrounding air soon after drying begins. This is the beginning of the development
+of a typical moisture gradient (Fig. 13-2), that is, the difference in moisture content between the inner and outer portions of a board. If air circulation is too slow, a longer time
+is required for the wood surface to reach moisture equilibrium. This is one reason why air circulation is so important
+in kiln drying. If air circulation is too slow, the drying rate
+is also slower than necessary and mold could develop on the
+surface of lumber. If drying is too fast, electrical energy in
+running the fans is wasted, and in certain species, surface
+checking and other drying defects can develop if relative
+humidity and air velocity are not coordinated.
+Water moves through the interior of wood as a liquid or
+vapor through various air passageways in the cellular structure of the wood, as well as through the wood cell walls.
+Moisture moves in these passageways in all directions, both
+across and with the grain. In general, lighter species dry
+faster than heavier species because the structure of lighter
+wood contains more openings per unit volume, and moisture
+moves through air faster than through wood cell walls. Water moves by two main mechanisms: capillary action (liquid) and diffusion of bound water (vapor). Capillary action
+causes the free water to flow through cell cavities and the
+small passageways that connect adjacent cell cavities. Diffusion of bound water moves moisture from areas of high
+concentration to areas of low concentration. Diffusion in the
+longitudinal direction is about 10 to 15 times faster than radial or tangential diffusion, and radial diffusion is somewhat
+faster than tangential diffusion. This explains why flatsawn
+lumber generally dries faster than quartersawn lumber. Al13-6
+General Technical Report FPL-GTR-190
+though longitudinal diffusion is much faster than diffusion
+across the grain, it generally is not of practical importance in
+lumber that is many times longer than it is thick. In addition,
+a direct result of longitudinal diffusion may be end-checking
+or splitting without proper care.
+Because chemical extractives in heartwood plug up passageways, moisture generally moves more freely in sapwood
+than in heartwood; thus, sapwood generally dries faster than
+heartwood. However, the heartwood of many species is lower in moisture content than is the sapwood. Thus heartwood
+can reach final moisture content as fast as the sapwood.
+The rate at which moisture moves in wood depends on the
+relative humidity of the surrounding air, the steepness of the
+moisture gradient, and the temperature of the wood. Lower
+relative humidity increases capillary flow. Low relative
+humidity also stimulates diffusion by lowering the moisture content at the surface, thereby steepening the moisture
+gradient and increasing the diffusion rate. The greater the
+temperature of the wood, the faster moisture will move from
+the wetter interior to the drier surface, thus the steeper the
+moisture gradient. If relative humidity is too low in the early
+stages of drying, excessive shrinkage may occur, resulting
+in surface and end checking. If the temperature is too high,
+collapse, honeycomb, or strength reduction can occur.
+Drying Stresses
+Drying stresses are the main cause of nonstain-related drying defects. Understanding these stresses provides a means
+for minimizing and recognizing the damage they can cause.
+The cause of drying stresses is the differential shrinkage
+between the outer part of a board (the shell) and the interior
+part (the core) that can result in drying defects. Early in
+drying, the fibers in the shell dry first and begin to shrink.
+However, the core has not yet begun to dry and shrink;
+consequently, the core prevents the shell from shrinking
+fully. Thus, the shell goes into tension and the core into
+compression (Fig. 13-3). If the shell dries too rapidly, it is
+stressed beyond the elastic limit and dries in a permanently
+stretched (set) condition without attaining full shrinkage.
+Sometimes surface cracks, or checks, occur from this initial
+stage of drying and can be a serious defect for many uses.
+As drying progresses, the core begins to dry and attempts to
+shrink. However, the shell is set in a permanently expanded
+condition and prevents normal shrinkage of the core. This
+causes the stresses to reverse; the core goes into tension and
+the shell into compression. The change in the shell and core
+stresses and in the moisture content level during drying is
+shown in Figure 13-4. These internal tension stresses may
+be severe enough to cause internal cracks (honeycomb).
+Differential shrinkage caused by differences in radial, tangential, and longitudinal shrinkage is a major cause of warp.
+The distortions shown in Figure 4-3 in Chapter 4 are due
+to differential shrinkage. When juvenile or reaction wood is
+present on one edge or face of a board and normal wood is
+13-7
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+Figure 13-2. Typical moisture gradient in lumber
+during drying at time increasing from t1 to t3.
+Figure 13-3. End view of board showing development of drying stresses (a) early and (b) later in
+drying.
+present on the opposite side, the difference in their longitudinal shrinkage can also cause warp.
+Dry Kilns
+Most dry kilns are thermally insulated compartments designed for a batch process in which the kiln is completely
+loaded with lumber in one operation and the lumber remains
+stationary during the entire drying cycle. Temperature and
+relative humidity are kept as uniform as possible throughout
+the kiln and can be controlled over a wide range. As the
+wood dries, kiln temperature and relative humidity change
+based on a schedule that takes into account the moisture
+content or the drying rate, or both, of the lumber. All dry
+kilns use some type of forced-air circulation, with air moving through the lumber perpendicular to the length of the
+lumber and parallel to the spacers (stickers) that separate
+each layer of lumber in a stack. This forced-air circulation
+allows for uniform air flow in the dry kiln.
+Three general types of kilns are in common use. One is the
+track-loaded type (Fig. 13-5), where lumber is stacked on
+kiln trucks that are rolled in and out of the kiln on tracks.
+Most softwood lumber in the United States is dried in this
+kiln type. Another major type is the package-loaded kiln
+(Fig. 13-6), where individual stacks of lumber are forklifted into place in the kiln. Package-loaded kilns are commonly used for drying hardwood lumber. Indirect-steam
+heat is common for these two types although softwood
+lumber kilns are sometimes directly heated using combustion gases from burning fuel. A third common type of kiln,
+usually package loaded, is the dehumidification kiln. Instead
+of venting humid air to remove water, as the other two types
+of kilns do, water is removed by condensation on cold dehumidifier coils (Fig. 13-7).
+Kiln Schedules
+A kiln schedule is a carefully developed compromise
+between the need to dry lumber as fast as possible for
+economic efficiency and the need to avoid severe drying
+conditions that will lead to drying defects. A kiln schedule
+is a series of temperatures and relative humidities that are
+applied at various stages of drying. In most schedules, the
+temperature is gradually increased and the relative humidity
+decreased, thus lowering the EMC. The schedule for Southern Pine structural lumber is an exception to this general
+rule. This is lumber usually dried at a constant temperature
+and relative humidity. Temperatures are chosen to balance
+the highest drying rate with the avoidance of objectionable
+drying defects. The stresses that develop during drying are
+the limiting factor in determining the kiln schedule. The
+schedule must be developed so that the drying stresses do
+not exceed the strength of the wood at any given temperature and moisture content. Otherwise, the wood will crack
+either on the surface or internally or be crushed by forces
+that collapse the wood cells. Wood generally becomes
+stronger as the moisture content decreases, and to a lesser
+13-8
+General Technical Report FPL-GTR-190
+Figure 13-4. Moisture-stress relationship during six
+stages of kiln drying 50-mm- (2-in.-) thick red oak.
+Figure 13-5. Lineshaft, double-track, compartment
+kiln with alternately opposing fans. Vents are over
+fan shaft between fans. Vent on high pressure side of
+fans becomes fresh air inlet when direction of circulation is reversed.
+extent, it becomes weaker as temperature increases. The
+net result is that as wood dries it becomes stronger because
+of the decreasing moisture content and can tolerate higher
+drying temperatures and lower relative humidities without
+cracking. This is a fortunate circumstance because as wood
+dries, its drying rate decreases at any given temperature, and
+the ability to increase drying temperature helps maintain a
+reasonably fast drying rate. Thus, rapid drying is achieved in
+kilns by the use of temperatures as high as possible and relative humidities as low as possible.
+Drying schedules vary by species, thickness, grade, moisture content, and end use of lumber. The two general types
+of kiln schedules are moisture content schedules and timebased schedules. Most hardwood lumber is dried by moisture content schedules. This means that the temperature and
+relative humidity conditions are changed according to the
+percentage moisture content of the lumber during drying.
+A typical hardwood schedule might begin at 49 °C (120 °F)
+and 80% relative humidity when the lumber is green. By the
+time the lumber has reached 15% moisture content, the temperature is as high as 82 °C (180 °F). A typical hardwood
+drying schedule is shown in Table 13-3. Some method of
+monitoring moisture content during drying is required for
+schedules based on moisture content. One common method
+is the use of kiln samples that are periodically weighed,
+usually manually but potentially remotely with load cells.
+Alternatively, imbedded electrodes in sample boards sense
+the change in electrical conductivity with moisture content.
+This system is limited to moisture content values less than
+30% (Simpson 1991, Denig and others 2000).
+Softwood kiln schedules generally differ from hardwood
+schedules in that changes in kiln temperature and relative
+humidity are made at predetermined times rather than moisture content levels. Examples of time-based schedules, both
+conventional temperature (<100 °C (<212 °F)) and high
+temperature (>110 °C (>230 °F )), are given in Table 13-3.
+Some hardwoods used as structural lumber also use a timebased schedule as shown in Table 13-3 (Simpson and Wang
+2001, Ross and Erickson 2005).
+Drying Defects
+Most drying defects or problems that develop in wood products during drying can be classified as fracture or distortion,
+warp, or discoloration. Defects in any one of these categories are caused by an interaction of wood properties with
+processing factors. Wood shrinkage is mainly responsible
+for wood ruptures and distortion of shape. Cell structure and
+chemical extractives in wood contribute to defects associated with uneven moisture content, undesirable color, and
+undesirable surface texture. Drying temperature is the most
+important processing factor because it can be responsible for
+defects in each category.
+13-9
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+Figure 13-6. Package-loaded kiln with fans connected directly to motors.
+Fracture or Distortion
+Surface checks occur early in drying when the shell of a
+board is stressed in tension enough to fracture the wood.
+These checks occur most often on the face of flatsawn
+boards and are illustrated in Figure 13-8. End checks
+(Fig. 13-9) are similar to surface checks but appear on the
+ends of boards and logs. End checks occur because the
+rapid longitudinal movement of moisture causes the end
+to dry very quickly and develop high stresses, therefore
+fracturing. End coatings, on either the log or freshly sawn
+(green) lumber, are an effective preventative measure. Collapse is a distortion, flattening, or crushing of wood cells.
+In severe cases (Fig. 13-10), collapse usually shows up as
+grooves or corrugations, a washboarding effect. Less severe
+collapse shows up as excessive thickness shrinkage and may
+not be a serious problem. Honeycomb (Fig. 13-11) is an
+internal crack that occurs in the later stages of kiln drying
+when the core of a board is in tension. This internal defect
+is caused when the core is still at a relatively high moisture
+content and drying temperatures are too high for too long
+during this critical drying period. It may go unnoticed until
+the lumber is machined. Nondestructive testing methods,
+using speed of sound, have been found to be effective in detecting the presence of these cracks in dried lumber. Knots
+may loosen during drying because of the unequal shrinkage
+between the knot and the surrounding wood (Fig. 13-12).
+Warp
+Warp in lumber is any deviation of the face or edge of a
+board from flatness or any edge that is not at right angles to
+the adjacent face or edge. Warp can be traced to two causes:
+(a) differences between radial, tangential, and longitudinal
+shrinkage in the piece as it dries or (b) growth stresses.
+Warp is aggravated by irregular or distorted grain and the
+presence of abnormal types of wood, such as juvenile and
+reaction wood. The six major types of warp are bow, crook,
+twist, oval, diamond, and cup (Fig. 13-13).
+Discoloration
+Discoloration impairs the use of dried wood products, particularly when the end use requires a clear, natural finish.
+Unwanted discoloration can develop in the tree, during
+storage of logs and green lumber, or during drying. The two
+general types of discoloration are chemical and fungal.
+Chemical discoloration is the result of oxidative and enzymatic reactions with chemical compounds in wood.
+Discolorations range from pinkish, bluish, and yellowish
+hues through gray and reddish brown to dark brown shades.
+Brown stain in pines and darkening in many hardwoods is
+a common problem when drying temperatures are too high
+(Fig. 13-14). A deep grayish-brown chemical discoloration
+can occur in many hardwood species if initial drying is too
+slow or too high of an initial kiln temperature (Fig. 13-15)
+(Wiemann and others 2009).
+Fungal stains, often referred to as blue or sap stain, are
+caused by fungi that grow in the sapwood (Fig. 13-16).
+Blue-stain fungi do not cause decay of the sapwood, and
+fungi generally do not grow in heartwood. Blue stain can
+develop if initial drying is too slow.
+Another common type of stain develops under stickers
+(Fig. 13-17). This stain results from contact of the sticker
+with the board. Sticker stains (sometimes called shadow)
+are imprints of the sticker that are darker or lighter than
+the wood between the stickers and can be caused by either
+chemical or fungal action, or both.
+13-10
+General Technical Report FPL-GTR-190
+Figure 13-7. A typical dehumidification kiln (top) and
+dehumidification drying system (bottom).
+Moisture Content of Dried Lumber
+Although widely used, the trade terms "shipping dry," "air
+dry," and "kiln dry" may not have identical meanings as
+to moisture content in the different producing regions. Despite the wide variations in the use of these terms, they are
+sometimes used to describe dried lumber. The following
+statements, which are not exact definitions, outline these
+categories.
+Shipping Dry
+Shipping dry means lumber that has been partially dried to
+prevent stain or mold during brief periods of transit; ideally
+the outer 3.2 mm (1/8 in.) is dried to 25% or less moisture
+content (McMillen 1978).
+Air Dry
+Air dry means lumber dried by exposure to the air outdoors
+or in a shed or by forced circulation of air that has not been
+13-11
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+Table 13-3. Typical dry kiln schedules for lumber
+Moisture-content-based schedule for 25-mm (1-in.) (4/4) black
+walnut, dried to 7% moisture content
+Moisture
+content
+(%)
+Temperature (°C (°F)) Relative humidity
+(%)
+Equilibrium
+moisture content
+(%)Dry-bulb Wet-bulb
+Above 50 49.0 (120) 45.0 (113) 80 14.4
+50 to 40 49.0 (120) 43.5 (110) 72 12.1
+40 to 35 49.0 (120) 40.5 (105) 60 9.6
+35 to 30 49.0 (120) 35.0 (95) 40 6.5
+30 to 25 54.5 (130) 32.0 (90) 22 4.0
+25 to 20 60.0 (140) 32.0 (90) 15 2.9
+20 to 15 65.5 (150) 37.5 (100) 18 3.2
+15 to 7 82.2 (180) 54.4 (130) 27 3.7
+Equalize 82.2 (180) 58.3 (137) 30 3.8
+Condition 82.2 (180) 76.7 (170) 79 11.1
+Time-based schedule for 25- to 50-mm (1- to 2-in.) (4/4 to 8/4)
+Douglas-fir, upper grades, dried to 12% moisture content
+Time
+(h)
+Temperature (°C (°F)) Relative humidity
+(%)
+Equilibrium
+moisture content
+(%)Dry-bulb Wet-bulb
+0 to 12 76.5 (170) 73.5 (164) 86 14.1
+12 to 24 76.5 (170) 71.0 (160) 78 11.4
+24 to 48 79.5 (175) 71.0 (160) 69 9.1
+48 to 72 82.2 (180) 71.0 (160) 62 7.7
+72 to 96
+or until dry
+82.2 (180) 60.0 (140) 36 4.5
+High-temperature schedule for 50- by 100-mm to 50- by
+250-mm (2- by 4-in. to 2- by 10-in.) Southern Pine, dried
+to 15% moisture content
+Time
+(h)
+Temperature (°C (°F))
+Relative
+humidity
+(%)
+Equilibrium
+moisture content
+(%)Dry-bulb Wet-bulb
+0 until dry 116 (240) 82.2 (180) 29 2.5
+Time-based schedule for 50- by 150-mm (2- by 6-in.) sugar
+maple, dried to 15% moisture content in 5 days
+Time
+(h)
+Temperature (°C (°F)) Relative humidity
+(%)
+Equilibrium
+moisture content
+(%)Dry-bulb Wet-bulb
+0 to 24 71.0 (160) 67.2 (153) 84 14.1
+24 to 48 71.0 (160) 65.6 (150) 78 12.1
+48 to 60 71.0 (160) 62.8 (145) 69 10.1
+60 to 72 71.0 (160) 57.2 (135) 52 7.4
+72 to 84 76.7 (170) 54.4 (130) 35 4.9
+84 to 115 82.2 (180) 54.4 (130) 27 3.7
+heated above 49 °C (120 °F). Commercial air-dry stock generally has an average moisture content low enough for rapid
+kiln drying or rough construction use. Moisture content is
+generally in the range of 20% to 25% for dense hardwoods
+and 15% to 20% for softwoods and low-density hardwoods.
+Extended exposure can bring standard 19- and 38-mm
+(nominal 1- and 2-in.) lumber within one or two percentage
+points of the average exterior equilibrium moisture content
+of the region. For much of the United States, the minimum
+moisture content of thoroughly air-dried lumber is 12% to
+15%.
+Kiln Dry
+Kiln dry means lumber that has been dried in a kiln or by
+some special drying method to an average moisture content
+13-12
+General Technical Report FPL-GTR-190
+Figure 13-8. Surface checking on white oak
+5/4 lumber.
+Figure 13-9. End checking in red pine logs.
+Figure 13-10. Severe collapse in western redcedar.
+Figure 13-11. Red cedar timber end shows honeycomb (top). Surface of the timber shows no honeycomb (bottom).
+Figure 13-12. Large knot in treated Southern Pine.
+specified or understood to be suitable for a certain use. The
+average moisture content should have upper and lower tolerance limits, and all values should fall within these limits. If
+the moisture contents fall outside these limits, use the dry
+kiln to equalize the lumber until the moisture is inside these
+limits. Kiln-dried softwood dimension lumber generally
+has an average moisture content of 19% or less; the average
+moisture content for many other softwood uses is 10%
+to 20%. Hardwood and softwood lumber for furniture,
+cabinetry, and millwork usually has a final moisture content of 6% to 8% and can be specified to be free of drying
+stresses. Drying stresses built up during the drying cycle are
+relieved by conditioning inside the dry kiln. The importance
+of suitable moisture content values is recognized, and provisions covering them are now incorporated in some softwood
+standards as grading rules. Moisture content values in the
+general grading rules may or may not be suitable for a
+specific use; if not, a special moisture content specification
+should be made (USDC 2005).
+Moisture Control during Transit
+and Storage
+Lumber and other wood items may change in moisture content and dimension while awaiting shipment, during fabrication, in transit, and in storage.
+When standard 19-mm (nominal 1-in.) dry softwood lumber
+is shipped in tightly closed boxcars, shipping containers, or
+trucks or in packages with complete and intact wrappers,
+average moisture content changes for a package can generally be held to 0.2% or less per month. In holds or between
+decks of ships, dry material usually adsorbs about 1.5%
+moisture during normal shipping periods. If green material
+is included in the cargo, the moisture regain of the dry lumber may be doubled. On the top deck, if unprotected from
+the elements, the moisture regain can be as much as 7%.
+When standard 19-mm (nominal 1-in.) softwood lumber,
+kiln dried to 8% or less, is piled solid under a good pile roof
+in a yard in warm, humid weather, average moisture content
+of a pile can increase at the rate of about 2% per month during the first 45 days. A moisture uptake rate of about 1% per
+month can then be sustained throughout a humid season.
+Comparable initial and sustaining moisture uptake rates are
+about 1% per month in open (roofed) sheds and 0.3% per
+month in closed sheds. Stock piled for a year in an open
+13-13
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+Figure 13-13. Various types of warp that can develop
+in boards during drying.
+Figure 13-14. Brown sapwood stain in Southern Pine
+lumber.
+Figure 13-15. Soft maple sapwood boards (surface,
+end, edge) showing patches of oxidative stain.
+shed in a western location increased 2.7% on the inside of
+solid piles and 3.5% on the outside of the piles. Protect all
+manufactured stock from precipitation and spray, because
+liquid water on a solid pile tends to be absorbed by the
+wood instead of evaporating. The extent to which additional
+control of the storage environment is required depends upon
+the final use of the wood and the corresponding moisture
+content recommendations. It is important to determine the
+moisture content of all stock when received. If moisture
+content is not as specified or required, stickered storage in
+an appropriate condition could ultimately bring the stock
+within the desired moisture content range. If a large degree
+of moisture change is required, the stock must be redried
+(Rietz 1978).
+Plywood and Structural Items
+It is good practice to open-pile green or partially dried lumber and timbers using stickers and protect from sunshine and
+precipitation by a tight roof. Framing lumber and plywood
+with 20% or less moisture content can be solid-piled (no
+stickers) in a shed that has good protection against sunshine
+and direct or wind-driven precipitation. However, a better
+practice for stock with greater than 12% moisture content is
+the use of stickered piling to bring moisture content more in
+line with the moisture content in use. Dry lumber piled solid
+in the open for relatively short periods with a minimum pile
+cover of waterproofed paper whenever possible. Because
+keeping rain out completely is difficult, storing solid-piled
+lumber in the open for long periods is not recommended. If
+framing lumber must be stored in the open for a long time,
+pile on stickers with good base support and cover the piles.
+Re-pile using stickers for solid-piled material that has become wet again is good practice.
+Finish and Factory Lumber
+Keep kiln-dried items such as exterior finish, siding, and exterior millwork in a closed unheated shed. Place material on
+supports raised above the floor, at least 150 mm (6 in.) high
+if the floor is paved or 300 mm (12 in.) if not paved. Interior
+trim, flooring, cabinet work, and lumber for processing into
+furniture should be stored in a room or closed shed where
+relative humidity is controlled. In addition, store kiln-dried
+and machined hardwood dimension or softwood cut stock
+under controlled humidity conditions.
+Dried and machined hardwood dimension or softwood lumber intended for remanufacture should also be stored under
+controlled humidity conditions. Under uncontrolled conditions, the ends of such stock may attain a higher moisture
+content than the rest of the stock. Then, when the stock is
+straight-line ripped or jointed before edge gluing, subsequent shrinkage will cause splitting or open glue joints at
+the ends of panels. The simplest way to reduce relative humidity in storage areas of all sizes is to heat the closed space
+to a temperature slightly higher than that of the outside air.
+Dehumidifiers can be used in small, well-enclosed spaces.
+If the heating method is used, and there is no source of
+moisture except that contained in the air, the equilibrium
+moisture content can be maintained by increasing the
+temperature of the storage area greater than the outside
+temperature by the amounts shown in Table 13-4. When a
+dehumidifier is used, monitor or control if needed the average temperature in the storage space. Select the proper relative humidity in Table 4-2 in Chapter 4 to give the desired
+average moisture content. Wood in a factory awaiting or following manufacture can become too dry if the area is heated
+to 21 °C (70 °F) or greater when the outdoor temperature is
+low. This often occurs in the northern United States during
+the winter. Under such circumstances, exposed ends and
+surfaces of boards or cut pieces will tend to dry to the low
+equilibrium moisture content condition, causing shrinkage
+and warp. In addition, an equilibrium moisture content of
+4% or more below the moisture content of the core of freshly crosscut boards can cause end checking. Simple remedies
+are to cover piles of partially manufactured items with plastic film and lower the shop temperature during non-work
+hours. Increased control can be obtained in critical shop and
+13-14
+General Technical Report FPL-GTR-190
+Figure 13-16. Sap stain in Ponderosa Pine. Color ranges from bluish gray to black.
+13-15
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+storage areas by humidification. In warm weather, cooling
+can increase relative humidity and dehumidification may be
+necessary (FPL 1972).
+Dimensional Changes in Wood
+Dry wood undergoes small changes in dimension with normal changes in relative humidity. More humid air will cause
+slight swelling, and drier air will cause slight shrinkage.
+These changes are considerably smaller than those involved
+with shrinkage from the green condition. Equation (13-2)
+can be used to approximate dimensional changes caused by
+shrinking and swelling by using the total shrinkage coefficient from green to oven-dry. However, the equation assumes that the shrinkage-moisture content relationship is
+linear. Figure 4-4 (Chap. 4) shows that this is not the case,
+so some error is introduced. The error is in the direction of
+underestimating dimensional change, by about 5% of the
+true change. Many changes of moisture content in use are
+over the small moisture content range of 6% to 14%, where
+the shrinkage-moisture content relationship is linear
+(Chap. 4, Fig.4-4). Therefore, a set of shrinkage coefficients based on the linear portion of the shrinkage-moisture
+content curve has been developed (Table 13-5). Estimating
+approximate changes in dimension using this simple equation utilizes these dimensional change coefficients, from
+Table 13-5, when moisture content remains within the range
+of normal use. (Dimensional changes are further discussed
+in Chaps. 4 and 7.)
+Estimation Using Dimensional Change
+Coefficient
+The change in dimension within the moisture content limits
+of 6% to 14% can be estimated satisfactorily by using a
+dimensional change coefficient based on the dimension at
+10% moisture content:
+[ ])( IFTI MMCDD -=D (13-2)
+where DD is change in dimension, DI dimension in units of
+length at start of change, CT dimensional change coefficient
+tangential direction (for radial direction, use CR), MF moisture content (%) at end of change, and MI moisture content
+(%) at start of change.
+Values for CT and CR, derived from total shrinkage values,
+are given in Table 13-5. When MF < MI, the quantity
+(MF - MI) will be negative, indicating a decrease in dimension; when greater, it will be positive, indicating an increase
+in dimension.
+As an example, assuming the width of a flat-grained white
+fir board is 232 mm (9.15 in.) at 8% moisture content, its
+change in width at 11% moisture content is estimated as
+DD = 232[0.00245(11 - 8)]
+= 232(0.00735)
+= 1.705 mm
+DD = 9.15[0.00245(11 - 8)]
+= 9.15[0.00735]
+= 0.06725 or 0.067 in.
+Figure 13-17. Sticker stain in sapwood of sugar maple
+after planing.
+Table 13-4. Increase in storage area temperature above outside
+temperature to maintain the desired wood moisture content
+Outside
+relative
+humidity
+(%)
+Temperature differential (°C (°F)) for desired wood moisture content
+6% 7% 8% 9% 10% 11% 12%
+90 18.3 (33) 16.1 (29) 12.8 (23) 10.0 (18) 8.3 (15) 6.1 (11) 5.0 (9)
+80 16.7 (30) 13.9 (25) 10.5 (19) 7.8 (14) 6.1 (11) 4.4 (8) 3.3 (6)
+70 13.9 (25) 11.1 (20) 8.3 (15) 5.6 (10) 3.9 (7) 2.2 (4) 1.7 (3)
+60 11.1 (20) 8.3 (15) 5.0 (9) 3.3 (6) 1.7 (3) - -
+50 8.3 (15) 5.6 (10) 2.8 (5) 0.6 (1) - - -
+13-16
+General Technical Report FPL-GTR-190
+Table 13-5. Dimensional change coefficients (CR, radial; CT, tangential) for shrinking or
+swelling within moisture content limits of 6% to 14%
+Dimensional
+change
+coefficienta
+Dimensional
+change
+coefficienta
+Species CR CT Species CR CT
+Hardwoods
+Alder, red 0.00151 0.00256 Honeylocust 0.00144 0.00230
+Apple 0.00205 0.00376 Locust, black 0.00158 0.00252
+Ash, black 0.00172 0.00274 Madrone, Pacific 0.00194 0.00451
+Ash, Oregon 0.00141 0.00285 Magnolia, cucumbertree 0.00180 0.00312
+Ash, pumpkin 0.00126 0.00219 Magnolia, southern 0.00187 0.00230
+Ash, white 0.00169 0.00274 Magnolia, sweetbay 0.00162 0.00293
+Ash, green 0.00169 0.00274 Maple, bigleaf 0.00126 0.00248
+Aspen, quaking 0.00119 0.00234 Maple, red 0.00137 0.00289
+Basswood, American 0.00230 0.00330 Maple, silver 0.00102 0.00252
+Beech, American 0.00190 0.00431 Maple, black 0.00165 0.00353
+Birch, paper 0.00219 0.00304 Maple, sugar 0.00165 0.00353
+Birch, river 0.00162 0.00327 Oak, black 0.00123 0.00230
+Birch, yellow 0.00256 0.00338 Red Oak, commercial 0.00158 0.00369
+Birch, sweet 0.00256 0.00338 Red oak, California 0.00123 0.00230
+Buckeye, yellow 0.00123 0.00285 Red oak: water, laurel, willow 0.00151 0.00350
+Butternut 0.00116 0.00223 White Oak, commercial 0.00180 0.00365
+Catalpa, northern 0.00085 0.00169 White oak, live 0.00230 0.00338
+Cherry, black 0.00126 0.00248 White oak, Oregon white 0.00144 0.00327
+Chestnut, American 0.00116 0.00234 White oak, overcup 0.00183 0.00462
+Cottonwood, black 0.00123 0.00304 Persimmon, common 0.00278 0.00403
+Cottonwood, eastern 0.00133 0.00327 Sassafras 0.00137 0.00216
+Elm, American 0.00144 0.00338 Sweetgum 0.00183 0.00365
+Elm, rock 0.00165 0.00285 Sycamore, American 0.00172 0.00296
+Elm, slippery 0.00169 0.00315 Tanoak 0.00169 0.00423
+Elm, winged 0.00183 0.00419 Tupelo, black 0.00176 0.00308
+Elm, cedar 0.00183 0.00419 Tupelo, water 0.00144 0.00267
+Hackberry 0.00165 0.00315 Walnut, black 0.00190 0.00274
+Hickory, pecan 0.00169 0.00315 Willow, black 0.00112 0.00308
+Hickory, true 0.00259 0.00411 Willow, Pacific 0.00099 0.00319
+Holly, American 0.00165 0.00353 Yellow-poplar 0.00158 0.00289
+Softwoods
+Baldcypress 0.00130 0.00216 Pine, eastern white 0.00071 0.00212
+Cedar, yellow- 0.00095 0.00208 Pine, jack 0.00126 0.00230
+Cedar, Atlantic white- 0.00099 0.00187 Pine, loblolly 0.00165 0.00259
+Cedar, Eastern Red 0.00106 0.00162 Pine, pond 0.00165 0.00259
+Cedar, incense 0.00112 0.00180 Pine, lodgepole 0.00148 0.00234
+Cedar, northern white-b 0.00101 0.00229 Pine, Jeffrey 0.00148 0.00234
+Cedar, Port-Orford- 0.00158 0.00241 Pine, longleaf 0.00176 0.00263
+Cedar, western redb 0.00111 0.00234 Pine, ponderosa 0.00133 0.00216
+Douglas-fir, Coast-type 0.00165 0.00267 Pine, red 0.00130 0.00252
+Douglas-fir, Interior north 0.00130 0.00241 Pine, shortleaf 0.00158 0.00271
+Douglas-fir, Interior west 0.00165 0.00263 Pine, slash 0.00187 0.00267
+Fir, balsam 0.00099 0.00241 Pine, sugar 0.00099 0.00194
+Fir, California red 0.00155 0.00278 Pine, Virginia 0.00144 0.00252
+Fir, noble 0.00148 0.00293 Pine, western white 0.00141 0.00259
+Fir, Pacific silver 0.00151 0.00327 Redwood, old-growthb 0.00120 0.00205
+Fir, subalpine 0.00088 0.00259 Redwood, second-growthb 0.00101 0.00229
+Fir, grand 0.00112 0.00245 Spruce, black 0.00141 0.00237
+Fir, white 0.00112 0.00245 Spruce, Engelmann 0.00130 0.00248
+13-17
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+Then, dimension at end of change
+DI + DD = 232 + 1.7 (= 9.15 + 0.067)
+= 233.7 mm (= 9.217 in.)
+The thickness of the same board at 11% moisture content
+can be estimated by using the coefficient CR = 0.00112.
+Because commercial lumber is often not perfectly flatsawn
+or quartersawn, this procedure will probably overestimate
+width shrinkage and underestimate thickness shrinkage.
+Note also that if both a size change and percentage moisture
+content are known, Equation (13-2) can be used to calculate
+the original moisture content.
+Calculation Based on Green Dimensions
+Approximate dimensional changes associated with moisture content changes greater than 6% to 14%, or when one
+moisture content value is outside of those limits, can be
+calculated by
+(13-3)
+where ST is tangential shrinkage (%) from green to ovendry
+(Chap. 4 Tables 4-3 and 4-4) (use radial shrinkage SR when
+appropriate).
+Neither MI nor MF should exceed 30%, the assumed moisture content value when shrinkage starts for most species.
+Design Factors Affecting
+Dimensional Change
+Framing Lumber in House Construction
+Ideally, house framing lumber should be dried to the moisture content it faces in use to minimize dimensional changes
+as a result of frame shrinkage. This ideal condition is difficult to achieve, but some drying and shrinkage of the frame
+may take place without being visible or causing serious
+defects after the house is completed. If, at the time the wall
+and ceiling finish is applied, the moisture content of the
+framing lumber is not more than about 5% above that which
+it will reach in service, there will be little or no evidence of
+defects caused by shrinkage of the frame. For heated houses
+in cold climates, joists over heated basements, studs, and
+ceiling joists may reach a moisture content as low as 6% to
+7% (Table 13-2). In mild climates, the minimum moisture
+content will be greater.
+The most common signs of excessive shrinkage are cracks
+in plastered walls, truss rise, open joints, and nail pops in
+dry-wall construction; distortion of door openings; uneven
+floors; and loosening of joints and fastenings. The extent of
+vertical shrinkage after the house is completed is proportional to the depth of wood used as supports in a horizontal
+position, such as girders, floor joists, and plates. After all,
+Table 13-5. Dimensional change coefficients (CR, radial; CT, tangential) for shrinking or
+swelling within moisture content limits of 6% to 14%-con.
+Dimensional
+change
+coefficienta
+Dimensional
+change
+coefficienta
+Species CR CT CR CT
+Hemlock, eastern 0.00102 0.00237 Spruce, red 0.00130 0.00274
+Hemlock, western 0.00144 0.00274 Spruce, white 0.00130 0.00274
+Larch, western 0.00155 0.00323 Spruce, Sitka 0.00148 0.00263
+Tamarack 0.00126 0.00259
+Imported Woods
+Andiroba, crabwood 0.00137 0.00274 Light red "Philippine mahogany" 0.00126 0.00241
+Angelique 0.00180 0.00312 Limba 0.00151 0.00187
+Apitong, keruingb
+(all Dipterocarpus spp.)
+0.00243 0.00527 Mahoganyb
+Meranti
+0.00172
+0.00126
+0.00238
+0.00289
+Avodire 0.00126 0.00226 Obeche 0.00106 0.00183
+Balsa 0.00102 0.00267 Okoume 0.00194 0.00212
+Banak 0.00158 0.00312 Parana, pine 0.00137 0.00278
+Cativo 0.00078 0.00183 Paumarfim 0.00158 0.00312
+Cuangare 0.00183 0.00342 Primavera 0.00106 0.00180
+Greenheartb 0.00390 0.00430 Ramin 0.00133 0.00308
+Irokob 0.00153 0.00205 Santa Maria 0.00187 0.00278
+Khaya 0.00141 0.00201 Spanish-cedar 0.00141 0.00219
+Kokroduab 0.00148 0.00297 Teakb 0.00101 0.00186
+Lauans: dark red
+"Philippine mahogany"
+0.00133 0.00267
+aPer 1% change in moisture content, based on dimension at 10% moisture content and a straight-line relationship between
+moisture content at which shrinkage starts and total shrinkage. (Shrinkage assumed to start at 30% for all species except
+those indicated by footnote b.)
+bShrinkage assumed to start at 22% moisture content.
+13-18
+General Technical Report FPL-GTR-190
+shrinkage occurs primarily in the width and thickness of
+members, not the length.
+Thoroughly consider the type of framing best suited to the
+whole building structure. Methods should be chosen that
+will minimize or balance the use of wood across the grain
+in vertical supports. These involve variations in floor, wall,
+and ceiling framing. The factors involved and details of
+construction are covered extensively in Wood-Frame House
+Construction (Sherwood and Stroh 1991).
+Heavy Timber Construction
+In heavy timber construction, a certain amount of shrinkage
+is to be expected. A column that bears directly on a wood
+girder can result in a structure settling as a result of the perpendicular-to-grain shrinkage of the girder. If not provided
+for in the design, shrinkage may cause weakening of the
+joints or uneven floors or both. One means of eliminating
+part of the shrinkage in mill buildings and similar structures
+is to use metal post caps; the metal in the post cap separates
+the upper column from the lower column. The same thing is
+accomplished by bolting wood corbels (tassels or braggers)
+to the side of the lower column to support the girders.
+When joist hangers are installed, the top of the joist should
+be above the top of the girder; otherwise, when the joist
+shrinks in the stirrup, the floor over the girder will be higher
+than that bearing upon the joist. Heavy planking used for
+flooring should be near 12% moisture content to minimize openings between boards as they approach moisture
+equilibrium. When standard 38- or 64-mm (nominal 2- or
+3-in.) joists are nailed together to provide a laminated floor
+of greater depth for heavy design loads, the joist material
+should be somewhat less than 12% moisture content if the
+building is to be heated.
+Interior Finish
+Normal seasonal changes in the moisture content of interior
+finish are not enough to cause serious dimensional change if
+the woodwork was properly installed. Large members, such
+as ornamental beams, cornices, newel posts, stair stringers,
+and handrails, should be built up from comparatively small
+pieces. Wide door and window trim and base should be hollow-backed. Backband trim, if mitered at the corners, should
+be glued and splined before erection; otherwise butt joints
+should be used for the wide faces. Design and install large,
+solid pieces, such as wood paneling, so that the panels are
+free to move across the grain. Narrow widths are preferable.
+Flooring
+Flooring is usually dried to the moisture content expected
+in service so that shrinking and swelling are minimized and
+buckling or large gaps between boards do not occur. For
+basement, large hall, or gymnasium floors, however, leave
+enough space around the edges to allow for some expansion.
+Wood Care and Installation during
+Construction
+Lumber and Trusses
+Although it is good housekeeping practice, lumber is often
+not protected from the weather at construction sites. Lumber
+is commonly placed on the ground in open areas near the
+building site as bulked and strapped packages. Place supports under such packages that elevate the packages at least
+150 mm (6 in.) off the ground to prevent wetting from mud
+and ground water. In addition, cover the packages with plastic tarpaulins for protection from rain.
+Pile lumber that is green or nearly green on stickers under a
+roof for additional drying before building into the structure.
+The same procedure is required for lumber treated with a
+waterborne preservative but not fully re-dried. Prefabricated
+building parts, such as roof trusses, sometimes lie unprotected on the ground at the building site. In warm, rainy weather, moisture regain can result in fungal staining. Wetting of
+the lumber also results in swelling, and subsequent shrinkage of the framing may contribute to structural distortions.
+Extended storage of lumber at moisture contents greater
+than 20% without drying can allow decay to develop.
+If framing lumber has a greater moisture content when
+installed than that recommended in Table 13-2, shrinkage
+can be expected. Framing lumber, even thoroughly air-dried
+stock, will generally have a moisture content greater than
+that recommended when it is delivered to the building site.
+If carelessly handled in storage at the site, the lumber can
+take up more moisture. Builders can schedule their work
+so an appreciable amount of drying can take place during
+the early stages of construction. This minimizes the effects
+of additional drying and shrinkage after completion. When
+the house has been framed, sheathed, and roofed, the framing is so exposed that in time it can dry to a lower moisture
+content than could be found in yard-dried lumber. The
+application of the wall and ceiling finish is delayed while
+wiring and plumbing are installed. If this delay is about
+30 days in warm, dry weather, the framing lumber should
+lose enough moisture so that any additional drying in place
+will be minimal. In cool, damp weather, or if wet lumber is
+used, the period of exposure should be extended. Checking
+moisture content of door and window headers and floor and
+ceiling joists at this time with an electric moisture meter is
+good practice. When these members approach an average of
+12% moisture content, interior finish and trim can normally
+be installed. Closing the house and using the heating system
+will hasten the rate of drying.
+Before the wall finish is applied, the frame should be examined and defects that may have developed during drying,
+such as warped or distorted studs, shrinkage of lintels (header) over openings, or loosened joints, should be corrected.
+13-19
+Chapter 13 Drying and Control of Moisture Content and Dimensional Changes
+Exterior Trim and Millwork
+Exterior trim, such as cornice and rake mouldings, fascia
+boards, and soffit material, is typically installed before the
+shingles are laid. Protect trim, siding, and window and door
+frames on the site by storing in the house or garage until
+time of installation. Although items such as window frames
+and sashes are usually treated with some type of waterrepellent preservative to resist absorption of water, store in a
+protected area if they cannot be installed soon after delivery.
+Wood siding is often received in packaged form and can ordinarily remain in the package until installation.
+Finished Flooring
+Cracks develop in flooring if the material takes up moisture
+either before or after installation, then shrinks when the
+building is heated. Such cracks can be greatly reduced by
+observing the following practices:
+• Specify flooring manufactured according to association
+rules and sold by dealers that protect the material properly during storage and delivery.
+• Measure random pieces of flooring using a non-penetrating meter to ensure moisture content is correct upon
+arrival and prior to installation.
+• Have flooring delivered after masonry and plastering
+are completed and fully dry, unless a dry storage space
+is available.
+• Install the heating plant before flooring is delivered.
+• Break open flooring bundles and expose all sides of
+flooring to the atmosphere inside the structure.
+• Close up the house at night and increase the temperature about 8 °C (15 °F) greater than the outdoor temperature for about 3 days before laying the floor.
+• If the house is not occupied immediately after the floor
+is laid, keep the house closed at night or during damp
+weather and supply some heat if necessary.
+Better and smoother sanding and finishing can be done
+when the house is warm and the wood has been kept dry
+(FPL 1961).
+Interior Trim
+In a building under construction, average relative humidity
+will be greater than that in an occupied house because of
+the moisture that evaporates from wet concrete, brickwork,
+plaster, and even the structural wood members. The average
+temperature will be lower because workers prefer a lower
+temperature than is common in an occupied house. Under
+such conditions, the interior trim tends to have greater moisture content during construction than it will have during
+occupancy.
+Before the interior trim is delivered, the outside doors and
+windows should be kept closed at night. In this way, interior
+conditions are held as close as possible to the higher
+temperature and lower humidity that ordinarily occurs during the day. Such protection may be sufficient during dry
+warm weather, but during damp or cool weather, it is highly
+desirable to heat the house, particularly at night. Whenever
+possible, the heating plant should be placed in the house
+before the interior trim is installed, to be available for supplying the necessary heat. Portable heaters can also be used.
+Keep the inside temperature during the night about 8 °C
+(15 °F) greater than the outside temperature but not below
+about 21 °C (70 °F) during the summer or 17 °C (62 °F)
+when the outside temperature is below freezing.
+After buildings have thoroughly dried, less heat is needed,
+but unoccupied houses, new or old, should have some heat
+during the winter. A temperature of about 8 °C (15 °F)
+greater than the outside temperature and above freezing at
+all times will keep the woodwork, finish, and other parts of
+the house from being affected by dampness or frost.
+Plastering
+During a plastering operation in a moderate-sized, six-room
+house, approximately 450 kg (1,000 lb) of water is used,
+all of which must dissipate before the house is ready for
+the interior finish. Adequate ventilation removes the evaporated moisture and keeps it from being adsorbed by the
+framework. In houses plastered in cold weather, the excess
+moisture can also cause paint to blister on exterior finish and
+siding. During warm, dry weather, with the windows wide
+open, the moisture will be gone within a week after the final
+coat of plaster is applied. During damp, cold weather, the
+heating system or portable heaters are used to prevent freezing of plaster and to hasten its drying. Provide adequate ventilation constantly because a large volume of air is required
+to carry away the amount of water involved. Even in the
+coldest weather, the windows on the side of the house away
+from the prevailing winds should be opened 50 to 75 mm
+(2 to 3 in.), preferably from the top.
+Literature Cited
+ASTM. 2007. Standard test methods for direct moisture
+content measurement of wood and wood-base materials.
+Standard D 4442. West Conshohocken, PA: ASTM
+International.
+Boone, R.S.; Kozlik, C.J.; Bois, P.J.; Wengert, E.M. 1988.
+Dry kiln schedules for commercial woods: temperate and
+tropical. Gen. Tech. Rep. FPL-GTR-57. Madison, WI: U.S.
+Department of Agriculture, Forest Service, Forest Products
+Laboratory. 158 p.
+Denig, J.; Wengert E.M.; Simpson, W.T. 2000. Drying hardwood lumber. Gen. Tech. Rep. FPL-GTR-118. Madison,
+WI: U.S. Department of Agriculture, Forest Service, Forest
+Products Laboratory. 138 p.
+FPL. 1961. Wood floors for dwellings. Agric. Handb. 204.
+Washington, DC: U.S. Department of Agriculture, Forest
+Service. 44 p.
+13-20
+General Technical Report FPL-GTR-190
+FPL. 1972. Methods of controlling humidity in woodworking plants. Res. Note FPL-RN-0218. Madison, WI: U.S.
+Department of Agriculture, Forest Service, Forest Products
+Laboratory. 6 p.
+James, W.L. 1988. Electric moisture meters for wood. Gen.
+Tech. Rep. FPL-GTR-6. Madison, WI: U.S. Department of
+Agriculture, Forest Service, Forest Products Laboratory.
+17 p.
+McMillen, J.M. 1978. Overseas protection of logs and lumber. Madison, WI: U.S. Department of Agriculture,Forest
+Service, Forest Products Laboratory. 4 p.
+Rietz, R.C. 1978. Storage of lumber. Agric. Handb. 531.
+Washington, DC: U.S. Department of Agriculture. 63 p.
+Rietz, R.C.; Page, R.H. 1971. Air drying of lumber: A guide
+to industry practices. Agric. Handb. 402. Washington, DC:
+U.S. Department of Agriculture. 120 p.
+Ross, R.J.; Erickson, J.R. 2005. Undervalued Hardwoods
+for Engineered Materials and Components. Forest Products
+Society. Madison, WI. 144 p.
+Sherwood, G.E.; Stroh, R.C. 1991. Wood-frame house construction. Agric. Handb. 73. Washington, DC: U.S.
+Department of Agriculture. 268 p.
+Simpson, W.T., ed. 1991. Dry kiln operator's manual. Agric.
+Handb. 188. Washington, DC: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 274 p.
+Simpson, W.T. 1998. Equilibrium moisture content of wood
+in outdoor locations in the United States and worldwide.
+Res. Note FPL-RN-268. Madison, WI: U.S. Department of
+Agriculture, Forest Service, Forest Products Laboratory.
+11 p.
+Simpson, W.T.; Wang, X. 2001. Time-based kiln drying
+schedule for sugar maple for structural uses. Res. Note
+FPL-RN-0279. Madison, WI: USDA Forest Service, Forest
+Products Laboratory. 4 p.
+USDC. 2005. American softwood lumber standard. NIST
+Voluntary Product Standard PS 20-05. Washington, DC:
+U.S. Department of Commerce. 50 p.
+Wiemann, M.C.; Bergman, R.D.; Knaebe, M.; Bowe, S.A.
+2009. Exploring methods for prevention of oxidative stain
+in soft maple. Res. Pap. FPL-RP-654. Madison, WI: U.S.
+Department of Agriculture, Forest Service, Forest Products
+Laboratory. 6 p.

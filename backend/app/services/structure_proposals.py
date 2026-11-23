@@ -17,11 +17,13 @@ from app.research.fetcher import Fetcher
 from app.research.structure_proposals import (
     APPROVED_STATUS,
     CONFLICT,
+    GROUP_NAME,
     PENDING_STATUS,
     REFUSED,
     REFUSED_STATUS,
     STORED,
     WRITTEN,
+    GroupNameItem,
     StructureCheck,
     StructureProposal,
     StructureProposalResult,
@@ -58,6 +60,17 @@ MESSAGES = {
     WRITTEN: "Written at once into the page and its dossier, because your account reviews structure.",
     REFUSED: "Not added: the {check} check refused it. {reason}",
 }
+NAME_MESSAGES = {
+    STORED: (
+        "Stored for review: a Professor or Admin approves or rejects it, and approval adds the name to the "
+        "craft's list of names kept out of AI pictures, which readers never see. Who proposed it is kept "
+        "privately."
+    ),
+    WRITTEN: (
+        "Added at once to the craft's list of names kept out of AI pictures, because your account reviews "
+        "structure. Readers never see the list."
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -90,11 +103,7 @@ async def propose_structure(
 ) -> StructureProposalResult:
     origin, fetcher, site = context
     role = await role_now(session, user.id)
-    owner, page = await curated_subject(session, proposal.subject)
-    held = await held_claims(session, owner)
-    problem = dossier_problem(proposal) or target_problem(page, proposal.item, held=held)
-    if problem is not None:
-        raise InvalidInput(problem)
+    owner = await _fitting_owner(session, proposal)
     await check_question_task(session, proposal.task_key, tuple(filter(None, (proposal.field,))))
     checked = await _checked(session, fetcher, proposal, user.id)
     kept = await _kept(session, checked.read, user.id) if checked.passed else {}
@@ -110,6 +119,19 @@ async def propose_structure(
     return _result(row, owner, checked.checks, site)
 
 
+async def _fitting_owner(session: AsyncSession, proposal: StructureProposal) -> StructureOwner:
+    if proposal.item.kind == GROUP_NAME:
+        owner = await subject_owner(session, proposal.subject)
+        problem = dossier_problem(proposal)
+    else:
+        owner, page = await curated_subject(session, proposal.subject)
+        held = await held_claims(session, owner)
+        problem = dossier_problem(proposal) or target_problem(page, proposal.item, held=held)
+    if problem is not None:
+        raise InvalidInput(problem)
+    return owner
+
+
 async def _checked(
     session: AsyncSession, fetcher: Fetcher, proposal: StructureProposal, proposer_id: uuid.UUID
 ) -> _Checked:
@@ -120,12 +142,18 @@ async def _checked(
     if not stated.passed:
         return _Checked(checks=(stated,), read=())
     read = tuple([await read_source(session, fetcher, s, proposer_id=proposer_id) for s in proposal.sources])
-    candidate = Candidate(ref=CANDIDATE_REF, statement=proposal.statement or "", field=proposal.field)
+    candidate = Candidate(ref=CANDIDATE_REF, statement=_gated_statement(proposal), field=proposal.field)
     outcomes = first_gates(candidate, [source.cited for source in read])
     gates = [
         StructureCheck(check=item.gate, passed=item.passed, reasons=list(item.reasons)) for item in outcomes
     ]
     return _Checked(checks=(stated, *gates), read=read)
+
+
+def _gated_statement(proposal: StructureProposal) -> str:
+    if isinstance(proposal.item, GroupNameItem):
+        return proposal.item.name
+    return proposal.statement or ""
 
 
 async def _kept(
@@ -192,7 +220,7 @@ def _result(
         REFUSED if row.status == REFUSED_STATUS else WRITTEN if row.status == APPROVED_STATUS else STORED
     )
     refused = next((check for check in checks if not check.passed), None)
-    message = MESSAGES[outcome]
+    message = (NAME_MESSAGES if row.kind == GROUP_NAME else MESSAGES).get(outcome, MESSAGES[outcome])
     if refused is not None:
         message = message.format(check=refused.check, reason=refused.reasons[0])
     return StructureProposalResult(

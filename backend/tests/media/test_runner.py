@@ -6,7 +6,8 @@ from dataclasses import replace
 from datetime import timedelta
 
 from app.media.jobs import MediaDeps, submit_job, visible_job
-from app.media.runner import RunnerDeps, abandon_job, run_job
+from app.media.records import ClaimFacts
+from app.media.runner import NAMED_GROUP_REASON, RunnerDeps, abandon_job, run_job
 from app.models import User
 from app.providers.base import MediaResult
 from app.providers.media_router import MediaAsk, MediaCall
@@ -23,6 +24,7 @@ from .fakes import (
     FakeLinks,
     FakeObjects,
     MemoryMedia,
+    claim,
     media_call,
     media_result,
     png_bytes,
@@ -36,9 +38,15 @@ RESEARCHER = User(id=USER_ID, name="Meera Rao", email="meera@example.org", role=
 GENERATED_AT = NOW + timedelta(seconds=36)
 
 
-async def queued(memory: MemoryMedia, *, kind: str = "IMAGE", user: User = STUDENT) -> uuid.UUID:
+async def queued(
+    memory: MemoryMedia,
+    *,
+    kind: str = "IMAGE",
+    user: User = STUDENT,
+    claims: list[ClaimFacts] | None = None,
+) -> uuid.UUID:
     memory.stages[STAGE_ID] = stage()
-    memory.claims[STAGE_ID] = stage_claims()
+    memory.claims[STAGE_ID] = stage_claims() if claims is None else claims
     body = {"kind": kind, "stageId": str(STAGE_ID), "idempotencyKey": f"media:{uuid.uuid4()}"}
     deps = MediaDeps(store=memory, budget=FakeBudget(), links=FakeLinks(), bundle_key=BUNDLE_KEY, now=NOW)
     view, _ = await submit_job(deps, user, MediaJobRequest.model_validate(body))
@@ -101,6 +109,19 @@ async def test_a_blocked_job_is_refunded_at_once_without_a_retry() -> None:
     assert await memory.units_used(USER_ID, "IMAGE", NOW) == 0
     view = await view_of(memory, job_id)
     assert view.refunded and view.failure is not None and view.failure.reason == "BLOCKED"
+
+
+async def test_a_queued_job_naming_a_community_listed_since_is_blocked_without_a_call() -> None:
+    memory = MemoryMedia()
+    printers = claim(uuid.UUID(int=77), "Khatri printers lay the pa paste with wooden blocks.")
+    job_id = await queued(memory, claims=[*stage_claims(), printers])
+    assert "Khatri printers" in memory.jobs[job_id].prompt
+    listed = stage()
+    memory.stages[STAGE_ID] = replace(listed, craft=replace(listed.craft, group_names=("Khatri",)))
+    generator = FakeGenerator([media_call(media_result(png_bytes()))])
+    assert await run_job(runner(memory, generator), job_id) == "BLOCKED"
+    assert generator.asks == [] and memory.jobs[job_id].error == NAMED_GROUP_REASON
+    assert memory.ledger[f"media-refund:{job_id}"].units == -1
 
 
 async def test_a_failing_job_is_tried_three_times_then_refunded() -> None:

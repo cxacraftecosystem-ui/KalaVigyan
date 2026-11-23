@@ -574,9 +574,9 @@
       "craftSlug": "Dabu-Hand-Block-Printing",
       "scope": "CRAFT",
       "file": "Dabu-Hand-Block-Printing.json",
-      "version": 1,
+      "version": 2,
       "coverage": "FULL",
-      "curatedAt": "2026-11-18T09:00:00Z",
+      "curatedAt": "2026-11-23T17:05:00Z",
       "counts": {
         "sources": 16,
         "claims": 126,
@@ -588,7 +588,7 @@
         "orderedStages": 8,
         "materials": 22,
         "tools": 7,
-        "reactions": 0,
+        "reactions": 1,
         "environment": 5,
         "terms": 27,
         "conflicts": 9,
@@ -617,7 +617,7 @@
       "check": {
         "status": "PASS",
         "problems": 0,
-        "verifiedAt": "2026-11-18T11:05:07.439070Z"
+        "verifiedAt": "2026-11-23T17:08:50.041653Z"
       }
     },
     {

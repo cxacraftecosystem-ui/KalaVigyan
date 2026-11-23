@@ -40,6 +40,7 @@ class CraftFacts:
     active: bool
     place: PlaceParts
     place_names: tuple[str, ...]
+    group_names: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

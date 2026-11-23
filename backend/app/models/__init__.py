@@ -65,6 +65,7 @@ from app.models.field_voices import (
     FieldVoiceStream,
 )
 from app.models.glossary import SharedTermCraft, Term, TermConcept, TermCraft, TermSummary
+from app.models.group_names import CraftGroupName
 from app.models.identity import (
     AccessRoster,
     AuditLog,
@@ -179,6 +180,7 @@ __all__ = [
     "CraftCategory",
     "CraftCode",
     "CraftGiRecord",
+    "CraftGroupName",
     "CraftLocation",
     "CraftPageSnapshot",
     "CraftPrice",

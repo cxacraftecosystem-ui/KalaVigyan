@@ -2,8 +2,8 @@
   "schemaVersion": 2,
   "scope": "CRAFT",
   "craftSlug": "Dabu-Hand-Block-Printing",
-  "version": 1,
-  "curatedAt": "2026-11-18T09:00:00+00:00",
+  "version": 2,
+  "curatedAt": "2026-11-23T17:05:00+00:00",
   "curator": "claude-code",
   "coverage": "FULL",
   "searched": [
@@ -130,6 +130,38 @@
     {
       "query": "Pipar City dabu centre district",
       "site": "web search (no A to C source naming Pipar as a dabu centre with its district; Piparcity is not listed as a place)"
+    },
+    {
+      "query": "\"Aakola\" OR \"Akola\" Dabu Prints geographical indication application Chittorgarh",
+      "site": "web search, 2026-11-23 (found GI application 845, Aakola Dabu Prints)"
+    },
+    {
+      "query": "GI application 845 Aakola Dabu Prints, Statement of Case",
+      "site": "search.ipindia.gov.in Application/Details/845 (read 2026-11-23; Pre Examination; documents open by POST only, so not citable; it states no reaction)"
+    },
+    {
+      "query": "dabu mud resist lime calcium carbonate carbon dioxide hardens resist paste chemistry indigo",
+      "site": "web search, 2026-11-23 (no A to C source states a reaction of the resist paste itself)"
+    },
+    {
+      "query": "Akola Chittorgarh dabu printing indigo vat study journal pdf process steps chhipa",
+      "site": "web search, 2026-11-23 (Deccan Herald, Irresistible indigo, on Akola read: states no reaction)"
+    },
+    {
+      "query": "Akola dabu \"indigo vats\" pairs immersed twice oxidised",
+      "site": "web search, 2026-11-23 (only Craft Revival Trust captions on artsandculture.google.com, no named author; not used)"
+    },
+    {
+      "query": "dsource OR sahapedia \"Akola\" dabu mud resist process soaking clay overnight printing indigo",
+      "site": "web search, 2026-11-23 (no new A to C source)"
+    },
+    {
+      "query": "Akola craft page",
+      "site": "handicrafts.gov.in Crafts/akolacraftwebpage.html (timed out again on 2026-11-23; no Wayback copy)"
+    },
+    {
+      "query": "indigo air oxidation in dabu dyeing (held sources re-read)",
+      "site": "metmuseum.org Perspectives, paragraph 12, and GI Journal No. 37, pp. 21-22 (re-read 2026-11-23; written as reaction R01 on C112)"
     }
   ],
   "sources": [
@@ -3583,6 +3615,29 @@
       "name": "Muslin strainer cloth",
       "claimIds": [
         "C075"
+      ]
+    }
+  ],
+  "reactions": [
+    {
+      "id": "R01",
+      "kind": "REDOX",
+      "stageId": "P07",
+      "reactants": [
+        {
+          "name": "reduced indigo"
+        },
+        {
+          "name": "atmospheric oxygen"
+        }
+      ],
+      "products": [
+        {
+          "name": "oxidized indigo"
+        }
+      ],
+      "claimIds": [
+        "C112"
       ]
     }
   ],

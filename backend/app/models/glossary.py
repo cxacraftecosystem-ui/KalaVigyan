@@ -7,9 +7,10 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
-from app.models.enums import TERM_BASES
+from app.models.enums import TERM_BASES, TERM_ZOOM_LEVELS
 
 TERM_TEXT_COLUMN_CHARS = 120
+TERM_ZOOM_LEVEL_CHARS = 16
 
 
 class Term(Base):
@@ -27,8 +28,11 @@ class Term(Base):
         ARRAY(Text), nullable=False, server_default=text("ARRAY[]::text[]")
     )
     wikidataId: Mapped[str | None] = mapped_column(String(20))
+    zoomLevel: Mapped[str | None] = mapped_column(String(TERM_ZOOM_LEVEL_CHARS))
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
+
+    __table_args__ = (CheckConstraint(one_of("zoomLevel", TERM_ZOOM_LEVELS), name="zoomLevel"),)
 
 
 class TermCraft(Base):

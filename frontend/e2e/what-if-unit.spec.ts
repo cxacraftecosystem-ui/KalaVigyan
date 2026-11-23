@@ -58,6 +58,23 @@ test("a relationship that is a hypothesis is labelled as one and stated findings
   expect(lab(block, false)).not.toContain(">Hypothesis<");
 });
 
+test("a flagged outcome opens its two readings after its sentence, never inside a paragraph", () => {
+  const block = whatIf();
+  const [first, second] = block.options[0].outcomes;
+  const [cite] = first.sentence.citations;
+  const readings = [
+    { ...cite, quote: "Alum alone fixes the red" },
+    { ...cite, id: `${cite.id}-other`, sourceId: MORDANT_PAPER, quote: "Alum with iron dulls the red" }
+  ];
+  const flagged = { ...first, sentence: { ...first.sentence, citations: readings, sourcesDiffer: true, differsOn: "What alum does to the red" } };
+  const html = lab({ ...block, options: [{ ...block.options[0], outcomes: [flagged, second] }, ...block.options.slice(1)] }, false);
+  const outcome = html.slice(html.indexOf('data-testid="what-if-outcome"'), html.indexOf("</li>"));
+  expect(shownText(outcome)).toContain("<summary>Sources differ: What alum does to the red</summary>");
+  expect(attribute(outcome, "sources-differ-reading", "data-cite-host")).toEqual(["", ""]);
+  expect(outcome).not.toMatch(/<p[^>]*>(?:(?!<\/p>).)*<details/);
+  expect(lab(block, false)).not.toContain("<details");
+});
+
 test("an option with no cited outcome is shown as Unknown and given none", () => {
   const block = whatIf();
   const html = lab({ ...block, options: [block.options[2], block.options[0]] }, false);

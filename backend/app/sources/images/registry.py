@@ -9,9 +9,10 @@ from ..adapter import Clock, utc_now
 from ..http import RatePolicy, ResponseCache, SourceHttp
 from ..reference.commons import COMMONS_RATE, WikimediaCommonsAdapter
 from ..web.searxng import SEARXNG_RATE, SearxngAdapter
+from .europe_pmc_figures import EUROPE_PMC_FIGURES_RATE, EuropePmcFiguresAdapter
 from .openverse import OPENVERSE_RATE, OpenverseAdapter
 
-__all__ = ["image_sources"]
+__all__ = ["figure_source", "image_sources"]
 
 
 def image_sources(
@@ -27,3 +28,13 @@ def image_sources(
             http(SearxngAdapter.name, SEARXNG_RATE), base_url=searxng_url, fetcher=fetcher, clock=clock
         ),
     )
+
+
+def figure_source(client: httpx.AsyncClient, *, clock: Clock = utc_now) -> ImageSource:
+    http = SourceHttp(
+        client=client,
+        service=EuropePmcFiguresAdapter.name,
+        policy=EUROPE_PMC_FIGURES_RATE,
+        cache=ResponseCache(),
+    )
+    return EuropePmcFiguresAdapter(http, clock=clock)

@@ -17,17 +17,16 @@ from .structure_proposal_deps import structure_proposed
 __all__ = ["PROPOSE_STRUCTURE", "STRUCTURE_TOOLS", "ProposeStructure", "StructureToolReply"]
 
 PROPOSE_DESCRIPTION = (
-    "Propose one piece of a curated page's structure, with the fact and the verbatim quotes that state it: a "
-    "stage's after (STAGE_AFTER, with its colours) or why (STAGE_WHY), a native name as a source gives it "
-    "(NATIVE_NAME), a reaction (REACTION), a material's botanical name (BOTANICAL_NAME) or a material that can "
-    "stand in for it (ALTERNATIVE), a glossary term (GLOSSARY_TERM), an open question (OPEN_QUESTION), parts of "
-    "the GI record (GI_RECORD), or held facts that disagree (CONFLICT: their ids, no new fact). A category page "
-    "takes a reaction without a stage, a term, a question or a conflict. Read get_facts and get_page first: "
-    "stage and material keys are the page's own. Every name, colour and number given must be in a quote; the "
-    "gates fetch every source, re-find every quote and grade the source. It waits in the review queue, and "
-    "approval writes it into the page and its dossier. Name the field task you claimed as task_key: a passing "
-    "proposal completes it. Names inside the proposal are snake_case; the old camelCase names work until the "
-    "next release."
+    "Propose one piece of a curated page's structure with the fact and the verbatim quotes that state it: a "
+    "stage's after (STAGE_AFTER, with colours) or why (STAGE_WHY), a native name (NATIVE_NAME), a reaction "
+    "(REACTION), a material's botanical name (BOTANICAL_NAME) or stand-in (ALTERNATIVE), a glossary term "
+    "(GLOSSARY_TERM), an open question (OPEN_QUESTION), GI record parts (GI_RECORD), held facts that disagree "
+    "(CONFLICT: their ids, no new fact), or a community or person a source names (GROUP_NAME: sources only, "
+    "any craft; kept out of AI pictures, never shown). A category takes a reaction without a stage, a term, a "
+    "question or a conflict. Stage and material keys are the page's own (get_facts, get_page). Every name, "
+    "colour and number must be in a quote; the gates re-find every quote and grade each source. It waits for "
+    "review; approval writes it into the page and its dossier. A passing proposal completes the field task "
+    "you claimed as task_key. Names are snake_case."
 )
 NEEDS_PROPOSER = (
     "propose_structure needs an account of Researcher or above; this account cannot propose structure."
@@ -40,10 +39,9 @@ CHECKS_UNAVAILABLE = (
 class ProposeStructure(SnakeBodyArguments):
     proposal: StructureProposal = Field(
         description=(
-            "subject {kind craft or category, slug}, item {kind and its parts, such as stage_key}, field, statement (one "
-            "sentence), sources [{url, title, licence, language, quotes [{text, locator}]}], the task_key you "
-            "claimed and an optional note; a CONFLICT item gives about and claim_ids and no field, statement or "
-            "sources"
+            "subject {kind, slug}, item (its kind and parts, such as stage_key), field, statement (one sentence), "
+            "sources [{url, title, licence, language, quotes [{text, locator}]}], the task_key you claimed, an "
+            "optional note; CONFLICT gives no field, statement or sources, GROUP_NAME sources only"
         )
     )
 

@@ -91,6 +91,7 @@ const plexSansItalic = localFont({
   variable: "--font-plex-sans-italic",
   weight: "400",
   style: "italic",
+  preload: false,
   adjustFontFallback: false,
   declarations: [
     { prop: "font-family", value: "IBM Plex Sans" },

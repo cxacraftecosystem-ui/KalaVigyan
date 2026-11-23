@@ -2,17 +2,18 @@
 
 import { useMemo, useRef, useState } from "react";
 
-import { edgePost, inFrame, POST_FONT } from "@/components/answer/journey/journeyGeometry";
+import { inFrame } from "@/components/answer/journey/journeyGeometry";
 import { AnswerFigure } from "@/components/answer/place/AnswerFigure";
 import { AnswerMapSource } from "@/components/answer/place/AnswerMapSource";
 import { PIN_DISC } from "@/components/answer/place/figureMarks";
 import { fitStyle, useFitScale } from "@/components/charts/useFitScale";
+import { AbroadInset, type InsetPin, type InsetRoute } from "@/components/map/AbroadInset";
 import { IndiaMap, type MapPoint } from "@/components/map/IndiaMap";
 import { VIEW_BOX } from "@/components/map/projection";
 import { listText } from "@/lib/format";
 import type { BoundaryNote } from "@/lib/regionContract";
 import { wikidataUrl } from "@/lib/supplyView";
-import type { PlacedPlace, TimelineRouteLine } from "@/lib/timelineView";
+import { abroadSummary, type PlacedPlace, type TimelineRouteLine } from "@/lib/timelineView";
 
 function RouteLines({ routes }: { routes: readonly TimelineRouteLine[] }) {
   return (
@@ -32,23 +33,18 @@ function RouteLines({ routes }: { routes: readonly TimelineRouteLine[] }) {
   );
 }
 
-function EdgePosts({ places, scale }: { places: readonly PlacedPlace[]; scale: number }) {
+function Abroad({ places, routes }: { places: readonly PlacedPlace[]; routes: readonly TimelineRouteLine[] }) {
+  const pins = useMemo<InsetPin[]>(() => places.map((place) => ({ key: `abroad:${place.index}`, label: String(place.pin), name: place.name, longitude: place.longitude, latitude: place.latitude })), [places]);
+  const lines = useMemo<InsetRoute[]>(
+    () => routes.filter((route) => route.start.beyond || route.end.beyond).map((route) => ({ key: route.key, from: route.start, to: route.end })),
+    [routes]
+  );
+  const summary = abroadSummary(places);
   return (
-    <g className="pointer-events-none" data-testid="timeline-edge-posts">
-      {places.map((place) => {
-        const text = `${place.pin} ${place.name}`;
-        const post = edgePost(place.longitude, place.latitude, text, scale);
-        return (
-          <g key={place.index} data-testid="timeline-edge-post" data-pin={place.pin} data-angle={post.angle}>
-            <rect x={post.left} y={post.top} width={post.width} height={post.height} rx={post.height / 2} fill="var(--map-marker)" stroke="var(--map-marker-ring)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-            <path d="M -3 -5 L 3 0 L -3 5" transform={`translate(${post.left + 13 * scale} ${post.middle}) rotate(${post.angle}) scale(${scale.toFixed(4)})`} fill="none" stroke="var(--map-label)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            <text x={post.left + 24 * scale} y={post.middle} dominantBaseline="central" fill="var(--map-label)" className="font-ui font-semibold" style={{ fontSize: `calc(${POST_FONT}px * var(--k, 1))` }}>
-              {text}
-            </text>
-          </g>
-        );
-      })}
-    </g>
+    <div className="mt-3 grid min-w-0 gap-1.5 lg:max-w-md" dir="ltr" data-testid="timeline-abroad-frame">
+      <AbroadInset pins={pins} routes={lines} label={summary} />
+      <p className="font-ui text-caption text-ink-3">{summary}</p>
+    </div>
   );
 }
 
@@ -86,18 +82,15 @@ export function TimelinePins({ placed, reached, routes, boundary }: PinsProps) {
         .map((place) => ({ key: `place:${place.index}`, name: place.name, latitude: place.latitude, longitude: place.longitude, total: 1, pinLabel: String(place.pin), caption: null })),
     [shown]
   );
-  const overlay = (
-    <>
-      <RouteLines routes={routes} />
-      <EdgePosts places={shown.filter((place) => place.beyond)} scale={scale} />
-    </>
-  );
+  const abroad = useMemo(() => shown.filter((place) => place.beyond), [shown]);
+  const overlay = <RouteLines routes={routes} />;
   const texts = { title: listText(placed.map((place) => place.name)), source: <AnswerMapSource boundary={boundary} coordinates /> };
   return (
     <AnswerFigure texts={texts} className="lg:sticky lg:top-24" data-testid="timeline-pins">
       <div ref={frame} style={fitStyle(scale)} className="min-w-0">
         <IndiaMap points={points} hoveredKey={hovered} selectedKey={pinned} onHover={setHovered} onSelect={(key) => setPinned((current) => (current === key ? null : key))} overlay={overlay} />
       </div>
+      {abroad.length > 0 ? <Abroad places={abroad} routes={routes} /> : null}
       <PlaceLinks placed={placed} />
     </AnswerFigure>
   );

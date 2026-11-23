@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from app.models.knowledge import DIFFERS_ON_CHARS
+
 from .candidate_gates import COMPARISON_RELATIONS, REASON_MAX_CHARS
 from .quotes import quote_key
 
@@ -10,6 +12,7 @@ __all__ = [
     "NEW_DETAILS_MAX",
     "ComparedFacts",
     "comparison_relation",
+    "differs_about",
     "novelty_adds",
     "novelty_reason",
     "relation_reason",
@@ -49,9 +52,20 @@ def comparison_relation(compared: ComparedFacts) -> str:
 def relation_reason(compared: ComparedFacts, relation: str, said: str) -> str:
     if relation != DIFFERS:
         return said[:REASON_MAX_CHARS]
-    named = f"{compared.subject}, {compared.property}" if compared.subject else compared.property
-    clash = f"{named}: the candidate says {compared.candidate_value}, the held fact {compared.held_value}"
+    clash = f"{_named(compared)}: the candidate says {compared.candidate_value}, the held fact {compared.held_value}"
     return f"{clash}. {said}"[:REASON_MAX_CHARS]
+
+
+def differs_about(compared: ComparedFacts, relation: str) -> str | None:
+    named = _named(compared).strip(" ,.")
+    if relation != DIFFERS or not named:
+        return None
+    return f"{named[0].upper()}{named[1:]}"[:DIFFERS_ON_CHARS]
+
+
+def _named(compared: ComparedFacts) -> str:
+    subject, asked = compared.subject.strip(), compared.property.strip()
+    return f"{subject}, {asked}" if subject and asked else subject or asked
 
 
 def novelty_adds(new_details: Sequence[str], *, specific: bool) -> bool:

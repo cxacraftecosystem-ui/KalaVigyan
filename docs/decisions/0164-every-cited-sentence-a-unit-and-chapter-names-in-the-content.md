@@ -19,6 +19,7 @@ authored page, and where an authored page's chapter names live). The contracts a
 | The ground figure captured from the React page | [decision 0151](0151-a-release-the-live-side-can-read.md) |
 | The document, its content and its units | [monograph-document.md](../contracts/monograph-document.md) |
 | The renderer, the page plan and the native views | [monograph-renderer.md](../contracts/monograph-renderer.md) |
+| The shell measured and its register entries rewritten to what is left | [decision 0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

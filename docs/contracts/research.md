@@ -216,6 +216,21 @@ URL or `hostType` (`PUBLISHER`, `REPOSITORY`). URLs are https only, so an open w
 none. A text that is not a DOI is `InvalidInput`; an unknown DOI is `not_found`. Unpaywall is
 the locator: its title search is retired (decision 0005), so it is not a `SourceAdapter`.
 
+### Reference lister (decision 0181)
+
+```
+class ReferenceLister(Protocol):
+    name: str
+    def lists(self, item: EvidenceItem) -> bool
+    async def references(self, item: EvidenceItem, k: int) -> list[SourceDocument]
+```
+
+The works a read item cites, as documents with their abstracts, at most `k` in the service's order;
+an item the lister cannot place (`lists` false) has none and costs no call. `OpenAlexAdapter` lists an
+item carrying `externalIds.openalex`: one `works` call filtered `cited_by:<work>,has_abstract:true`,
+sorted `cited_by_count:desc`, `per-page` `k`, with the fields a fetch reads; a record without a usable
+abstract is left out (recorded fixture `tests/sources/fixtures/openalex_references.json`).
+
 ### Scholarly adapters (`app/sources/`, decision 0005)
 
 `sources.scholarly.registry.scholarly_sources(keys, client) -> ScholarlySources {adapters,
@@ -694,14 +709,23 @@ document is read), which the answer stream turns into `trail` events.
   1 of 4, none of 3; decisions 0046 and 0089) wait while the primary items are read; then DOIs cited in
   documents whose tier `follows_references` (at most `REFERENCES_PER_DOCUMENT` 5 new per document, in text order)
   are fetched as `<doi_source>:<doi>` and opened like any scholarly item, the fetched abstract
-  beside an open published copy. They join the
+  beside an open published copy. A read document the `reference_source` lists (`ReferenceLister.lists`:
+  an OpenAlex work, by its `externalIds.openalex`; decision 0181) then fills the rest of its five from
+  its own reference list in one call (`ReferenceLister.references(item, k)`: OpenAlex `works` filtered
+  `cited_by:<work>,has_abstract:true`, `sort cited_by_count:desc`, each work's abstract rebuilt as for a
+  fetch), the lists sharing what the cited DOIs leave of the reserve in reading order
+  (`references.cited_lists`). Followed works are opened like DOI leads, kept once by source key, and
+  a failed list is logged as a `FOLLOW` failure of `openalex` naming the parent. No model is called and
+  no budget grows: only `DEEP` (Expert) follows references, so a Basic or Detailed answer, the ones
+  measured, reads exactly what it read before. They join the
   evidence after the searched items with `followedFrom` set and the parent's facets.
 
-`LiveSources {searchers (distinct names), fetcher?, locator?, doi_source?, publisher?}` (a dataclass);
+`LiveSources {searchers (distinct names), fetcher?, locator?, doi_source?, publisher?, reference_source?}`
+(a dataclass);
 `services.live_sources.live_sources(session, client)` builds it from every scholarly adapter,
 the reference adapters and `WebSearch` (one `FetcherClient` shared by the web adapters and the
-open-access reads), the Unpaywall locator, `crossref` as the DOI source and the registry's
-`ScholarlySources.publisher`. Hold it for the
+open-access reads), the Unpaywall locator, `crossref` as the DOI source, the scholarly adapter that
+lists references (`openalex`) and the registry's `ScholarlySources.publisher`. Hold it for the
 process: each adapter paces and caches itself.
 
 ### Evidence pack (`research/evidence_pack.py`)

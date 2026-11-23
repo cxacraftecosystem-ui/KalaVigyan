@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -70,6 +70,7 @@ async def settle_sources_differ(
     curated = await conflicted_claims(session, touched) - await cleared_claims(session, touched)
     flagged = {claim for claim in touched if rivals.get(claim)} | curated
     await _flag(session, flagged & touched, touched - flagged)
+    await _name(session, await _rival_subjects(session, rivals))
     return {claim: rivals.get(claim, frozenset()) for claim in given}
 
 
@@ -169,6 +170,40 @@ async def _scopes(session: AsyncSession, claim_ids: set[uuid.UUID]) -> dict[uuid
         .where(Claim.id.in_(list(claim_ids)))
     )
     return {claim: HeldScope(status, craft, owner) for claim, status, craft, owner in rows.tuples()}
+
+
+async def _rival_subjects(
+    session: AsyncSession, rivals: Mapping[uuid.UUID, frozenset[uuid.UUID]]
+) -> dict[uuid.UUID, str]:
+    ids = list(rivals)
+    if not ids:
+        return {}
+    rows = await session.execute(
+        select(CandidateCheck.claimId, CandidateCheck.relatedClaimIds, CandidateCheck.differsOn)
+        .where(
+            CandidateCheck.gate == DUPLICATE_GATE,
+            CandidateCheck.passed.is_(True),
+            CandidateCheck.differsOn.is_not(None),
+            or_(CandidateCheck.claimId.in_(ids), CandidateCheck.relatedClaimIds.overlap(ids)),
+        )
+        .order_by(CandidateCheck.checkedAt, CandidateCheck.id)
+    )
+    named: dict[uuid.UUID, str] = {}
+    for claim, related, about in rows.tuples():
+        ends = [pair for held in related for pair in ((claim, held), (held, claim))]
+        for one, other in ends:
+            if about and other in rivals.get(one, frozenset()):
+                named.setdefault(one, about)
+    return named
+
+
+async def _name(session: AsyncSession, subjects: Mapping[uuid.UUID, str]) -> None:
+    for claim, about in subjects.items():
+        await session.execute(
+            update(Claim)
+            .where(Claim.id == claim, Claim.sourcesDiffer.is_(True), Claim.differsOn.is_(None))
+            .values(differsOn=about)
+        )
 
 
 async def _flag(session: AsyncSession, raised: set[uuid.UUID], cleared: set[uuid.UUID]) -> None:

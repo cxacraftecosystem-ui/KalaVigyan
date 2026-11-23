@@ -2,7 +2,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.curation.checks import default_context
@@ -29,6 +29,7 @@ DIFFERING_TEXT = "Ajrakh is printed on one side of the cloth only."
 WRONG = "The quote was misread."
 SETTLED = "Both sources describe the same dye bath."
 SOAKING, SOAKING_PARTNER = "C064", "C065"
+SIDES = "How many sides of the cloth are printed"
 
 
 @pytest.fixture
@@ -42,6 +43,15 @@ async def seeded() -> AsyncIterator[tuple[AsyncSession, People]]:
 async def flags(session: AsyncSession, *claim_ids: uuid.UUID) -> dict[uuid.UUID, bool]:
     rows = await session.execute(
         select(Claim.id, Claim.sourcesDiffer)
+        .where(Claim.id.in_(claim_ids))
+        .execution_options(populate_existing=True)
+    )
+    return dict(rows.tuples().all())
+
+
+async def subjects(session: AsyncSession, *claim_ids: uuid.UUID) -> dict[uuid.UUID, str | None]:
+    rows = await session.execute(
+        select(Claim.id, Claim.differsOn)
         .where(Claim.id.in_(claim_ids))
         .execution_options(populate_existing=True)
     )
@@ -63,6 +73,24 @@ async def test_retracting_the_only_differing_fact_clears_its_rival_s_flag(
     )
     assert (decided.status, decided.sources_differ) == ("RETRACTED", False)
     assert await flags(session, AGENT_WAITING, HELD) == {AGENT_WAITING: False, HELD: False}
+
+
+async def test_approving_a_fact_the_judge_found_differing_names_what_both_facts_differ_on(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, people = seeded
+    await session.execute(
+        update(CandidateCheck)
+        .where(CandidateCheck.claimId == AGENT_WAITING, CandidateCheck.gate == "DUPLICATE")
+        .values(differsOn=SIDES)
+    )
+    await decisions.approve_item(session, fact(AGENT_WAITING), people.admin, QueueApproval(), now=NOW)
+    assert await flags(session, AGENT_WAITING, HELD) == {AGENT_WAITING: True, HELD: True}
+    assert await subjects(session, AGENT_WAITING, HELD) == {AGENT_WAITING: SIDES, HELD: SIDES}
+    await decisions.retract_fact(
+        session, AGENT_WAITING, people.professor, FactRetraction(reason=WRONG), now=NOW
+    )
+    assert await subjects(session, AGENT_WAITING, HELD) == {AGENT_WAITING: None, HELD: None}
 
 
 async def test_approving_a_fact_under_another_craft_flags_neither_craft_s_facts(
@@ -136,6 +164,7 @@ async def test_a_later_import_keeps_the_flag_a_live_differing_fact_set_on_a_cura
             passed=True,
             reasons=["it differs on how many sides are printed"],
             relatedClaimIds=[curated],
+            differsOn=SIDES,
             checkedAt=NOW,
         )
     )
@@ -144,6 +173,7 @@ async def test_a_later_import_keeps_the_flag_a_live_differing_fact_set_on_a_cura
     again = await import_path(session, CURATION_DIR / f"{AJRAKH}.json", default_context())
     assert (again.status, again.changed.get("claims")) == ("IMPORTED", None)
     assert await flags(session, curated, CONTRIBUTED) == {curated: True, CONTRIBUTED: True}
+    assert await subjects(session, curated, CONTRIBUTED) == {curated: SIDES, CONTRIBUTED: SIDES}
 
 
 async def test_a_mark_a_person_cleared_stays_cleared_when_the_dossier_is_imported_again(

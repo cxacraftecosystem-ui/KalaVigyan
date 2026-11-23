@@ -1,9 +1,11 @@
+import json
 import re
 from typing import Any
 
 import pytest
 
 from app.core.errors import InvalidInput
+from app.data.craft_master_loader import SEED_CLAIMS_FILE
 from app.research.monograph_page import (
     UNIT_SLOT,
     CitedSource,
@@ -190,3 +192,26 @@ def test_kutch_ajrakhs_chapter_names_are_its_approved_rail_and_chapter_menu() ->
     assert [(c.key, c.rail) for c in named] == rail
     assert [(c.key, c.title) for c in named] == menu == labels
     assert ("made", "Making") in rail and ("made", "How it is made") in menu
+
+
+def test_kutch_ajrakhs_reader_data_names_the_gi_journal_s_author_whole_as_the_seed_does() -> None:
+    listed = monograph_content("Kutch-Ajrakh").data["kv-data"]["sources"].values()
+    (journal,) = [
+        source for source in listed if source["kind"] == "GI_JOURNAL" and "Kutch Ajrakh" in source["t"]
+    ]
+    seeded = json.loads(SEED_CLAIMS_FILE.read_text(encoding="utf-8"))["sources"]
+    (seed,) = [
+        source
+        for source in seeded
+        if source["kind"] == "GI_JOURNAL"
+        and source["year"] == journal["y"]
+        and "Kutch Ajrakh" in source["title"]
+    ]
+    assert (
+        journal["authors"]
+        == seed["authors"]
+        == [
+            "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala"
+            " Vikas Sangathan; facilitated by Textiles Committee, Ministry of Textiles)"
+        ]
+    )

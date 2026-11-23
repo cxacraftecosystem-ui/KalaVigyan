@@ -171,7 +171,7 @@ work by DOI or the service's record URL; what is kept of what it reads is below 
 
 | Adapter | Service | Terms that bind us |
 |---|---|---|
-| `openalex` | OpenAlex works API | Metadata CC0; daily allowance per key or per IP |
+| `openalex` | OpenAlex works API: search, a work's abstract, and in Expert research a read work's reference list (`cited_by`, decision 0181) | Metadata CC0; daily allowance per key or per IP |
 | `crossref` | Crossref REST API, polite pool (`mailto`) | Metadata free to reuse; abstracts remain the publishers' |
 | `semantic_scholar` | Semantic Scholar Academic Graph | API licence; publishers may elide abstracts |
 | `core` | CORE API v3 | Key required; full texts keep their own licences |
@@ -249,6 +249,19 @@ has no 3D record for is asked again once its kept miss is over 90 days old, deci
 one call per 0.25 s, kept in the private bucket and drawn in the explainer citing the compound's
 record (decision 0045).
 
+## Vendored source texts (decision 0181)
+
+The Wood Handbook the seed's wood claims cite: Forest Products Laboratory (2010), *Wood Handbook:
+Wood as an Engineering Material*, General Technical Report FPL-GTR-190, USDA Forest Service, Madison,
+Wisconsin. It is a work of the United States Government, so it is in the public domain and its text
+may be stored and shown whole. The five chapters the claims cite (3, Structure and Function of Wood;
+4, Moisture Relations and Physical Properties of Wood; 5, Mechanical Properties of Wood; 13, Drying
+and Control of Moisture Content and Dimensional Changes; 16, Finishing of Wood) are kept in
+`backend/app/data/source_texts/fpl-gtr-190/` exactly as `tools/curation/fetch.py` read them on
+2026-11-23 from `https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_<nn>.pdf`, through
+their Wayback Machine copies (each named in `source.json` with the SHA-256 of its text), and are
+stored as the source's public passages, cited by chapter and printed page.
+
 ## Live web sources
 
 Found through `backend/app/sources/web/` and read by the fetcher (decision 0007). A web page
@@ -282,6 +295,7 @@ builder.
 |---|---|---|
 | `wikimedia_commons` | Wikimedia Commons file search (`imageinfo`, 960 px thumbnails) | Each file's own licence; shown inline only under CC0, CC BY, CC BY-SA or public domain with its author, credited author, licence (linked) and Wikimedia Commons; otherwise a link card |
 | `openverse` | Openverse image search (`api.openverse.org`, anonymous) | Only `by`, `by-sa`, `cc0` and `pdm` results with a creator; credited creator, licence and source site (Flickr, Wikimedia Commons, ...); the Openverse thumbnail is shown |
+| `europe_pmc_figures` | Europe PMC REST search of figure legends (`FIG:`) in open-access full texts (`www.ebi.ac.uk/europepmc/webservices/rest`, anonymous), the article's JATS full text, and the figure image from the PMC CDN (`cdn.ncbi.nlm.nih.gov/pmc/blobs/...`); asked only for a zoom's fibre level after Commons and Openverse (decision 0180) | Only articles under CC BY, CC BY-SA or CC0 (the search record's licence and the full text's licence link both open); each figure carries its article's licence (linked), its article's first author ("et al." for more) and Europe PMC as its site, and links its article's DOI page; a figure with its own permissions or a legend that cites another work or says reprinted, reproduced, adapted, permission, copyright or courtesy is third-party material and is never offered |
 | `searxng` | SearXNG image results | No licence is known, so always a link card: the source site's own image as thumbnail, the page title and site, opening the page |
 | `brave` | Brave Image Search API (`/res/v1/images/search`, only with `BRAVE_SEARCH_API_KEY`), asked for an answer's section when SearXNG finds fewer than two link cards or fails (decision 0166) | Brave Search API terms; no licence is known, so always a link card: the source site's own image (`properties.url`, never Brave's proxied `thumbnail`), the page title and site, opening the page |
 

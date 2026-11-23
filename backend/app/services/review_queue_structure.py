@@ -19,6 +19,7 @@ from app.research.structure_proposals import (
     ALTERNATIVE,
     BOTANICAL_NAME,
     CONFLICT,
+    GROUP_NAME,
     PENDING_STATUS,
     REACTION,
     STAGE_AFTER,
@@ -42,6 +43,9 @@ MESSAGES = {
     "APPROVED": "Approved: written into the page and its dossier, with its fact cited.",
     "REJECTED": "Rejected: the page stays as it is, and the reason is kept with the proposal.",
 }
+NAME_APPROVED = (
+    "Approved: the name joins the craft's list of names kept out of AI pictures, which readers never see."
+)
 UNGRADED = "ungraded"
 SITE_RELATIVE = ""
 
@@ -89,7 +93,8 @@ async def approve_structure_item(
         await approve_structure(session, row, reviewer, note=note, now=now)
     except Refused as moved:
         raise DecisionConflict(moved.message) from moved
-    return QueueDecision(kind=STRUCTURE, id=row.id, status=row.status, message=MESSAGES[row.status])
+    message = NAME_APPROVED if row.kind == GROUP_NAME else MESSAGES[row.status]
+    return QueueDecision(kind=STRUCTURE, id=row.id, status=row.status, message=message)
 
 
 async def reject_structure_item(
@@ -181,8 +186,16 @@ def _review(row: ProposalRow, subject: _Subject, known: _Known) -> StructureRevi
             RelatedFact(id=claim_id, text=known.claims.get(claim_id, ""))
             for claim_id in (item.claim_ids if item.kind == CONFLICT else [])
         ],
-        stale=NO_PAGE if page is None else target_problem(page, item, held=subject.held),
+        stale=_stale(item, subject),
     )
+
+
+def _stale(item: Any, subject: _Subject) -> str | None:
+    if item.kind == GROUP_NAME:
+        return None
+    if subject.page is None:
+        return NO_PAGE
+    return target_problem(subject.page, item, held=subject.held)
 
 
 def _target(item: Any, page: OwnerPage | None, known: _Known) -> str | None:

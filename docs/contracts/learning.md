@@ -552,7 +552,14 @@ boundaryCaption}`, read with no model call:
   `GEOGRAPHY`, `GEOLOGY` and `CLIMATE` prose pieces of the crafts listed whose topic names the
   district, at most four, each passing the reuse rule. Facets are the district's own values of
   the land facets (`LAND_FACETS`: `SOIL`, `CLIMATE`, `WATER`, `TERRAIN`), exactly as the region route
-  gives a district place. Neither is `land: null`.
+  gives a district place, every stored year of a yearly series included. Neither is `land: null`.
+  The screen folds a yearly series (three or more values of one dataset, variable, depth,
+  statistic, aggregation and unit whose period is a single year, `lib/yearlySeries.foldedRows`)
+  into one row where its first year stood: the variable and its years, a finding naming the
+  highest and the lowest year, a sparkline in the variable's series token (`--series-rain`,
+  `--series-heat`, else `--chart-series`) with those two years marked in `--chart-emph` and a
+  break at a missing year, the provenance line, and every year in its table behind "All N values"
+  (`components/map/YearlySeriesRow`, decision 0180). The route's shape does not change.
 - `sources`: the crafts' basis sources, then every source the blocks cite, once each, in that
   order. `datasets`: `DR_DISTRICT_SHAPES`, then each value's dataset row once, by code.
   `boundaryCaption` is `BOUNDARY_CAPTION`; the client draws the district from the shapes it has.

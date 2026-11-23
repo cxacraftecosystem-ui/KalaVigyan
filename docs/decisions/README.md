@@ -37,7 +37,7 @@ flowchart LR
 | [0006](0006-reference-source-adapters.md) | Reference source adapters: Wikipedia, Wikidata, PubChem, Wikimedia Commons | · |
 | [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
-| [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
+| [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | [0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) |
 | [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0011](0011-claim-write-back-and-coverage-enrichment.md) | Claim write-back and the coverage enrichment job | · |
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
@@ -50,7 +50,7 @@ flowchart LR
 | [0019](0019-craft-page-and-region-panel.md) | Craft page process timeline, region panel and map choropleths | [0092](0092-design-system.md) |
 | [0020](0020-voice-ui.md) | Voice UI: the voice dock on /ask and the craft page | [0140](0140-voice-and-listen-kept-true.md) |
 | [0021](0021-media-ui.md) | Media UI: Image and Video on the craft page's process stages | [0092](0092-design-system.md) |
-| [0022](0022-batch-3-review-fixes.md) | Voice spend fails closed, a filtered style hint, region sources and one home per rule | · |
+| [0022](0022-batch-3-review-fixes.md) | Voice spend fails closed, a filtered style hint, region sources and one home per rule | [0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) |
 | [0023](0023-multilingual-answers.md) | Answers in Indian languages | [0117](0117-pages-in-other-languages.md) and [0157](0157-translations-read-back-and-reviewed-interface-words.md) |
 | [0024](0024-admin-role.md) | Admin role | [0155](0155-accounts-and-sharing-kept-true.md) |
 | [0025](0025-multilingual-voice.md) | Voice in every answer language | [0157](0157-translations-read-back-and-reviewed-interface-words.md) |
@@ -92,15 +92,15 @@ flowchart LR
 | [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | [0147](0147-time-market-and-figures-kept-true.md) |
 | [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md), [0152](0152-matter-read-once-and-the-science-seed-kept-true.md), [0169](0169-mcp-follow-ups-kept-true.md) |
-| [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | [0147](0147-time-market-and-figures-kept-true.md) |
+| [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | [0147](0147-time-market-and-figures-kept-true.md) and [0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) |
 | [0058](0058-elevenlabs-music-sound-image-video.md) | ElevenLabs music, sound effects, image and video | [0154](0154-ai-media-and-film-scores-kept-true.md) |
 | [0059](0059-sandbox-and-what-if-renderers.md) | Sandbox and what-if renderers | · |
-| [0060](0060-zoom-timeline-and-film-renderers.md) | Zoom, timeline and film mode renderers | [0154](0154-ai-media-and-film-scores-kept-true.md) |
+| [0060](0060-zoom-timeline-and-film-renderers.md) | Zoom, timeline and film mode renderers | [0154](0154-ai-media-and-film-scores-kept-true.md) and [0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) |
 | [0061](0061-phase-c-review-fixes.md) | Phase C review fixes | · |
 | [0062](0062-phase-d-contract.md) | Phase D contract: learning blocks, versions, alerts, lessons, exports and the map | [0067](0067-lessons-and-exports.md) and [0147](0147-time-market-and-figures-kept-true.md) |
 | [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md), [0143](0143-lessons-exports-and-follow-ups-kept-true.md) and [0160](0160-place-builders-kept-true.md) |
 | [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md), [0143](0143-lessons-exports-and-follow-ups-kept-true.md) and [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
-| [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
+| [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) and [0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) |
 | [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md), [0147](0147-time-market-and-figures-kept-true.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0067](0067-lessons-and-exports.md) | Lesson packs, the explainer PDF and citation export | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0068](0068-learning-block-renderers.md) | Learning block renderers | · |
@@ -159,7 +159,7 @@ flowchart LR
 | [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md), [0117](0117-pages-in-other-languages.md), [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0112](0112-reviewed-field-photographs.md) | Each field photograph filed on an artisan is reviewed by a person before it is shown | · |
 | [0113](0113-questions-become-work.md) | Questions KalaVigyan cannot answer well become open work | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
-| [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md) and [0169](0169-mcp-follow-ups-kept-true.md) |
+| [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md), [0169](0169-mcp-follow-ups-kept-true.md) and [0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | [0115](0115-client-id-metadata-documents.md) | MCP clients sign in with their published identity | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) |
 | [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI | [0130](0130-a-craft-release.md) and [0149](0149-a-fact-readers-can-see.md) |
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
@@ -200,7 +200,7 @@ flowchart LR
 | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) | Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see | · |
 | [0154](0154-ai-media-and-film-scores-kept-true.md) | A film score is made once and timed by what was heard, AI pictures are shared on their craft page, and the paid checks run under a cap | [0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) and [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) |
 | [0155](0155-accounts-and-sharing-kept-true.md) | The roster offers what its guards allow, a recovery code may add a first password, roles sort and cap by rank, and a stopped share's files leave the bucket | · |
-| [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
+| [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | [0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
 | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) | A place abroad refuses only practice there, a reviewer files any researched fact, and the MCP server describes its kinds once | · |
@@ -208,7 +208,7 @@ flowchart LR
 | [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) | Listen falls back to the Gemini voice by sentence, a shared-science node counts and pages its crafts, admins see the hidden facts, and the smoke measures the dock's bit rate | [0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
 | [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
-| [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) | Every cited sentence of Kutch Ajrakh is a text unit, 73 of its components draw natively, and its content names its chapters | · |
+| [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) | Every cited sentence of Kutch Ajrakh is a text unit, 73 of its components draw natively, and its content names its chapters | [0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | [0175](0175-production-checks-read-what-the-page-shows.md) |
 | [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
@@ -221,8 +221,11 @@ flowchart LR
 | [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
 | [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
 | [0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) | Listen plays as it narrates, the admin build waits for the API main needs, evaluation runs are kept, and the Gemini voice is a fixture | · |
+| [0177](0177-differences-named-and-the-monograph-shell-measured.md) | A difference is named from what the judge already answers, the kind preview is served its themes, and what holds Kutch Ajrakh's authored shell is measured | · |
 | [0178](0178-seed-authors-whole-and-goldens-from-recorded-data.md) | The seed names an organisation as one author, Kutch Ajrakh's fixture market shows its curated price, and the goldens show recorded rain, a placed component and a craft's own names | · |
 | [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) | A transcript window is a chunk kind, a craft reads the shared concepts the graph links to it, and the paid checks make one Gemini clip when asked | · |
+| [0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) | A place abroad sits in its own inset, a yearly series is one row, picture levels come from glossary tags, the fibre asks paper figures, and a generated page shows its kin crafts | · |
+| [0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) | A craft's community and person names stay out of AI pictures, Expert research follows OpenAlex reference lists, and the Wood Handbook's cited chapters are its passages | · |
 | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) | A section's pictures illustrate only what it shows and never end an answer, the citation numeral's touch area stays on the page, and the production checks read only our own frames | · |
 
 ## How this document is kept true

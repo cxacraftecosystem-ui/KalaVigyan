@@ -22,6 +22,8 @@ GI_PASSAGE = (
     "technique that involves series of direct and resist printing and dyeing"
 )
 GI_LOCATOR = "GI Journal No. 188 copy (application 1050), PDF p. 1"
+WOOD_PASSAGE = "Green wood is often defined as freshly sawn wood in which the cell walls are completely saturated with water"
+WOOD_LOCATOR = "Chapter 4, Moisture Relations and Physical Properties of Wood, p. 4-1, "
 
 
 async def seeded_afresh(session: AsyncSession) -> int:
@@ -41,7 +43,13 @@ async def test_the_seed_import_keeps_each_checked_quote_as_a_passage_of_its_sour
             )
         ).all()
         assert any(row.text == GI_PASSAGE and GI_LOCATOR in row.locator and row.acl == "PUBLIC" for row in gi)
-        assert (await session.scalars(select(Chunk.id).where(Chunk.sourceId == WOOD_HANDBOOK))).all() == []
+        wood = (
+            await session.execute(
+                select(Chunk.text, Chunk.locator, Chunk.acl).where(Chunk.sourceId == WOOD_HANDBOOK)
+            )
+        ).all()
+        assert wood and {row.acl for row in wood} == {"PUBLIC"}
+        assert any(WOOD_PASSAGE in row.text and row.locator.startswith(WOOD_LOCATOR) for row in wood)
         assert await store_seed_passages(session, load_seed_claims()) == 0
 
 

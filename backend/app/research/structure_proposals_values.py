@@ -11,6 +11,7 @@ from .structure_proposals import (
     BOTANICAL_NAME,
     GI_RECORD,
     GLOSSARY_TERM,
+    GROUP_NAME,
     NATIVE_NAME,
     REACTION,
     STAGE_AFTER,
@@ -115,5 +116,6 @@ _VALUES: Mapping[str, Callable[[Any], list[StatedValue]]] = MappingProxyType(
         BOTANICAL_NAME: _named("the botanical name", "botanical_name"),
         GLOSSARY_TERM: _named("the term", "term"),
         GI_RECORD: _gi,
+        GROUP_NAME: _named("the name", "name"),
     }
 )

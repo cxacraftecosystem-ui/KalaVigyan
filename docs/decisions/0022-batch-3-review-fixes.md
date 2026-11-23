@@ -11,6 +11,7 @@ Date: 2026-11-17. Status: accepted.
 |---|---|
 | The lanes it reviewed | [0014](0014-science-region-voice-media-contracts.md), [0015](0015-science-engine.md), [0016](0016-region-profile.md), [0017](0017-voice-backend.md), [0018](0018-media-backend.md), [0019](0019-craft-page-and-region-panel.md), [0020](0020-voice-ui.md) and [0021](0021-media-ui.md) |
 | The contracts it names | [voice.md](../contracts/voice.md) |
+| A craft's listed community and person names kept out of prompts beside the group words | [decision 0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

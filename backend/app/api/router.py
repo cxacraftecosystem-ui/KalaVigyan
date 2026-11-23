@@ -13,6 +13,7 @@ from app.api.routes import (
     craft_monograph,
     crafts,
     dataset_uploads,
+    design,
     explainer_exports,
     explainers,
     field_photo_reviews,
@@ -89,6 +90,7 @@ api_router.include_router(field_voices.router)
 api_router.include_router(field_voices_held.router)
 api_router.include_router(field_photo_reviews.router)
 api_router.include_router(film.router)
+api_router.include_router(design.router)
 api_router.include_router(knowledge.router)
 api_router.include_router(knowledge_export.router)
 api_router.include_router(knowledge_writes.router)

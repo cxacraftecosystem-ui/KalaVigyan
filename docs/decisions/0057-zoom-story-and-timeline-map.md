@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted.
 | The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
 | The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
 | Timeline places through the district register and curated ids before Wikidata, and undated history listed | [decision 0147](0147-time-market-and-figures-kept-true.md) |
+| Picture levels from glossary zoom tags, and open paper figures for the fibre | [decision 0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CircleHelp } from "lucide-react";
 
-import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
+import { SentenceWithReadings } from "@/components/answer/SentencesDiffer";
 import type { WhatIfBlock, WhatIfOption } from "@/lib/explainerPlay";
 import { cn } from "@/lib/utils";
 import { isUnknownOption, optionNote, UNKNOWN_OUTCOME } from "@/lib/whatIfView";
@@ -40,7 +40,7 @@ function Outcomes({ option }: { option: WhatIfOption }) {
     <ul className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
       {option.outcomes.map((outcome) => (
         <li key={outcome.sentence.id} className="min-w-0 max-w-measure break-words font-reading text-body-sm text-ink-1" data-testid="what-if-outcome">
-          <ExplainerSentence sentence={outcome.sentence} />
+          <SentenceWithReadings sentence={outcome.sentence} />
         </li>
       ))}
     </ul>

@@ -6,18 +6,21 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from app.data.design_palette import THEMES
+from app.data.kind_fixture_files import KIND_FIXTURE_ORDER, KIND_FIXTURES_DIR, kind_fixtures
 from app.research.component_specs import CONTRIBUTABLE_KINDS, checked_spec, not_contributable
 from app.research.component_specs_general_delivery import DeliveredUnit, spec_problems, unit_problems
+from app.services.drawing_themes import themed_markup
+from app.services.kind_fixture_specs import served_kind_fixtures
 
 REPO = Path(__file__).resolve().parents[3]
-FIXTURES = REPO / "frontend" / "lib" / "kindFixtures"
 DOSSIERS = REPO / "backend" / "app" / "data" / "curation"
 KUTCH = "Kutch-Ajrakh"
 WITHHELD = ("language_switch", "citation_tool", "credits", "picture_plate", "model_explainer", "timeline_map")
 
 
 def _fixtures() -> list[dict[str, Any]]:
-    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(FIXTURES.glob("*.json"))]
+    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(KIND_FIXTURES_DIR.glob("*.json"))]
 
 
 def _dossier(craft: str) -> dict[str, Any]:
@@ -108,3 +111,21 @@ def test_dip_phases_are_the_spec_s_own_words_each_named_once() -> None:
     twice = [dip["phases"][0], dip["phases"][0]]
     with pytest.raises(ValidationError, match="each of its phases once"):
         checked_spec("dip_player", {**dip, "phases": twice})
+
+
+def test_the_preview_is_served_its_fixtures_in_page_order_with_each_drawing_s_four_themes() -> None:
+    served = served_kind_fixtures()
+    assert [fixture["label"] for fixture in served] == [fixture["label"] for fixture in kind_fixtures()]
+    assert len(served) == len(KIND_FIXTURE_ORDER) == 24
+    (drawing,) = [fixture for fixture in served if fixture["kind"] == "drawing"]
+    themes = drawing["spec"]["themes"]
+    assert list(themes) == list(THEMES) == ["light", "dark", "hcLight", "hcDark"]
+    assert themes == {theme: themed_markup(drawing["spec"]["svg"], theme) for theme in THEMES}
+    assert themes["light"] != themes["dark"]
+    others = [
+        (served_one, filed)
+        for served_one, filed in zip(served, kind_fixtures(), strict=True)
+        if filed["kind"] != "drawing"
+    ]
+    assert all(served_one == filed for served_one, filed in others)
+    assert all("themes" not in fixture["spec"] for fixture in kind_fixtures())

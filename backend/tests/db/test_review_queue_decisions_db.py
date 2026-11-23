@@ -3,11 +3,12 @@ from collections.abc import AsyncIterator
 from datetime import timedelta
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
     AuditLog,
+    CandidateCheck,
     Claim,
     ComponentProposal,
     Concept,
@@ -91,7 +92,12 @@ async def test_a_named_difference_is_stored_with_the_flag_and_keeps_a_name_alrea
     held.differsOn = kept
     await session.flush()
     about = "How many times the saaj soaking is repeated"
-    assert await mark_sources_differ(session, AGENT_WAITING, about=about) == [HELD]
+    await session.execute(
+        update(CandidateCheck)
+        .where(CandidateCheck.claimId == AGENT_WAITING, CandidateCheck.gate == "DUPLICATE")
+        .values(differsOn=about)
+    )
+    assert await mark_sources_differ(session, AGENT_WAITING) == [HELD]
     rows = await session.execute(
         select(Claim.id, Claim.sourcesDiffer, Claim.differsOn)
         .where(Claim.id.in_([AGENT_WAITING, HELD]))

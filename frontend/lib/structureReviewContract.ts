@@ -10,7 +10,8 @@ export const STRUCTURE_KINDS = [
   "CONFLICT",
   "OPEN_QUESTION",
   "GI_RECORD",
-  "ALTERNATIVE"
+  "ALTERNATIVE",
+  "GROUP_NAME"
 ] as const;
 
 export type StructureKind = (typeof STRUCTURE_KINDS)[number];
@@ -48,6 +49,7 @@ export type GiRecordEntry = {
   authorisedUserCount: number | null;
 };
 export type AlternativeEntry = { kind: "ALTERNATIVE"; materialKey: string; alternativeKey: string };
+export type GroupNameEntry = { kind: "GROUP_NAME"; name: string; groupKind: string };
 export type StructureEntry =
   | StageAfterEntry
   | StageWhyEntry
@@ -58,7 +60,8 @@ export type StructureEntry =
   | ConflictEntry
   | OpenQuestionEntry
   | GiRecordEntry
-  | AlternativeEntry;
+  | AlternativeEntry
+  | GroupNameEntry;
 
 const tag = <K extends StructureKind>(kind: K) => oneOf([kind] as const);
 const species: Shape<StructureSpecies> = object<StructureSpecies>({ name: text, formula: nullable(text) });
@@ -101,7 +104,8 @@ export const structureEntryShape: Shape<StructureEntry> = tagged<StructureEntry>
     proprietors: list(text),
     authorisedUserCount: nullable(integer)
   }),
-  ALTERNATIVE: object<AlternativeEntry>({ kind: tag("ALTERNATIVE"), materialKey: text, alternativeKey: text })
+  ALTERNATIVE: object<AlternativeEntry>({ kind: tag("ALTERNATIVE"), materialKey: text, alternativeKey: text }),
+  GROUP_NAME: object<GroupNameEntry>({ kind: tag("GROUP_NAME"), name: text, groupKind: text })
 });
 
 function kindOf(value: unknown): unknown {

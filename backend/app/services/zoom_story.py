@@ -7,12 +7,19 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.geo.datasets import region_dataset
-from app.models import Craft
+from app.models import Craft, Term, TermCraft
 from app.research.blocks import ExplainerSentence, named_in
-from app.research.blocks_journey import ZOOM_LEVELS, ZoomCompound, ZoomLevel, ZoomStoryBlock
+from app.research.blocks_journey import (
+    IMAGE_ZOOM_LEVELS,
+    ZOOM_LEVELS,
+    ZoomCompound,
+    ZoomLevel,
+    ZoomStoryBlock,
+)
 from app.research.blocks_place import DistrictRef
 from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, DatasetRef
 from app.research.explainer import Block
@@ -26,7 +33,7 @@ from .matter_builders import LinkedCompound
 from .media_ref_store import StoredPicture, stored_pictures
 from .place_offers import district_refs, mapped_districts
 from .region_records import dataset_records
-from .zoom_pictures import LevelPicture
+from .zoom_pictures import LevelPicture, LevelTerm
 
 __all__ = [
     "ZOOM_DISTRICT_CLAIMS_MAX",
@@ -34,6 +41,7 @@ __all__ = [
     "ZoomGround",
     "district_level",
     "figure_texts",
+    "level_terms",
     "molecule_level",
     "picture_level_of",
     "zoom_ground",
@@ -63,6 +71,7 @@ class ZoomGround:
     claims: tuple[KnownClaim, ...] = ()
     sources: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
     pictures: tuple[StoredPicture, ...] = ()
+    terms: tuple[LevelTerm, ...] = ()
 
 
 @dataclass
@@ -112,7 +121,21 @@ async def zoom_ground(
     boundary = region_dataset(record) if record is not None else None
     claims, sources = await _district_claims(session, craft, districts, mode) if boundary else ((), {})
     pictures = await stored_pictures(session, [*offered, *(claim.id for claim in claims)])
-    return ZoomGround(districts, boundary, claims, sources, tuple(pictures))
+    terms = await level_terms(session, craft.id)
+    return ZoomGround(districts, boundary, claims, sources, tuple(pictures), terms)
+
+
+async def level_terms(session: AsyncSession, craft_id: uuid.UUID) -> tuple[LevelTerm, ...]:
+    linked = select(TermCraft.termId).where(TermCraft.craftId == craft_id)
+    rows = await session.scalars(
+        select(Term).where(Term.id.in_(linked), Term.zoomLevel.in_(IMAGE_ZOOM_LEVELS)).order_by(Term.key)
+    )
+    return tuple(
+        LevelTerm(
+            level=str(row.zoomLevel), label=row.label, surfaces=(row.label, *row.aliases, *row.localNames)
+        )
+        for row in rows
+    )
 
 
 def district_level(ground: ZoomGround, captions: Captions) -> ZoomLevel | None:

@@ -36,9 +36,11 @@ from .curation_seed_rows import SeedRetirement, retire_curated_seed_rows
 from .curation_store import source_aliases, write_evidence, write_records, write_structure
 from .curation_terms import write_curated_term_summaries
 from .curation_writes import insert_missing, stored_values, sync_rows
+from .group_names import keep_dossier_group_names
 from .monograph_generated_sections import SectionOwner
 from .piece_lookup import craft_districts
 from .piece_store import piece_values
+from .term_scales import fill_zoom_levels
 from .term_sentence_names import fill_sentence_names
 
 __all__ = [
@@ -92,6 +94,7 @@ class ImportReport:
     retired_seed_rows: SeedRetirement = field(default_factory=SeedRetirement)
     term_summaries: int = 0
     sentence_names: int = 0
+    zoom_levels: int = 0
 
     @property
     def refused(self) -> list[DossierOutcome]:
@@ -103,6 +106,7 @@ class ImportReport:
             "retiredSeedRows": self.retired_seed_rows.summary(),
             "termSummaries": self.term_summaries,
             "sentenceNames": self.sentence_names,
+            "zoomLevels": self.zoom_levels,
             "imported": sum(1 for outcome in self.dossiers if outcome.status == IMPORTED),
             "refused": len(self.refused),
             "waiting": sum(1 for outcome in self.dossiers if outcome.status == WAITING),
@@ -131,6 +135,7 @@ async def import_curation(
         retired_seed_rows=retired,
         term_summaries=await write_curated_term_summaries(session),
         sentence_names=await fill_sentence_names(session),
+        zoom_levels=await fill_zoom_levels(session),
     )
 
 
@@ -180,6 +185,7 @@ async def import_dossier(
     changed |= await write_evidence(session, plan)
     changed |= await write_structure(session, plan, previous)
     changed |= await write_records(session, plan, previous)
+    changed["groupNames"] = await keep_dossier_group_names(session, craft.id, dossier)
     await session.flush()
     changed["sections"] = await publish_dossier_sections(session, dossier, SectionOwner.craft(craft.id))
     overview = await _overview(session, plan, craft)

@@ -3,10 +3,11 @@ from dataclasses import dataclass
 
 import pytest
 
+from app.models import Claim, ClaimSource
 from app.research.blocks import ExplainerSentence
 from app.research.composition import ComposedAnswer, ComposedSection, ComposedSentence, QuotedSpan
 from app.services.answer_events import CitedClaims, cited_claims
-from app.services.knowledge_view import ClaimView
+from app.services.knowledge_view import ClaimView, cited_view
 from app.services.section_blocks import (
     BlockRefused,
     KeptSentence,
@@ -17,7 +18,7 @@ from app.services.section_blocks import (
     section_sentences,
 )
 
-from .fakes import ALUM_CLAIM_ID, SOURCES, VIEWS, WEB, WRITTEN_LAKE_ID, stored_view
+from .fakes import ALUM_CLAIM_ID, BOOK_ID, SOURCES, VIEWS, WEB, WRITTEN_LAKE_ID, stored_view
 
 PAGE = "searxng:https://crafts.example.org/ajrakh"
 WRITTEN_ID = uuid.UUID("6d000000-0000-4000-8000-000000000001")
@@ -104,6 +105,26 @@ def test_a_flagged_sentence_names_what_its_sources_differ_on_when_the_claim_stor
     assert (named["sourcesDiffer"], named["differsOn"]) == (True, "How long the red dye bath lasts")
     unnamed = flagged_alum(DifferingView)
     assert unnamed["sourcesDiffer"] is True and "differsOn" not in unnamed
+
+
+def stored_claim(*, differs: bool, about: str | None) -> Claim:
+    alum = VIEWS[0]
+    return Claim(id=alum.id, text=alum.text, evidenceLevel=alum.level, sourcesDiffer=differs, differsOn=about)
+
+
+def test_a_stored_claim_s_subject_of_difference_reaches_the_sentence_that_cites_it() -> None:
+    cite = ClaimSource(
+        id=uuid.UUID(int=41), claimId=VIEWS[0].id, sourceId=BOOK_ID, quote="Alum is the mordant"
+    )
+    view = cited_view(
+        stored_claim(differs=True, about="How long the red dye bath lasts"), [cite], (None, "MATERIAL")
+    )
+    assert (view.sources_differ, view.differs_on) == (True, "How long the red dye bath lasts")
+    sentence = KeptSentence(view.text, (view.id,), (), False)
+    shown = explainer_sentence("s1.b1.1", sentence, cited_claims([view], SOURCES)).model_dump(by_alias=True)
+    assert (shown["sourcesDiffer"], shown["differsOn"]) == (True, "How long the red dye bath lasts")
+    cleared = cited_view(stored_claim(differs=False, about=None), [cite], (None, "MATERIAL"))
+    assert (cleared.sources_differ, cleared.differs_on) == (False, None)
 
 
 def test_a_sentence_names_a_difference_only_when_its_sources_differ() -> None:

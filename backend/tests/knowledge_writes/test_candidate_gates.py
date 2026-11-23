@@ -137,6 +137,27 @@ def test_a_judged_same_fact_is_refused_and_a_differing_one_is_kept_as_sources_di
         kept.reasons[1]
         == f"it differs from fact {other.id}, kept as sources differ: Three dips against four."
     )
+    assert (refused.about, kept.about) == (None, None)
+
+
+def test_the_duplicate_gate_names_what_the_first_named_differing_fact_differs_on() -> None:
+    near, other = (
+        held("near", "Ajrakh is dipped four times.", 0.93),
+        held("other", "Ajrakh dips five times.", 0.9),
+    )
+    unnamed = FactComparison(held=near.id, relation="DIFFERS", reason="Three dips against four.")
+    named = FactComparison(
+        held=other.id,
+        relation="DIFFERS",
+        reason="Three dips against five.",
+        about="The indigo vat, number of dips",
+    )
+    kept = duplicate_outcome(CANDIDATE, twin=None, close=[near, other], comparisons=[unnamed, named])
+    assert (kept.passed, kept.related, kept.about) == (
+        True,
+        [near.id, other.id],
+        "The indigo vat, number of dips",
+    )
 
 
 def test_without_close_facts_vectors_or_a_judge_the_duplicate_gate_says_what_it_did() -> None:

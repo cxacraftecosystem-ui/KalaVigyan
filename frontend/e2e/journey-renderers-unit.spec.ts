@@ -244,23 +244,50 @@ test("the slider runs over every point's and route's years and the map follows i
   expect(attribute(earliest, "timeline-map", "data-year")).toEqual(["1401"]);
   expect(attribute(earliest, "timeline-entry", "data-state")).toEqual(["current", "later", "later", "later"]);
   expect(earliest).toContain('aria-valuetext="15th century"');
-  expect(attribute(earliest, "timeline-edge-post", "data-pin")).toEqual(["1"]);
+  expect(attribute(earliest, "timeline-abroad-pin", "data-pin")).toEqual(["1"]);
   expect([sceneStep(2, 3, 0, true), sceneStep(2, 3, 0, false), sceneStep(2, 3, null, false), sceneStep(2, 3, 0.5, false)]).toEqual([2, 0, 2, 1]);
   expect(attribute(filmed(createElement(TimelineMap, { block: timeline() }), 0), "timeline-map", "data-year")).toEqual(["1401"]);
   expect(attribute(filmed(createElement(TimelineMap, { block: timeline() }), 0.5), "timeline-map", "data-year")).toEqual(["1586"]);
   expect(attribute(drawn(createElement(TimelineMap, { block: timeline() })), "timeline-map", "data-year")).toEqual(["2001"]);
 });
 
-test("a place beyond India is a signpost at the frame's edge on the plain ground, with its Wikidata item, under the boundary caption", () => {
+function viewBoxOf(html: string, testId: string): number[] {
+  return attribute(html, testId, "viewBox")[0].split(" ").map(Number);
+}
+
+test("a place beyond India is a pin in an inset frame of its own bounds on the plain ground, with its Wikidata item, under the boundary caption", () => {
   const html = drawn(createElement(TimelineMapView, { block: timeline(), at: 2, onChoose: () => undefined }));
-  expect(attribute(html, "timeline-edge-post", "data-pin")).toEqual(["1"]);
-  expect(attribute(html, "timeline-edge-post", "data-angle")).toEqual(["180"]);
-  expect(html).toContain(">1 Fustat</text>");
+  expect(attribute(html, "timeline-abroad-pin", "data-pin")).toEqual(["1"]);
+  expect(html).toContain('data-testid="timeline-abroad-name">Fustat</text>');
+  expect(shownText(html)).toContain("Beyond the map of India: 1 Fustat");
+  expect(attribute(html, "timeline-abroad", "aria-label")).toEqual(["Beyond the map of India: 1 Fustat"]);
+  const [, , width, height] = viewBoxOf(html, "timeline-abroad");
+  expect(width).toBe(640);
+  expect(height).toBeCloseTo(381.3, 1);
+  const circle = /data-testid="timeline-abroad-pin" data-pin="1"><circle cx="([\d.]+)" cy="([\d.]+)"/.exec(html);
+  expect(Number(circle?.[1])).toBeCloseTo(59.5, 0);
+  expect(Number(circle?.[2])).toBeCloseTo(122, 0);
+  expect(html).toContain('data-testid="timeline-abroad-india"');
+  expect(html).toContain('fill="var(--sunk)"');
   expect(pinLabels(html)).toEqual([]);
   expect(html).not.toContain('data-testid="timeline-route"');
+  expect(html).not.toContain('data-testid="timeline-edge-post"');
   expect(html).toContain('href="https://www.wikidata.org/wiki/Q839456"');
   expect(shownText(html)).toContain(BOUNDARY_CAPTION);
-  expect(html).not.toMatch(/Pakistan|Egypt<\/text>/);
+  expect(html).not.toMatch(/Pakistan|Egypt<\/text>|data-iso="EGY"/);
+});
+
+test("the inset leaves India's frame as it is and draws a route that leaves India inside the inset", () => {
+  const block = placedTimeline();
+  const routed = parseShape(BLOCK_SHAPES.timeline_map, { ...block, routes: block.routes.map((route) => ({ ...route, start: 0 })) });
+  const html = drawn(createElement(TimelineMapView, { block: routed, at: 2, onChoose: () => undefined }));
+  const india = [...html.matchAll(/<svg viewBox="0 0 1000 ([\d.]+)"/g)].map((found) => Number(found[1]));
+  expect(india).toHaveLength(1);
+  expect(india[0]).toBeCloseTo(1114.2, 1);
+  expect(attribute(html, "timeline-abroad-route", "data-testid")).toHaveLength(1);
+  expect(attribute(html, "timeline-route", "data-testid")).toHaveLength(1);
+  const inland = drawn(createElement(TimelineMapView, { block: placedTimeline(), at: 2, onChoose: () => undefined }));
+  expect(inland).not.toContain('data-testid="timeline-abroad-route"');
 });
 
 test("placed places inside the frame are pins, and a stated move between two placed ends is a route", () => {
@@ -272,7 +299,7 @@ test("placed places inside the frame are pins, and a stated move between two pla
   const earliest = drawn(createElement(TimelineMapView, { block, at: 0, onChoose: () => undefined }));
   expect(pinLabels(earliest)).toEqual([]);
   expect(earliest).not.toContain('data-testid="timeline-route"');
-  expect(attribute(earliest, "timeline-edge-post", "data-pin")).toEqual(["1"]);
+  expect(attribute(earliest, "timeline-abroad-pin", "data-pin")).toEqual(["1"]);
 });
 
 test("with nothing placed there is no map, and with one moment there is no slider", () => {
@@ -286,7 +313,7 @@ test("with nothing placed there is no map, and with one moment there is no slide
   const one = drawn(createElement(TimelineMapView, { block: single, at: 0, onChoose: () => undefined }));
   expect(one).not.toContain('type="range"');
   expect(attribute(one, "timeline-entry", "data-state")).toEqual(["current"]);
-  expect(attribute(one, "timeline-edge-post", "data-pin")).toEqual(["1"]);
+  expect(attribute(one, "timeline-abroad-pin", "data-pin")).toEqual(["1"]);
 });
 
 test("journey renderers lay out in shrinkable columns so nothing widens a phone page", () => {

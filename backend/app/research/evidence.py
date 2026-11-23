@@ -25,6 +25,7 @@ __all__ = [
     "OpenAccessLocation",
     "OpenAccessLocator",
     "Quote",
+    "ReferenceLister",
     "SearchQuery",
     "SourceAdapter",
     "SourceDocument",
@@ -183,3 +184,12 @@ class OpenAccessLocator(Protocol):
     name: str
 
     async def locate(self, doi: str) -> OpenAccessLocation: ...
+
+
+@runtime_checkable
+class ReferenceLister(Protocol):
+    name: str
+
+    def lists(self, item: EvidenceItem) -> bool: ...
+
+    async def references(self, item: EvidenceItem, k: int) -> list[SourceDocument]: ...

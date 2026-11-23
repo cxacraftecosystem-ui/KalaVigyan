@@ -310,7 +310,7 @@
   },
   "lede": [
     {
-      "id": "pab9ad028a157.1",
+      "id": "pdd8671e603ab.1",
       "text": "Kutch Ajrakh is an elaborate resist block-printing technique of direct and resist printing and dyeing, made by Khatri artisans as a double-sided textile.",
       "level": "PROVISIONAL",
       "citations": [
@@ -349,7 +349,7 @@
       "terms": []
     },
     {
-      "id": "pab9ad028a157.2",
+      "id": "pdd8671e603ab.2",
       "text": "Its tradition is kept up in the Kutch villages of Ajrakhpur, Dhamadka and Khavda, and its process and designs are common to Sindh, where it originated, and to Barmer district of Rajasthan.",
       "level": "PROVISIONAL",
       "citations": [
@@ -416,10 +416,11 @@
       ],
       "translated": false,
       "terms": [],
-      "sourcesDiffer": true
+      "sourcesDiffer": true,
+      "differsOn": "Whether Dhamadka was abandoned after the 2001 earthquake or still makes ajrakh"
     },
     {
-      "id": "pab9ad028a157.3",
+      "id": "pdd8671e603ab.3",
       "text": "A traditional piece needs all four colours, blue, black, red and white, and the most highly prized cloths were printed identically on both sides.",
       "level": "PROVISIONAL",
       "citations": [
@@ -1402,7 +1403,7 @@
             "reuse": null,
             "sentences": [
               {
-                "id": "p0a6ffbbadb96.6",
+                "id": "p74885d9fa954.6",
                 "text": "Sources count 14, 15 to 16 or 16 stages, and the GI journal gives approximately 15 to 21 days for the whole process.",
                 "level": "PROVISIONAL",
                 "citations": [
@@ -1459,7 +1460,8 @@
                 ],
                 "translated": false,
                 "terms": [],
-                "sourcesDiffer": true
+                "sourcesDiffer": true,
+                "differsOn": "How many stages the ajrakh process has"
               }
             ]
           },
@@ -4891,7 +4893,7 @@
             "reuse": null,
             "sentences": [
               {
-                "id": "pe72782aeb182.5",
+                "id": "p78b15fe6e08c.5",
                 "text": "Water rich in alum, tin or chrome brightens the colours, while iron in the water supply dulls and darkens the final result.",
                 "level": "PROVISIONAL",
                 "citations": [
@@ -4910,7 +4912,7 @@
                 "terms": []
               },
               {
-                "id": "pe72782aeb182.6",
+                "id": "p78b15fe6e08c.6",
                 "text": "Sources differ on whether synthetic alizarin is chemically identical to natural madder, whose colour compounds the GI journal finds much more complex.",
                 "level": "PROVISIONAL",
                 "citations": [
@@ -4947,7 +4949,8 @@
                 ],
                 "translated": false,
                 "terms": [],
-                "sourcesDiffer": true
+                "sourcesDiffer": true,
+                "differsOn": "Whether synthetic alizarin is chemically the same as natural madder"
               }
             ]
           },
@@ -17506,7 +17509,7 @@
   "overview": {
     "lede": [
       {
-        "id": "pab9ad028a157.1",
+        "id": "pdd8671e603ab.1",
         "text": "Kutch Ajrakh is an elaborate resist block-printing technique of direct and resist printing and dyeing, made by Khatri artisans as a double-sided textile.",
         "level": "PROVISIONAL",
         "claimIds": [
@@ -17516,7 +17519,7 @@
         "terms": []
       },
       {
-        "id": "pab9ad028a157.2",
+        "id": "pdd8671e603ab.2",
         "text": "Its tradition is kept up in the Kutch villages of Ajrakhpur, Dhamadka and Khavda, and its process and designs are common to Sindh, where it originated, and to Barmer district of Rajasthan.",
         "level": "PROVISIONAL",
         "claimIds": [
@@ -17527,7 +17530,7 @@
         "terms": []
       },
       {
-        "id": "pab9ad028a157.3",
+        "id": "pdd8671e603ab.3",
         "text": "A traditional piece needs all four colours, blue, black, red and white, and the most highly prized cloths were printed identically on both sides.",
         "level": "PROVISIONAL",
         "claimIds": [
@@ -17676,7 +17679,7 @@
         "basis": "CURATED",
         "sentences": [
           {
-            "id": "p0a6ffbbadb96.1",
+            "id": "p74885d9fa954.1",
             "text": "The cloth is first scoured in saaj by repeated soaking in castor oil, soda ash and camel dung and drying until it is soft and white, though sources differ on whether these ingredients are still used.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17693,7 +17696,7 @@
             ]
           },
           {
-            "id": "p0a6ffbbadb96.2",
+            "id": "p74885d9fa954.2",
             "text": "In kasanu it is treated with harda (myrobalan), and the white outlines are then printed with rekh blocks in a resist of gum arabic and lime.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17712,7 +17715,7 @@
             ]
           },
           {
-            "id": "p0a6ffbbadb96.3",
+            "id": "p74885d9fa954.3",
             "text": "Kat prints the black with an iron paste, and kan or pa prints a paste of alum and tamarind seed powder where red is required.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17728,7 +17731,7 @@
             ]
           },
           {
-            "id": "p0a6ffbbadb96.4",
+            "id": "p74885d9fa954.4",
             "text": "Gach printing adds a resist of alum, gum arabic, millet flour and red clay before the cloth is dyed in indigo and washed in running water.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17744,7 +17747,7 @@
             ]
           },
           {
-            "id": "p0a6ffbbadb96.5",
+            "id": "p74885d9fa954.5",
             "text": "In rang the cloth is boiled with tamarisk galls and madder, or dyed with alizarin crystals, and steps 7 to 10 are repeated for brighter red and blue.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17760,7 +17763,7 @@
             ]
           },
           {
-            "id": "p0a6ffbbadb96.6",
+            "id": "p74885d9fa954.6",
             "text": "Sources count 14, 15 to 16 or 16 stages, and the GI journal gives approximately 15 to 21 days for the whole process.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17771,7 +17774,7 @@
             "terms": []
           },
           {
-            "id": "p0a6ffbbadb96.7",
+            "id": "p74885d9fa954.7",
             "text": "Sources differ on when the first red dyeing comes: the GI journal puts the madder or al dyeing straight after the alum pa printing, before the gach resists and indigo dyeing.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17797,7 +17800,7 @@
         "basis": "CURATED",
         "sentences": [
           {
-            "id": "pe72782aeb182.1",
+            "id": "p78b15fe6e08c.1",
             "text": "Myrobalan contains high levels of tannic acid, an essential pre-mordant that aids the adhesion of the printed mordants onto the cotton.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17806,7 +17809,7 @@
             "terms": []
           },
           {
-            "id": "pe72782aeb182.2",
+            "id": "p78b15fe6e08c.2",
             "text": "Printed on harde-treated cloth, kut develops a deep fast chocolate-black as the iron in the paste oxidises with the tannic acid.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17820,7 +17823,7 @@
             ]
           },
           {
-            "id": "pe72782aeb182.3",
+            "id": "p78b15fe6e08c.3",
             "text": "Madder and synthetic alizarin both need alum as a mordant to develop red, and lime in the outline resist discharges the alum.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17831,7 +17834,7 @@
             "terms": []
           },
           {
-            "id": "pe72782aeb182.4",
+            "id": "p78b15fe6e08c.4",
             "text": "Cloth lifted from the indigo vat is bright green and turns blue as oxygen meets the dye on the fibres.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17840,7 +17843,7 @@
             "terms": []
           },
           {
-            "id": "pe72782aeb182.5",
+            "id": "p78b15fe6e08c.5",
             "text": "Water rich in alum, tin or chrome brightens the colours, while iron in the water supply dulls and darkens the final result.",
             "level": "PROVISIONAL",
             "claimIds": [
@@ -17849,7 +17852,7 @@
             "terms": []
           },
           {
-            "id": "pe72782aeb182.6",
+            "id": "p78b15fe6e08c.6",
             "text": "Sources differ on whether synthetic alizarin is chemically identical to natural madder, whose colour compounds the GI journal finds much more complex.",
             "level": "PROVISIONAL",
             "claimIds": [

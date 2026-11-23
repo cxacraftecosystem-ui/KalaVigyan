@@ -10,11 +10,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Refused
 from app.models import Claim, Concept, CraftGiRecord, StructureProposal, User
-from app.research.structure_proposals import CONFLICT, GI_RECORD, GLOSSARY_TERM, GiRecordItem, parsed_item
+from app.research.structure_proposals import (
+    CONFLICT,
+    GI_RECORD,
+    GLOSSARY_TERM,
+    GiRecordItem,
+    GroupNameItem,
+    parsed_item,
+)
 
 from .curated_index import CuratedPage
 from .curation_keys import DISCIPLINE_CONCEPT_TYPES, ENTITY_CONCEPT_TYPES, craft_concept_key, curated_id
 from .curation_terms import write_curated_term_summaries
+from .group_names import keep_proposed_group_name
 from .structure_proposals_claims import ClaimPlan, write_curated_claim
 from .structure_proposals_owner import (
     StructureOwner,
@@ -35,10 +43,11 @@ from .structure_proposals_page import (
 )
 from .structure_proposals_rows import stored_rows
 
-__all__ = ["NO_PAGE", "STALE_STRUCTURE", "held_claims", "write_structure"]
+__all__ = ["NO_CRAFT", "NO_PAGE", "STALE_STRUCTURE", "held_claims", "write_structure"]
 
 STALE_STRUCTURE = "stale_structure"
 NO_PAGE = "The page of this proposal no longer has a curated page to write it into."
+NO_CRAFT = "The craft of this proposal is no longer held, so its name has no list to join."
 MOVED_ON = "The page has moved on since this was proposed: {problem}."
 OPEN_SENSITIVITY = "OPEN"
 TERM_TYPE = ENTITY_CONCEPT_TYPES["TERM"]
@@ -57,10 +66,15 @@ async def held_claims(session: AsyncSession, owner: StructureOwner) -> frozenset
 
 async def write_structure(session: AsyncSession, row: StructureProposal, reviewer: User) -> uuid.UUID | None:
     owner = await proposal_owner(session, row)
+    item = parsed_item(row.item)
+    if isinstance(item, GroupNameItem):
+        if owner is None or owner.is_category:
+            raise Refused(STALE_STRUCTURE, NO_CRAFT)
+        await keep_proposed_group_name(session, owner.id, row, item)
+        return None
     page = await owner_page(session, owner, lock=True) if owner is not None else None
     if owner is None or page is None:
         raise Refused(STALE_STRUCTURE, NO_PAGE)
-    item = parsed_item(row.item)
     problem = target_problem(page, item, held=await held_claims(session, owner))
     if problem is not None:
         raise Refused(STALE_STRUCTURE, MOVED_ON.format(problem=problem))

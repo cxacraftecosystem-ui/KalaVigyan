@@ -17,6 +17,7 @@ from .knowledge_writes import (
     ProposedSource,
     fact_task_problem,
 )
+from .named_groups import NAMED_GROUP_KINDS
 from .open_work import TASK_KEY_MAX_CHARS
 from .review_switch import AGENT, CONTRIBUTION
 from .vocabulary import Discipline, ReactionKind
@@ -32,6 +33,7 @@ __all__ = [
     "CONFLICT_CLAIMS_MAX",
     "GI_RECORD",
     "GLOSSARY_TERM",
+    "GROUP_NAME",
     "NATIVE_NAME",
     "OPEN_QUESTION",
     "PENDING_STATUS",
@@ -53,6 +55,7 @@ __all__ = [
     "ConflictItem",
     "GiRecordItem",
     "GlossaryTermItem",
+    "GroupNameItem",
     "NativeNameItem",
     "OpenQuestionItem",
     "ReactionItem",
@@ -81,6 +84,7 @@ STRUCTURE_KINDS = (
     "OPEN_QUESTION",
     "GI_RECORD",
     "ALTERNATIVE",
+    "GROUP_NAME",
 )
 (
     STAGE_AFTER,
@@ -93,6 +97,7 @@ STRUCTURE_KINDS = (
     OPEN_QUESTION,
     GI_RECORD,
     ALTERNATIVE,
+    GROUP_NAME,
 ) = STRUCTURE_KINDS
 CRAFT_SUBJECT, CATEGORY_SUBJECT = "craft", "category"
 CATEGORY_KINDS = (REACTION, GLOSSARY_TERM, CONFLICT, OPEN_QUESTION)
@@ -116,6 +121,11 @@ QUESTION_MAX_CHARS = 600
 NOTE_MAX_CHARS = 500
 LANGUAGE_MAX_CHARS = 35
 STATEMENT_MIN_CHARS = 20
+CONFLICT_EVIDENCE = "a conflict names the held facts that disagree; it gives no new fact or task"
+GROUP_NAME_EVIDENCE = (
+    "a group name gives the sources whose quotes state it, and no field, statement or task: it only keeps "
+    "the name out of AI pictures and is never shown as a fact"
+)
 ENTRY_KEY_PATTERN = r"^[A-Z]\d{2,4}$"
 SCRIPT_CHARS = 4
 
@@ -223,6 +233,12 @@ class GiRecordItem(ContractModel):
         return self
 
 
+class GroupNameItem(ContractModel):
+    kind: Literal["GROUP_NAME"] = GROUP_NAME
+    name: Name
+    group_kind: Literal[*NAMED_GROUP_KINDS]
+
+
 class AlternativeItem(ContractModel):
     kind: Literal["ALTERNATIVE"] = ALTERNATIVE
     material_key: EntryKey
@@ -245,7 +261,8 @@ StructureItem = Annotated[
     | ConflictItem
     | OpenQuestionItem
     | GiRecordItem
-    | AlternativeItem,
+    | AlternativeItem
+    | GroupNameItem,
     Field(discriminator="kind"),
 ]
 
@@ -289,24 +306,9 @@ class StructureProposal(ContractModel):
 
     @model_validator(mode="after")
     def _evidence_fits_the_kind(self) -> Self:
-        if self.item.kind == CONFLICT:
-            if (
-                self.statement is not None
-                or self.sources
-                or self.field is not None
-                or self.task_key is not None
-            ):
-                raise ValueError(
-                    "a conflict names the held facts that disagree; it gives no new fact or task"
-                )
-            return self
-        if self.statement is None or self.field is None or not self.sources:
-            raise ValueError(
-                f"a {self.item.kind} proposal gives the fact that states it: field, statement, sources"
-            )
-        urls = [canonical_url(source.url) for source in self.sources]
-        if len(set(urls)) != len(urls):
-            raise ValueError("each source is named once; give all its quotes under it")
+        problem = _evidence_problem(self)
+        if problem is not None:
+            raise ValueError(problem)
         return self
 
     @model_validator(mode="after")
@@ -326,6 +328,20 @@ class StructureProposal(ContractModel):
             if problem is not None:
                 raise ValueError(problem)
         return self
+
+
+def _evidence_problem(proposal: StructureProposal) -> str | None:
+    kind, gives_fact = proposal.item.kind, proposal.statement is not None or proposal.field is not None
+    if kind == CONFLICT:
+        given = gives_fact or bool(proposal.sources) or proposal.task_key is not None
+        return CONFLICT_EVIDENCE if given else None
+    if kind == GROUP_NAME:
+        if gives_fact or proposal.task_key is not None or not proposal.sources:
+            return GROUP_NAME_EVIDENCE
+    elif proposal.statement is None or proposal.field is None or not proposal.sources:
+        return f"a {kind} proposal gives the fact that states it: field, statement, sources"
+    urls = [canonical_url(source.url) for source in proposal.sources]
+    return None if len(set(urls)) == len(urls) else "each source is named once; give all its quotes under it"
 
 
 class StructureCheck(ContractModel):

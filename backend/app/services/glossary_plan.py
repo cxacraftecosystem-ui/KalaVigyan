@@ -12,6 +12,8 @@ from app.data.english_words import load_english_words
 from app.research.subject_keys import term_key
 from app.research.terms import TERM_LABEL_MAX_CHARS
 
+from .term_scales import COMPOUND_LEVEL, stated_zoom_level
+
 __all__ = [
     "CONCEPT_TERM_TYPES",
     "HEAD_WORDS_MAX",
@@ -99,10 +101,13 @@ class TermSeed:
     craft_slugs: list[str] = field(default_factory=list)
     concept_keys: list[str] = field(default_factory=list)
     wikidata_id: str | None = None
+    compound: bool = False
+    zoom_level: str | None = None
 
     def merge(self, other: TermSeed) -> None:
         self.meaning = self.meaning or other.meaning
         self.wikidata_id = self.wikidata_id or other.wikidata_id
+        self.compound = self.compound or other.compound
         _extend(self.local_names, other.local_names, leave_out=self.label)
         _extend(self.aliases, other.aliases, leave_out=self.label)
         _extend(self.craft_slugs, other.craft_slugs)
@@ -135,7 +140,7 @@ def glossary_plan(
         kept = by_key.setdefault(seed.key, seed)
         if kept is not seed:
             kept.merge(seed)
-    return [by_key[key] for key in sorted(by_key)]
+    return [_levelled(by_key[key]) for key in sorted(by_key)]
 
 
 def wikidata_links(document: Mapping[str, Any]) -> dict[str, WikidataLink]:
@@ -250,7 +255,15 @@ def _glossed_term(concept: SeedConcept) -> TermSeed | None:
 def _compound_term(compound: SeedCompound, concept_crafts: Mapping[str, str]) -> TermSeed | None:
     crafts = [concept_crafts[key] for key in compound.material_keys if key in concept_crafts]
     keys = [key for key in compound.material_keys if key in concept_crafts]
-    return _seed(compound.name, craft_slugs=list(dict.fromkeys(crafts)), concept_keys=keys)
+    seed = _seed(compound.name, craft_slugs=list(dict.fromkeys(crafts)), concept_keys=keys)
+    if seed is not None:
+        seed.compound = True
+    return seed
+
+
+def _levelled(seed: TermSeed) -> TermSeed:
+    seed.zoom_level = COMPOUND_LEVEL if seed.compound else stated_zoom_level(seed.label, seed.meaning)
+    return seed
 
 
 def _meaning_term(meaning: StatedMeaning, concept_crafts: Mapping[str, str]) -> TermSeed | None:

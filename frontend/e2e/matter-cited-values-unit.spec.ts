@@ -76,6 +76,25 @@ test("a step shows its reaction energy beside its conditions, cited by its own c
   }
 });
 
+test("a step's flagged why opens both readings after its paragraph", () => {
+  const lookup = lookupOf([
+    [GI_JOURNAL, 1],
+    [MICROBES, 4]
+  ]);
+  const step = oxidation();
+  const [cite] = step.citations;
+  const readings = [
+    { ...cite, quote: "The vat turns blue in the air" },
+    { ...cite, id: `${cite.id}-other`, sourceId: MICROBES, quote: "The vat turns green before it turns blue" }
+  ];
+  const why = { id: "s4.b1.why.1", text: "Air oxidises leucoindigo back to indigo.", level: "PROVISIONAL" as const, citations: readings, translated: false, terms: [], sourcesDiffer: true, differsOn: "The colour the cloth turns first" };
+  const html = withReading(createElement(StepDetail, { step, notes: [why], animate: false }), lookup);
+  const part = segment(html, 'data-testid="step-why"', '<p class="font-ui text-label">');
+  expect(part.indexOf("</p><details")).toBeGreaterThan(0);
+  expect(part).toContain("<summary>Sources differ: The colour the cloth turns first</summary>");
+  expect(attribute(part, "sources-differ-reading", "data-cite-host")).toEqual(["", ""]);
+});
+
 test("a material card cites its compound's PubChem record beside the formula and never links the record twice", () => {
   const block = card();
   expect(parseShape(materialCardBlockShape, alizarinCard()).sourceId).toBe(ALIZARIN_RECORD);

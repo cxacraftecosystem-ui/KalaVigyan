@@ -76,16 +76,6 @@ Last reviewed: 2026-11-22.
   processes staying under the 768 MB cap and the `WebFetch` row an answer writes; then record one
   SearXNG and one Brave answer to replace the synthetic fixtures.
 
-### Stored-knowledge retrieval: what is left (decision 0008, round 4)
-
-- **What:** round 4 cleared stamps per embedding model with re-embedding, cleared vectors on a text
-  change, embedding after the seeds on every release, the Indic text ranking and the seed import's
-  passages (`docs/contracts/retrieval.md`); decision 0166 stamped knowledge pieces and made the
-  gates and the piece store compare vectors of one model. Left: the Wood Handbook import has no
-  passages, because the repository holds no text of the cited edition (FPL-GTR-190).
-- **Clears it:** vendor the pages of FPL-GTR-190 (a US government work), or give FPL-GTR-282 its
-  own source and re-cite the wood claims after a quote check.
-
 ## Checks not automated yet
 
 - **Nesting depth** (budget 3) is not measured by the hygiene check.
@@ -99,23 +89,23 @@ Last reviewed: 2026-11-22.
 - Clears it: a lint rule set for size and boundaries with a baseline for the existing files, a
   nesting count in `tools/hygiene/budgets.py`, and a push-triggered test job for `etl/geo`.
 
-### Planner and tiered research: gaps left on 2026-11-16 (decision 0009)
+### Planner and tiered research: the reader and the facet routing (decisions 0009, 0181)
 
-- **What:** (1) The pack holds documents, not quotes: the `WEB_READ` reader that extracts
-  verbatim quotes for the composer is not built. (2) References are followed only as DOIs written
-  in the text, through Crossref, which returns abstracts only; links in pages and reference lists
-  without DOIs are not followed. (3) Facet coverage counts claims that share a word with the
-  target; it does not judge whether they answer it. (4) Every query runs on every source of its
-  tier, including Commons and PubChem for questions they cannot serve (each answers quickly with
-  no hits). Every answer writes its `AnswerTrace` rows since decision 0146, and a question's facet
-  targets are embedded in one call since decision 0166.
-- **Why left:** the `WEB_READ` reader is a model call per document read, and the owner's rule of
-  2026-11-23 keeps each answer's model calls at today's while answers are measured (decision
+- **What:** (1) The pack holds documents, not quotes: the `WEB_READ` reader that extracts verbatim
+  quotes for the composer is not built, and the links inside a fetched page are not followed.
+  (2) Facet coverage counts claims that share a word with the target; it does not judge whether they
+  answer it. (3) Every query runs on every source of its tier, including Commons and PubChem for
+  questions they cannot serve (each answers quickly with no hits). Expert research follows cited DOIs
+  and, since decision 0181, OpenAlex reference lists.
+- **Why left:** the reader is a model call per document read, and the owner's rule of 2026-11-23
+  keeps each answer's model calls and input tokens at today's while answers are measured (decision
   0165); a better coverage judgement and the routing need the known-answer checks to calibrate
-  against; the OpenAlex adapter does not read `referenced_works` yet.
-- **Clears it:** the reader turns documents into quoted evidence once the owner allows its calls;
-  follow reference lists through OpenAlex `referenced_works`; route facet types to the sources that
-  can serve them once the checks show which do.
+  against.
+- **Waits on:** the owner allowing the reader's calls, and measurements of which facet types each
+  source serves.
+- **Clears it:** the reader turns documents, and the links in them, into quoted evidence once its
+  calls are allowed; coverage is judged and facet types are routed to the sources the measurements
+  show can serve them.
 
 ## Science, region, voice and media contracts (decision 0014)
 
@@ -197,29 +187,35 @@ Last reviewed: 2026-11-22.
 
 ## Science engine (decision 0015)
 
-### Seeded crafts without a cited reaction, a firing stage or a stated temperature
+### Seeded crafts without a cited reaction, a stage's place or a checked reading
 
-- **What:** reactions now come from the science seed (Kutch Ajrakh, Bagh, Machilipatnam) and
-  from the curated dossiers of nine crafts (those three, Bagru, Sanganeri, Bastar Dhokra, Agates
-  of Cambay, Firozabad Glass, Cane and Bamboo, through `services/curation_structure`). What is
-  left: Dabu (its dossier holds no reaction) and Akola stages have materials and tools but no
-  reaction, because no source the seed or a dossier holds states one; no craft has a process with a `FIRE` stage, so kaolinite dehydroxylation has no
-  reaction (the terracotta seed is sub-category mechanism chains); four stage concepts state no
-  ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block carving) and
-  get no stage, since no `PRECEDES` edge joins them to their craft's ladder: the seed's only one
-  among them says mud soaking precedes paste preparation (`tests/science/test_seed_stage_order.py`);
-  and no seed claim states a temperature or pH, so no seeded reading is checked against an
+- **What:** reactions come from the science seed (Kutch Ajrakh, Bagh, Machilipatnam) and from the
+  curated dossiers of ten crafts (those three, Bagru, Sanganeri, Dabu since decision 0181, Bastar
+  Dhokra, Agates of Cambay, Firozabad Glass, Cane and Bamboo). Left: Akola's stages have materials
+  and tools but no reaction; Akola's mud soaking and paste preparation, and Machilipatnam's and
+  Sanganeri's block carving, state no place in their ladders (seed concepts with no ordinal and no
+  `PRECEDES` edge, `tests/science/test_seed_stage_order.py`; the dossier stages Machilipatnam P11 and
+  Sanganeri P13 have no order either); the curated clay crafts have `FIRE` stages with stated temperatures (Ghurni P04,
+  Krishnanagar P03, Nizamabad P08; Blue Pottery's body is quartz) but none of their sources states
+  kaolinite dehydroxylation, so it is no reaction of theirs, and their temperatures are claim text,
+  not readings; no seed claim states a temperature or pH, so no seeded reading is checked against an
   envelope.
-- **Why left:** reactions, readings and a stage's place are written only as a cited quote states
-  them; the sources still to find are a GI application or a chemistry paper on Dabu mud resist and
-  on Akola's mud and indigo work (and where its mud stages fall), a source placing block carving in
-  the Machilipatnam and Sanganeri processes, a curated clay craft's firing schedule, and a dyeing
-  source stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP
-  server (`search_sources`, `read_source`, then `propose_structure` for a reaction or a stage).
-- **Clears it:** a dossier or seed reaction for Dabu and Akola from such a source, a curated clay
-  craft with a `FIRE` stage and its stated temperature, and each unordered stage's place written
-  from a source that states it (its ordinal, or a stated `PRECEDES` edge to a ladder stage, which
-  `claim_seed.stage_rows` would then be taught to read).
+- **Why left (searched 2026-11-23, decision 0181):** Akola's GI application 845 (Aakola Dabu Prints)
+  puts the overnight mud soaking and the resist, prepared before every printing, ahead of step 12,
+  block printing (statement of case, p. 5, section 6), but the registry serves it only by POST, so
+  the reader cannot fetch it, and Akola's stages are seed concepts (`etl/crafts`, `claim_seed.stage_rows`);
+  no Akola source states a reaction. Machilipatnam's GI journal (application 90, method of production)
+  names block making first and fibre2fashion's Sanganer article (the dossier's S08) puts carving
+  before printing, but both dossiers hold the 150 claims a dossier may. No clay dossier's source
+  states the kaolinite reaction. No dyeing source stating a bath temperature or pH was searched.
+- **Waits on:** someone who can open GI application 845 supplying it (`supply_source`) and a seed
+  change for Akola's stages in `etl/crafts`; a curator choosing which claim Machilipatnam and
+  Sanganeri drop for an order claim, or seed `PRECEDES` edges `claim_seed.stage_rows` learns to read;
+  a source on a curated clay craft's firing that states the reaction; a dyeing source stating a bath
+  temperature or pH.
+- **Clears it:** Akola's reaction and stage places from such a source, each unordered stage's place
+  written from a source that states it, a curated clay craft's kaolinite reaction cited to its own
+  source, and a reading checked against its stage envelope.
 
 ## Answers in Indian languages (decision 0023)
 
@@ -283,17 +279,6 @@ Last reviewed: 2026-11-22.
   approval of 2026-11-23), then committing the recorded replies over the documented fixtures in
   `backend/tests/media/fixtures` (the clip's base64 cut to a small MP4, as the image's was) and
   correcting `gemini_media` and `MEDIA_OUTPUT` where they differ.
-
-### Community and caste names caught by group words only
-
-- **What:** a claim, stage name or style hint is kept out of a prompt when it uses a group word in
-  the singular or plural (`schemas/media.NAMED_GROUP_WORDS`, decision 0022); a community named
-  without one (a surname or cluster name alone) still passes, and
-  `depictsNamedCluster` compares only the craft's located place names.
-- **Why left:** no register of community and caste names exists; PLAN 13a names them only from
-  cited sources.
-- **Waits on:** the owner's and the governance lane's decision to keep the named practitioners per
-  craft as cited data; the claim set and the named-cluster flag then check against it.
 
 ## Yahoo sign-in (decision 0026)
 
@@ -461,31 +446,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
 
-## Zoom story and timeline map (decision 0057)
-
-### No open-access paper figure is searched for the fibre level
-
-- **What:** the fibre level comes only from Commons and Openverse micrographs; the contract's
-  "open-access figure whose `sourceId` is the stored paper" has no adapter (no figure search in
-  Europe PMC or a publisher's open figures), so most crafts show no fibre level.
-- **Why left:** no figure source exists to reuse, and a new adapter needs its own recorded tests
-  and licence reading per figure.
-- **Clears it:** one figures adapter over an open-access full-text source (for example the
-  figures of Europe PMC's open-access articles, each with its article's licence), checked on
-  recorded responses, and the fibre search asking it after Commons and Openverse.
-
-### Picture levels are read from English words
-
-- **What:** a picture's level is read from its title and description against short English word
-  lists (`zoom_pictures.LEVEL_WORDS`), and the craft's fibre from a list of fibre names
-  (`FIBRE_NAMES`); a picture titled in another language or with an unlisted word ("hand block
-  print", "karigar") finds no level, and a fibre material named only by a local word ("kora")
-  gives no fibre level.
-- **Why left:** a vision call per candidate would spend from the answer for a picture the reader
-  may never open; the lists hold the words the stored pictures use.
-- **Clears it:** the glossary's terms tagged with a zoom level, or a vision check of the top
-  candidate per level within the answer's headroom.
-
 ## ElevenLabs music, sound effects, image and video (decision 0058)
 
 ### ElevenLabs prices are unverified
@@ -510,16 +470,6 @@ Last reviewed: 2026-11-22.
   not include; if it names another host, add it to `DOWNLOAD_HOSTS` after checking the reference.
 
 ## Zoom, timeline and film renderers (decision 0060)
-
-### A place beyond the India frame is a signpost, not a pin
-
-- **What:** the timeline draws a placed point outside the India frame (Fustat in the fixture) as
-  a signpost at the frame's edge pointing toward it, so the reader sees its direction and its
-  Wikidata item but not its distance or neighbourhood.
-- **Why left:** the frame is fixed by `components/map/projection.ts`; widening it for one point
-  would shrink India on every timeline, and drawing other countries is refused.
-- **Clears it:** an inset frame for points abroad (the same projection, its own bounds, the plain
-  ground only), chosen by the timeline when it places a point outside the India frame.
 
 ### Film volumes on iPhones and iPads not yet heard
 
@@ -549,17 +499,6 @@ Last reviewed: 2026-11-22.
   for more states on the portal (each a new dataset row and a table in
   `etl/geo/geo_etl/layers/groundwater.py`), or the owner's choice to load the National Compilation's
   district annexure another way (for example a transcription recorded as its own dataset).
-
-### Ask the map lists every year of the series
-
-- **What:** ask the map lists each district value, so Climate shows 45 years of CHIRPS annual
-  means (with their 10th and 90th percentiles) and 45 years of GHCN CAMS means beside the normals
-  and trends. The region route no longer does: a place there sends only its facets' headline
-  values (`geo/headline.HEADLINE_SERIES`, decision 0153).
-- **Why left:** ask the map gives a district's values as stored (contract); folding a series is a
-  screen choice.
-- **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
-  dataset value), or a contract change that leaves yearly rows out of its facets.
 
 ## Public transcripts and share links (decision 0097)
 
@@ -599,13 +538,16 @@ Last reviewed: 2026-11-22.
 
 ### The craft page's film score and its AI media on the monograph
 
-- **What:** AI images and clips now get a page copy, join their craft's chapters as `ai_media` and
-  are served at `GET /api/crafts/media/{assetId}` (decision 0154). Left: the page's film score (job
-  step 5 and `GET /api/crafts/{slug}/film-score`) is not built, and the monograph document the craft
-  page renders for a curated craft does not draw the chapters' `ai_media` part.
-- **Why left:** the media-and-film lane of 2026-11-22 built the producer side; the page's film and
-  the monograph's picture slots are the craft page's and the monograph's own work.
-- **Clears it:** job step 5 with the route, and an AI media slot in the monograph document.
+- **What:** AI images and clips get a page copy, join their craft's chapters as `ai_media` and are
+  served at `GET /api/crafts/media/{assetId}` (decision 0154). Left: the page's film score (job step
+  5 and `GET /api/crafts/{slug}/film-score`) is not built, and the monograph document the craft page
+  renders does not draw the chapters' `ai_media` part.
+- **Waits on:** for the score, the owner's approval of a nightly ElevenLabs music and sound spend for
+  every curated page (step 5 makes it from the job, unasked, where an answer's score is made only
+  when a reader turns Music on) together with a film player on the craft page to play it: no page
+  plays a film since decision 0162 retired the chapters screen, and the monograph's authored `film`
+  carries no score, so a score made now would be heard by no one (decision 0180). For the AI media
+  slot, the owner's ruling on principle 9 (pictures are plates: no AI imagery).
 
 ## Track 1, round 1 (decision 0101, 2026-11-19)
 
@@ -638,16 +580,22 @@ Last reviewed: 2026-11-22.
   (`components/map/place-context/GroundFigure`) fills the neighbouring countries and sizes its pins
   only after it is drawn in the browser, so its view's first drawing is not the figure readers see;
   once the stored document carries it, a change to the ground data reaches the page only through a
-  new capture. The six page tools' views draw their own markup, behaviour and legacy scope for the
-  React shell, so inside the authored shell they would nest a second `div.bx` scope and differ from
-  the approved markup the native proof compares element for element. The kit's script still drives
-  the native views' behaviour by ids and classes, and a generated page still reuses a borrowed
-  component's fragment when it has no spec (every Kutch Ajrakh component has one, so the path
-  serves only a future authored monograph).
+  new capture. The six page tools' views (`kinds/tools`) draw their own markup, React behaviour and
+  legacy scope (`LegacyScope`) for generated pages, while the approved page's tools are markup the
+  kit's script drives through ids (`#quiz*`, `#lang-*`, `#gen*`), so inside the authored shell a
+  tool view would nest a second `div.bx` scope, differ from the approved markup the native proof
+  compares element for element, and be driven twice. The kit's script still drives the native
+  views' behaviour by ids and classes, and a generated page still reuses a borrowed component's
+  fragment when it has no spec (every Kutch Ajrakh component has one, so the path serves only a
+  future authored monograph). A Vercel preview reads the production API's stored document, so a
+  branch's `native.json` is proven by `e2e/monograph-native-unit.spec.ts` and the smoke on the
+  golden document and seen only after its release's `load_monograph` (checked 2026-11-23, decision
+  0177).
 - **Clears it:** the ground map drawing its neighbours and pins in its first drawing (the map is the
   place builders' `components/map`), then the figure listed in `native.json`; the six tools drawn
-  natively once the React shell draws the page (the next entry but one); then the kit's behaviour
-  moved into the views and the fragments and the generated pages' fragment reuse retired.
+  natively once the React page draws Kutch Ajrakh without its authored shell (the next entry but
+  one), each drawing the approved markup; then the kit's behaviour moved into the views and the
+  fragments and the generated pages' fragment reuse retired.
 
 ### A plate's crop is a class or a focal box
 
@@ -656,11 +604,12 @@ Last reviewed: 2026-11-22.
   the frame's aspect ratio (3 / 4, 3 / 2, 4 / 3, `.ph.tall`, `.ph.r32`, `.ph.r43`); a generated plate
   carries the layout's focal box, which `SpecPicture.focalPosition` draws as `object-position` only
   and which sets no frame. Two ways to say one thing, and a focal box cannot yet say what a class
-  says. It cannot be cleared while the authored shell holds (checked 2026-11-23, monograph shell
-  lane): the native proof (`e2e/monograph-native-unit.spec.ts`) needs each native plate to draw the
-  approved markup element for element, and the approved page writes `div.ph.tall`, `.ph.r32` and
-  `.ph.r43`, so a frame set by a style fails it; and stored document versions are never changed
-  (`monograph-document.md`, Versions), so the editions stored before the change keep `crop`.
+  says. It cannot be cleared while the authored shell holds (checked 2026-11-23, decisions 0164
+  and 0177): the native proof (`e2e/monograph-native-unit.spec.ts`) needs each native plate to
+  draw the approved markup element for element, and the approved page writes `div.ph.tall`,
+  `.ph.r32` and `.ph.r43`, so a frame set by a style fails it; and stored document versions are
+  never changed (`monograph-document.md`, Versions), so the editions stored before the change keep
+  `crop`.
 - **Clears it:** once the shell retires (the next entry), a focal box that also sets its frame's
   aspect ratio (the box's width and height times the picture's), the three crops written as such
   boxes (each picture's own ratio is its class's: 1280 by 1707, 853 and 960, so each box is the
@@ -675,18 +624,30 @@ Last reviewed: 2026-11-22.
   and the seven components "Fragments are a bridge" names inlined from their fragments, so the
   React page matches the approved one by construction (decision 0106, the first parity run); 73
   components are native views inside it and the rail takes the content's chapter names (decision
-  0164). Besides components the shell holds hand-made markup that `MonographDocumentPage` does not
-  draw: the masthead with its tools and counts (44 sources plus 24 for the kin crafts, where the React
-  masthead counts every cited source, 64), the answer's table of contents, margin notes with fixed
-  entries, the sources chapter's five groups (the React shell draws one numbered list), and each
-  chapter's own wrappers (screens, articles, spreads, the chemistry sub-rail, the colour key).
-- **Clears it:** the React shell drawing the masthead and its counts (the kin crafts' sources are
+  0164). Measured on 2026-11-23 (decision 0177), the shell's own markup outside units and
+  components is 1,633 elements and 365 runs of hand-written text in 13 chapters, which
+  `MonographDocumentPage` does not draw: the masthead with its tools and counts (44 sources plus 24
+  for the kin crafts, where the React masthead counts every cited source, 64), the answer's table
+  of contents (two of its seven entries are not units), margin notes with fixed entries, each
+  chapter's own wrappers (screens, articles, spreads, the chemistry sub-rail, the colour key) and
+  the sources chapter's five groups, 44 hand-made entries holding 320 of those text runs. The
+  `source-list` component is only the list's live status line (`setting: "status"`), because the
+  approved markup gives the groups no element an anchor (`#id` or `[attribute="value"]`) selects
+  once: the list's wrapper repeats in the kin crafts' list. Stored versions are never changed
+  (`monograph-document.md`, Versions), so every edition stored with a shell keeps it, and
+  `/crafts/<slug>/v<N>` serves them.
+- **Clears it:** the React page drawing the masthead and its counts (the kin crafts' sources are
   the ones the `kin-craft-sources` component lists), the table of contents, the margin notes, the
-  sources chapter through the page's own `source-list` and `kin-craft-sources` components (whose
-  specs carry the groups) and each chapter's wrappers, proven by Monograph parity (`check=all`),
-  then the shell retired. The wrappers are hand-made per chapter, so this needs either a port of
-  the template's main markup into structure the document carries, or the owner's leave to let a
-  React drawing become the approved reference, as the ground figure's capture did (decision 0151).
+  sources chapter's groups (from a `source-list` spec that carries them, once an anchor can select
+  them or the owner gives them an element) and each chapter's wrappers, proven by the native unit
+  spec and the smoke on the golden document and by Monograph parity (`check=all`) after the release
+  that loads it; then the shell retired for new editions, and for the stored ones either kept
+  readable or stored again with the owner's leave. The wrappers are hand-made per chapter, so this
+  needs either structure the page plan draws for any authored page (each chapter's frames named, as
+  `componentPlace` names a component's), into which the template's main markup is ported, or the
+  owner's leave to let a React drawing become the approved reference, as the ground figure's capture
+  did (decision 0151). The template's main carried as a tree of elements was weighed and refused
+  (decision 0177): it is the same hand-made markup under another name.
 
 ### The authored shell keeps the app's CSS out by name
 
@@ -701,19 +662,14 @@ Last reviewed: 2026-11-22.
   styles in the views), or prefix the kit's classes so no name can collide, which renames classes in
   the approved page's markup and so needs the owner's leave (decision 0100 serves it as built).
 
-### Curated craft documents: what they do not carry yet
+### Curated craft documents: the kin crafts not yet captured, and no AI imagery
 
-- **What:** a generated craft document draws its curated plates, its contributed plates and its
-  record (key facts as the fact grid, the record strip), and its page draws the reviewed field
-  photographs and quotes after the chapters (`FieldVoicesPart`, decision 0156), but not its kin
-  crafts (`relatives`), which `GET /crafts/{slug}/page` still carries in its chapters. AI images and
-  videos made from a craft's claims are not carried either.
-- **Why left:** a `related_crafts` spec per generated document needs each kin craft's swatch, shared
-  materials and cited sentence from stored rows (Kutch Ajrakh's are authored), and a capture of a
-  generated page; AI imagery on a page waits on the owner's ruling on principle 9 (see the production
-  E2E defects below).
-- **Clears it:** a `related_crafts` component in the kin chapter of a generated document, from the
-  page's relatives, with its tests and a capture; the owner's ruling for AI media.
+- **What:** a generated craft document now draws its kin crafts as a `related_crafts` component in
+  the kin chapter (decision 0180), but no capture of a generated page showing it has been taken; and
+  AI images and videos made from a craft's claims are not carried on the page.
+- **Waits on:** the lead's capture of a generated craft page with kin crafts after the release (the
+  capture workflow against production); the owner's ruling on principle 9 (pictures are plates: no
+  AI imagery) before any AI media joins a page (see the production E2E defects below).
 
 ## Round 6 (2026-11-20)
 
@@ -757,22 +713,25 @@ Last reviewed: 2026-11-22.
 
 ### Speed left after the quality lane
 
-- **What:** on a phone (Lighthouse at 360, median of three, 2026-11-22) Kutch Ajrakh scores 78 with
-  an LCP of 5.7 s against the 2.5 s target: about 1 MB is requested before its masthead picture
-  paints, namely the six first-screen font files the layout preloads (364 KB, Newsreader italic
-  143 KB and roman 128 KB among them), the kit stylesheet (78 KB, render-blocking) and about
-  400 KB of scripts. Signed out, `/ask` lands on the sign-in page (83, LCP 4.7 s), whose photograph
-  shares the first round with Google's sign-in script (104 KB). The Textiles hub scores 100 (LCP
-  1.5 s).
-- **Why left:** what the entry named is in: Newsreader subset to weights 300 to 600 and its kept
-  features (`tools/webfonts`), the arrow on Plex's symbols face, the uncurated page and (decision
-  0145) the answer renderers loaded on demand, curated documents split like Ajrakh's shell, and
-  `/ask` drawn before its scripts. Before and after this lane Ajrakh measured 78 and 5.7 s on the
-  phone (TBT 112 ms to 83 ms, 1.39 MB to 1.35 MB). What is left is a choice of which first-screen
-  bytes wait: the first-screen faces are preloaded by choice (round 7, so the first screen never
-  swaps its type), and the kit stylesheet is the owner-approved page's.
-- **Clears it:** the owner's or lead's choice of the faces to preload and of a kit stylesheet split
-  by chapter, then the change proven by Monograph parity and Lighthouse at 360.
+- **What:** on a phone (Lighthouse at 360, median of three, 2026-11-22) Kutch Ajrakh scored 78 with
+  an LCP of 5.7 s against the 2.5 s target, with about 1 MB requested before its masthead picture
+  paints (the preloaded first-screen faces, the kit stylesheet and about 400 KB of scripts); signed
+  out, `/ask` lands on the sign-in page (83, LCP 4.7 s). Decision 0177 measured, from the computed
+  styles of the text each first screen at 360 shows (`e2e/first-screen-fonts.smoke.spec.ts`), which
+  faces they draw: Kutch Ajrakh's Newsreader roman and italic (its standfirst) and Plex Sans 400,
+  500 and 600; the landing's Newsreader roman and italic (the hero title's emphasis) and Plex Sans
+  500; the sign-in page's the same with Plex Sans 400. None draws Plex Sans italic, which is no
+  longer preloaded (23,096 bytes off every page's first round, 359,276 to 336,180 bytes of
+  preloaded faces); every face still preloaded is drawn on Kutch Ajrakh's first screen, so none can
+  wait without its type swapping. The kit stylesheet (526,637 bytes, 84,108 gzipped,
+  render-blocking) stays one file: its rules are grouped by kit scope (`bx-mb`, `bx-chem`, `bx-pt`,
+  `bx-rm`, `bx-sa`, `bx-ask`), not by chapter, every chapter mixes scopes, and a later rule decides
+  over an earlier one, so a split by chapter would reorder the cascade the approved page is built
+  from (decision 0100) and parity could not stay exact.
+- **Why left:** Lighthouse is not run in CI, so the effect is measured on production.
+- **Clears it:** the lead's Lighthouse at 360 on Kutch Ajrakh and the sign-in page after the
+  release that carries decision 0177 (expected: about 23 KB fewer bytes before the masthead
+  paints); the entry is deleted with that measurement, or rewritten to what it shows is left.
 
 ### The geo ETL stays on Python 3.14
 
@@ -782,31 +741,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** building `exactextract` from source needs GEOS and GDAL headers on every runner.
 - **Clears it:** when `exactextract` publishes a cp315 wheel, move `etl/geo/pyproject.toml` and
   `geo-etl.yml` together; `backend/tests/test_python_version.py` keeps the two agreeing.
-
-### Leftovers of the design-conformance lane
-
-- **What:** the Sources differ readings open in a `<details>` after their paragraph and the claim
-  stores what they differ on (`Claim.differsOn`, decision 0156), but three seams are open. An
-  answer sentence never receives it, because `knowledge_view.ClaimView` carries no `differs_on`
-  (`section_blocks.explainer_sentence` reads it through `DIFFERS_ON_FIELD`), so answers show a plain
-  "Sources differ" summary; a flag the write-back's duplicate judge sets stores no subject, because
-  the judge names none; and the matter and what-if hosts
-  (`components/answer/matter/ReactionStepList.tsx`, `StepDetail.tsx`,
-  `components/answer/play/WhatIfLab.tsx`) draw a flagged sentence's tag without its readings. A
-  drawing stored without server variants (the kind fixtures on `/design/kinds`) shows a sunk
-  placeholder until it hydrates.
-- **Why left:** filling `ClaimView.differs_on` also gives the craft page's sentences their
-  `differsOn` (the Kutch Ajrakh page gains three, renumbering its paragraphs), so it lands with the
-  refresh of `shared/craft.page.golden.json` and a re-baseline of the approved page's parity, which
-  the final clean-up and monograph lanes held while decision 0166 ran; the judges and their callers
-  (`write_back_gates`, `fact_proposals`) and the matter hosts were other lanes' files; the
-  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
-  and the page bundles them instead of asking the server, which adds the variants.
-- **Clears it:** `ClaimView.differs_on: str | None` filled from `Claim.differsOn` in `cited_view`,
-  with the craft page golden regenerated and the parity re-baselined; the duplicate judge naming
-  what two facts differ on and passing it as `candidate_writes.mark_sources_differ(..., about=)`;
-  `SentencesDiffer` after the paragraph in the three hosts; serve the kind preview's specs through the backend, which adds the four variants
-  with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### Goldens that do not yet show every field
 
