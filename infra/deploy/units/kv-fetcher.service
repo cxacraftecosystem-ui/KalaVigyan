@@ -6,8 +6,8 @@ ConditionPathExists=|/opt/kalavigyan/current/backend/app/fetcher.py
 ConditionPathExists=|/opt/kalavigyan/current/backend/app/fetcher/__main__.py
 
 [Service]
-User=kalavigyan
-Group=kalavigyan
+DynamicUser=yes
+ProtectProc=invisible
 WorkingDirectory=/opt/kalavigyan/current/backend
 Environment=MALLOC_ARENA_MAX=2
 Environment=PYTHONUNBUFFERED=1

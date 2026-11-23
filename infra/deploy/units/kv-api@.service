@@ -11,6 +11,7 @@ Environment=API_WORKERS=1
 Environment=MALLOC_ARENA_MAX=2
 Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=/opt/kalavigyan/.env
+EnvironmentFile=-/opt/kalavigyan/slot-%i/release.env
 Environment=KV_PROCESS=api
 SyslogIdentifier=kv-api
 ExecStart=/opt/kalavigyan/slot-%i/backend/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port %i --workers ${API_WORKERS} --no-proxy-headers --timeout-graceful-shutdown 15

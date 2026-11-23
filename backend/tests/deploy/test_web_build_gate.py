@@ -1,0 +1,142 @@
+import os
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+import pytest
+
+from .fake_box import REPO, executable
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="the gate runs under Linux bash on the runner"
+)
+
+GATE = REPO / ".github" / "actions" / "build-web-app" / "api_ready.sh"
+ACTION = REPO / ".github" / "actions" / "build-web-app" / "action.yml"
+WORKFLOWS = REPO / ".github" / "workflows"
+STUBS = Path(__file__).resolve().parent / "gate"
+GIT_ENV = {
+    "GIT_AUTHOR_NAME": "Gate test",
+    "GIT_AUTHOR_EMAIL": "gate@example.org",
+    "GIT_COMMITTER_NAME": "Gate test",
+    "GIT_COMMITTER_EMAIL": "gate@example.org",
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_NOSYSTEM": "1",
+}
+
+
+@dataclass(frozen=True)
+class History:
+    root: Path
+    checkout: Path
+    first: str
+    api: str
+    web: str
+
+
+def git(cwd: Path, *arguments: str) -> str:
+    done = subprocess.run(
+        ["git", *arguments],
+        cwd=cwd,
+        env={**os.environ, **GIT_ENV},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return done.stdout.strip()
+
+
+def committed(work: Path, files: dict[str, str]) -> str:
+    for name, text in files.items():
+        (work / name).parent.mkdir(parents=True, exist_ok=True)
+        (work / name).write_text(text, encoding="utf-8")
+    git(work, "add", "-A")
+    git(work, "commit", "-q", "-m", ", ".join(files))
+    return git(work, "rev-parse", "HEAD")
+
+
+@pytest.fixture
+def history(tmp_path: Path) -> History:
+    origin = f"file://{tmp_path / 'origin.git'}"
+    git(tmp_path, "init", "-q", "--bare", "-b", "main", "origin.git")
+    work = tmp_path / "work"
+    git(tmp_path, "init", "-q", "-b", "main", "work")
+    first = committed(
+        work,
+        {
+            ".github/workflows/backend-checks.yml": "name: Backend checks\n",
+            "backend/app/routes.py": "ROUTES = ('/api/crafts',)\n",
+            "frontend/app/page.tsx": "export const calls = '/api/crafts';\n",
+        },
+    )
+    api = committed(
+        work,
+        {
+            "backend/app/routes.py": "ROUTES = ('/api/crafts', '/api/kilns')\n",
+            "frontend/app/page.tsx": "export const calls = '/api/kilns';\n",
+        },
+    )
+    web = committed(work, {"frontend/app/footer.tsx": "export const year = 2026;\n"})
+    git(work, "push", "-q", origin, "main")
+    git(tmp_path, "clone", "-q", origin, "checkout")
+    commands = tmp_path / "bin"
+    commands.mkdir()
+    for name in ("curl", "yq"):
+        executable(STUBS / f"{name}.sh", commands / name)
+    return History(tmp_path, tmp_path / "checkout", first, api, web)
+
+
+def gate(history: History, live: str) -> tuple[str, str]:
+    output = history.root / "github-output"
+    output.write_text("", encoding="utf-8")
+    env = {
+        **os.environ,
+        **GIT_ENV,
+        "PATH": f"{history.root / 'bin'}{os.pathsep}{os.environ['PATH']}",
+        "API_BASE_URL": "https://api.example.org",
+        "GITHUB_OUTPUT": str(output),
+        "LIVE_RELEASE": live,
+    }
+    done = subprocess.run(
+        ["bash", str(GATE)],
+        cwd=history.checkout,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert done.returncode == 0, done.stdout + done.stderr
+    return output.read_text(encoding="utf-8").strip(), done.stdout
+
+
+def test_a_web_only_push_builds_at_once_when_the_api_it_needs_answers(history: History) -> None:
+    assert gate(history, history.api)[0] == "api=live"
+    assert gate(history, history.web)[0] == "api=live"
+
+
+def test_a_web_only_push_waits_while_an_earlier_api_push_has_not_shipped(history: History) -> None:
+    decided, said = gate(history, history.first)
+    assert decided == "api=waiting"
+    assert f"main ({history.web}) changes the API since {history.first}" in said
+
+
+def test_an_api_that_names_no_release_or_does_not_answer_holds_the_build(history: History) -> None:
+    for live in ("dev", "unreachable"):
+        decided, said = gate(history, live)
+        assert decided == "api=waiting", live
+        assert "::warning::" in said
+
+
+def test_every_web_build_goes_through_the_gate_first() -> None:
+    action = ACTION.read_text(encoding="utf-8")
+    assert action.index('run: bash "$GITHUB_ACTION_PATH/api_ready.sh"') < action.index(
+        "VERCEL_DEPLOY_HOOK_URL"
+    )
+    assert "      if: steps.ready.outputs.api == 'live'\n" in action
+    calls = "uses: ./.github/actions/build-web-app\n        with:\n          api-base-url: ${{ vars.API_BASE_URL }}\n"
+    for workflow in ("deploy-web.yml", "deploy-backend.yml"):
+        text = (WORKFLOWS / workflow).read_text(encoding="utf-8")
+        assert text.count(calls) == 1, workflow
+        assert "VERCEL_DEPLOY_HOOK_URL" not in text, workflow

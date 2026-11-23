@@ -19,6 +19,7 @@ from app.providers.router import (
     reserve,
     route_allowed,
     settle,
+    settle_abandoned,
 )
 from app.research.image_screens import (
     NOT_SCREENED,
@@ -96,6 +97,9 @@ async def screen_with_vision(request: VisionRequest) -> VisionVerdict:
     except ProviderError as failure:
         await _settled_failure(event_id, failure)
         return unscreened(FAILED.format(kind=failure.kind or "error"))
+    except BaseException:
+        await settle_abandoned(sessionmaker(), event_id, route.estimate_usd)
+        raise
     return await _settled(route, event_id, result, request)
 
 
