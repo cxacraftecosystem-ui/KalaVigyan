@@ -294,7 +294,10 @@ both.
   since the registered component is the stored thing. The client draws it as a figure card
   (`components/answer/ComponentFigure.tsx`): the kicker "Figure from the {craft name} monograph",
   the title as an h4 and one indigo link, "Open the figure", to `href`; complete at rest, no
-  motion.
+  motion. Golden: `shared/explainer.component.golden.json`, the Kutch Ajrakh red player as the
+  catalogue places it with the eight sources the monograph load records
+  (`tests/db/test_component_sources_db.py` loads the dossiers and the monograph and reads them back;
+  decision 0178).
 
 ### Phase B blocks (decision 0042)
 
@@ -2001,7 +2004,8 @@ and reduces the stream to the document (`e2e/explainer-view-unit.spec.ts`).
 sections: a region story for Kachchh (four cited steps on the Dhamadka stream, the Saran, the move
 to Ajrakhpur and iron in groundwater; the `river-density` layer; the boundary and HydroRIVERS
 dataset rows), a map layer (`soil-ph-0-5cm` from `region.layer.golden.json`, Kachchh highlighted),
-seasons (two monsoon rows, no rainfall), a reaction player (the four seeded Ajrakh reactions from
+seasons (a monsoon row and Kachchh's CHIRPS monthly normals over 1981-2025, recorded from Geo ETL
+run 44204618054, with the CHIRPS dataset row; decision 0178), a reaction player (the four seeded Ajrakh reactions from
 the science seed plan), a material card (the seeded Alum with potassium alum and the `alum`
 glossary term), a molecule (the seeded Alizarin compound, PubChem CID 6293 as the recorded
 adapter response gives it, its record source `record_source_id(6293)`), two expert views
@@ -2066,11 +2070,12 @@ claims), a concept graph (alum shared with Bagru, Machilipatnam and Sanganeri; i
 Akola, Machilipatnam and Sanganeri; each craft's seeded concepts and one claim naming the term), a
 comparison (alum, indigo, water, history and GI rows; the Ajrakh water cell read from the stored
 water piece of `explainer.piece.golden.json`), a measure (the falling water table's "10-15 feet"
-as 3.05 to 4.57 m by the exact foot), the GI records of both crafts (Bagru's with the GI journal's
-sign of fake screen-printed Bagru textiles) and climate and risk for Kachchh (the CHIRPS row over
+as 3.05 to 4.57 m by the exact foot), the GI records of both crafts (Kutch Ajrakh's with the dossier's 1975 Barmer price, C049 by
+its curated id, decision 0178; Bagru's with the GI journal's sign of fake screen-printed Bagru
+textiles) and climate and risk for Kachchh (the CHIRPS row over
 1981-2025 and two meaning sentences on the water table and iron in groundwater). Terms are marked
 with the two crafts' seed glossary. The trend is the loaded Kachchh `CHIRPS_3_0` row (Geo ETL
-run 44204618054); every other id resolves to a seed claim and source, a seed concept, the LGD
+run 44204618054); every other id resolves to a seed claim and source, the price's curated claim and source, a seed concept, the LGD
 register, the geo ETL catalogue or a golden (`tests/contracts/test_explainer_phase_d.py`). It also lists how each block is stored (`pieces`:
 the measure and the Ajrakh market block) and its sources in order of first citation. The client
 parses each block with its kind's shape and refuses it in the built-only parser, the stream and
