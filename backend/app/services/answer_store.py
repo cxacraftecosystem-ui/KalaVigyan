@@ -284,7 +284,7 @@ def build_answer_pipeline(
     tools = BuilderTools(
         sessions, live, models.builder_plan, models.builder_compose, models.explainer, retriever=retriever
     )
-    composer = ModelComposer(model=models.compose)
+    composer = ModelComposer(model=models.compose, translator=ModelTranslator(model=models.translate))
     return AnswerPipeline(
         understand=answer_understander(sessions, index, embed=embed, model=models.understand).understand,
         research=research,

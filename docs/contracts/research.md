@@ -817,12 +817,21 @@ Gemini).
   list; a heading empty, over 120 characters, or carrying a figure, a link, markup or personal
   data): asked again once, then `ExternalFailure` (service `model`). Follow-ups with a link,
   markup or personal data are dropped.
+- **Quotes in another language** (decision 0167): before any regenerate, the failing sentences'
+  quotes written in an Indian script are rendered into English in one `TRANSLATE` call
+  (`composer/quote_checks.rendered_draft` over `quote_renderings.english_renderings`, the
+  composer's `ModelTranslator`), at most `RENDERED_QUOTES_MAX` (8) per draft; a quote's language
+  is its script's (`gu` for Gujarati), or for a script two answer languages share (Devanagari,
+  Bengali) the language its source id names (`wikipedia:hi:<page>`), else it is not rendered. A
+  sentence that passes `sentence_violations(..., renderings=)` is kept, citing the verbatim quote;
+  one that still fails goes on to the regenerate.
 - **Regenerate**: when a usable reply has failing sentences (a violation, or a sentence that
   does not construct, `MALFORMED`) and no retry was spent, one call with
   `REGENERATE_SYSTEM_PROMPT`, `regenerate_message` (each failed sentence numbered, with its
   problems, its text inside a block) and `regenerate_schema(n)` (`sentences[{index, text,
   quotes}]`). A replacement takes the failed sentence's place if it passes; an omitted or
-  failing one is dropped; an unusable reply drops them all. At most two model calls per answer.
+  failing one is dropped; an unusable reply drops them all. At most two `COMPOSE` calls per answer,
+  and the one `TRANSLATE` call (with its translator's one retry) above.
 - **Result**: passing sentences by section, hypothesis-level ones to `openQuestions`, empty
   sections dropped. No candidates: no call, `notEnoughEvidence`. Nothing passing:
   `notEnoughEvidence`.

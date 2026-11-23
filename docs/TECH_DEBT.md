@@ -136,22 +136,16 @@ Last reviewed: 2026-11-22.
 
 ## Live research write-back (decision 0011)
 
-### The composer does not yet ask for quote renderings (decisions 0013, 0023, 0139)
+### The write-back's quote gate does not read quote renderings (decisions 0013, 0023, 0139)
 
-- **What:** `research/quote_renderings.english_renderings` renders a draft's non-English quotes into
-  English through the TRANSLATE route and keeps a rendering only when `translation_problems`, read
-  from the quote's language, finds nothing; `research/composition.sentence_violations(...,
-  renderings=)` then measures the overlap, the unrelated-source and the stance checks on the
-  rendering while the citation keeps the verbatim quote. Nothing calls it yet: the composer's
-  post-check (`composer/drafts.checked_sentence`) passes no renderings and the write-back's quote
-  gate (`services/write_back_plan`) compares raw quotes, so a sentence resting only on a Hindi
-  passage is still dropped.
-- **Why left:** the composer and the write-back plan belonged to the answer-composition and
-  write-back lanes of round 7, which ran beside the sources and providers lane.
-- **Clears it:** in `composer/drafts`, collect the spans whose evidence item's `language` is not
-  English as `QuotedIn`, call `english_renderings` with the TRANSLATE route's `ModelTranslator`
-  once per draft, and pass the renderings to `sentence_violations`; let `write_back_plan`'s
-  overlap read the same renderings.
+- **What:** the composer renders a failing sentence's non-English quotes into English and keeps a
+  sentence its rendering supports, citing the verbatim quote (`composer/quote_checks`, decision
+  0167), but the write-back's quote gate (`services/write_back_plan`) still measures the overlap
+  on the raw quote, so such a sentence is shown and not written back.
+- **Why left:** `services/write_back_plan.py` belongs to the MCP and contributors lane, running at
+  the same time (2026-11-23).
+- **Clears it:** `write_back_plan`'s overlap reads the renderings the composer kept for the
+  sentence (`read_as`), once that lane has merged.
 
 ## Science, region, voice and media contracts (decision 0014)
 
