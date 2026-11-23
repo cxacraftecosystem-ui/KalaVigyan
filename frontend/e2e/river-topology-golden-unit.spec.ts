@@ -5,6 +5,8 @@ import { expect, test } from "@playwright/test";
 
 import { riverBasinOf } from "@/lib/riverTopology";
 
+import { basinCarriesDistricts, KACHCHH_BASIN } from "./production/riversLoaded";
+
 const ROOT = join(__dirname, "..", "..");
 const shared = (name: string): unknown => JSON.parse(readFileSync(join(ROOT, "shared", name), "utf8"));
 type StoryRiver = { mainRiv: number; reachIds: number[]; districtLgds: number[] };
@@ -52,4 +54,15 @@ test("the basin file decodes to the source's coordinates within half a quantizat
   const [outletLongitude, outletLatitude] = basin().reaches.get(3)?.line.at(-1) ?? [Number.NaN, Number.NaN];
   expect(Math.abs(outletLongitude - 69.92)).toBeLessThan(HALF_STEP);
   expect(Math.abs(outletLatitude - 23.2)).toBeLessThan(HALF_STEP);
+});
+
+test("the production run counts the river lines loaded only when the Khari's basin file carries every reach's districts", () => {
+  const loaded = shared("river.kachchh.golden.json") as { objects: { reaches: { geometries: { properties: Record<string, unknown> }[] } } };
+  expect(basinCarriesDistricts(loaded, KACHCHH_BASIN)).toBe(true);
+  const before = structuredClone(loaded);
+  for (const geometry of before.objects.reaches.geometries) delete geometry.properties.districts;
+  expect(basinCarriesDistricts(before, KACHCHH_BASIN)).toBe(false);
+  expect(basinCarriesDistricts({ type: "Topology" }, KACHCHH_BASIN)).toBe(false);
+  expect(basinCarriesDistricts(loaded, 41063204)).toBe(false);
+  expect(storyRiver().mainRiv).toBe(KACHCHH_BASIN);
 });

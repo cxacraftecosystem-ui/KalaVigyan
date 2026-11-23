@@ -12,15 +12,18 @@ import {
   type KnownAnswerQuestion,
   type WaitOutcome
 } from "./answers";
+import { builtBlockNotes } from "./builtBlocks";
 import { settle } from "./capture";
 import { answerLanguageProblems, translatedProblems } from "./languageChecks";
-import { CRAFT_SLUG, riversLoaded } from "./run";
+import { riversLoadedOn } from "./riversLoaded";
+import { CRAFT_SLUG, baseUrl } from "./run";
 import { readSandboxFrames, watchSandboxFrames, type SandboxWatch } from "./sandboxWatch";
 import { glanceAtTaps, pageNow, readTaps } from "./streamTap";
 
 const POLL_MS = 2_000;
 const LAST_STREAM_GRACE_MS = 1_500;
 const UI_SETTLE_MS = 30_000;
+let riversLoaded: Promise<boolean> | null = null;
 const AUTO_LANGUAGE = /^Auto\b/;
 
 async function chooseAutoLanguage(page: Page): Promise<void> {
@@ -93,7 +96,8 @@ async function asked(page: Page, question: KnownAnswerQuestion, watch: SandboxWa
 }
 
 export async function askKnownAnswer(page: Page, question: KnownAnswerQuestion): Promise<AnswerRecord> {
-  await page.goto(`/ask?craft=${encodeURIComponent(CRAFT_SLUG)}`, { waitUntil: "domcontentloaded" });
+  const loaded = (riversLoaded ??= riversLoadedOn(page.request, baseUrl()));
+  await page.goto(`/ask?craft=${encodeURIComponent(question.craft ?? CRAFT_SLUG)}`, { waitUntil: "domcontentloaded" });
   await settle(page);
   await chooseDepth(page, question.depth);
   await chooseAutoLanguage(page);
@@ -101,10 +105,10 @@ export async function askKnownAnswer(page: Page, question: KnownAnswerQuestion):
   const watch = question.check === "GENERATED_EXPLAINER" ? await watchSandboxFrames(page) : null;
   try {
     const record = await asked(page, question, watch);
-    const options = { riversLoaded: riversLoaded() };
+    const options = { riversLoaded: await loaded };
     record.problems.push(...answerProblems(record, question, options), ...translatedProblems(record, question));
     if (record.endedWith === "done") record.problems.push(...(await answerLanguageProblems(page, question)));
-    record.notes.push(...knownAnswerOutcome(record, question, options).notes);
+    record.notes.push(...knownAnswerOutcome(record, question, options).notes, ...builtBlockNotes(record.builtBlocks));
     return record;
   } finally {
     await watch?.stop();

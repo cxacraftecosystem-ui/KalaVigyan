@@ -4,11 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       questions:
-        description: Also ask the seven known-answer questions (the mordant in English, Hindi and Urdu, Kachchh's water, what the cloth is made of and its history at Detailed depth, indigo's generated explainer at Expert depth)
-        type: boolean
-        default: false
-      rivers_loaded:
-        description: The river lines are loaded, so the water question fails without a region story
+        description: Also ask the nine known-answer questions (the mordant in English, Hindi and Urdu, Kachchh's water, what the cloth is made of, its history, its seasons and a Varanasi craft's Ganga at Detailed depth, indigo's generated explainer at Expert depth)
         type: boolean
         default: false
       base_url:
@@ -31,7 +27,7 @@ jobs:
     name: Drive production at every width
     if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
     runs-on: ubuntu-26.04
-    timeout-minutes: 110
+    timeout-minutes: 130
     defaults:
       run:
         working-directory: frontend
@@ -40,7 +36,6 @@ jobs:
       E2E_BASE_URL: ${{ inputs.base_url || vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
       E2E_PREVIEW: ${{ inputs.base_url != '' && '1' || '0' }}
       E2E_QUESTIONS: ${{ inputs.questions && '1' || '0' }}
-      E2E_RIVERS_LOADED: ${{ inputs.rivers_loaded && '1' || '0' }}
       E2E_REPORT_DIR: production-run
       E2E_RUN_ID: ${{ github.run_id }}
       E2E_WORKERS: "4"

@@ -620,41 +620,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** one HTML reader for the live fetcher and curation; long books usually come as PDFs.
 - **Clears it:** a cap option on `extract` that curation passes.
 
-## Region story and map layers (decision 0044)
-
-### The place builders have not run against loaded rivers
-
-- **What:** the builders are tested on fixture reaches and, on GitHub Actions, on a hand-made
-  network in Kachchh; no answer has yet traced a real HydroRIVERS basin, so the time of a large
-  basin's trace (the Ganga's links and its stored reach districts) inside the 20 s wait is unmeasured.
-- **Why left:** the river lines load only after the deploy (decision 0043).
-- **Clears it:** after the `riverlines` load, one Expert answer for a Ganga craft and one for Kutch
-  Ajrakh in production, recording the builder's time; if a trace nears the wait, cache traces per
-  crossing reach.
-
-## Seasons and supply (decision 0047)
-
-### The seasons and supply builders have not met production
-
-- **What:** both are tested on fixtures, recorded Wikidata answers and, on GitHub Actions, the
-  seeded claims; neither has run on production claims, and the supply builder's time inside its
-  30 s wait (one plan-model call, up to 8 searches paced at 0.2 s and one SPARQL query paced at 1 s)
-  is unmeasured.
-- **Why left:** they reach readers with the next deploy.
-- **Clears it:** the Kutch Ajrakh climate and materials questions in the production E2E, recording
-  each builder's time and the rows and pins shown.
-
-## Phase B review fixes (decision 0050)
-
-### The water question needs `rivers_loaded` set by hand
-
-- **What:** the production E2E's water question fails a missing region story only when dispatched
-  with `rivers_loaded` true; it cannot tell on its own whether the river lines are loaded.
-- **Why left:** no route says whether rivers are loaded, and adding one for a test would be an
-  admin surface with no reader.
-- **Clears it:** dispatch with `rivers_loaded` true from the first run after the `riverlines` load,
-  then make it the default.
-
 ## Phase C contract (decision 0054)
 
 ### Numbers the explainer computes are not checked
