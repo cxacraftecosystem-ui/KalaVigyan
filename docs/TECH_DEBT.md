@@ -1019,21 +1019,27 @@ Last reviewed: 2026-11-22.
 
 ### Leftovers of the design-conformance lane
 
-- **What:** the Sources differ readings open in a `<details>` after their paragraph, the claim
-  stores what they differ on (`Claim.differsOn`, decision 0156), and an answer sentence names it
-  (`knowledge_view.ClaimView.differs_on`, decision 0166), but two seams are open. A flag the
-  write-back's duplicate judge sets stores no subject, because the judge names none; and the
-  matter and what-if hosts (`components/answer/matter/ReactionStepList.tsx`, `StepDetail.tsx`,
+- **What:** the Sources differ readings open in a `<details>` after their paragraph and the claim
+  stores what they differ on (`Claim.differsOn`, decision 0156), but three seams are open. An
+  answer sentence never receives it, because `knowledge_view.ClaimView` carries no `differs_on`
+  (`section_blocks.explainer_sentence` reads it through `DIFFERS_ON_FIELD`), so answers show a plain
+  "Sources differ" summary; a flag the write-back's duplicate judge sets stores no subject, because
+  the judge names none; and the matter and what-if hosts
+  (`components/answer/matter/ReactionStepList.tsx`, `StepDetail.tsx`,
   `components/answer/play/WhatIfLab.tsx`) draw a flagged sentence's tag without its readings. A
   drawing stored without server variants (the kind fixtures on `/design/kinds`) shows a sunk
   placeholder until it hydrates.
-- **Why left:** the judges and their callers (`write_back_gates`, `fact_proposals`) and the matter
-  hosts were other lanes' files while decisions 0156 and 0166 ran; the fixtures are delivered
-  specs, which may not carry `themes` (`component_specs_general_delivery`), and the page bundles
-  them instead of asking the server, which adds the variants.
-- **Clears it:** the duplicate judge naming what two facts differ on and passing it as
-  `candidate_writes.mark_sources_differ(..., about=)`; `SentencesDiffer` after the paragraph in the
-  three hosts; serve the kind preview's specs through the backend, which adds the four variants
+- **Why left:** filling `ClaimView.differs_on` also gives the craft page's sentences their
+  `differsOn` (the Kutch Ajrakh page gains three, renumbering its paragraphs), so it lands with the
+  refresh of `shared/craft.page.golden.json` and a re-baseline of the approved page's parity, which
+  the final clean-up and monograph lanes held while decision 0166 ran; the judges and their callers
+  (`write_back_gates`, `fact_proposals`) and the matter hosts were other lanes' files; the
+  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
+  and the page bundles them instead of asking the server, which adds the variants.
+- **Clears it:** `ClaimView.differs_on: str | None` filled from `Claim.differsOn` in `cited_view`,
+  with the craft page golden regenerated and the parity re-baselined; the duplicate judge naming
+  what two facts differ on and passing it as `candidate_writes.mark_sources_differ(..., about=)`;
+  `SentencesDiffer` after the paragraph in the three hosts; serve the kind preview's specs through the backend, which adds the four variants
   with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### Goldens that do not yet show every field

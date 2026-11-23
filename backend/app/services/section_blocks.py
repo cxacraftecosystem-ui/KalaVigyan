@@ -20,6 +20,8 @@ from .stated_names import unstated_names
 from .write_back_plan import composed_sentences
 
 __all__ = [
+    "DIFFERS_ON_FIELD",
+    "SOURCES_DIFFER_FIELD",
     "BlockRefused",
     "DroppedSentence",
     "KeptSentence",
@@ -34,6 +36,9 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+
+SOURCES_DIFFER_FIELD = "sources_differ"
+DIFFERS_ON_FIELD = "differs_on"
 
 
 class BlockRefused(InvalidInput):
@@ -206,12 +211,11 @@ def _quotes(views: Sequence[ClaimView]) -> list[str]:
 
 
 def _differing(views: Sequence[ClaimView]) -> dict[str, Any]:
-    flagged = [view for view in views if view.sources_differ]
+    flagged = [view for view in views if getattr(view, SOURCES_DIFFER_FIELD, False) is True]
     if not flagged:
         return {}
-    about = next(
-        (view.differs_on.strip() for view in flagged if view.differs_on and view.differs_on.strip()), None
-    )
+    named = (getattr(view, DIFFERS_ON_FIELD, None) for view in flagged)
+    about = next((on.strip() for on in named if isinstance(on, str) and on.strip()), None)
     return {"sourcesDiffer": True} | ({"differsOn": about} if about else {})
 
 
