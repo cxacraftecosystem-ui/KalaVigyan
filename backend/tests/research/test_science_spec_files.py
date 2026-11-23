@@ -23,8 +23,6 @@ NESTED = {
     "kutch-ajrakh/chemistry/what-if-red-dye": ["kutch-ajrakh/process/red-bath-hours"],
     "kutch-ajrakh/materials/six-materials": ["kutch-ajrakh/materials/natural-dye-materials-photo"],
 }
-STAGES = "kutch-ajrakh/process/cloth-after-each-stage"
-HELD = [(STAGES, "pt:C131")]
 STRUCTURES = (
     "shared/chemistry/alizarin-aluminium-ring-structures",
     "shared/chemistry/alizarin-purpurin-structures-hindi",
@@ -115,9 +113,8 @@ def test_a_spec_places_its_nested_components_where_the_page_nests_them(
     assert {label: found for label, found in nested.items() if found} == NESTED
 
 
-def test_the_cited_passages_outside_text_units_are_held_back_and_listed() -> None:
-    held = [(item.label, item.citation) for item in extract_specs(SLUG).held]
-    assert sorted(held) == sorted(HELD)
+def test_no_cited_passage_of_a_science_component_sits_outside_a_text_unit() -> None:
+    assert [(item.label, item.citation) for item in extract_specs(SLUG).held] == []
 
 
 def test_each_structure_carries_the_citation_of_its_pubchem_record(

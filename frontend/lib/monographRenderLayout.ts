@@ -1,4 +1,4 @@
-import type { MonographComponent, MonographDocument, MonographLayoutEntry, MonographUnit } from "@/lib/monographDocument";
+import type { MonographChapterName, MonographComponent, MonographDocument, MonographLayoutEntry, MonographUnit } from "@/lib/monographDocument";
 import { placedMastheadPicture } from "@/lib/monographPlacement";
 import { citedSourceKeys, hasSentence, nodesText, type MonographSources } from "@/lib/monographRender";
 
@@ -16,7 +16,7 @@ export const PARAGRAPH_SENTENCES = 3;
 export type MarginNote = { ref: string; source: string };
 export type Passage = { kind: "passage"; head: boolean; pieces: PassagePiece[]; notes: MarginNote[] };
 export type ChapterBlock = Passage | { kind: "component"; label: string } | { kind: "sources"; replaces: string[] };
-export type ChapterPlan = { key: string; index: number; number: number | null; label: string; blocks: ChapterBlock[] };
+export type ChapterPlan = { key: string; index: number; number: number | null; label: string; rail: string; blocks: ChapterBlock[] };
 export type MastheadPlan = { kicker: string | null; standfirst: string[]; lede: string | null; picture: string | null };
 export type LabelMasthead = { kicker: string | null; title: string; terms: string[]; picture: string | null; lede: string[] };
 export type PagePlan = { masthead: MastheadPlan; label: LabelMasthead | null; chapters: ChapterPlan[] };
@@ -158,7 +158,14 @@ function chapterPlan(document: MonographDocument, { key, index, nested }: Chapte
     }
   }
   flush();
-  return { key, index, number, label: chapterLabel(document, key, number), blocks: key === SOURCES_CHAPTER ? withSourceList(document, blocks) : blocks };
+  const named = chapterName(document, key);
+  const label = named?.title ?? chapterLabel(document, key, number);
+  return { key, index, number, label, rail: named?.rail ?? label, blocks: key === SOURCES_CHAPTER ? withSourceList(document, blocks) : blocks };
+}
+
+export function chapterName(document: MonographDocument, key: string): MonographChapterName | undefined {
+  if (document.translation) return undefined;
+  return document.content.chapters?.find((chapter) => chapter.key === key);
 }
 
 export function chapterLabel(document: MonographDocument, key: string, number: number | null): string {

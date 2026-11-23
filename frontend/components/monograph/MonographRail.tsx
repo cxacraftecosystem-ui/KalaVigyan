@@ -32,7 +32,7 @@ function RailNav({ chapters }: Chapters) {
               <li key={chapter.key}>
                 <a href={`#${chapter.key}`} aria-current={at === 0 ? "location" : undefined}>
                   {chapter.number !== null ? <b>{chapter.number}</b> : null}
-                  <span>{chapter.label}</span>
+                  <span>{chapter.rail}</span>
                 </a>
               </li>
             ))}

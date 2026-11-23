@@ -40684,5 +40684,72 @@
    "ref": "u1086",
    "within": "kutch-ajrakh/overview/picture-and-data-credits"
   }
+ ],
+ "chapters": [
+  {
+   "key": "answer",
+   "title": "The answer",
+   "rail": "Answer"
+  },
+  {
+   "key": "cloth",
+   "title": "The cloth",
+   "rail": "The cloth"
+  },
+  {
+   "key": "made",
+   "title": "How it is made",
+   "rail": "Making"
+  },
+  {
+   "key": "chemistry",
+   "title": "The chemistry",
+   "rail": "Chemistry"
+  },
+  {
+   "key": "why-kachchh",
+   "title": "Why Kachchh",
+   "rail": "Why Kachchh"
+  },
+  {
+   "key": "history",
+   "title": "History and trade",
+   "rail": "History"
+  },
+  {
+   "key": "market",
+   "title": "Market and GI",
+   "rail": "Market and GI"
+  },
+  {
+   "key": "what-if",
+   "title": "What if",
+   "rail": "What if"
+  },
+  {
+   "key": "people",
+   "title": "People and voices",
+   "rail": "People"
+  },
+  {
+   "key": "kin",
+   "title": "Kin crafts",
+   "rail": "Kin crafts"
+  },
+  {
+   "key": "reading",
+   "title": "Reading tools",
+   "rail": "Reading"
+  },
+  {
+   "key": "media",
+   "title": "Pictures, video and film",
+   "rail": "Media"
+  },
+  {
+   "key": "sources",
+   "title": "Sources",
+   "rail": "Sources"
+  }
  ]
 }

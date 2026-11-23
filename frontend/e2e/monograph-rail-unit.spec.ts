@@ -10,9 +10,12 @@ import { ChapterRail } from "../components/editorial/ChapterRail";
 import { MonographRail, RAIL_ARROWS, RAIL_LIST_ID } from "../components/monograph/MonographRail";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { railArrowShown, railEnds, railMask, railStep, railTarget } from "../lib/monographRail";
-import type { ChapterPlan } from "../lib/monographRenderLayout";
+import { pagePlan, railChapters, type ChapterPlan } from "../lib/monographRenderLayout";
+import { shownPage } from "../lib/monographShownPage";
 
-const chapter = (key: string, number: number | null, label: string): ChapterPlan => ({ key, index: number ?? 0, number, label, blocks: [] });
+import { goldenDocument, SERVED_PAGE } from "./monographNative";
+
+const chapter = (key: string, number: number | null, label: string): ChapterPlan => ({ key, index: number ?? 0, number, label, rail: label, blocks: [] });
 const provided = (element: ReactElement) => renderToStaticMarkup(createElement(AuthProvider, null, createElement(ThemeProvider, null, element)));
 const CHAPTERS = [chapter("answer", null, "Answer"), chapter("cloth", 1, "The cloth"), chapter("sources", 2, "Sources")];
 
@@ -75,4 +78,29 @@ test("the kit fades the rail by the edges the script measures and sets each arro
   expect(css).toContain(".kv-rail-go[hidden] { display: none; }");
   expect(script).toContain("rail.setAttribute('data-edges', ends.over ? 'over' : 'fit');");
   expect(script).toContain("railList.scrollBy({ left: dir * step, behavior: reduced() ? 'auto' : 'smooth' });");
+});
+
+function listed(markup: string, opening: string): string {
+  const start = markup.indexOf(opening);
+  expect(start, opening).toBeGreaterThanOrEqual(0);
+  return markup.slice(start, markup.indexOf("</ol>", start) + "</ol>".length);
+}
+
+test("Kutch Ajrakh's React rail and chapter menu name its chapters as the approved page's rail and menu do", () => {
+  const served = readFileSync(SERVED_PAGE, "utf8");
+  const react = provided(createElement(MonographRail, { chapters: railChapters(shownPage(goldenDocument()).plan) }));
+  expect(listed(react, `<ol id="${RAIL_LIST_ID}">`)).toBe(listed(served, `<ol id="${RAIL_LIST_ID}">`));
+  const menu = '<div class="kv-menu-h"><p>Chapters</p>';
+  expect(listed(react.slice(react.indexOf(menu)), "<ol>")).toBe(listed(served.slice(served.indexOf(menu)), "<ol>"));
+  expect(react).toContain('<p id="kv-menu-label"><span>The answer</span></p>');
+  expect(listed(react, `<ol id="${RAIL_LIST_ID}">`)).toContain('<a href="#made"><b>2</b><span>Making</span></a>');
+});
+
+test("a page in another language names its chapters from its own headings, not from the English names", () => {
+  const document = goldenDocument();
+  const translation = { sourceLanguage: "en" as const, sourceVersion: document.version, script: "Deva", direction: "ltr" as const, passages: 1, translated: 1, held: 0 };
+  const english = pagePlan(document).chapters.find((found) => found.key === "made");
+  const other = pagePlan({ ...document, translation }).chapters.find((found) => found.key === "made");
+  expect([english?.label, english?.rail]).toEqual(["How it is made", "Making"]);
+  expect([other?.label, other?.rail]).toEqual(["How it is made", "How it is made"]);
 });

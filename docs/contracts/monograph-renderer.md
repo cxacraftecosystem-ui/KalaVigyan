@@ -109,9 +109,12 @@ stylesheet (`MONOGRAPH_KIT_CSS`, loaded once as a React 19 stylesheet) styles it
 
 The plan (`pagePlan`) is pure and tested:
 
-- **Chapters** follow the layout's first appearance of each chapter key. A chapter's name is its
-  kicker (the `p` without a sentence right before its first `h2`), else that `h2`, else its key;
-  the first chapter is named from its key.
+- **Chapters** follow the layout's first appearance of each chapter key. A chapter's name is the
+  `title` its content's chapter names give it (decision 0164), else its kicker (the `p` without a
+  sentence right before its first `h2`), else that `h2`, else its key; the first chapter is named
+  from its key. The rail shows the names' `rail` and the menu and section the `title`; a page in
+  another language (`translation` set) names its chapters from its own headings, since the names
+  are the English page's. Kutch Ajrakh's names are its approved rail's and menu's.
 - **Masthead**: the first chapter's leading `p` units up to its first cited one: the first uncited
   is the kicker over the `h1` (the document's title), the others the standfirst, the cited one the
   lede (`p.t-lede.ans-lede`); a `picture_plate` component right after them is the masthead
@@ -171,8 +174,9 @@ classes and attributes for `s` (`data-src`, `data-sid`, `data-pair`), `cite` (`s
 `button.kcite` cluster with `data-c`, `data-g`, `aria-haspopup`, `aria-expanded`, `aria-label`
 "Source 1" or "Sources 1, 2 and 11", `aria-description` the titles), `i` (roles `loc`, `bot`,
 `ring`, `on`), `b`, `sub`, `sup`, `mark`, `link` (class, or `rel`, `target`, `data-ask`, `lang`),
-`figref` and `span`; text escapes `&`, `<`, `>` and attributes also quotes, as Python's `html.escape`
-does. It refuses what the backend refuses (an unknown mark, an unknown source, a role outside the
+`figref` and `span`; text and attributes escape `&`, `<`, `>`, `"` and `'` (`escapeMarkup`, the
+apostrophe as `&#x27;`), as Python's `html.escape` and React's server render do, so `UnitView`
+writes the same markup (decision 0164). It refuses what the backend refuses (an unknown mark, an unknown source, a role outside the
 set) and, on the web, a link that is not `#`, `/`, `http(s)` or `mailto`, and a class with
 characters a class name cannot have. Parity is tested on fifteen Ajrakh units covering every mark,
 whose expected markup the backend wrote (`e2e/monographParityCases.ts`).

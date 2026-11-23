@@ -44,6 +44,7 @@ export type MonographComponent = {
   subjects: string[];
 };
 export type MonographLayoutEntry = { chapter: string; kind: "unit" | "component"; ref: string; within: string | null };
+export type MonographChapterName = { key: string; title: string; rail: string };
 export type MonographContent = {
   schemaVersion: 1;
   craftSlug: string;
@@ -54,6 +55,7 @@ export type MonographContent = {
   units: Record<string, MonographUnit>;
   components: MonographComponent[];
   layout: MonographLayoutEntry[];
+  chapters?: MonographChapterName[];
 };
 export type MonographDocument = {
   schemaVersion: 1;

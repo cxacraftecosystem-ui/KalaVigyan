@@ -3,6 +3,7 @@ import {
   MONOGRAPH_DOCUMENT_PATH,
   SUBJECT_KINDS,
   type DocumentTranslation,
+  type MonographChapterName,
   type MonographComponent,
   type MonographContent,
   type MonographDocument,
@@ -108,6 +109,8 @@ const layoutShape: Shape<MonographLayoutEntry> = object<MonographLayoutEntry>({
   within: nullable(text)
 });
 
+const chapterNameShape: Shape<MonographChapterName> = object<MonographChapterName>({ key: text, title: text, rail: text });
+
 const contentShape: Shape<MonographContent> = object<MonographContent>({
   schemaVersion: oneOf([1] as const),
   craftSlug: text,
@@ -117,7 +120,8 @@ const contentShape: Shape<MonographContent> = object<MonographContent>({
   data: dictionary(ANY_KEY, anything),
   units: dictionary(ANY_KEY, unitShape),
   components: list(componentShape),
-  layout: list(layoutShape)
+  layout: list(layoutShape),
+  chapters: optional(list(chapterNameShape))
 });
 
 export const monographDocumentShape: Shape<MonographDocument> = object<MonographDocument>({
