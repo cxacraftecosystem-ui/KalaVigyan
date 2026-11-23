@@ -1,4 +1,6 @@
+import json
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -14,6 +16,8 @@ pytestmark = pytest.mark.skipif(
 
 GATE = REPO / ".github" / "actions" / "build-web-app" / "api_ready.sh"
 ACTION = REPO / ".github" / "actions" / "build-web-app" / "action.yml"
+AWAIT = REPO / ".github" / "actions" / "await-build" / "action.yml"
+HAND_OFF = "Hand the web build to Deploy backend"
 WORKFLOWS = REPO / ".github" / "workflows"
 STUBS = Path(__file__).resolve().parent / "gate"
 GIT_ENV = {
@@ -140,3 +144,31 @@ def test_every_web_build_goes_through_the_gate_first() -> None:
         text = (WORKFLOWS / workflow).read_text(encoding="utf-8")
         assert text.count(calls) == 1, workflow
         assert "VERCEL_DEPLOY_HOOK_URL" not in text, workflow
+
+
+def built_by(steps: list[tuple[str, str | None]]) -> str:
+    program = re.search(r"--jq '([^']+)'", AWAIT.read_text(encoding="utf-8"))
+    assert program is not None
+    jobs = {"jobs": [{"steps": [{"name": name, "conclusion": done} for name, done in steps]}]}
+    done = subprocess.run(
+        ["jq", "-r", program.group(1)], input=json.dumps(jobs), capture_output=True, text=True, check=True
+    )
+    return done.stdout.strip()
+
+
+def test_a_deploy_that_leaves_the_build_to_deploy_backend_reads_as_no_build() -> None:
+    build = "Build the web app once the API it needs is live"
+    assert built_by([(build, "success"), (HAND_OFF, "success")]) == "none"
+    assert built_by([(build, "success"), (HAND_OFF, "skipped")]) == "success"
+    assert built_by([(build, "failure"), (HAND_OFF, "skipped")]) == "failure"
+    assert built_by([("Assume the deploy role", "success")]) == "none"
+
+
+def test_both_deploys_name_the_hand_off_when_the_gate_waits() -> None:
+    assert "    value: ${{ steps.ready.outputs.api }}\n" in ACTION.read_text(encoding="utf-8")
+    for workflow in ("deploy-web.yml", "deploy-backend.yml"):
+        text = (WORKFLOWS / workflow).read_text(encoding="utf-8")
+        assert "        id: build\n        uses: ./.github/actions/build-web-app\n" in text, workflow
+        assert f"      - name: {HAND_OFF}\n        if: steps.build.outputs.api == 'waiting'\n" in text, (
+            workflow
+        )
