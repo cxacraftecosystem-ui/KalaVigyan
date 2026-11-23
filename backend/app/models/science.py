@@ -21,9 +21,11 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import enums as e
-from app.models.base import Base, created_at, updated_at, uuid_pk
+from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
 
 CONDITION_KEY_MAX_CHARS = 40
+READING_REVIEW_NOTE_CHARS = 500
+READING_REVIEW_STATUSES = ("APPROVED", "REJECTED")
 
 
 class Process(Base):
@@ -219,11 +221,23 @@ class ConditionReading(Base):
     statedMin: Mapped[Decimal | None] = mapped_column(Numeric(14, 4))
     statedMax: Mapped[Decimal | None] = mapped_column(Numeric(14, 4))
     statedUnit: Mapped[str] = mapped_column(String(40), nullable=False)
+    reviewStatus: Mapped[str | None] = mapped_column(String(16))
+    reviewedById: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("User.id", ondelete="SET NULL")
+    )
+    reviewedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reviewNote: Mapped[str | None] = mapped_column(String(READING_REVIEW_NOTE_CHARS))
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
 
     __table_args__ = (
         CheckConstraint('num_nonnulls("statedMin", "statedMax") >= 1', name="bounded"),
+        CheckConstraint(
+            f'"reviewStatus" IS NULL OR {one_of("reviewStatus", READING_REVIEW_STATUSES)}',
+            name="review_status",
+        ),
+        CheckConstraint('"reviewStatus" IS NULL OR "reviewedAt" IS NOT NULL', name="reviewed"),
         UniqueConstraint("conditionId", "claimSourceId", "stated"),
         Index(None, "claimSourceId"),
+        Index(None, "reviewedById"),
     )

@@ -27,6 +27,7 @@ STRUCTURE_PROPOSAL_KINDS = (
     "CONFLICT",
     "OPEN_QUESTION",
     "GI_RECORD",
+    "ALTERNATIVE",
 )
 STRUCTURE_PROPOSAL_STATUSES = ("PENDING", "APPROVED", "REJECTED", "REFUSED")
 STRUCTURE_PROPOSAL_ORIGINS = ("CONTRIBUTION", "AGENT")
@@ -43,8 +44,11 @@ class StructureProposal(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     proposerId: Mapped[uuid.UUID | None] = _person()
-    craftId: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("Craft.id", ondelete="CASCADE"), nullable=False
+    craftId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("Craft.id", ondelete="CASCADE")
+    )
+    categoryId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("CraftCategory.id", ondelete="CASCADE")
     )
     kind: Mapped[str] = mapped_column(String(CODE_CHARS), nullable=False)
     item: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
@@ -75,9 +79,11 @@ class StructureProposal(Base):
         CheckConstraint(
             "\"status\" IN ('PENDING', 'REFUSED') OR \"reviewedAt\" IS NOT NULL", name="reviewed"
         ),
+        CheckConstraint('num_nonnulls("craftId", "categoryId") = 1', name="subject"),
         Index(None, "status", "createdAt"),
         Index(None, "proposerId"),
         Index(None, "craftId"),
+        Index(None, "categoryId"),
         Index(None, "reviewedById"),
         Index(None, "claimId"),
     )
