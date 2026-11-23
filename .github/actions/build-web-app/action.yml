@@ -4,6 +4,10 @@ inputs:
   api-base-url:
     description: The API's public origin; its /health names the release commit it runs.
     required: true
+outputs:
+  api:
+    description: live when the API main needs answered and the hook was called; waiting when the build is left to a later Deploy backend
+    value: ${{ steps.ready.outputs.api }}
 runs:
   using: composite
   steps:
