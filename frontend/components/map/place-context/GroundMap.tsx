@@ -1,15 +1,15 @@
 "use client";
 
-import { useId, useMemo, useRef } from "react";
+import { useId, useMemo } from "react";
 
-import { fitStyle, useFitScale } from "@/components/charts/useFitScale";
+import { fitScale, fitStyle } from "@/components/charts/useFitScale";
 import { decodeRings } from "@/components/map/basemap";
 import { indiaRings } from "@/components/map/indiaGeometry";
 import { mineralColour, symbolPath } from "@/components/map/physical/MineralsLayer";
 import { RotatedLabel } from "@/components/map/physical/RotatedLabel";
 import { AbroadPins, NamedRivers } from "@/components/map/place-context/GroundBeyond";
 import type { DrawnRiver } from "@/components/map/place-context/useGroundRivers";
-import { useNeighbourRings } from "@/components/map/place-context/useNeighbourRings";
+import { NEIGHBOUR_RINGS } from "@/components/map/place-context/neighbourLand";
 import { RANN_RINGS } from "@/components/map/rannGeometry";
 import { frameView, kmUnits, linePath, placed, ringsIn, ringsPath, type FrameView } from "@/lib/groundFrame";
 import { riverWidth } from "@/lib/mapPhysical";
@@ -28,9 +28,8 @@ export const MATCHED_PX = 5;
 const LABEL_GAP_PX = 6;
 
 function Land({ frame, view, saltId }: { frame: GroundFrame; view: FrameView; saltId: string }) {
-  const neighbours = useNeighbourRings();
   const india = useMemo(() => ringsPath(view, ringsIn(frame, indiaRings().flat())), [frame, view]);
-  const foreign = useMemo(() => ringsPath(view, ringsIn(frame, neighbours)), [frame, view, neighbours]);
+  const foreign = useMemo(() => ringsPath(view, ringsIn(frame, NEIGHBOUR_RINGS)), [frame, view]);
   const rann = useMemo(() => ringsPath(view, ringsIn(frame, decodeRings(RANN_RINGS))), [frame, view]);
   return (
     <g className="pointer-events-none">
@@ -158,14 +157,16 @@ function SaltPattern({ id }: { id: string }) {
   );
 }
 
+export function groundScale(view: FrameView): number {
+  return fitScale(view.width, 0);
+}
+
 export function GroundMap({ frame, pins, deposits, radiusKm, title, description, marks = NO_MARKS }: GroundMapProps) {
-  const ref = useRef<SVGSVGElement | null>(null);
   const view = useMemo(() => frameView(frame), [frame]);
-  const k = useFitScale(ref, view.width);
+  const k = groundScale(view);
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
     <svg
-      ref={ref}
       viewBox={`0 0 ${view.width} ${view.height.toFixed(1)}`}
       role="img"
       aria-labelledby={`${id}-t ${id}-d`}

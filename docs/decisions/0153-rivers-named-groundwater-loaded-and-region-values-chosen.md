@@ -171,8 +171,10 @@ headline set per facet. The production Geo ETL runs' artifacts (runs 43884310432
   line (the Ganges' is 98 km out in the delta), is named only if OpenStreetMap names its reaches.
 - A part fails on a district a person has not reviewed as without cells: the first full raster
   run of a dataset may stop on one, which is then checked and listed with its evidence.
-- Groundwater shows only for Rajasthan; the rest of the country waits on the portal
-  (`docs/TECH_DEBT.md`, Groundwater values only for Rajasthan).
+- Groundwater shows only for Rajasthan, and only once loaded from a network the portal answers:
+  GitHub's runners could not connect to it on 2026-11-23 (run 45088759547); the rest of the
+  country waits on the portal (`docs/TECH_DEBT.md`, Groundwater values only for Rajasthan, and not
+  yet loaded).
 - The region route sends about a tenth of what it did; every value is still stored and on the map.
 
 ## How this record is kept true

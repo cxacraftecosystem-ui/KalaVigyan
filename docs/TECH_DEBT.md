@@ -1366,18 +1366,23 @@ Last reviewed: 2026-11-22.
 
 ## Climate and risk, and ask the map (decision 0065)
 
-### Groundwater values only for Rajasthan
+### Groundwater values only for Rajasthan, and not yet loaded
 
-- **What:** `climate_risk.groundwater` shows stored groundwater figures only for Rajasthan's 33
+- **What:** `climate_risk.groundwater` can show stored groundwater figures only for Rajasthan's 33
   districts as on 31 March 2023 (`OGD_GW_RESOURCES_RAJASTHAN_2023`); a craft in any other state shows
-  groundwater only through cited claims.
+  groundwater only through cited claims. None is loaded yet: the Geo ETL run of 2026-11-23 (run
+  45088759547) could not connect to `api.data.gov.in` from GitHub's runners (`ConnectionError` on
+  every try, the part failed as it should), while the same address answers from India.
 - **Why left:** the India data portal holds no all-India district table of the Dynamic Ground Water
   Resources assessment as an API resource (searched 2026-11-23): the Ministry of Jal Shakti's
   assessment catalogues there are empty, the National Compilation gives district tables only in PDF
   annexures, and the portal's other district-wise tables are Rajya Sabha answers for single states or
   urban areas (Delhi and Bengaluru by assessment unit).
-- **Clears it:** a district table for more states on the portal (each a new dataset row and a table
-  in `etl/geo/geo_etl/layers/groundwater.py`), or the owner's choice to load the National Compilation's
+  The portal refuses connections from GitHub's runners.
+- **Clears it:** one `groundwater` extract and load from a network the portal answers (for example a
+  self-hosted runner in India, or the portal's allowance for GitHub's addresses); then a district table
+  for more states on the portal (each a new dataset row and a table in
+  `etl/geo/geo_etl/layers/groundwater.py`), or the owner's choice to load the National Compilation's
   district annexure another way (for example a transcription recorded as its own dataset).
 
 ### Ask the map lists every year of the series
