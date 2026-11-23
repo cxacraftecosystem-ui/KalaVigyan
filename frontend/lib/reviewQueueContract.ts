@@ -12,10 +12,14 @@ import {
   type StructureEntry,
   type StructureKind
 } from "@/lib/structureReviewContract";
+import { readingShape, type ReadingReview } from "@/lib/readingReviewContract";
+import { sourceShape, type FactSource, type SourceQuote, type SuppliedProvenance } from "@/lib/reviewSources";
 import { reviewEntryShape, type ClosedReviewItem, type RejectReason, type ReviewItem } from "@/lib/testimonyContract";
 
+export type { FactSource, ReadingReview, SourceQuote, SuppliedProvenance };
+
 export const REVIEW_QUEUE_PATH = "/review-queue";
-export const QUEUE_KINDS = ["FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE"] as const;
+export const QUEUE_KINDS = ["FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS"] as const;
 export const REVIEW_ORIGINS = ["RESEARCH", "CONTRIBUTION", "AGENT", "TESTIMONY"] as const;
 export const QUEUE_ACTIONS = ["approve", "raise", "reject", "retract"] as const;
 export const LAYOUT_CHANGES = ["ADDED", "CHANGED", "REMOVED"] as const;
@@ -29,9 +33,6 @@ export type QueueAction = (typeof QUEUE_ACTIONS)[number];
 export type LayoutChangeKind = (typeof LAYOUT_CHANGES)[number];
 
 export type Proposer = { name: string; role: string };
-export type SourceQuote = { text: string; locator: string | null };
-export type SuppliedProvenance = { suppliedSourceId: string; access: string; accessedOn: string; grade: string; confirmedBy: string | null; textSha256: string; characters: number };
-export type FactSource = { title: string; url: string | null; licence: string | null; reliability: string; quotes: SourceQuote[]; supplied?: SuppliedProvenance };
 export type RelatedFact = { id: string; text: string };
 export type GateCheck = { gate: string; passed: boolean; reasons: string[]; model: string | null; related: RelatedFact[] };
 export type FactConcept = { name: string; type: string };
@@ -137,7 +138,8 @@ export type PictureItem = ItemBase & { kind: "IMAGES"; picture: ImageContributio
 export type ComponentItem = ItemBase & { kind: "COMPONENTS"; component: ComponentReview };
 export type LayoutItem = ItemBase & { kind: "LAYOUTS"; layout: LayoutReview };
 export type StructureItem = ItemBase & { kind: "STRUCTURE"; structure: StructureReview };
-export type QueueItem = FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureItem;
+export type ReadingItem = ItemBase & { kind: "READINGS"; reading: ReadingReview };
+export type QueueItem = FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureItem | ReadingItem;
 
 export type ReviewQueuePage = {
   schemaVersion: 1;
@@ -166,17 +168,6 @@ const originShape = oneOf(REVIEW_ORIGINS);
 const proposerShape: Shape<Proposer> = object<Proposer>({ name: text, role: text });
 
 const relatedShape: Shape<RelatedFact> = object<RelatedFact>({ id: text, text });
-
-const sourceShape: Shape<FactSource> = object<FactSource>({
-  title: text,
-  url: nullable(text),
-  licence: nullable(text),
-  reliability: text,
-  quotes: list(object<SourceQuote>({ text, locator: nullable(text) })),
-  supplied: optional(
-    object<SuppliedProvenance>({ suppliedSourceId: text, access: text, accessedOn: text, grade: text, confirmedBy: nullable(text), textSha256: text, characters: integer })
-  )
-});
 
 const gateShape: Shape<GateCheck> = object<GateCheck>({
   gate: text,
@@ -289,15 +280,40 @@ export const queueItemShape: Shape<QueueItem> = tagged<QueueItem>("kind", {
   IMAGES: object<PictureItem>({ ...base, kind: oneOf(["IMAGES"] as const), picture: imageContributionShape }),
   COMPONENTS: object<ComponentItem>({ ...base, kind: oneOf(["COMPONENTS"] as const), component: componentShape }),
   LAYOUTS: object<LayoutItem>({ ...base, kind: oneOf(["LAYOUTS"] as const), layout: layoutShape }),
-  STRUCTURE: object<StructureItem>({ ...base, kind: oneOf(["STRUCTURE"] as const), structure: structureShape })
+  STRUCTURE: object<StructureItem>({ ...base, kind: oneOf(["STRUCTURE"] as const), structure: structureShape }),
+  READINGS: object<ReadingItem>({ ...base, kind: oneOf(["READINGS"] as const), reading: readingShape })
 });
+
+function isKnownKind(value: unknown): value is QueueKind {
+  return QUEUE_KINDS.includes(value as QueueKind);
+}
+
+function isLaterKind(entry: unknown): boolean {
+  const kind = (entry as { kind?: unknown } | null)?.kind;
+  return typeof kind === "string" && /^[A-Z_]+$/.test(kind) && !isKnownKind(kind);
+}
+
+const knownKinds: Shape<QueueKind[]> = {
+  expected: "a list of queue kinds",
+  parse: (value, path) => list(text).parse(value, path).filter(isKnownKind)
+};
+
+const knownItems: Shape<QueueItem[]> = {
+  expected: `a list of ${queueItemShape.expected}`,
+  parse(value, path) {
+    if (!Array.isArray(value)) return list(queueItemShape).parse(value, path);
+    const entries = value.map((entry: unknown, index) => ({ entry, index }));
+    const known = entries.filter(({ entry }) => !isLaterKind(entry));
+    return known.map(({ entry, index }) => queueItemShape.parse(entry, `${path}[${index}]`));
+  }
+};
 
 export const reviewQueuePageShape: Shape<ReviewQueuePage> = object<ReviewQueuePage>({
   schemaVersion,
-  kinds: list(kindShape),
+  kinds: knownKinds,
   counts: dictionary(/^[A-Z]+$/, integer),
   total: integer,
-  items: list(queueItemShape),
+  items: knownItems,
   nextCursor: nullable(text)
 });
 

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
 from app.models import Claim, ClaimSource, ConditionReading, Craft, KnowledgePiece, ProcessCondition
+from app.models.science import shown_reading
 from app.research.knowledge_api import (
     CoverageSummary,
     FactFigure,
@@ -134,7 +135,7 @@ async def _readings(session: AsyncSession, claim_ids: list[uuid.UUID]) -> dict[u
         )
         .join(ConditionReading, ConditionReading.claimSourceId == ClaimSource.id)
         .join(ProcessCondition, ProcessCondition.id == ConditionReading.conditionId)
-        .where(ClaimSource.claimId.in_(claim_ids))
+        .where(ClaimSource.claimId.in_(claim_ids), shown_reading())
         .order_by(ClaimSource.claimId, ProcessCondition.label, ConditionReading.stated)
     )
     found: dict[uuid.UUID, list[FactReading]] = defaultdict(list)

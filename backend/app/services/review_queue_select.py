@@ -34,6 +34,7 @@ from app.research.review_queue import (
     PictureItem,
     QueueEntry,
     QueueKey,
+    ReadingQueueItem,
     StructureQueueItem,
     TestimonyItem,
 )
@@ -70,7 +71,15 @@ QUEUE_MODELS: Mapping[str, Any] = MappingProxyType(
 )
 
 
-RenderedItem = FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem
+RenderedItem = (
+    FactItem
+    | TestimonyItem
+    | PictureItem
+    | ComponentItem
+    | LayoutItem
+    | StructureQueueItem
+    | ReadingQueueItem
+)
 
 
 @dataclass(frozen=True)

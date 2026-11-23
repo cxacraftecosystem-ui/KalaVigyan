@@ -342,9 +342,9 @@ def test_a_malformed_task_key_is_refused(key: str) -> None:
         ("STUDENT", ()),
         ("ARTISAN", ()),
         ("RESEARCHER", ()),
-        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE")),
-        ("ADMIN", ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE")),
-        ("MASTER_ADMIN", ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE")),
+        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE", "READINGS")),
+        ("ADMIN", ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS")),
+        ("MASTER_ADMIN", ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS")),
     ],
 )
 def test_each_role_reviews_the_queues_its_capabilities_allow(

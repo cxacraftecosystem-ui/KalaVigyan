@@ -41,7 +41,7 @@ from app.research.review_queue_components import closest_components
 from app.services.claim_writer import HELD_NOTE, held_note
 from app.services.write_back_crafts import HELD_OTHER_PLACE
 
-ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE")
+ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS")
 NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
 
 
@@ -51,7 +51,7 @@ NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
         ("STUDENT", ()),
         ("ARTISAN", ()),
         ("RESEARCHER", ()),
-        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE")),
+        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE", "READINGS")),
         ("ADMIN", ALL_KINDS),
         ("MASTER_ADMIN", ALL_KINDS),
     ],
@@ -68,9 +68,9 @@ def test_only_admins_and_master_admins_see_who_proposed(role: str, shown: bool) 
 @pytest.mark.parametrize(
     ("origin", "kinds"),
     [
-        ("RESEARCH", ("FACTS",)),
-        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS", "STRUCTURE")),
-        ("AGENT", ("FACTS", "COMPONENTS", "LAYOUTS", "STRUCTURE")),
+        ("RESEARCH", ("FACTS", "READINGS")),
+        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS", "STRUCTURE", "READINGS")),
+        ("AGENT", ("FACTS", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS")),
         ("TESTIMONY", ("TESTIMONY",)),
         (None, ALL_KINDS),
     ],

@@ -27,7 +27,7 @@ from app.schemas.science import (
     sources_differ,
 )
 
-from .envelopes import envelope_check
+from .reading_checks import reading_check
 from .records import (
     ConditionRecord,
     KnownClaim,
@@ -37,7 +37,7 @@ from .records import (
     ReadingRecord,
     StageRecord,
 )
-from .units import Bounds, normalised_bounds
+from .units import Bounds
 
 __all__ = ["condition_id", "craft_process", "ordered_claims"]
 
@@ -170,13 +170,13 @@ def _condition_view(condition: ConditionRecord, stage_type: str, index: _Index) 
 
 
 def _reading(reading: ReadingRecord, quantity: str, stage_type: str) -> ConditionReading:
-    bounds = normalised_bounds(quantity, Bounds(reading.low, reading.high), reading.unit)
+    checked = reading_check(stage_type, quantity, Bounds(reading.low, reading.high), reading.unit)
     return ConditionReading(
         claim_id=reading.claim_id,
-        min=bounds.low,
-        max=bounds.high,
+        min=checked.bounds.low,
+        max=checked.bounds.high,
         stated=reading.stated,
-        envelope=envelope_check(stage_type, quantity, bounds.low, bounds.high),
+        envelope=checked.envelope,
     )
 
 

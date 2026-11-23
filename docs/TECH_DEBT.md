@@ -254,17 +254,6 @@ Last reviewed: 2026-11-22.
   craft with a `FIRE` stage and its stated temperature, and `claim_seed.stage_rows` ordering a
   stage by its `PRECEDES` edges when no ordinal is stated.
 
-### Out-of-envelope readings are not in a review queue
-
-- **What:** the contract lists every `OUTSIDE` reading in the review queue; the review queue
-  (`services/review_queue*`) now exists but has no readings kind, so an out-of-envelope reading is
-  only shown with its status. No stored reading is checked against an envelope yet (the entry
-  above), so the queue would list nothing today.
-- **Why left:** the review queue's kinds, routes and screen belonged to the MCP and contributors
-  lane in round 7's debt round; the place builders lane (decision 0160) did not touch them.
-- **Clears it:** a readings kind in the review queue listing the `ConditionReading` rows whose
-  `envelope_check` is `OUTSIDE`, decided on the review screen like the other kinds.
-
 ## Answers in Indian languages (decision 0023)
 
 ### The read-back check is not yet calibrated by readers

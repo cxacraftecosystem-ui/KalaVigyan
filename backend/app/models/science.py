@@ -26,6 +26,7 @@ from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
 CONDITION_KEY_MAX_CHARS = 40
 READING_REVIEW_NOTE_CHARS = 500
 READING_REVIEW_STATUSES = ("APPROVED", "REJECTED")
+READING_APPROVED, READING_REJECTED = READING_REVIEW_STATUSES
 
 
 class Process(Base):
@@ -241,3 +242,7 @@ class ConditionReading(Base):
         Index(None, "claimSourceId"),
         Index(None, "reviewedById"),
     )
+
+
+def shown_reading() -> ColumnElement[bool]:
+    return ConditionReading.reviewStatus.is_distinct_from(READING_REJECTED)

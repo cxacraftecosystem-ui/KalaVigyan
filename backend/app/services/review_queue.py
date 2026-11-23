@@ -17,12 +17,14 @@ from app.research.review_queue import (
     IMAGES,
     KIND_ORIGINS,
     LAYOUTS,
+    READINGS,
     STRUCTURE,
     TESTIMONY,
     TESTIMONY_ORIGIN,
     PictureItem,
     Proposer,
     QueueEntry,
+    QueueKey,
     ReviewFilters,
     ReviewQueuePage,
     TestimonyItem,
@@ -39,6 +41,7 @@ from .review_queue_components import component_items
 from .review_queue_errors import UnknownCraft
 from .review_queue_fact_views import fact_items
 from .review_queue_layouts import layout_items
+from .review_queue_readings import ReadingScope, reading_count, reading_entries, reading_items
 from .review_queue_select import QueueScope, Rendered, RenderedItem, queue_count, queue_entries, rows_by_id
 from .review_queue_structure import structure_items
 from .testimony_views import Turns, review_item
@@ -64,12 +67,10 @@ async def list_review_queue(
         viewer_id=viewer.id, craft=await _craft(session, filters.craft_slug), origin=filters.origin
     )
     counted = selected_kinds(kinds, kind=None, origin=filters.origin)
-    counts = {kind: await queue_count(session, kind, scope) if kind in counted else 0 for kind in kinds}
+    counts = {kind: await _count(session, kind, scope) if kind in counted else 0 for kind in kinds}
     chosen = selected_kinds(kinds, kind=filters.kind, origin=filters.origin)
     before = parsed_cursor(filters.cursor) if filters.cursor is not None else None
-    groups = [
-        await queue_entries(session, kind, scope, before=before, limit=filters.limit + 1) for kind in chosen
-    ]
+    groups = [await _entries(session, kind, scope, before=before, limit=filters.limit + 1) for kind in chosen]
     kept, following = newest_first(groups, filters.limit)
     return ReviewQueuePage(
         kinds=list(kinds),
@@ -78,6 +79,25 @@ async def list_review_queue(
         items=await _items(session, viewer, kept, adapters=adapters, now=now),
         next_cursor=following,
     )
+
+
+async def _count(session: AsyncSession, kind: str, scope: QueueScope) -> int:
+    if kind == READINGS:
+        return await reading_count(session, _reading_scope(scope))
+    return await queue_count(session, kind, scope)
+
+
+async def _entries(
+    session: AsyncSession, kind: str, scope: QueueScope, *, before: QueueKey | None, limit: int
+) -> list[QueueEntry]:
+    if kind == READINGS:
+        return await reading_entries(session, _reading_scope(scope), before=before, limit=limit)
+    return await queue_entries(session, kind, scope, before=before, limit=limit)
+
+
+def _reading_scope(scope: QueueScope) -> ReadingScope:
+    craft_id = scope.craft.id if scope.craft is not None else None
+    return ReadingScope(viewer_id=scope.viewer_id, craft_id=craft_id, origin=scope.origin)
 
 
 async def _craft(session: AsyncSession, slug: str | None) -> Craft | None:
@@ -119,6 +139,8 @@ async def _rendered(
         return await layout_items(session, ids)
     if kind == STRUCTURE:
         return await structure_items(session, ids)
+    if kind == READINGS:
+        return await reading_items(session, ids)
     if kind == TESTIMONY:
         return await _testimony_items(session, ids, adapters=adapters, now=now)
     return await _picture_items(session, ids, adapters=adapters, now=now)

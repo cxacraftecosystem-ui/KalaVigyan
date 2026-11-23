@@ -17,11 +17,22 @@ from app.models import (
     LayoutProposal,
     StructureProposal,
 )
+from app.models.science import READING_REJECTED
 from app.research.page_revalidation import PageOwners
-from app.research.review_queue import COMPONENTS, FACTS, IMAGES, LAYOUTS, STRUCTURE, TESTIMONY, QueueDecision
+from app.research.review_queue import (
+    COMPONENTS,
+    FACTS,
+    IMAGES,
+    LAYOUTS,
+    READINGS,
+    STRUCTURE,
+    TESTIMONY,
+    QueueDecision,
+)
 from app.research.structure_proposals import APPROVED_STATUS
 
 from .page_revalidation import claim_owners, craft_owners, merged_owners, refresh_pages
+from .review_queue_readings import reading_craft
 
 __all__ = ["refresh_after_decision"]
 
@@ -56,6 +67,8 @@ def _owning_craft(decided: QueueDecision) -> Select[Any] | None:
         return select(StructureProposal.craftId).where(StructureProposal.id == decided.id)
     if decided.kind == IMAGES and decided.status == APPROVED:
         return select(ImageContribution.craftId).where(ImageContribution.id == decided.id)
+    if decided.kind == READINGS and decided.status == READING_REJECTED:
+        return reading_craft(decided.id)
     return None
 
 
