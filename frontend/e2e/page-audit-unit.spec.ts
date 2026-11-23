@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 
 import { renderChemistry } from "@/lib/chemistry";
 
-import { auditPage, type AuditOptions } from "./production/pageAudit";
+import { auditPage, sidewaysProblems, type AuditOptions } from "./production/pageAudit";
 
 const KATEX_CSS = readFileSync(join(__dirname, "..", "node_modules", "katex", "dist", "katex.min.css"), "utf8");
 const OPTIONS: AuditOptions = { citedSelector: "[data-cited]", limit: 12 };
@@ -56,4 +56,14 @@ test("a charge set as a superscript may rise above its formula's line, but not o
   await page.setContent(chargedPage());
   const audited = await page.evaluate(auditPage, OPTIONS);
   expect(audited.textOverflow).toEqual(['main > div > b[data-testid="lifted"]: "2+" spills out of its box']);
+});
+
+test("a page that scrolls sideways names the outermost box past the screen, not its children", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const wide = `<figure data-testid="wide" style="width:380px;margin:0"><div style="width:380px;height:10px"></div></figure>`;
+  await page.setContent(`<!doctype html><html><head><style>body{margin:0} main{padding:0 16px}</style></head><body><main><section data-testid="answer-view">${wide}<p>Short.</p></section></main></body></html>`);
+  const audited = await page.evaluate(auditPage, OPTIONS);
+  expect(audited.widest).toEqual(['main > section[data-testid="answer-view"] > figure[data-testid="wide"] (6px past the screen)']);
+  expect(sidewaysProblems(audited)).toEqual([`the page scrolls sideways by ${audited.pageOverflowPx}px: ${audited.widest[0]}`]);
+  expect(sidewaysProblems({ pageOverflowPx: 1, widest: [] })).toEqual([]);
 });

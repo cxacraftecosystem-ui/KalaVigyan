@@ -28,6 +28,7 @@ piece rebuild) and `docs/contracts/retrieval.md` (`facets`).
 | The page merge that told curated pieces by their claims first | [decision 0096](0096-reader-question-pieces-join-their-craft-page.md) |
 | Retiring a dossier also removes its places, GI record, prices and workforce rows (amends item 2) | [decision 0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | The debt it clears and what it leaves | [TECH_DEBT.md](../TECH_DEBT.md) |
+| A term whose retired seed claims defined it, read from the curated facts naming it | [decision 0175](0175-production-checks-read-what-the-page-shows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

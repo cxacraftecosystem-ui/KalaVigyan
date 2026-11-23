@@ -1,13 +1,12 @@
-import { scriptOf } from "@/lib/answerLanguages";
-import { splitSseBuffer } from "@/lib/answerStream";
+import { splitSseBuffer, sseFields } from "@/lib/answerStream";
 import type { LedeBlock } from "@/lib/explainerContract";
 import { explainerEventOf, type ExplainerEvent } from "@/lib/explainerStream";
 import { blockSentences, ledeSentences } from "@/lib/explainerView";
-import type { AnswerSentence } from "@/lib/types";
 
 import { builtBlocks, type BuiltBlockSeen } from "./builtBlocks";
 import { NO_EXPERT_PANEL, expertPanelNote, withExpertPanel } from "./expertPanel";
 import { NO_GENERATED_EXPLAINER, generatedExplainerFound, generatedExplainerOutcome, withGeneratedExplainer, type GeneratedExplainerRecord } from "./generatedExplainer";
+import { blockSentenceRecords, pageSentenceProblems, sentenceRecord, type SentenceRecord } from "./pageSentences";
 import type { TappedChunk, TappedStream } from "./streamTap";
 import { NO_REGION_STORY, waterStoryFound, waterStoryOutcome, withRegionStory, type CheckOutcome, type RegionStoryRecord } from "./waterStory";
 
@@ -56,22 +55,7 @@ export type WaitOutcome = "stalled" | "timeout" | "never-started";
 export type AnswerEnd = "done" | "error" | "closed" | WaitOutcome;
 
 export type TimedEvent = { at: number; event: ExplainerEvent };
-export type ParsedStream = { events: TimedEvent[]; heartbeats: number; longestSilenceMs: number; unparsed: number };
-
-export type SentenceRecord = {
-  kind: "sentence" | "open_question";
-  id: string;
-  sectionId: string;
-  blockId: string | null;
-  blockKind: string | null;
-  text: string;
-  original: string | null;
-  translated: boolean;
-  level: string;
-  script: string | null;
-  citations: number;
-  sourceIds: string[];
-};
+export type ParsedStream = { events: TimedEvent[]; heartbeats: number; longestSilenceMs: number; refused: string[] };
 
 export type SourceRecord = { id: string; kind: string; title: string; publisher: string | null; year: number | null; doi: string | null; url: string | null };
 
@@ -97,6 +81,7 @@ export type AnswerRecord = {
   citedSentenceCount: number;
   uncitedSentenceCount: number;
   refusedFrames: number;
+  refusedEvents: string[];
   openQuestionCount: number;
   citationCount: number;
   sources: SourceRecord[];
@@ -121,7 +106,7 @@ function isComment(block: string): boolean {
 }
 
 export function parseTappedStream(chunks: readonly TappedChunk[], startedAt: number): ParsedStream {
-  const parsed: ParsedStream = { events: [], heartbeats: 0, longestSilenceMs: 0, unparsed: 0 };
+  const parsed: ParsedStream = { events: [], heartbeats: 0, longestSilenceMs: 0, refused: [] };
   let buffer = "";
   let last = startedAt;
   const take = (block: string, at: number) => {
@@ -132,7 +117,7 @@ export function parseTappedStream(chunks: readonly TappedChunk[], startedAt: num
     }
     const event = explainerEventOf(block);
     if (event) parsed.events.push({ at, event });
-    else parsed.unparsed += 1;
+    else parsed.refused.push(sseFields(block).name);
   };
   for (const chunk of chunks) {
     parsed.longestSilenceMs = Math.max(parsed.longestSilenceMs, chunk.at - last);
@@ -144,23 +129,6 @@ export function parseTappedStream(chunks: readonly TappedChunk[], startedAt: num
   }
   take(buffer.replace(/\r\n/g, "\n"), last);
   return parsed;
-}
-
-function sentenceRecord(kind: SentenceRecord["kind"], sectionId: string, sentence: AnswerSentence, block: { id: string; kind: string } | null = null): SentenceRecord {
-  return {
-    kind,
-    id: sentence.id,
-    sectionId,
-    blockId: block?.id ?? null,
-    blockKind: block?.kind ?? null,
-    text: sentence.text,
-    original: sentence.original ?? null,
-    translated: sentence.translated === true,
-    level: sentence.level,
-    script: scriptOf(sentence.text),
-    citations: sentence.citations.length,
-    sourceIds: [...new Set(sentence.citations.map((citation) => citation.sourceId))]
-  };
 }
 
 function ledeRecords(lede: LedeBlock): { record: LedeRecord; sentences: SentenceRecord[] } {
@@ -228,7 +196,7 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
       sentences.push(...opening.sentences);
       lede = opening.record;
     } else if (event.type === "block") {
-      sentences.push(...blockSentences(event.data.block).map((sentence) => sentenceRecord("sentence", event.data.sectionId, sentence, event.data.block)));
+      sentences.push(...blockSentenceRecords(event.data.sectionId, event.data.block));
       kinds.add(event.data.block.kind);
       regionStory = withRegionStory(regionStory, event.data.block);
       generatedExplainer = withGeneratedExplainer(generatedExplainer, event.data.block);
@@ -271,7 +239,8 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
     sentenceCount: sentences.length,
     citedSentenceCount: body.filter((sentence) => sentence.citations > 0).length,
     uncitedSentenceCount: sentences.filter((sentence) => sentence.citations === 0).length,
-    refusedFrames: parsed.unparsed,
+    refusedFrames: parsed.refused.length,
+    refusedEvents: [...new Set(parsed.refused)],
     openQuestionCount: sentences.length - body.length,
     citationCount: sentences.reduce((sum, sentence) => sum + sentence.citations, 0),
     sources,
@@ -321,45 +290,6 @@ export function knownAnswerOutcome(record: AnswerRecord, question: KnownAnswerQu
 
 export const NO_RIVER_STORY_NOTE = "No region story with a river arrived, so the trace through a large basin is not timed in this run.";
 
-export const STEPPED_BLOCK_KINDS: ReadonlySet<string> = new Set(["zoom_story", "concept_graph"]);
-
-const NAMED_IDS_MAX = 8;
-
-function named(ids: readonly string[]): string {
-  return ids.length > NAMED_IDS_MAX ? `${ids.slice(0, NAMED_IDS_MAX).join(", ")} and ${ids.length - NAMED_IDS_MAX} more` : ids.join(", ");
-}
-
-export function pageSentenceProblems(record: AnswerRecord): string[] {
-  if (record.pageSentences === null) return [];
-  const cited = record.sentences.filter((sentence) => sentence.kind === "sentence" && sentence.citations > 0);
-  if (record.pageSentenceIds === null) {
-    const shown = new Set(cited.map((sentence) => `${sentence.sectionId}:${sentence.id}`)).size;
-    return record.pageSentences === shown ? [] : [`the page shows ${record.pageSentences} sentences; the stream sent ${shown}`];
-  }
-  const onPage = new Set(record.pageSentenceIds);
-  const shownTexts = new Set(cited.filter((sentence) => onPage.has(sentence.id)).map((sentence) => `${sentence.blockId}\u0000${sentence.text}`));
-  const problems: string[] = [];
-  const missing = [
-    ...new Set(
-      cited
-        .filter((sentence) => !STEPPED_BLOCK_KINDS.has(sentence.blockKind ?? "") && !onPage.has(sentence.id) && !shownTexts.has(`${sentence.blockId}\u0000${sentence.text}`))
-        .map((sentence) => sentence.id)
-    )
-  ];
-  if (missing.length > 0) problems.push(`${missing.length} streamed sentences are not on the page: ${named(missing)}`);
-  const stepped = new Map<string, string[]>();
-  for (const sentence of cited) {
-    if (sentence.blockId !== null && STEPPED_BLOCK_KINDS.has(sentence.blockKind ?? "")) stepped.set(sentence.blockId, [...(stepped.get(sentence.blockId) ?? []), sentence.id]);
-  }
-  for (const [blockId, ids] of stepped) {
-    if (!ids.some((id) => onPage.has(id))) problems.push(`the stepped block ${blockId} shows none of its ${ids.length} sentences`);
-  }
-  const sent = new Set(cited.map((sentence) => sentence.id));
-  const unsent = [...new Set(record.pageSentenceIds.filter((id) => !sent.has(id)))];
-  if (unsent.length > 0) problems.push(`${unsent.length} sentences on the page never arrived in the stream: ${named(unsent)}`);
-  return problems;
-}
-
 export function ledeProblems(record: AnswerRecord): string[] {
   const { lede } = record;
   if (lede.shown === null) return [];
@@ -384,7 +314,7 @@ export function answerProblems(record: AnswerRecord, question: KnownAnswerQuesti
   if (record.request.language !== question.language) problems.push(`the request asked for ${record.request.language ?? "no language"}, not ${question.language}`);
   if (record.citedSentenceCount < 1) problems.push("no cited sentence arrived");
   if (record.uncitedSentenceCount > 0) problems.push(`${record.uncitedSentenceCount} sentences arrived without a citation`);
-  if (record.refusedFrames > 0) problems.push(`${record.refusedFrames} stream frames broke the explainer contract`);
+  if (record.refusedFrames > 0) problems.push(`${record.refusedFrames} stream frames broke the explainer contract: ${record.refusedEvents.join(", ")}`);
   const orphans = record.sentences.flatMap((sentence) => sentence.sourceIds).filter((id) => !sent.has(id));
   if (orphans.length > 0) problems.push(`${new Set(orphans).size} cited sources never arrived as source events`);
   if (record.pageSentencesWithoutChip) problems.push(`${record.pageSentencesWithoutChip} sentences on the page show no citation`);

@@ -22,7 +22,7 @@ from .answer_translation import AnswerTranslation
 from .block_builders import BlockBuilders
 from .explainer_events import ExplainerStream
 from .research_ledger import ResearchLedger
-from .reuse_enrichment import Floor
+from .reuse_enrichment import Floor, shown_builds
 from .section_deepening import NEW_SECTION, Deepening
 from .section_enrichment import Enrichment
 from .section_fields import SectionFields
@@ -101,6 +101,9 @@ class SectionOutcome:
     sources: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
     failure: AppError | None = None
     shown_title: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "built", shown_builds(self.built, {block.id for block in self.blocks}))
 
 
 def answer_plans(outcomes: Sequence[SectionOutcome]) -> AnswerPlans:

@@ -21,6 +21,7 @@ from app.services.reuse_enrichment import (
     placed_section,
     reused_ladder,
 )
+from app.services.section_context import SectionOutcome
 from app.services.stored_fields import FIELD_CLAIMS_MIN, every_stored_field, fields_held
 
 from ..research.fixtures import AJRAKH
@@ -50,7 +51,7 @@ def test_a_reused_section_runs_every_builder_whose_kind_it_does_not_already_show
     shown = {"prose", "material_card", "zoom_story", "reaction_player", "market_gi"}
     reused = registry().for_reuse(shown, depth="EXPERT")
     chemistry = kinds_of(reused, "CHEMISTRY")
-    assert "material_card" not in chemistry and "zoom_story" not in chemistry
+    assert "material_card" not in chemistry and "zoom_story" in chemistry
     assert {"reaction_player", "molecule_3d", "what_if", "simulation", "concept_graph", "expert_view"} <= set(
         chemistry
     )
@@ -64,8 +65,9 @@ def test_below_expert_a_reused_section_asks_no_generated_explainer_and_no_expert
         assert {"reaction_player", "material_card", "what_if"} <= set(chemistry)
 
 
-def test_only_the_reaction_player_replaces_its_stored_block_on_reuse() -> None:
-    assert registry().replaced_on_reuse("CHEMISTRY") == {"reaction_player"}
+def test_the_reaction_player_and_the_zoom_story_replace_their_stored_blocks_on_reuse() -> None:
+    assert registry().replaced_on_reuse("CHEMISTRY") == {"reaction_player", "zoom_story"}
+    assert registry().replaced_on_reuse("PROCESS") == {"zoom_story"}
     assert registry().replaced_on_reuse("HISTORY") == frozenset()
 
 
@@ -79,7 +81,7 @@ async def test_a_reused_group_leaves_out_the_stored_player_it_rebuilds() -> None
     placed = placed_section(spec, section, enrichment, replaced=frozenset({"reaction_player"}))
     assert [block.kind for block in placed.blocks] == [block.kind for block in placed.copies] == ["prose"]
     assert placed.stored == (chemistry.payload, stored.payload)
-    assert kept_with_reuse(placed, (player_of(curated, "s2.b2"),)) == ()
+    assert kept_with_reuse(placed, (player_of(curated, "s2.b2"),), shown={"s2.b1", "s2.b2"}) == ()
 
 
 def test_a_curated_section_is_one_whose_craft_pieces_no_answer_made_from_curated_claims() -> None:
@@ -137,11 +139,11 @@ def test_a_reused_section_is_kept_again_only_when_it_gained_a_block_it_does_not_
     (process,) = [piece for piece in curated.pieces if piece.facet == "PROCESS"]
     copy = process.payload.model_copy(update={"id": "s1.b1"})
     placed = Placed(blocks=(copy,), copies=(copy,), stored=(process.payload,))
-    assert kept_with_reuse(placed, ()) == ()
-    assert kept_with_reuse(placed, (copy.model_copy(update={"id": "s1.b2"}),)) == ()
+    assert kept_with_reuse(placed, (), shown={"s1.b1"}) == ()
+    assert kept_with_reuse(placed, (copy.model_copy(update={"id": "s1.b2"}),), shown={"s1.b1", "s1.b2"}) == ()
     ladder = reused_ladder(curated.process, "s1", (copy,))
     assert ladder is not None
-    assert kept_with_reuse(placed, (ladder,)) == (copy, ladder)
+    assert kept_with_reuse(placed, (ladder,), shown={"s1.b1"}) == (copy, ladder)
 
 
 def test_a_rebuilt_player_alike_the_stored_one_keeps_nothing_and_a_fuller_one_is_kept() -> None:
@@ -151,10 +153,22 @@ def test_a_rebuilt_player_alike_the_stored_one_keeps_nothing_and_a_fuller_one_is
     copy = chemistry.payload.model_copy(update={"id": "s2.b1"})
     placed = Placed(blocks=(copy,), copies=(copy,), stored=(chemistry.payload, stored.payload))
     rebuilt = player_of(curated, "s2.b2")
-    assert kept_with_reuse(placed, (rebuilt,)) == ()
+    assert kept_with_reuse(placed, (rebuilt,), shown={"s2.b1", "s2.b2"}) == ()
     fewer = stored.payload.model_copy(update={"steps": stored.payload.steps[:1], "notes": []})
     older = Placed(blocks=(copy,), copies=(copy,), stored=(chemistry.payload, fewer))
-    assert kept_with_reuse(older, (rebuilt,)) == (copy, rebuilt)
+    assert kept_with_reuse(older, (rebuilt,), shown={"s2.b1", "s2.b2"}) == (copy, rebuilt)
+    assert kept_with_reuse(older, (rebuilt,), shown={"s2.b1"}) == ()
+
+
+def test_a_section_stores_its_prose_and_only_the_builds_its_page_showed() -> None:
+    curated = curated_ajrakh()
+    (chemistry,) = [piece for piece in curated.pieces if piece.facet == "CHEMISTRY"]
+    prose = chemistry.payload.model_copy(update={"id": "s2.b1"})
+    player = player_of(curated, "s2.b2")
+    spec = SectionSpec(id="s2", discipline="CHEMISTRY", title="The chemistry of Kutch Ajrakh", order=2)
+    assert SectionOutcome(spec, blocks=(prose, player), built=(prose, player)).built == (prose, player)
+    assert SectionOutcome(spec, blocks=(prose,), built=(prose, player)).built == (prose,)
+    assert SectionOutcome(spec, blocks=(), built=(prose, player)).built == (prose,)
 
 
 def test_fields_with_three_curated_claims_are_held() -> None:

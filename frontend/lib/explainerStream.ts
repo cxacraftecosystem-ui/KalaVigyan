@@ -16,7 +16,7 @@ import {
   type WorkingSectionState
 } from "@/lib/explainerContract";
 import { buildsOnEventShape, versionMarkShape, type BuildsOnEvent, type VersionMark } from "@/lib/learningContract";
-import { boolean, integer, list, matching, nullable, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
+import { boolean, integer, list, matching, nullable, number, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
 import type { AnswerSentence, AnswerStatus, SourceRef } from "@/lib/types";
 
 export const TRAIL_STAGES = ["FOUND", "READ", "QUOTED"] as const;
@@ -41,6 +41,8 @@ export type TrailEntry = {
 };
 
 export type StreamDone = { answerId: string | null; quizAvailable?: boolean };
+export type ServiceWait = { service: string; waitedSeconds: number; waitedRequests: number; refusals: number; unsent: number };
+export type PacedServices = { services: ServiceWait[] };
 
 export type ExplainerEvent =
   | { type: "understood"; data: Understood }
@@ -53,6 +55,7 @@ export type ExplainerEvent =
   | { type: "section_heading"; data: SectionHeading }
   | { type: "lede"; data: LedeArrived }
   | { type: "trail"; data: TrailEntry }
+  | { type: "paced"; data: PacedServices }
   | { type: "status"; data: AnswerStatus }
   | { type: "source"; data: SourceRef }
   | { type: "open_question"; data: { sectionId: string; heading?: string; sentence: AnswerSentence } }
@@ -88,6 +91,9 @@ const EVENTS: { [K in ExplainerEvent["type"]]: Shape<Extract<ExplainerEvent, { t
     year: nullable(integer),
     sourceId: nullable(text),
     storedAt: nullable(INSTANT)
+  }),
+  paced: object<PacedServices>({
+    services: list(object<ServiceWait>({ service: text, waitedSeconds: number, waitedRequests: integer, refusals: integer, unsent: integer }), 1)
   }),
   status: answerStatusShape,
   source: sourceRefShape,

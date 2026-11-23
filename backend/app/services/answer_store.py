@@ -332,7 +332,7 @@ def build_answer_enrichment(
             return await glossary_entries(session, [found.id] if found is not None else [])
 
     async def pictures(ask: SectionImagesAsk) -> ImagesBlock | None:
-        return await (await section_images(sessions, live)).block(ask)
+        return await section_images(sessions, live).block(ask)
 
     return EnrichmentTools(glossary=glossary, pictures=pictures)
 

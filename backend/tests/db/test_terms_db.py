@@ -4,18 +4,21 @@ from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import func, select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
-from app.models import Claim, Craft, Term, TermConcept, TermCraft, TermSummary
+from app.models import Claim, Craft, CuratedClaim, Term, TermConcept, TermCraft, TermSummary
 from app.research.composition import ComposedSentence, QuotedSpan
 from app.research.evidence import EvidenceItem
 from app.research.retrieval import EVERY_CHUNK_ACLS, OPEN_CHUNK_ACLS
-from app.research.term_marking import TermMarker
+from app.research.term_marking import GlossaryEntry, TermMarker
+from app.research.vocabulary import FACT_LEVELS
+from app.services import knowledge_view
 from app.services.claim_seed import seed_id
 from app.services.term_glossary import glossary_entries, seed_terms
 from app.services.term_research import ResearchedSummary
-from app.services.term_store import SqlTermStore
+from app.services.term_store import SqlTermStore, curated_naming
 from app.services.term_summaries import TermLookup
 from app.sources.adapter import build_document
 
@@ -142,3 +145,41 @@ async def test_the_glossary_of_a_craft_marks_its_local_names_but_not_its_own_nam
     assert "kutch-ajrakh" not in keys
     spans = TermMarker(entries).spans("Kut is printed on harde-treated cloth in Kutch Ajrakh.")
     assert [(span.text, span.term_key) for span in spans] == [("Kut", "kut"), ("harde", "harde")]
+
+
+async def readable_fact_naming_kut(session: AsyncSession) -> uuid.UUID:
+    rows = await session.scalars(
+        select(Claim.id)
+        .where(Claim.subjectType == "CONCEPT", Claim.id != KUT_CLAIM, Claim.text.op("~*")(r"\mkut\M"))
+        .order_by(Claim.id)
+    )
+    for claim_id in rows.all():
+        views, _ = await knowledge_view.claims_by_id(session, [claim_id], acls=OPEN_CHUNK_ACLS)
+        view = views.get(claim_id)
+        if view is not None and view.level in FACT_LEVELS and view.citations:
+            return claim_id
+    raise AssertionError("the seed holds a readable fact naming kut")
+
+
+async def test_a_term_whose_defining_claim_left_is_read_from_the_curated_facts_naming_it(
+    session: AsyncSession,
+) -> None:
+    store = store_for(session)
+    term = await store.term("kut")
+    assert term is not None
+    chosen = await readable_fact_naming_kut(session)
+    craft_id = await session.scalar(select(Craft.id).where(Craft.slug == "Kutch-Ajrakh"))
+    await session.execute(
+        insert(CuratedClaim)
+        .values(claimId=chosen, craftId=craft_id, key="kutnamed", discipline="MATERIALS")
+        .on_conflict_do_nothing()
+    )
+    await session.execute(update(Claim).where(Claim.id == KUT_CLAIM).values(status="SUPERSEDED"))
+    assert chosen in await curated_naming(session, term)
+    found = await lookup(store).summary("kut", "en")
+    cited = {uuid.UUID(c.claim_id) for sentence in found.summary for c in sentence.citations}
+    curated = set(await session.scalars(select(CuratedClaim.claimId).where(CuratedClaim.craftId == craft_id)))
+    assert found.basis == "STORED" and cited and cited <= curated and KUT_CLAIM not in cited
+    assert all(
+        TermMarker([GlossaryEntry("kut", ("Kut",))]).spans(sentence.text) for sentence in found.summary
+    )

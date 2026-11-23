@@ -1,5 +1,6 @@
 export type PageAudit = {
   pageOverflowPx: number;
+  widest: string[];
   textOverflow: string[];
   alerts: string[];
   copy: string;
@@ -7,7 +8,14 @@ export type PageAudit = {
 
 export type AuditOptions = { citedSelector: string; limit: number };
 
+export function sidewaysProblems(audit: Pick<PageAudit, "pageOverflowPx" | "widest">): string[] {
+  if (audit.pageOverflowPx <= 1) return [];
+  const named = audit.widest.length > 0 ? `: ${audit.widest.join("; ")}` : "";
+  return [`the page scrolls sideways by ${audit.pageOverflowPx}px${named}`];
+}
+
 export function auditPage(options: AuditOptions): PageAudit {
+  const WIDEST_NAMED = 3;
   const root = document.documentElement;
   const viewportWidth = root.clientWidth;
   const flat = (value: string | null) => (value ?? "").replace(/\s+/g, " ").trim();
@@ -66,8 +74,20 @@ export function auditPage(options: AuditOptions): PageAudit {
     .map((element) => flat(element.textContent))
     .filter(Boolean);
 
+  const pageOverflowPx = Math.max(root.scrollWidth, document.body.scrollWidth) - viewportWidth;
+  const past = (element: Element) => Math.round(element.getBoundingClientRect().right - viewportWidth);
+  const widest =
+    pageOverflowPx > 1
+      ? Array.from(document.body.querySelectorAll("*"))
+          .filter((element) => past(element) > 1 && !(element.parentElement && past(element.parentElement) > 1) && !scrolledOrClipped(element.parentElement ?? element))
+          .sort((one, other) => past(other) - past(one))
+          .slice(0, WIDEST_NAMED)
+          .map((element) => `${name(element)} (${past(element)}px past the screen)`)
+      : [];
+
   return {
-    pageOverflowPx: Math.max(root.scrollWidth, document.body.scrollWidth) - viewportWidth,
+    pageOverflowPx,
+    widest,
     textOverflow: [...textOverflow],
     alerts,
     copy: copy.join(" ")

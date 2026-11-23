@@ -128,7 +128,7 @@ flowchart LR
 | [0087](0087-generated-explainers-per-concept.md) | A generated explainer, or a picture, for every concept that needs one | · |
 | [0088](0088-reactions-step-by-step-and-molecules.md) | Reactions play step by step with their stage, conditions, colours and why; curated CIDs become compounds | [0095](0095-craft-page-chapters.md) |
 | [0089](0089-expert-depth-caps-and-answer-routes.md) | Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation | [0093](0093-no-caps-for-now.md) and [0167](0167-answer-leftovers-kept-true.md) |
-| [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) |
+| [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) and [0175](0175-production-checks-read-what-the-page-shows.md) |
 | [0091](0091-field-voices-kalavigyan-side.md) | Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view | [0097](0097-public-reading-everywhere-but-asking.md), [0112](0112-reviewed-field-photographs.md) and [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0092](0092-design-system.md) | The KalaVigyan design system: Alum & Indigo | [0114](0114-kinds-and-datasets.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
 | [0093](0093-no-caps-for-now.md) | No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
@@ -186,7 +186,7 @@ flowchart LR
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
-| [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | [0171](0171-imports-keep-approvals-and-differences-settle.md) |
+| [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | [0171](0171-imports-keep-approvals-and-differences-settle.md) and [0175](0175-production-checks-read-what-the-page-shows.md) |
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | [0167](0167-answer-leftovers-kept-true.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
@@ -210,7 +210,7 @@ flowchart LR
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
 | [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) | Every cited sentence of Kutch Ajrakh is a text unit, 73 of its components draw natively, and its content names its chapters | · |
 | [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
-| [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | · |
+| [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | [0175](0175-production-checks-read-what-the-page-shows.md) |
 | [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
 | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) | A quantities table is drawn under a sentence the answer already said, and the Python files are split along what they do | · |
 | [0169](0169-mcp-follow-ups-kept-true.md) | A write-back asks the cheap judge first, a reviewer decides readings, map layers and a category's structure, and a PDF is described by its first page | · |
@@ -219,6 +219,7 @@ flowchart LR
 | [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) | The web takes over every session the API rotates, a cached reading page fails rather than drops a part, and sign-in and the shells settle once | · |
 | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) | A release keeps the site serving and its way back open, a colour takes traffic only once it reaches its database, the web builds only on the API it calls, the fetcher runs as a user of its own, and every provider call ends and settles | · |
 | [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
+| [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | · |
 
 ## How this document is kept true
 

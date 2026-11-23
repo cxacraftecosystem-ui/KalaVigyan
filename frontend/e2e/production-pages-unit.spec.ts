@@ -1,18 +1,22 @@
 import { expect, test } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+import { Button } from "@/components/ui/button";
 
 import { labelsOf } from "./production/appbarChecks";
 import { segmentScreens } from "./production/capture";
 import { CRAFT_TEMPLATES, drawnTemplate } from "./production/craftChecks";
-import { NO_FAMILY_SCIENCE_NOTE, documentProblems, essayProblems, hubProblems, recordProblems } from "./production/pageGates";
-import { DOCUMENT_ROOT, ESSAY_ROOT, HUB_ROOT, RAIL_LINKS, RECORD_ROOT, documentShape, essayShape, hubShape, recordShape, type DocumentShape, type RecordShape } from "./production/pageShapes";
+import { NO_FAMILY_SCIENCE_NOTE, REST_NOT_DRAWN, documentProblems, essayProblems, hubProblems, recordProblems } from "./production/pageGates";
+import { DOCUMENT_READ, ESSAY_ROOT, HUB_ROOT, RAIL_LINKS, RECORD_ROOT, REST_HOLDER, documentShape, essayShape, hubShape, recordShape, type DocumentShape, type RecordShape } from "./production/pageShapes";
 
-const DOCUMENT: DocumentShape = { heading: "Kutch Ajrakh", chapters: ["The answer", "The cloth"], railTargets: ["answer", "cloth"], missingTargets: [], citedSentences: 12 };
+const DOCUMENT: DocumentShape = { heading: "Kutch Ajrakh", chapters: ["The answer", "The cloth"], railTargets: ["answer", "cloth"], missingTargets: [], citedSentences: 12, restWaiting: false };
 const RECORD: RecordShape = { heading: "Kasuti Embroidery", facts: 4, start: "Start the research on Kasuti Embroidery", questions: 3, plate: true, rail: 0, citeThis: false };
 
 test("a document passes with a heading, labelled chapters, a rail that reaches them and cited sentences", () => {
   expect(documentProblems(DOCUMENT)).toEqual([]);
   expect(documentProblems(null)).toEqual(["the page draws no document"]);
-  expect(documentProblems({ heading: "", chapters: ["The answer", "", "The answer"], railTargets: ["answer", "sources"], missingTargets: ["sources"], citedSentences: 0 })).toEqual([
+  expect(documentProblems({ heading: "", chapters: ["The answer", "", "The answer"], railTargets: ["answer", "sources"], missingTargets: ["sources"], citedSentences: 0, restWaiting: false })).toEqual([
     "the document draws no h1",
     "1 of the 3 chapters carry no label",
     "the document draws a chapter twice: The answer",
@@ -66,12 +70,13 @@ test("a document is read from its chapters, its rail and its cited sentences, by
       `<section class="kv-ch" id="answer" data-label="The answer"><h1>Kutch Ajrakh</h1><p><span class="s" data-src="a1">One.</span> <span class="s">Two <span class="nw">words.<button class="kcite">1</button></span></span> <span class="s">Three.</span></p></section>` +
       `<section class="kv-ch" id="cloth" data-label="The cloth"></section></div>`
   );
-  expect(await page.evaluate(documentShape, { root: DOCUMENT_ROOT, rail: RAIL_LINKS })).toEqual({
+  expect(await page.evaluate(documentShape, DOCUMENT_READ)).toEqual({
     heading: "Kutch Ajrakh",
     chapters: ["The answer", "The cloth"],
     railTargets: ["answer", "made"],
     missingTargets: ["made"],
-    citedSentences: 2
+    citedSentences: 2,
+    restWaiting: false
   });
   expect(await drawnTemplate(page)).toBe("document");
 });
@@ -111,4 +116,30 @@ test("nav labels are read without their counts, unread badges or hidden words", 
       `<a href="/admin/access"><svg></svg><span>Who may sign in</span><span title="3 people are waiting">3 waiting</span></a></nav>`
   );
   expect(await labelsOf(page.getByRole("navigation", { name: "Main" }).locator("a"))).toEqual(["Ask", "Saved", "Who may sign in"]);
+});
+
+test("a document's rail is judged once the rest of the document is drawn, and a rest that never draws is its own problem", async ({ page }) => {
+  const rail = `<nav aria-label="Chapters"><a href="#glance">At a glance</a><a href="#made">How it is made</a><a href="#chem">The chemistry</a></nav>`;
+  const lead = `<section class="kv-ch" id="glance" data-label="At a glance"><h1>Agra Marble Inlay</h1><p><span class="s" data-src="a1">One.</span></p></section>`;
+  await page.setContent(`<div class="kv-monograph">${rail}<div id="kv-main">${lead}<div class="min-h-[300vh]" aria-busy="true" data-kv-deferred=""></div></div></div>`);
+  const waiting = await page.evaluate(documentShape, DOCUMENT_READ);
+  expect(REST_HOLDER).toBe("[data-kv-deferred]");
+  expect(waiting).toMatchObject({ railTargets: ["glance", "made", "chem"], missingTargets: ["made", "chem"], restWaiting: true });
+  expect(documentProblems(waiting)).toEqual([REST_NOT_DRAWN]);
+  const rest = `<section class="kv-ch" id="made" data-label="How it is made"></section><section class="kv-ch" id="chem" data-label="The chemistry"></section>`;
+  await page.setContent(`<div class="kv-monograph">${rail}<div id="kv-main">${lead}${rest}</div></div>`);
+  const drawn = await page.evaluate(documentShape, DOCUMENT_READ);
+  expect(drawn).toMatchObject({ missingTargets: [], restWaiting: false });
+  expect(documentProblems(drawn)).toEqual([]);
+});
+
+test("an answer's actions are read as the reader sees and hears them, without the busy verb laid over a resting label", async ({ page }) => {
+  const save = (saved: boolean) => renderToStaticMarkup(createElement(Button, { "aria-pressed": saved, busyLabel: saved ? "Removing" : "Saving" }, saved ? "Saved" : "Save"));
+  const cite = renderToStaticMarkup(createElement(Button, null, "Cite this answer"));
+  for (const saved of [false, true]) {
+    await page.setContent(`<article data-testid="answer-view"><h1>Which mordant?</h1><div data-testid="answer-actions">${save(saved)}${cite}</div></article>`);
+    const essay = await page.evaluate(essayShape, ESSAY_ROOT);
+    expect(essay?.actions).toEqual([saved ? "Saved" : "Save", "Cite this answer"]);
+    expect(await page.getByRole("button", { name: saved ? "Saved" : "Save", exact: true }).count()).toBe(1);
+  }
 });

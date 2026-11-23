@@ -23,6 +23,7 @@ The contracts are `docs/contracts/explainer.md` (Pictures and terms as served, `
 | The stamps it extends to pieces | [decision 0008](0008-stored-knowledge-retrieval.md) |
 | The vocabulary pattern it keeps | [decision 0033](0033-knowledge-pieces-and-reuse.md) |
 | The per-answer cost it must not raise | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| Stored pictures read before the search's sources are built (amends item 3) | [decision 0175](0175-production-checks-read-what-the-page-shows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

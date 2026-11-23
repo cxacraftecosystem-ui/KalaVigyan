@@ -224,6 +224,7 @@ def test_the_registry_adds_kinds_in_the_one_order_a_reused_section_reads() -> No
         "reaction_player",
         "molecule_3d",
         "artisan_voice",
+        "zoom_story",
         "compare",
         "concept_graph",
     ]

@@ -16,6 +16,7 @@ from app.models import (
     ClaimSource,
     Concept,
     Craft,
+    CuratedClaim,
     Term as TermRow,
     TermConcept,
     TermCraft,
@@ -24,7 +25,8 @@ from app.models import (
 from app.research.composition import ComposedSentence
 from app.research.embedding import TextEmbedder
 from app.research.evidence import Quote, SourceDocument
-from app.research.retrieval import OPEN_CHUNK_ACLS
+from app.research.retrieval import HIDDEN_CLAIM_STATUSES, OPEN_CHUNK_ACLS
+from app.research.term_marking import GlossaryEntry, TermMarker
 from app.research.terms import Term
 from app.research.write_back import ClaimWriteBack, WriteBackCitation, WriteBackSubject
 
@@ -40,6 +42,7 @@ __all__ = [
     "CONCEPT_SUBJECT_TYPE",
     "SqlTermStore",
     "claim_for_sentence",
+    "curated_naming",
     "glossary_term",
     "glossary_terms",
     "kept_summary",
@@ -48,6 +51,7 @@ __all__ = [
 ]
 
 CONCEPT_SUBJECT_TYPE = "CONCEPT"
+CURATED_NAMING_MAX = 6
 TERM_FACET = "CONCEPT"
 FOUND_BY = "BACKGROUND"
 
@@ -82,22 +86,11 @@ class SqlTermStore:
         return summary if cites_only_shown(summary, visible) else None
 
     async def defining_claims(self, term: GlossaryTerm) -> StoredClaims:
-        described = {c.concept_id: _folded(c.description) for c in term.concepts if c.description}
-        if not described:
-            return StoredClaims()
         async with self._sessions() as session:
-            rows = (
-                await session.execute(
-                    select(Claim.id, Claim.subjectId, Claim.text).where(
-                        Claim.subjectType == CONCEPT_SUBJECT_TYPE, Claim.subjectId.in_(list(described))
-                    )
-                )
-            ).all()
-            defining = {
-                row.subjectId: row.id for row in rows if _folded(row.text) == described[row.subjectId]
-            }
-            ordered = [defining[c.concept_id] for c in term.concepts if c.concept_id in defining]
-            return await stored_claims(session, ordered, acls=self._acls)
+            defined = await stored_claims(session, await _defining(session, term), acls=self._acls)
+            if defined.views:
+                return defined
+            return await stored_claims(session, await curated_naming(session, term), acls=self._acls)
 
     async def write_back(self, term: GlossaryTerm, researched: ResearchedSummary) -> list[uuid.UUID]:
         craft_slug, subject = write_back_subject(term)
@@ -164,6 +157,46 @@ async def stored_claims(
     views, sources = await knowledge_view.claims_by_id(session, claim_ids, acls=acls)
     stored = _stored(claim_ids, views, sources)
     return replace(stored, changed_at=await _changed_at(session, stored.views))
+
+
+async def _defining(session: AsyncSession, term: GlossaryTerm) -> list[uuid.UUID]:
+    described = {c.concept_id: _folded(c.description) for c in term.concepts if c.description}
+    if not described:
+        return []
+    rows = (
+        await session.execute(
+            select(Claim.id, Claim.subjectId, Claim.text).where(
+                Claim.subjectType == CONCEPT_SUBJECT_TYPE, Claim.subjectId.in_(list(described))
+            )
+        )
+    ).all()
+    defining = {row.subjectId: row.id for row in rows if _folded(row.text) == described[row.subjectId]}
+    return [defining[c.concept_id] for c in term.concepts if c.concept_id in defining]
+
+
+async def curated_naming(session: AsyncSession, term: GlossaryTerm) -> list[uuid.UUID]:
+    if not term.craft_slugs:
+        return []
+    rows = (
+        await session.execute(
+            select(Claim.id, Claim.text)
+            .join(CuratedClaim, CuratedClaim.claimId == Claim.id)
+            .join(Craft, Craft.id == CuratedClaim.craftId)
+            .where(Craft.slug.in_(list(term.craft_slugs)), Claim.status.not_in(HIDDEN_CLAIM_STATUSES))
+        )
+    ).all()
+    marker = TermMarker([GlossaryEntry(term.key, (term.label, *term.aliases, *term.local_names))])
+    named = sorted(
+        (at, len(row.text), str(row.id), row.id)
+        for row in rows
+        if (at := _named_at(row.text, marker)) is not None
+    )
+    return [claim_id for *_, claim_id in named[:CURATED_NAMING_MAX]]
+
+
+def _named_at(text: str, marker: TermMarker) -> int | None:
+    spans = marker.spans(text)
+    return text.casefold().find(spans[0].text.casefold()) if spans else None
 
 
 async def kept_summary(session: AsyncSession, term_id: uuid.UUID, summary: Term) -> None:

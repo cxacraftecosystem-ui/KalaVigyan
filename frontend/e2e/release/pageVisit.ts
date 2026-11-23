@@ -1,7 +1,7 @@
 import { errors, type Page } from "@playwright/test";
 
 import { clip } from "../production/checks";
-import { DOCUMENT_ROOT, HUB_ROOT, RAIL_LINKS, RECORD_ROOT, documentShape, hubShape, recordShape } from "../production/pageShapes";
+import { DOCUMENT_READ, DOCUMENT_ROOT, HUB_ROOT, RAIL_LINKS, RECORD_ROOT, documentShape, hubShape, recordShape } from "../production/pageShapes";
 
 import type { DrawnShape, KeyPage, PageSeen } from "./keyPages";
 
@@ -38,7 +38,7 @@ async function citations(page: Page, root: string): Promise<number> {
 async function drawnShape(page: Page, keyPage: KeyPage): Promise<DrawnShape | null> {
   switch (keyPage.marker.kind) {
     case "document": {
-      const shape = await page.evaluate(documentShape, { root: DOCUMENT_ROOT, rail: RAIL_LINKS });
+      const shape = await page.evaluate(documentShape, DOCUMENT_READ);
       return shape && { heading: shape.heading, chapters: shape.chapters.length, citations: await citations(page, DOCUMENT_ROOT) };
     }
     case "record": {

@@ -5,7 +5,7 @@ import type { CDPSession, ConsoleMessage, Page, Request, Response } from "@playw
 import { NetworkQuiet, captureScreen, readyForCapture, settle, sightProblems } from "./capture";
 import { CITED_CONTENT, OVERFLOW_LIMIT, abortedRequest, clip, errorHeadline, gapCopyFindings, webkitLeavingNoise } from "./checks";
 import type { Scheme } from "./matrix";
-import { auditPage } from "./pageAudit";
+import { auditPage, sidewaysProblems } from "./pageAudit";
 import { isPreview, previewConsoleNoise } from "./preview";
 import type { ScreenOutcome, ScreensReport } from "./report";
 import { SCREENSHOT_DIR, baseUrl, runFileName, runId, runStartedAt, writeReport } from "./run";
@@ -179,7 +179,7 @@ export class ScreenRun {
   private async audit(): Promise<void> {
     const audit = await this.page.evaluate(auditPage, { citedSelector: CITED_CONTENT, limit: OVERFLOW_LIMIT });
     const expectedAlert = this.expected.expectedAlert;
-    if (audit.pageOverflowPx > 1) this.flag(`the page scrolls sideways by ${audit.pageOverflowPx}px`);
+    this.flag(...sidewaysProblems(audit));
     this.flag(...audit.textOverflow.map((finding) => `text overflow: ${finding}`));
     this.flag(...audit.alerts.filter((alert) => !(expectedAlert && alert.startsWith(expectedAlert))).map((alert) => `shows an error: ${clip(alert)}`));
     this.flag(...gapCopyFindings(audit.copy).map((finding) => `gap copy: "${finding}"`));

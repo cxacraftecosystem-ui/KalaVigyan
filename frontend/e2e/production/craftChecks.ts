@@ -6,8 +6,8 @@ import { parseShape } from "@/lib/shape";
 
 import { curatedOverviewProblems, overviewNote, type OverviewServed } from "./checks";
 import { clickProblems } from "./clicks";
-import { documentProblems, recordProblems } from "./pageGates";
-import { DOCUMENT_ROOT, RAIL_LINKS, RECORD_ROOT, documentShape, recordShape } from "./pageShapes";
+import { REST_WAIT_MS, documentProblems, recordProblems } from "./pageGates";
+import { DOCUMENT_READ, DOCUMENT_ROOT, RAIL_LINKS, RECORD_ROOT, REST_HOLDER, documentShape, recordShape } from "./pageShapes";
 
 export const CRAFT_TEMPLATES = {
   document: DOCUMENT_ROOT,
@@ -66,8 +66,13 @@ async function overviewOutcome(page: Page, served: Promise<Response | null>): Pr
   return { problems: curatedOverviewProblems(summary, shown), note: overviewNote(summary) };
 }
 
-export function documentOutcome(page: Page): Promise<string[]> {
-  return page.evaluate(documentShape, { root: DOCUMENT_ROOT, rail: RAIL_LINKS }).then(documentProblems);
+export async function documentOutcome(page: Page): Promise<string[]> {
+  await page
+    .locator(REST_HOLDER)
+    .first()
+    .waitFor({ state: "detached", timeout: REST_WAIT_MS })
+    .catch(() => undefined);
+  return documentProblems(await page.evaluate(documentShape, DOCUMENT_READ));
 }
 
 export function recordOutcome(page: Page): Promise<string[]> {

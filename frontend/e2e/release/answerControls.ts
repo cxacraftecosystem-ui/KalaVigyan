@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 
+import { ANSWER_SCOPE } from "../production/gates";
 import { submitSignIn } from "../production/signIn";
 import type { Credentials } from "../production/run";
 
@@ -10,6 +11,12 @@ const TIMEOUT_MS = 60_000;
 const QUICK_MS = 5_000;
 const SEGMENTED = ".kv-seg";
 const TERMS_TRIED = 3;
+export const ASK_OPTIONS = '[data-testid="ask-options"]';
+export const SHOWN_PLATES = '[data-testid="media-plate"]:visible';
+export const FILM_READY_MS = 300_000;
+const FILM_READY = "ready";
+const FILM_LOADING = "loading";
+const FILM_FAILED = "failed: ";
 
 async function pressedLabel(group: Locator): Promise<string> {
   const pressed = group.locator('button[aria-pressed="true"]');
@@ -82,10 +89,24 @@ async function film(page: Page): Promise<string[]> {
   return [...(shown ? [] : ["Film opens no player"]), ...played, ...(gone ? [] : ["Escape leaves the film open"])];
 }
 
+export async function filmState(page: Page): Promise<string> {
+  const failed = page.getByTestId("film-player").getByRole("alert");
+  if ((await failed.count()) > 0) return `${FILM_FAILED}${(await failed.first().locator("span").first().innerText()).trim()}`;
+  const play = page.getByTestId("film-play");
+  if ((await play.count()) === 0) return FILM_LOADING;
+  return (await play.getAttribute("aria-disabled")) === null ? FILM_READY : FILM_LOADING;
+}
+
+export function filmStateProblems(state: string): string[] {
+  if (state === FILM_READY) return [];
+  if (state === FILM_LOADING) return [`Film was still preparing its narration after ${FILM_READY_MS / 1000} s`];
+  return [`Film did not start: ${state.slice(FILM_FAILED.length)}`];
+}
+
 async function filmPlays(page: Page): Promise<string[]> {
   const play = page.getByTestId("film-play");
-  const ready = await reached(async () => String((await play.getAttribute("aria-disabled")) === null), "true", TIMEOUT_MS);
-  if (ready !== "true") return ["Film never became ready to play"];
+  const unready = filmStateProblems(await changedFrom(() => filmState(page), FILM_LOADING, FILM_READY_MS));
+  if (unready.length > 0) return unready;
   if ((await play.getAttribute("aria-label")) !== "Pause") await play.click();
   const bar = page.getByTestId("film-timing").getByRole("progressbar");
   const caption = page.getByTestId("film-caption");
@@ -102,8 +123,8 @@ async function filmPlays(page: Page): Promise<string[]> {
   return [...unchangedProblems("The film's played bar", barBefore, barAfter), ...unchangedProblems("The film's caption", wordBefore, wordAfter)];
 }
 
-async function pictureCredits(page: Page): Promise<string[]> {
-  const plates = page.getByTestId("image-strip").getByTestId("media-plate");
+export async function pictureCredits(page: Page): Promise<string[]> {
+  const plates = page.locator(`${ANSWER_SCOPE} ${SHOWN_PLATES}`);
   const count = await plates.count();
   if (count === 0) return ["The saved answer shows no pictures"];
   const problems: string[] = [];
@@ -180,7 +201,7 @@ export async function answerSession(watch: ControlWatch, page: Page, account: Cr
     if (new URL(page.url()).pathname !== "/ask") await mainLink(page, "Ask", "/ask");
     return [];
   });
-  await watch.step("Ask choices", () => segmentedChoices(page, '[data-testid="ask-options"]'));
+  await watch.step("Ask choices", () => segmentedChoices(page, ASK_OPTIONS));
   const opened = { answer: false };
   await watch.step("Saved answer opens", async () => {
     await mainLink(page, "Saved", "/saved");
@@ -188,7 +209,7 @@ export async function answerSession(watch: ControlWatch, page: Page, account: Cr
     return [];
   });
   if (!opened.answer) return;
-  await watch.step("Answer choices", () => segmentedChoices(page, "main"));
+  await watch.step("Answer choices", () => segmentedChoices(page, ANSWER_SCOPE));
   await watch.step("Answer pictures and terms", () => picturesAndTerms(page));
   await watch.step("Answer Listen", () => listen(page));
   await watch.step("Answer Film", () => film(page));

@@ -471,10 +471,12 @@ it, at most `BUILDER_WAIT_MAX_SECONDS` (180 s, decision 0087) for a model call. 
 `PIECE_BLOCK_ORDER`, so a fresh section shows its added blocks in the order a reused one reads
 them; `rebuilt_on_reuse` marks the kinds a reused section rebuilds even when its group already
 shows the kind (`region_story`, `map_layer`, `climate_risk`, `market_gi`, `reaction_player`,
-`molecule_3d`, `artisan_voice`, `compare`, `concept_graph`: never pieces, built per subject, or
-refreshed from stored rows with no model call); `replaces_stored` the one of them whose stored block
+`molecule_3d`, `artisan_voice`, `zoom_story`, `compare`, `concept_graph`: never pieces, built per subject, or
+refreshed from stored rows with no model call); `replaces_stored` the ones of them whose stored block
 a reused group leaves out, so the rebuilt one takes its place rather than joining it
-(`reaction_player`, decision 0090); `reused_from` the shallowest depth at which a reused section
+(`reaction_player`, decision 0090; `zoom_story`, decision 0175: a stored story, its level captions
+bare claim texts, could be dropped by the answer that placed it after it had taken the answer's
+one zoom from the builder); `reused_from` the shallowest depth at which a reused section
 runs the entry (`EXPERT` for `simulation` and `expert_view`, the two longest model calls; `BASIC`
 for the rest); and `places_pieces` the one entry whose builder may return a stored piece placed with
 its reuse mark (`simulation`, decision 0055). One answer's builders share a set of the craft-level
@@ -488,7 +490,10 @@ together (`SectionBuilds.start`; none when the section has no checked prose or l
 `EMPTY` with what it searched, decision 0050) while the prose and ladder are translated and sent; then the
 added blocks are numbered after them (`<section>.b<n>`), term-marked, translated and sent, before
 the `images` block (renumbered after them), the open questions and `section_done`. Added blocks
-join the stored explainer and, in English, the section's pieces. A builder that fails, overruns
+join the stored explainer and, in English, the section's pieces, but only those the claim ledger
+let onto the page: a section stores its composed prose and ladder and the built blocks it showed,
+never one the ledger dropped (`reuse_enrichment.shown_builds`, applied by `SectionOutcome` and
+`kept_with_reuse`, decision 0175). A builder that fails, overruns
 its wait, makes another kind, makes a kind not yet built, carries a reuse mark (unless its entry
 `places_pieces`) or cites a source
 it did not return adds nothing and is logged; the section is never failed by a builder. A builder
@@ -1043,7 +1048,10 @@ joined both kinds to `BUILT_BLOCK_KINDS` (decision 0061), their renderers being 
   `DR_DISTRICT_SHAPES` row, the craft's stored fact claims whose sentence or quotes name a mapped
   district (at most 8, by lexical rank; none without the row) with their source refs, and the
   `INLINE` pictures already kept for the offered claims (`media_ref_store.stored_pictures`).
-  Levels, each captioned by a stored fact no earlier level uses (`zoom_story.Captions`):
+  Levels, each captioned by a stored fact no earlier level uses and no figure of the section
+  (a card, a link, a ladder stage, anything but its prose) already states word for word, since the
+  claim ledger would drop that level as said (`zoom_story.Captions.without_said`, `figure_texts`,
+  decision 0175):
   `DISTRICT`, the first mapped district a claim names; `WORKSHOP`, `CLOTH` and `FIBRE`, a picture
   whose title or description holds that level's words (`zoom_pictures.LEVEL_WORDS`; a fibre
   picture also a micrograph word and the craft's fibre, `fibre_named` over the fibre materials'
@@ -1780,9 +1788,13 @@ is written "sentence" below; every sentence is cited.
   for English one built from stored defining claims, never a search, model call, translation or
   write, else 401 "Sign in to look this term up."; signed in, 60 in 10 minutes, Master Admin unlimited)
   answers a `Term`: the cached summary while every claim it cites is visible, else `STORED`
-  (each concept's defining claim), else `WIKIPEDIA` (verbatim lead sentences of the article for
-  the term's Wikidata item or one of its names), else `WEB_SEARCH` (one search, up to 2 pages
-  read, one `SUMMARISE` call whose sentences quote the pages). What was found is stored as quoted
+  (each concept's defining claim, or, when none of them is visible, as after decision 0142 retired a
+  curated craft's seed claims, the curated facts of the term's crafts that name it as a whole word,
+  those opening with it first: `term_store.curated_naming`, decision 0175), else `WIKIPEDIA`
+  (verbatim lead sentences of the article for the term's Wikidata item or one of its names), else
+  `WEB_SEARCH` (one search, up to 2 pages read, one `SUMMARISE` call whose sentences quote the pages;
+  a sentence citing a page that does not back it keeps the pages that do,
+  `term_summary.without_unrelated`). What was found is stored as quoted
   claims first, so every sentence cites stored claims. `language` is an answer language (default
   `en`); other languages translate the English summary sentence by sentence (a sentence that fails
   stays English). 404 for an unknown key or no cited summary; the client then shows no underline
@@ -1797,7 +1809,7 @@ validated by `event_frame` like every other: a payload off the contract never re
 |---|---|---|
 | `understood` | `Understood {crafts[CraftRef] (0-5), candidates[CraftRef] (0-5), depth, language, basis?}` | first. `crafts` empty is "Any craft"; several crafts is a comparison; `candidates` are the others offered, one tap to change. Each craft appears once across both lists. `basis` (`UNDERSTANDING_BASES`: `MODEL` or `RESOLVER`) says whether the model's reply or the craft resolver's fallback read the question (`Understanding.basis`); every answer sends it, for diagnosis and the answer evaluation, and the client shows nothing for it. An explainer stored before it has none and still reads |
 | `trail` | `{key, stage, group, title, url?, publisher?, year?, sourceId?, storedAt?}` | a source found, read or quoted. `key` is the evidence id (`openalex:W...`), `source:<uuid>` for stored sources or `piece:<uuid>` for a reused piece; stored keys are group `STORED` and never `READ`; a piece carries `storedAt`; a stored source names `sourceId`. Every block sent with a reuse mark gets its piece's `FOUND` entry just before it (the started section's shown title, `ExplainerStream._found_piece`, decision 0142), so a stored explainer a builder places in a freshly researched section is on the trail too. Groups: `PAPERS`, `ENCYCLOPAEDIA`, `DATASETS`, `WEB`, `STORED` (`TRAIL_GROUP_OF_SOURCE` maps every source type). A key's stage only moves forward: `FOUND`, `READ`, `QUOTED` |
-| `paced` | `{services: [{service, waitedSeconds, waitedRequests, refusals, unsent}]}` | what the scholarly services' shared pace cost this answer so far (decision 0139): per service, the seconds its requests waited for their turn and how many waited, the service's own refusals (429 or 403) and the requests not sent because the service was paused or its queue was full. Sent after a `trail` `FOUND` or `READ` whenever the record changed; only services that held a request back are listed. A client that does not draw it ignores it |
+| `paced` | `{services: [{service, waitedSeconds, waitedRequests, refusals, unsent}]}` | what the scholarly services' shared pace cost this answer so far (decision 0139): per service, the seconds its requests waited for their turn and how many waited, the service's own refusals (429 or 403) and the requests not sent because the service was paused or its queue was full. Sent after a `trail` `FOUND` or `READ` whenever the record changed; only services that held a request back are listed. The web parses it like every other event (`lib/explainerStream`, decision 0175) and draws nothing for it; a client that does not know it ignores it |
 | `section_started` | `{id, discipline, title, original?, order, state}` | `state` `RESEARCHING`, `WRITING` or `CHECKING` |
 | `section_state` | `{sectionId, state}` | a later working state of a started section |
 | `block` | `{sectionId, block}` | a built block only; every source it cites was sent as `source` first |

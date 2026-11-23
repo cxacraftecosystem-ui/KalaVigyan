@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -33,6 +33,7 @@ __all__ = [
     "MediaStore",
     "SectionImages",
     "SectionImagesAsk",
+    "SourcesOf",
     "image_search_text",
     "search_texts",
     "searched_images",
@@ -46,6 +47,8 @@ logger = logging.getLogger(__name__)
 CANDIDATES_PER_SOURCE = 10
 IMAGE_SEARCH_SECONDS = 6.0
 VISION_RELEVANCE = "VISION"
+
+SourcesOf = Callable[[], Awaitable[Sequence[ImageSource]]]
 
 
 class MediaStore(Protocol):
@@ -66,7 +69,7 @@ class SectionImagesAsk:
 
 @dataclass(frozen=True)
 class SectionImages:
-    sources: tuple[ImageSource, ...]
+    sources: SourcesOf
     store: MediaStore
     search_seconds: float = IMAGE_SEARCH_SECONDS
 
@@ -77,9 +80,13 @@ class SectionImages:
         stored = stored_items(await self.store.stored([claim.claim_id for claim in claims]))
         if stored:
             return ImagesBlock(id=ask.block_id, kind="images", version=1, reuse=None, items=stored)
+        return await self._searched(ask, claims)
+
+    async def _searched(self, ask: SectionImagesAsk, claims: Sequence[ClaimText]) -> ImagesBlock | None:
         named = ask.craft_name or ""
         texts = search_texts(ask, claims)
-        found = await asyncio.gather(*(self._candidates(source, texts) for source in self.sources))
+        sources = await self.sources()
+        found = await asyncio.gather(*(self._candidates(source, texts) for source in sources))
         chosen = choose_images(shown_candidates(c for batch in found for c in batch), claims, leave_out=named)
         if not chosen:
             return None
@@ -164,5 +171,8 @@ def image_search_text(craft_name: str, claims: Sequence[ClaimText]) -> str:
     return " ".join(part for part in (craft_name, *words) if part).strip()
 
 
-async def section_images(sessions: async_sessionmaker[AsyncSession], live: LiveSourcesStore) -> SectionImages:
-    return SectionImages(sources=await live.web_images(sessions), store=SqlMediaStore(sessions))
+def section_images(sessions: async_sessionmaker[AsyncSession], live: LiveSourcesStore) -> SectionImages:
+    async def sources() -> Sequence[ImageSource]:
+        return await live.web_images(sessions)
+
+    return SectionImages(sources=sources, store=SqlMediaStore(sessions))

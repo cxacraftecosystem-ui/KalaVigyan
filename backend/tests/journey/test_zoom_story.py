@@ -3,11 +3,13 @@ from typing import Any
 
 import pytest
 
+from app.research.explainer import BLOCK_MODELS
 from app.research.image_relevance import ClaimText
 from app.research.images import ImageCandidate
 from app.services import craft_matter as craft_matter_module, journey_builders
 from app.services.block_builders import BLOCK_BUILDERS
 from app.services.journey_builders import ZoomStoryBuilder
+from app.services.ledger_payloads import sentence_keys
 from app.services.matter_builders import molecule_candidates
 from app.services.media_ref_store import StoredPicture
 from app.services.zoom_pictures import (
@@ -22,6 +24,7 @@ from app.services.zoom_pictures import (
 from app.services.zoom_story import (
     Captions,
     district_level,
+    figure_texts,
     molecule_level,
     picture_level_of,
     zoom_story_block,
@@ -29,6 +32,8 @@ from app.services.zoom_story import (
 from app.sources.reference.pubchem import PubChemAdapter
 
 from ..images.fakes import RETRIEVED, FakeMediaStore, FakeSource, candidate
+from ..ledger.indigo_blocks import card
+from ..ledger.indigo_claims import AJRAKH_INDIGO
 from ..matter.fixtures import alizarin_record_source
 from ..place.season_supply_fixtures import written_claim
 from ..sources.recorded import Recorder, Reply, fixed_clock, source_http
@@ -277,3 +282,18 @@ def test_a_fibre_micrograph_is_captioned_only_by_a_claim_naming_the_fibre() -> N
 def test_the_zoom_joins_materials_chemistry_and_process_sections() -> None:
     (entry,) = [entry for entry in BLOCK_BUILDERS if entry.kind == "zoom_story"]
     assert (entry.disciplines, entry.wait_seconds) == ({"MATERIALS", "CHEMISTRY", "PROCESS"}, 20.0)
+
+
+def test_the_zoom_is_rebuilt_on_reuse_in_place_of_a_stored_story() -> None:
+    (entry,) = [entry for entry in BLOCK_BUILDERS if entry.kind == "zoom_story"]
+    assert (entry.rebuilt_on_reuse, entry.replaces_stored) == (True, True)
+
+
+def test_a_level_is_not_captioned_by_a_claim_a_figure_of_its_section_already_states() -> None:
+    _, workshop, molecule = zoom_claims()
+    captions = Captions.of([workshop, molecule]).without_said(sentence_keys(workshop.text))
+    assert captions.first([workshop.id, molecule.id]) == molecule
+    figure = BLOCK_MODELS["material_card"].model_validate(card("s3.b2", "Indigo", "indigo", AJRAKH_INDIGO))
+    prose = materials_ask().blocks
+    assert figure_texts(prose) == set()
+    assert figure_texts([*prose, figure]) == sentence_keys(AJRAKH_INDIGO.text)
