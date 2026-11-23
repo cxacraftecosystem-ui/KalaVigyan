@@ -108,7 +108,6 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
     pictures = _pictures(parts, page)
     components = _components(parts, page, drawings)
     place_why_here(parts.ground, parts.subject_slug, page, (texts, components))
-    place_kin(parts.kin, parts.subject_slug, page, components)
     _lay_out(page, (texts, pictures, components, placed.leading, placed.trailing))
     arranged = _headed(
         parts.record, page, [*_opening(parts, page), *arranged_layout(page.default, parts.layout)]
@@ -232,6 +231,7 @@ def _components(parts: GeneratedParts, page: _Page, drawings: Drawings) -> dict[
             subjects=list(component.subjects),
         )
         by_chapter.setdefault(chapter, []).append(component.label)
+    place_kin(parts.kin, parts.subject_slug, page, by_chapter)
     return by_chapter
 
 

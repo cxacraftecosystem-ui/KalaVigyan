@@ -605,13 +605,16 @@ Last reviewed: 2026-11-22.
 
 ### The craft page's film score and its AI media on the monograph
 
-- **What:** AI images and clips now get a page copy, join their craft's chapters as `ai_media` and
-  are served at `GET /api/crafts/media/{assetId}` (decision 0154). Left: the page's film score (job
-  step 5 and `GET /api/crafts/{slug}/film-score`) is not built, and the monograph document the craft
-  page renders for a curated craft does not draw the chapters' `ai_media` part.
-- **Why left:** the media-and-film lane of 2026-11-22 built the producer side; the page's film and
-  the monograph's picture slots are the craft page's and the monograph's own work.
-- **Clears it:** job step 5 with the route, and an AI media slot in the monograph document.
+- **What:** AI images and clips get a page copy, join their craft's chapters as `ai_media` and are
+  served at `GET /api/crafts/media/{assetId}` (decision 0154). Left: the page's film score (job step
+  5 and `GET /api/crafts/{slug}/film-score`) is not built, and the monograph document the craft page
+  renders does not draw the chapters' `ai_media` part.
+- **Waits on:** for the score, the owner's approval of a nightly ElevenLabs music and sound spend for
+  every curated page (step 5 makes it from the job, unasked, where an answer's score is made only
+  when a reader turns Music on) together with a film player on the craft page to play it: no page
+  plays a film since decision 0162 retired the chapters screen, and the monograph's authored `film`
+  carries no score, so a score made now would be heard by no one (decision 0180). For the AI media
+  slot, the owner's ruling on principle 9 (pictures are plates: no AI imagery).
 
 ## Track 1, round 1 (decision 0101, 2026-11-19)
 
