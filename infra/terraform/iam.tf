@@ -241,9 +241,9 @@ resource "aws_iam_role_policy" "river_load" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "WriteAndHeadRiverTopologies"
+        Sid      = "WriteHeadAndRetireRiverTopologies"
         Effect   = "Allow"
-        Action   = ["s3:PutObject", "s3:GetObject"]
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
         Resource = "${aws_s3_bucket.media.arn}/media/rivers/*"
       },
       {

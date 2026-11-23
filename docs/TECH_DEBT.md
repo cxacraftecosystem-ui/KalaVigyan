@@ -776,15 +776,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a dependency parse of the claim (spaCy, a recorded decision) that drops only
   mentions inside the negation's scope.
 
-### Superseded river files stay in the bucket
-
-- **What:** topology keys carry their SHA-256, so a load whose content changed writes new objects
-  and leaves the earlier ones under `media/rivers/<edition>/<mainRiv>/<old sha256>/`.
-- **Why left:** the river load role may write and read only; deleting needs a wider grant, and
-  the files are small next to the bucket's media.
-- **Clears it:** a lifecycle rule on `media/rivers/` expiring objects no `RiverBasin` row names,
-  or a delete step in the load with `s3:DeleteObject` on that prefix.
-
 ### The water question needs `rivers_loaded` set by hand
 
 - **What:** the production E2E's water question fails a missing region story only when dispatched
