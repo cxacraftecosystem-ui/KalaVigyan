@@ -269,9 +269,11 @@ each one stands (one placed by another native view has no slot: its owner draws 
   legacy scope for the React shell, so inside the authored shell they would nest a second scope and
   differ from the approved markup on purpose. The stage player and the two structure diagrams joined
   on 2026-11-23, once the stage player's stage 11 "Why" became a unit (decision 0164).
-- **To serve it**, after the deploy that carries `native.json` and the content, run
-  `python -m app.scripts.load_monograph` on the box (RUNBOOK, Monographs), then run **Monograph
-  parity** on production.
+- **To serve it**, deploy `native.json` and the content: the deploy's `rebuild_stale_pages` runs
+  `load_monograph` for each authored monograph before the web builds (RUNBOOK, Monographs), and the
+  post-deploy **Monograph parity** run checks production. A stored version from before the ground
+  figure joined the content has no `why-here` component, so the API places a live ground figure in
+  it (`with_why_here`), which the approved capture need not match.
 
 ### Every cited sentence of the page is a text unit
 

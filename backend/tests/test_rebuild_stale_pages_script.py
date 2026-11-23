@@ -21,7 +21,16 @@ async def no_documents(session: Session, *, report: Any, limit: int) -> None:
     return None
 
 
-def patched(monkeypatch: pytest.MonkeyPatch, rebuild: Any, documents: Any = no_documents) -> Session:
+async def no_monographs(session: Session, slugs: Any, load: Any, *, now: Any, report: Any) -> None:
+    return None
+
+
+def patched(
+    monkeypatch: pytest.MonkeyPatch,
+    rebuild: Any,
+    documents: Any = no_documents,
+    monographs: Any = no_monographs,
+) -> Session:
     session = Session()
 
     @asynccontextmanager
@@ -35,6 +44,7 @@ def patched(monkeypatch: pytest.MonkeyPatch, rebuild: Any, documents: Any = no_d
     monkeypatch.setattr(script, "dispose_engine", disposed)
     monkeypatch.setattr(script, "rebuild_stale_pages", rebuild)
     monkeypatch.setattr(script, "rebuild_documents", documents)
+    monkeypatch.setattr(script, "rebuild_monographs", monographs)
     monkeypatch.setattr(script, "page_code_fingerprint", lambda: "c1")
     return session
 
@@ -86,3 +96,23 @@ def test_stored_documents_are_rebuilt_after_the_snapshots_within_their_own_time(
     assert order == ["snapshots", "documents 100000"]
     assert (printed["finished"], printed["documentsFinished"], session.rolled_back) == (True, False, True)
     assert (printed["documentsRebuilt"], printed["documentsChanged"]) == (2, 1)
+
+
+def test_a_release_stores_each_authored_monograph_from_its_files_before_the_snapshots(
+    monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    order: list[str] = []
+
+    async def monographs(session: Session, slugs: Any, load: Any, *, now: Any, report: Any) -> None:
+        order.append(f"monographs {','.join(slugs)}")
+        assert load is script.monograph_content
+        report.monographs.append({"craftSlug": "Kutch-Ajrakh", "documentVersion": 6})
+
+    async def rebuild(session: Session, *, skip: Any, report: Any, limit: int) -> None:
+        order.append("snapshots")
+
+    patched(monkeypatch, rebuild, monographs=monographs)
+    assert script.main(["--seconds", "5"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert order == ["monographs Kutch-Ajrakh", "snapshots"]
+    assert printed["monographs"] == [{"craftSlug": "Kutch-Ajrakh", "documentVersion": 6}]

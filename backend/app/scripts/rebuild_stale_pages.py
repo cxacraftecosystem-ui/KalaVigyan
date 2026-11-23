@@ -2,13 +2,15 @@ import argparse
 import asyncio
 import json
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import dispose_engine, session_scope
+from app.scripts.build_monograph import SERVED_FOLDERS, monograph_content
 from app.services.page_code import page_code_fingerprint
-from app.services.upkeep_pages import PagesReport, rebuild_documents, rebuild_stale_pages
+from app.services.upkeep_pages import PagesReport, rebuild_documents, rebuild_monographs, rebuild_stale_pages
 
 EVERY_STALE_PAGE = 100_000
 DEFAULT_SECONDS = 480.0
@@ -21,6 +23,8 @@ async def run(seconds: float, document_seconds: float) -> dict[str, Any]:
     report = PagesReport()
 
     async def pages(session: AsyncSession) -> None:
+        authored = sorted(SERVED_FOLDERS)
+        await rebuild_monographs(session, authored, monograph_content, now=datetime.now(UTC), report=report)
         await rebuild_stale_pages(session, skip=(), report=report, limit=EVERY_STALE_PAGE)
 
     async def documents(session: AsyncSession) -> None:
@@ -56,7 +60,8 @@ def main(argv: list[str] | None = None) -> int:
         "--seconds",
         type=float,
         default=DEFAULT_SECONDS,
-        help="stop rebuilding page snapshots after this many seconds; the nightly upkeep rebuilds what is left",
+        help="store the authored monographs' documents, then stop rebuilding page snapshots after this many "
+        "seconds in all; the nightly upkeep rebuilds what is left",
     )
     parser.add_argument(
         "--document-seconds",

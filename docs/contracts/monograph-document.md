@@ -139,7 +139,7 @@ downgrade keeps only the English rows.
 | `store_document(session, document)` | the one writer. `contentHash` is the SHA-256 of the document's JSON (by alias, keys sorted, compact) without `version` and `language`, the row's key. When it equals the latest row's of that language, nothing is stored and it returns `None`; otherwise it stores the next version of that language and returns its number |
 | `stored_document(session, subject_kind, slug, language="en")` | the latest version as a `MonographDocument`, or `None` |
 | `document_row(session, kind, slug, language=, version=)` | the latest row, or that version's (the route serves its JSON without validating it again); `latest_document_row` is the latest |
-| `load_monograph` (`python -m app.scripts.load_monograph`, and the nightly reload) | stores the document of a craft with authored content after its sections and components; its report's `documentVersion` is the version it stored, or `null` when the document was unchanged or the craft has no authored folder. A folder named by another slug than the craft's is refused |
+| `load_monograph` (`python -m app.scripts.load_monograph`, each deploy's `rebuild_stale_pages` before the page snapshots, and the nightly reload) | stores the document of a craft with authored content after its sections and components; its report's `documentVersion` is the version it stored, or `null` when the document was unchanged or the craft has no authored folder. A folder named by another slug than the craft's is refused |
 
 ## The generated document
 
