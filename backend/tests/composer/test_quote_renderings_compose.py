@@ -50,6 +50,8 @@ async def test_a_sentence_resting_only_on_a_hindi_passage_is_kept_by_its_renderi
     assert (kept.text, kept.evidence_ids) == (STATED, [HINDI_PAGE])
     assert [span.text for span in kept.spans] == [HINDI_QUOTE]
     assert (len(model.calls), translator.asked) == (1, [[HINDI_QUOTE]])
+    assert composed.renderings == {HINDI_QUOTE: RENDERED}
+    assert "renderings" not in composed.model_dump(mode="json", by_alias=True)
 
 
 async def test_a_rendering_that_does_not_carry_the_sentence_keeps_it_failing() -> None:

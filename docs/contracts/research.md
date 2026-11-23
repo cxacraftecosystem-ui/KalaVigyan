@@ -824,7 +824,8 @@ Gemini).
   is its script's (`gu` for Gujarati), or for a script two answer languages share (Devanagari,
   Bengali) the language its source id names (`wikipedia:hi:<page>`), else it is not rendered. A
   sentence that passes `sentence_violations(..., renderings=)` is kept, citing the verbatim quote;
-  one that still fails goes on to the regenerate.
+  one that still fails goes on to the regenerate. The renderings ride on `ComposedAnswer.renderings`
+  (quote to English, never in a dumped payload) for the write-back.
 - **Regenerate**: when a usable reply has failing sentences (a violation, or a sentence that
   does not construct, `MALFORMED`) and no retry was spent, one call with
   `REGENERATE_SYSTEM_PROMPT`, `regenerate_message` (each failed sentence numbered, with its

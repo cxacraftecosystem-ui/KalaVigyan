@@ -4,7 +4,7 @@ import logging
 import re
 import uuid
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from pydantic import ValidationError
@@ -98,6 +98,7 @@ class DraftAnswer:
     headings: tuple[tuple[str, str], ...] = ()
     component_labels: tuple[str, ...] = ()
     unoffered_labels: int = 0
+    renderings: Mapping[str, str] = field(default_factory=dict)
 
     @property
     def failed(self) -> list[DraftSentence]:

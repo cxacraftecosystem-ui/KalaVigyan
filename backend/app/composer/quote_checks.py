@@ -58,7 +58,7 @@ async def rendered_draft(
         DraftSection(section.heading, tuple(_rechecked(s, allowed, renderings) for s in section.sentences))
         for section in draft.sections
     )
-    return replace(draft, sections=sections)
+    return replace(draft, sections=sections, renderings={**draft.renderings, **renderings})
 
 
 def _rechecked(

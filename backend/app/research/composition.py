@@ -222,6 +222,7 @@ class ComposedAnswer(ContractModel):
     not_enough_evidence: ResearchSummary | None = None
     heading: str | None = Field(default=None, min_length=1, max_length=HEADING_MAX_CHARS)
     component_labels: list[str] = Field(default_factory=list, max_length=COMPONENTS_OFFERED_MAX)
+    renderings: dict[str, str] = Field(default_factory=dict, exclude=True)
 
     @model_validator(mode="after")
     def _answers_or_says_why_not(self) -> Self:

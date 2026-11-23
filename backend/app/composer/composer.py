@@ -185,6 +185,7 @@ def assembled_answer(draft: DraftAnswer, request: ComposeRequest) -> ComposedAns
         follow_ups=list(draft.follow_ups),
         heading=draft.heading if sections else None,
         component_labels=list(draft.component_labels),
+        renderings=dict(draft.renderings),
     )
 
 
