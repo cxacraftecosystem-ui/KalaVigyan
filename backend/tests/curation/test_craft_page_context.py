@@ -350,3 +350,23 @@ def test_a_relative_leads_with_the_hero_its_own_page_shows() -> None:
     extras = relative_extras(records.curated, records.media, None, ({view.id for view in views}, {}))
     assert extras.hero is not None and extras.hero.media.id == hero.media.id
     assert hero.media.image_url != raw(AJRAKH)["pictures"][0]["url"]
+
+
+def test_the_craft_is_named_in_its_own_scripts_by_the_dossier_s_reviewed_native_names(
+    ajrakh: CraftPage,
+) -> None:
+    stated = raw(AJRAKH)["nativeNames"]
+    assert [(name["text"], name["language"], name["script"], name["claimId"]) for name in stated] == [
+        ("اجرڪ", "sd", "Arab", "C152"),
+        ("ajrak", "sd", "Latn", "C152"),
+    ]
+    assert [(name.name, name.language, name.script, name.claim_ids) for name in ajrakh.craft.local_names] == [
+        (name["text"], name["language"], name["script"], [claim(name["claimId"])]) for name in stated
+    ]
+
+
+def test_a_native_name_whose_claim_the_page_does_not_show_is_left_out() -> None:
+    records = ajrakh_records()
+    hidden = replace(records, views=tuple(view for view in records.views if view.id != claim("C152")))
+    assert craft_page(hidden).craft.local_names == []
+    assert craft_page(uncurated_records()).craft.local_names == []

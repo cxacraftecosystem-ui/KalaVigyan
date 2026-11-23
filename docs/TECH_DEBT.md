@@ -818,26 +818,27 @@ Last reviewed: 2026-11-22.
   (`test_golden_fields.py` fails on any other unshown field and on a listed one that is shown, so
   the list only shrinks; decision 0168 left out what the web never parses and showed the DOI, the
   understanding's basis, a translated answer and the craft page's voices and field photos):
-  - `GroundwaterValue` and `MonthlyRain`: the only geo ETL extract recorded here
-    (`backend/tests/geo/geo_district_env_extract.json`, run 44204618054) predates the groundwater
-    load and the monthly rainfall normals.
+  - `GroundwaterValue`: the climate fixtures are Kachchh's, and groundwater is stored only for
+    Rajasthan's districts and not loaded yet ("Groundwater values only for Rajasthan, and not yet
+    loaded"); no Geo ETL run has recorded a groundwater row (decision 0178 recorded Kachchh's CHIRPS
+    monthly normals from run 44204618054 for the seasons fixture).
   - `MeasureRegion`, `ReactionStep.delta_h` and `StepEnergy`: no stored claim states a regional
     factor (decision 0163's kept limit) or a step's ΔH (decision 0152).
   - `ReactionStep.formula_basis` and `formula_sources`: only the craft page's chapters infer
-    formulas, and the web drops the chapters; an answer's reaction player never sets them.
-  - `ComponentBlock` and `ComponentSource`: a placed component's sources are its units' stored
-    claims' sources, read from the database when its monograph is loaded.
+    formulas (`services/chapter_balance`), and the web drops the chapters; an answer's reaction
+    player never sets them.
   - `SourceRef.container_title`, `PageSource.container_title` and `NumberedSource.container_title`:
-    no seeded or curated source carries a journal name; only live research stores one.
+    only live research stores a journal name (a dossier writes its journal into `publisher`), and no
+    live-research answer with a paper is recorded here; recording one is a paid answer run, which
+    decision 0165 keeps from adding calls while answers are measured.
   - `AnswerSentence.original`: only the category page's lede is a plain answer sentence, and
     category pages are not translated.
-  - `LocalName`: nothing fills `PageCraft.local_names`.
 - **Why left:** a golden shows recorded or stated data, never a value made up for the test.
-- **Clears it:** record a later geo ETL run's Kachchh extract with its groundwater and monthly
-  normals and give the climate and seasons fixtures those rows; a curated quote stating a regional
-  factor or a ΔH; a test that records the Kutch Ajrakh red player's sources from the monograph load;
-  a live-research source with its journal in a fixture; and an owner decision on a craft's own names
-  in scripts (fill `local_names` or retire it) and on translated category pages. Empty the list.
+- **Waits on:** a Geo ETL run that loads groundwater for a fixture's district; a curated quote
+  stating a regional factor or a ΔH; an answer's reaction player that infers a step's formula from a
+  stored compound record, or the owner's choice to keep those two fields to the chapters; a recorded
+  live-research answer citing a paper with its journal, from a run the lead pays for after the
+  measurement; and the owner's decision on translated category pages. Then empty the list.
 
 ### The rubric floor waits on a run that shows the quantities table
 

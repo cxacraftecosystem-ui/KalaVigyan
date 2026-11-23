@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "sections": [
+    {
+      "id": "s1",
+      "discipline": "CHEMISTRY",
+      "blocks": [
+        {
+          "id": "s1.b1",
+          "kind": "component",
+          "version": 1,
+          "reuse": null,
+          "label": "kutch-ajrakh/chemistry/red-alum-madder-player",
+          "componentKind": "reaction_player",
+          "title": "Red develops only where alum was printed, and lime takes the alum away",
+          "craft": {
+            "slug": "Kutch-Ajrakh",
+            "name": "Kutch Ajrakh",
+            "path": "/crafts/Kutch-Ajrakh"
+          },
+          "href": "/crafts/Kutch-Ajrakh#rp-red",
+          "sources": [
+            {
+              "sourceId": "00cf6f09-8895-5523-9569-934498ca13c6"
+            },
+            {
+              "sourceId": "10f2058e-0349-5353-a0eb-b306f80a501a"
+            },
+            {
+              "sourceId": "3163aba8-8af4-5fc8-a3a2-463de9217dd3"
+            },
+            {
+              "sourceId": "5cab4b58-4ff3-5cc0-98d7-2e9403d34332"
+            },
+            {
+              "sourceId": "822de92d-ff35-52e1-a8dd-faed5a1f46f5"
+            },
+            {
+              "sourceId": "c1fa6a39-5386-5d7d-8623-393e1e61f6db"
+            },
+            {
+              "sourceId": "e1bd856b-940d-5131-9dfc-7f1ba059ab65"
+            },
+            {
+              "sourceId": "ed90e8f0-3af8-53c0-90b1-ad60a4a56aef"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "00cf6f09-8895-5523-9569-934498ca13c6",
+      "kind": "ENCYCLOPEDIA",
+      "title": "Madder Dye",
+      "authors": [],
+      "year": 2022,
+      "doi": null,
+      "url": "https://imp-art.org/articles/madder-dye/",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    },
+    {
+      "id": "10f2058e-0349-5353-a0eb-b306f80a501a",
+      "kind": "PAPER",
+      "title": "The development of Terminalia chebula Retz. (Combretaceae) in clinical research",
+      "authors": [
+        "Anwesa Bag",
+        "Subir Kumar Bhattacharyya",
+        "Rabi Ranjan Chattopadhyay"
+      ],
+      "year": 2013,
+      "doi": "10.1016/S2221-1691(13)60059-3",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3631759",
+      "publisher": "Asian Pacific Journal of Tropical Biomedicine",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "3163aba8-8af4-5fc8-a3a2-463de9217dd3",
+      "kind": "PAPER",
+      "title": "Fiber-Safe Extraction of Red Mordant Dyes from Hair Fibers",
+      "authors": [],
+      "year": 1995,
+      "doi": null,
+      "url": "https://cool.culturalheritage.org/jaic/articles/jaic34-03-004_2.html",
+      "publisher": "Journal of the American Institute for Conservation",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "5cab4b58-4ff3-5cc0-98d7-2e9403d34332",
+      "kind": "GOVERNMENT_REPORT",
+      "title": "Application for Registration of a Geographical Indication in Part A of the Register: Sanganeri Hand Block Printing (Form GI-1 with statement of case)",
+      "authors": [
+        "Calico Printers Co-operative Society Ltd."
+      ],
+      "year": null,
+      "doi": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/102-sanganeri-hand-block-printing.pdf",
+      "publisher": "Calico Printers Co-operative Society Ltd., Sanganer (filed with the Geographical Indications Registry)",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "822de92d-ff35-52e1-a8dd-faed5a1f46f5",
+      "kind": "PAPER",
+      "title": "Ajarkh, the resist printed fabric of Gujarat",
+      "authors": [
+        "Anjali Karolia",
+        "Heli Buch"
+      ],
+      "year": 2008,
+      "doi": null,
+      "url": "https://nopr.niscpr.res.in/bitstream/123456789/578/1/IJTK%207%281%29%20%282008%29%2093-97.pdf",
+      "publisher": "Indian Journal of Traditional Knowledge, CSIR",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "c1fa6a39-5386-5d7d-8623-393e1e61f6db",
+      "kind": "GI_JOURNAL",
+      "title": "Geographical Indications Journal No. 188: Kutch Ajrakh, G.I. Application No. 1050",
+      "authors": [],
+      "year": 2023,
+      "doi": null,
+      "url": "https://search.ipindia.gov.in/IPOJournal/Journal/ViewJournal?FileName=ipo-docs%5CIPIndia_Docs%5CGIR%5C2023%5CJournal_188%5CJournal+188.pdf",
+      "publisher": "Geographical Indications Registry, Government of India",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "e1bd856b-940d-5131-9dfc-7f1ba059ab65",
+      "kind": "OTHER",
+      "title": "Dyeing cotton fabrics is an ancient Indian art",
+      "authors": [
+        "Amit Mitra"
+      ],
+      "year": 1992,
+      "doi": null,
+      "url": "https://www.downtoearth.org.in/amp/story/environment/dyeing-cotton-fabrics-is-an-ancient-indian-art-30445",
+      "publisher": "Down To Earth",
+      "licence": null,
+      "attribution": null,
+      "reliability": "C"
+    },
+    {
+      "id": "ed90e8f0-3af8-53c0-90b1-ad60a4a56aef",
+      "kind": "GI_JOURNAL",
+      "title": "Geographical Indications Journal No. 37: Bagru Hand Block Print, G.I. Application No. 183",
+      "authors": [],
+      "year": 2011,
+      "doi": null,
+      "url": "https://search.ipindia.gov.in/IPOJournal/Journal/ViewJournal?FileName=ipo-docs%5CIPIndia_Docs/pdf/Journal_37.pdf",
+      "publisher": "Geographical Indications Registry, Government of India",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    }
+  ]
+}
