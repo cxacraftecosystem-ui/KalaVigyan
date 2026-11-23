@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from itertools import pairwise
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
@@ -11,6 +11,7 @@ from app.research.blocks import BLOCK_ID_MAX_CHARS, BLOCK_ID_PATTERN
 from app.research.vocabulary import AnswerLanguage
 
 __all__ = [
+    "LISTEN_POLL_SECONDS",
     "LISTEN_SCHEMA_VERSION",
     "LISTEN_VOICES",
     "ListenOffer",
@@ -22,8 +23,10 @@ __all__ = [
 ]
 
 LISTEN_SCHEMA_VERSION = 1
+LISTEN_POLL_SECONDS = 3
 LISTEN_VOICES = ("ELEVENLABS", "GEMINI")
 ListenVoiceName = Literal["ELEVENLABS", "GEMINI"]
+BlockId = Annotated[str, Field(min_length=1, max_length=BLOCK_ID_MAX_CHARS, pattern=BLOCK_ID_PATTERN)]
 
 
 class ListenWord(ContractModel):
@@ -52,7 +55,7 @@ class ListenSentence(ContractModel):
 
 
 class ListenTrack(ContractModel):
-    block_id: str = Field(min_length=1, max_length=BLOCK_ID_MAX_CHARS, pattern=BLOCK_ID_PATTERN)
+    block_id: BlockId
     audio_url: HttpsUrl
     duration_seconds: float = Field(gt=0)
     words: list[ListenWord] = Field(default_factory=list)
@@ -76,6 +79,17 @@ class ListenScript(ContractModel):
     language: AnswerLanguage
     voice: ListenVoiceName
     tracks: list[ListenTrack] = Field(min_length=1)
+    pending: list[BlockId] = Field(default_factory=list, exclude_if=empty)
+    poll_after_seconds: int | None = Field(default=None, ge=1, exclude_if=absent)
+
+    @model_validator(mode="after")
+    def _pending_blocks_follow_the_read_ones(self) -> Self:
+        if bool(self.pending) != (self.poll_after_seconds is not None):
+            raise ValueError("a script names when to ask again exactly when blocks are still being read")
+        read = {track.block_id for track in self.tracks}
+        if read & set(self.pending) or len(set(self.pending)) != len(self.pending):
+            raise ValueError("a pending block is named once and has no track yet")
+        return self
 
 
 class ListenOffer(ContractModel):

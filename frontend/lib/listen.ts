@@ -11,12 +11,15 @@ export type ListenWord = { sentenceId: string; text: string; start: number; end:
 export type ListenSentence = { sentenceId: string; start: number; end: number };
 export type ListenTrack = { blockId: string; audioUrl: string; durationSeconds: number; words: ListenWord[]; sentences?: ListenSentence[] };
 export type TimedTrack = Pick<ListenTrack, "words" | "sentences">;
-export type ListenScript = { schemaVersion: 1; answerId: string; language: string; voice?: ListenVoice; tracks: ListenTrack[] };
+export type ListenScript = { schemaVersion: 1; answerId: string; language: string; voice?: ListenVoice; tracks: ListenTrack[]; pending?: string[]; pollAfterSeconds?: number };
 export type ListenOffer = { languages: string[]; voice?: ListenVoice };
 export type ListenPosition = { track: number; time: number };
 export type ListenMark = { sentenceId: string; words: ListenWord[]; wordIndex: number };
+export type AfterTrack = "next" | "wait" | "end";
 
 export const LISTEN_RATES = [1, 1.25, 1.5] as const;
+export const LISTEN_POLLS_MAX = 100;
+export const LISTEN_POLL_SECONDS = 3;
 
 const listenWordShape: Shape<ListenWord> = object<ListenWord>({ sentenceId: text, text, start: number, end: number });
 const listenSentenceShape: Shape<ListenSentence> = object<ListenSentence>({ sentenceId: text, start: number, end: number });
@@ -30,13 +33,15 @@ const listenScriptShape: Shape<ListenScript> = object<ListenScript>({
   tracks: list(
     object<ListenTrack>({ blockId: text, audioUrl: HTTPS_URL, durationSeconds: number, words: list(listenWordShape), sentences: optional(list(listenSentenceShape)) }),
     1
-  )
+  ),
+  pending: optional(list(text)),
+  pollAfterSeconds: optional(number)
 });
 
 const listenOfferShape = object<ListenOffer>({ languages: list(languageCodeShape), voice: listenVoiceShape });
 
-export function listenPath(answerId: string, language: string): string {
-  return `/answers/${encodeURIComponent(answerId)}/listen${buildQuery({ language })}`;
+export function listenPath(answerId: string, language: string, voice?: ListenVoice): string {
+  return `/answers/${encodeURIComponent(answerId)}/listen${buildQuery({ language, voice })}`;
 }
 
 function checkTimings(timed: readonly { start: number; end: number }[], duration: number, path: string): void {
@@ -57,16 +62,44 @@ function checkTrack(track: ListenTrack, index: number): void {
   checkTimings(sentences, track.durationSeconds, `${path}.sentences`);
 }
 
+function checkPending(script: ListenScript): void {
+  const pending = script.pending ?? [];
+  const read = new Set(script.tracks.map((track) => track.blockId));
+  if (pending.some((blockId) => read.has(blockId)) || new Set(pending).size !== pending.length) throw new ShapeError("listen.pending", "blocks named once that have no track yet");
+  const asks = script.pollAfterSeconds;
+  if ((pending.length > 0) !== (asks !== undefined) || (asks !== undefined && !(asks > 0))) throw new ShapeError("listen.pollAfterSeconds", "a positive wait exactly while blocks are pending");
+}
+
 export function checkedScript(raw: unknown, answerId: string, language: string): ListenScript {
   const script = parseShape(listenScriptShape, raw);
   if (script.answerId !== answerId) throw new ShapeError("listen.answerId", `the answer ${answerId}`);
   if (script.language !== language) throw new ShapeError("listen.language", `the language ${language}`);
   script.tracks.forEach(checkTrack);
+  checkPending(script);
   return script;
 }
 
-export async function fetchListenScript(answerId: string, language: string): Promise<ListenScript> {
-  return checkedScript(await apiFetch<unknown>(listenPath(answerId, language)), answerId, language);
+export async function fetchListenScript(answerId: string, language: string, voice?: ListenVoice): Promise<ListenScript> {
+  return checkedScript(await apiFetch<unknown>(listenPath(answerId, language, voice)), answerId, language);
+}
+
+export function pendingBlocks(script: ListenScript | null): string[] {
+  return script?.pending ?? [];
+}
+
+export function pollDelayMs(script: ListenScript): number {
+  return (script.pollAfterSeconds ?? LISTEN_POLL_SECONDS) * 1000;
+}
+
+export function extendedScript(current: ListenScript, polled: ListenScript): ListenScript | null {
+  if (polled.voice !== current.voice || polled.tracks.length < current.tracks.length) return null;
+  if (current.tracks.some((track, at) => polled.tracks[at].blockId !== track.blockId)) return null;
+  return { ...polled, tracks: [...current.tracks, ...polled.tracks.slice(current.tracks.length)] };
+}
+
+export function afterTrack(script: ListenScript | null, track: number): AfterTrack {
+  if (script && track + 1 < script.tracks.length) return "next";
+  return pendingBlocks(script).length > 0 ? "wait" : "end";
 }
 
 export function listenLanguagesOf(raw: unknown): string[] {

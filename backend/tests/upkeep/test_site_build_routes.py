@@ -13,6 +13,7 @@ from app.main import create_app
 from app.models import User
 from app.services.site_build import BuildTooSoon, SiteBuildState
 from app.services.static_pages import StaticPages
+from app.services.web_build_gate import ApiNotLive
 
 from ..contracts.golden import golden_json
 from .fakes import CountingHook
@@ -32,6 +33,7 @@ def client(role: str | None, hook: Any = None) -> TestClient:
         app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_session] = QuietSession
     app.dependency_overrides[site_build.site_build_hook] = lambda: hook
+    app.dependency_overrides[site_build.api_commits] = lambda: None
     return TestClient(app)
 
 
@@ -51,8 +53,12 @@ def quiet_build(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
         await hook.trigger()
         triggered.append({"actor": actor.role, "origin": origin})
 
+    async def api_live(commits: Any, *, release: str) -> None:
+        return None
+
     monkeypatch.setattr(site_build, "site_build_state", state)
     monkeypatch.setattr(site_build, "refuse_early_build", not_early)
+    monkeypatch.setattr(site_build, "refuse_ahead_of_api", api_live)
     monkeypatch.setattr(site_build, "trigger_site_build", trigger)
     return triggered
 
@@ -100,6 +106,33 @@ def test_a_second_build_within_the_interval_waits(
     answer = client("ADMIN", hook).post("/api/site/build")
     assert answer.status_code == 429
     assert answer.headers["Retry-After"] == "126"
+    assert hook.triggered == 0
+
+
+def test_a_build_ahead_of_the_live_api_is_a_409_that_says_why_and_calls_no_hook(
+    monkeypatch: pytest.MonkeyPatch, quiet_build: list[dict[str, Any]]
+) -> None:
+    async def ahead(commits: Any, *, release: str) -> None:
+        raise ApiNotLive("Main changes the API since 1ab422fe0000, the release the API runs.")
+
+    monkeypatch.setattr(site_build, "refuse_ahead_of_api", ahead)
+    hook = CountingHook()
+    answer = client("ADMIN", hook).post("/api/site/build")
+    assert answer.status_code == 409
+    assert answer.json()["detail"].startswith("Main changes the API since 1ab422fe0000")
+    assert (hook.triggered, quiet_build) == (0, [])
+
+
+def test_the_api_check_unreachable_is_a_502_that_names_the_check_and_calls_no_hook(
+    monkeypatch: pytest.MonkeyPatch, quiet_build: list[dict[str, Any]]
+) -> None:
+    async def unknown(commits: Any, *, release: str) -> None:
+        raise ExternalFailure("the check could not be reached", kind="unavailable", service="github")
+
+    monkeypatch.setattr(site_build, "refuse_ahead_of_api", unknown)
+    hook = CountingHook()
+    answer = client("ADMIN", hook).post("/api/site/build")
+    assert answer.status_code == 502 and answer.json()["detail"] == site_build.GATE_FAILED_DETAIL
     assert hook.triggered == 0
 
 

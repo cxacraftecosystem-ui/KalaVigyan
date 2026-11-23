@@ -13,6 +13,7 @@ from app.retrieval.evaluation import ORDERS
 from app.services import write_back_filing_store
 from app.services.admin_spend import spend_by_day_and_task
 from app.services.coverage import COVERAGE_CLAIMS_MIN, craft_coverage, subject_coverage
+from app.services.eval_run_store import EvalRunRecord, latest_eval_runs
 from app.services.mcp_activity import ActivityAsk, read_activity
 from app.services.open_work_subjects import curated_craft_subjects
 from app.services.source_titles import junk_titled, producer_authored
@@ -73,8 +74,12 @@ SPEND_SAID = (
     "calls still reserved are left out."
 )
 NOTHING_MEASURED = (
-    "No answer-quality or retrieval-eval result is stored where the server can read it (each run's report is its "
-    "workflow's artifact), so these are the floors alone, unmeasured."
+    "No answer-quality or retrieval-eval run is stored yet (each run stores its summary when it finishes, and its "
+    "full report is its workflow's artifact), so these are the floors alone, unmeasured."
+)
+MEASURED = (
+    "The latest stored run of each kind ({runs}) first, then each floor with the value the latest run measuring it "
+    "found; a run's full report is its workflow's artifact."
 )
 
 Reader = Callable[[ToolContext, ReportAsk], Awaitable[ReportPage]]
@@ -157,18 +162,31 @@ async def spend_report(context: ToolContext, ask: ReportAsk) -> ReportPage:
 
 
 async def evaluations_report(context: ToolContext, ask: ReportAsk) -> ReportPage:
-    return page_rows(floor_rows(eval_floors()), ask, NOTHING_MEASURED)
+    runs = await latest_eval_runs(context.session)
+    rows = [*(run.as_dict() for run in runs.values()), *floor_rows(eval_floors(), runs)]
+    said = MEASURED.format(runs=", ".join(runs)) if runs else NOTHING_MEASURED
+    return page_rows(rows, ask, said)
 
 
-def floor_rows(floors: EvalFloors) -> list[dict[str, Any]]:
-    answers = [_floor(ANSWERS, check) for check in floor_checks({}, floors.answers.named())]
+def floor_rows(
+    floors: EvalFloors, runs: Mapping[str, EvalRunRecord] = MappingProxyType({})
+) -> list[dict[str, Any]]:
+    measured = _latest_measures(runs)
+    answers = [_floor(ANSWERS, check, measured) for check in floor_checks({}, floors.answers.named())]
     retrieval = [
-        _floor(RETRIEVAL, check)
+        _floor(RETRIEVAL, check, measured)
         for name in floors.retrieval
         for order in ORDERS
         for check in floor_checks({}, floors.retrieval_floors(name, order), prefix=f"{name}.{order}.")
     ]
     return [*answers, *retrieval]
+
+
+def _latest_measures(runs: Mapping[str, EvalRunRecord]) -> dict[str, tuple[float, str]]:
+    found: dict[str, tuple[float, str]] = {}
+    for run in sorted(runs.values(), key=lambda kept: kept.times.finished_at):
+        found |= {measure: (value, run.kind) for measure, value in run.means.items()}
+    return found
 
 
 def _standing(coverage: FieldCoverage) -> dict[str, Any]:
@@ -188,14 +206,16 @@ def _kinded(kind: str, row: BaseModel) -> dict[str, Any]:
     return {"kind": kind, **row.model_dump(mode="json", by_alias=True)}
 
 
-def _floor(suite: str, check: FloorCheck) -> dict[str, Any]:
-    passes = None if check.value is None else check.held
+def _floor(suite: str, check: FloorCheck, measured: Mapping[str, tuple[float, str]]) -> dict[str, Any]:
+    value, kind = measured.get(check.measure, (None, None))
+    found = FloorCheck(check.measure, check.floor, value)
     return {
         "suite": suite,
         "measure": check.measure,
         "floor": check.floor,
-        "measured": check.value,
-        "passes": passes,
+        "measured": value,
+        "passes": None if value is None else found.held,
+        "measuredBy": kind,
     }
 
 

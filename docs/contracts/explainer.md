@@ -1314,6 +1314,10 @@ A film plays an explainer on the client (plan feature 3, lane 0060); no video is
   narration of its tracks, captioned with the sentence being read in the answer language (Listen's
   words), a scene with no narration with its section's title (the lede with its first sentence). Under either reduced-motion switch a
   scene shows its block's static end state and the film advances at the narration's pace.
+- The film starts as soon as Listen answers with its first block (decision 0176): a scene whose
+  block the script lists as `pending` holds at its start, under "Preparing the narration of this
+  scene…", until a later ask brings its tracks, and the film is ready the whole time; a poll that
+  fails while the film holds there shows the failure with Try again.
 - The score is optional. `/answers/config` adds `film {score}` (`FilmOffer`): true when the music
   route has a key and media can be made now; absent, off the contract or false, no score control
   is drawn. Starting a film with the score on asks `GET /api/answers/{answerId}/film-score
@@ -1959,16 +1963,20 @@ table also holds `embedding` (1536 dimensions, filled like claims, never sent) a
 ## Listen (read by the explainer UI, decision 0037)
 
 The explainer UI reads Listen as below (`frontend/lib/listen.ts`); the route that serves it is
-Listen's lane (0035). `shared/listen.script.golden.json` is the script both sides check.
+Listen's lane (0035). `shared/listen.script.golden.json`, `listen.script-sentences.golden.json`
+and `listen.script-pending.golden.json` are the scripts both sides check.
 
 - `/answers/config` adds `listen {languages[code], voice?}`: the answer languages Listen can speak
   and the voice that reads first (`docs/contracts/voice.md`, Listen). The
   Listen control is drawn only after `done`, with an answer id, in a listed language; absent or
   off the contract, it is not drawn.
-- `GET /api/answers/{answerId}/listen?language=<code>` (the asker) answers `ListenScript
-  {schemaVersion 1, answerId, language, voice?, tracks[ListenTrack] (at least one)}`, refused by
-  the client unless `answerId` and `language` are the ones asked; `voice` names who read it
-  (`ELEVENLABS` or `GEMINI`, decision 0161).
+- `GET /api/answers/{answerId}/listen?language=<code>&voice=<voice>?` (the asker) answers
+  `ListenScript {schemaVersion 1, answerId, language, voice?, tracks[ListenTrack] (at least one),
+  pending?[blockId], pollAfterSeconds?}`, refused by the client unless `answerId` and `language`
+  are the ones asked; `voice` names who read it (`ELEVENLABS` or `GEMINI`, decision 0161).
+  `pending` names the blocks still being read, in reading order after the tracks, and comes
+  exactly with `pollAfterSeconds`; the client asks again with the script's `voice` after that many
+  seconds, keeps the tracks it holds and adds the new ones (decision 0176).
 - `ListenTrack {blockId, audioUrl (https; the private media bucket's presigned URL), durationSeconds
   > 0, words[ListenWord], sentences?[ListenSentence]}`, timed by its words (ElevenLabs) or, with
   `words` empty, by its sentences (Gemini), one per part of each `prose` or `process_ladder` block

@@ -1,5 +1,8 @@
 import base64
+import io
 import json
+import wave
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -16,10 +19,26 @@ from app.providers.gemini_media import (
     speech_audio,
     speech_body,
 )
+from app.scripts.paid_check_steps import SPEECH_TEXT
+from app.voice.listen_voices import GeminiVoice
+from app.voice.narration import CHARACTERS_PER_MINUTE, NarrationPart, SpokenSentence
+from app.voice.read_aloud import wav_frames
 
 KEY = "test-only-gemini-key"
 API = "https://generativelanguage.googleapis.com/v1beta"
 WAV = b"RIFF" + bytes(4) + b"WAVEfmt "
+FIXTURES = Path(__file__).parent / "fixtures"
+RECORDED_RATE, RECORDED_SECONDS, RECORDED_CHARACTERS, RECORDED_FRAMES = 24_000, 5.44, 81, 1514
+
+
+def recorded() -> dict[str, Any]:
+    return json.loads((FIXTURES / "speech_completed.json").read_text(encoding="utf-8"))
+
+
+def recorded_wire() -> GeminiMediaWire:
+    reply = recorded()
+    client = httpx.AsyncClient(transport=httpx.MockTransport(lambda _: httpx.Response(200, json=reply)))
+    return GeminiMediaWire(api_key=KEY, client=client)
 
 
 def answered(status: str = "completed", content: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -60,6 +79,35 @@ async def test_the_wire_posts_the_interaction_and_returns_its_wav() -> None:
     assert json.loads(request.content) == speech_body("Alum fixes the red.", voice="Kore")
     with pytest.raises(InvalidInput):
         await wire.read_aloud("   ")
+
+
+async def test_the_recorded_speech_is_the_documented_24_khz_mono_16_bit_wav_in_the_last_audio_block() -> None:
+    reply = recorded()
+    assert (reply["model"], reply["status"], reply["steps"][-1]["type"]) == (
+        SPEECH_MODEL,
+        "completed",
+        "model_output",
+    )
+    audio = await recorded_wire().read_aloud(SPEECH_TEXT)
+    with wave.open(io.BytesIO(audio), "rb") as read:
+        shape = (read.getnchannels(), read.getsampwidth(), read.getframerate())
+        declared = read.getnframes() / read.getframerate()
+    assert (shape, declared) == ((1, 2, RECORDED_RATE), RECORDED_SECONDS)
+    pcm = wav_frames(audio)
+    assert (pcm.rate, pcm.count) == (RECORDED_RATE, RECORDED_FRAMES)
+
+
+async def test_the_listen_voice_times_the_recorded_sentence_from_its_samples() -> None:
+    part = NarrationPart(language="en", sentences=(SpokenSentence("lede.1", SPEECH_TEXT, "en"),))
+    spoken = await GeminiVoice(reader=recorded_wire()).spoken([part], 0)
+    [sentence] = spoken.sentences
+    assert (sentence.sentence_id, sentence.start, sentence.end) == ("lede.1", 0.0, 0.063)
+    assert spoken.words == [] and spoken.billed_seconds == 1
+
+
+def test_gemini_read_the_recorded_sentence_slower_than_the_hold_assumes() -> None:
+    assert len(SPEECH_TEXT) == RECORDED_CHARACTERS
+    assert round(RECORDED_CHARACTERS * 60 / RECORDED_SECONDS) == 893 < CHARACTERS_PER_MINUTE
 
 
 async def test_a_refusal_or_an_outage_is_a_gemini_failure_the_fallback_can_name() -> None:

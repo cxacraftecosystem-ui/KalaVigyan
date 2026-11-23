@@ -5,9 +5,11 @@ from typing import Any
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Numeric,
     String,
     Text,
@@ -18,7 +20,9 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import enums as e
-from app.models.base import Base, created_at, updated_at, uuid_pk
+from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
+
+EVAL_RUN_KINDS = ("ANSWERS", "RETRIEVAL", "RELEASE_CHECK")
 
 
 class EvalCase(Base):
@@ -53,8 +57,15 @@ class EvalRun(Base):
     reportKey: Mapped[str | None] = mapped_column(Text)
     startedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finishedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    floorsHeld: Mapped[bool | None] = mapped_column(Boolean)
+    fresh: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_text("false"))
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
+
+    __table_args__ = (
+        CheckConstraint(one_of("suite", EVAL_RUN_KINDS), name="suite"),
+        Index(None, "suite", "finishedAt"),
+    )
 
 
 class EvalResult(Base):

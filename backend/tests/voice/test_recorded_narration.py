@@ -13,21 +13,23 @@ from .listen_fakes import Narrations
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REPLIES = {"en": "narration_with_timestamps.json", "hi": "narration_with_timestamps_hi.json"}
+PARENTHESISED = {"en": "narration_parenthesised.json", "hi": "narration_parenthesised_hi.json"}
+SECOND_RUN = "paid_checks_report_run2.json"
 
 
 def fixture(name: str) -> Any:
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
-async def heard(language: str) -> TimedSpeech:
-    reply = fixture(REPLIES[language])
+async def heard(language: str, replies: dict[str, str] = REPLIES, *, sent: str | None = None) -> TimedSpeech:
+    reply = fixture(replies[language])
     client = httpx.AsyncClient(transport=httpx.MockTransport(lambda _: httpx.Response(200, json=reply)))
     eleven = ElevenLabs(api_key="test-only-elevenlabs-key", client=client)
-    return await eleven.narration(NARRATIONS[language], voice_id="voice_1", language=language)
+    return await eleven.narration(sent or NARRATIONS[language], voice_id="voice_1", language=language)
 
 
-def bracketed_seconds(speech: TimedSpeech, text: str) -> float:
-    return round(speech.ends[text.index("]")] - speech.starts[text.index("[")], 3)
+def bracketed_seconds(speech: TimedSpeech, text: str, marks: str = "[]") -> float:
+    return round(speech.ends[text.index(marks[1])] - speech.starts[text.index(marks[0])], 3)
 
 
 async def test_eleven_v4_times_both_recorded_narrations_code_point_for_code_point() -> None:
@@ -50,6 +52,18 @@ def test_the_recorded_speech_is_slower_than_the_hold_assumes() -> None:
 async def test_v4_spoke_the_english_bracketed_words_and_skipped_the_hindi_ones() -> None:
     assert bracketed_seconds(await heard("en"), NARRATIONS["en"]) == 1.44
     assert bracketed_seconds(await heard("hi"), NARRATIONS["hi"]) == 0.075
+
+
+async def test_v4_speaks_the_parenthesised_words_listen_now_sends_in_both_languages() -> None:
+    checks = fixture(SECOND_RUN)["checks"]
+    for language, seconds in (("en", 1.32), ("hi", 1.12)):
+        sent = untagged(NARRATIONS[language])
+        speech = await heard(language, PARENTHESISED, sent=sent)
+        assert len(speech.starts) == checks[f"narration_{language}"]["characters"] == len(sent)
+        assert (
+            bracketed_seconds(speech, sent, "()") == checks[f"narration_{language}"]["parenthesisedSeconds"]
+        )
+        assert bracketed_seconds(speech, sent, "()") == seconds
 
 
 async def test_listen_sends_elevenlabs_no_square_brackets_and_keeps_the_shown_words() -> None:

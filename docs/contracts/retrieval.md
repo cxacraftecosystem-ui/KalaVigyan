@@ -568,7 +568,12 @@ held}], belowFloor, warnings[], searchSpentUsd, judgeSpentUsd, judgeCapUsd, out}
 absent[], misses{}, byField{}, byCraft{}}`, the reranked order also `fellBackToFused[]`.
 `searchSpentUsd` is what the run's query embeddings and reranks spent, read by
 `router.tagged_spend` on its request id `eval-search-<run>`. With `--out` it writes the judged
-revision there.
+revision there. A finished weekly run and a finished release check each store their summary in
+`EvalRun` (`RETRIEVAL` and `RELEASE_CHECK`: started, finished, the `RELEASE` commit the caller
+exports from the release's `release.env`, settled spend, the mean of each set, order and measure,
+the floors and whether they held; `services/eval_run_store.keep_run`), and the printed report adds
+`storedRunId`, or `storeError` when the store failed, which never fails the run; the admin
+`evaluations` report reads the latest of each kind (decision 0176).
 
 `python -m app.scripts.eval_retrieval --fusion [--out PATH]` (decision 0151) is read-only and makes
 no rerank or judge call: it embeds every hand-written and generated question once, reads each one's

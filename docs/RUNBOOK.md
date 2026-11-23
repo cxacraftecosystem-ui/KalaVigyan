@@ -748,6 +748,9 @@ fixture or the category page (`docs/contracts/category-page.md`).
   and leaves the issue as it is.
   Its artifact holds the judged revision of the generated questions: commit `retrieval_questions.json`
   over `backend/app/data/eval/generated/retrieval_questions.json` when `generatedRevision` rose.
+  Each finished run, as each answer-quality run and each release's retrieval check, also stores its
+  summary in `EvalRun`, which the admin `evaluations` report over MCP reads (decision 0176); the full
+  report stays the workflow's artifact.
 - **Gate judge evaluation** (`judge-eval.yml`): runs `app.scripts.eval_judges` on the box every night
   at 01:37 UTC and by hand from main: `gh workflow run judge-eval.yml -R cxacraftecosystem-ui/KalaVigyan
   --ref main`. Two judge calls score the duplicate and novelty judges on the labelled cases in
