@@ -1269,9 +1269,16 @@ Last reviewed: 2026-11-22.
 
 ### A plate's crop is a class or a focal box
 
-- **What:** Ajrakh's plates crop with CSS classes; a generated plate carries the layout's focal box,
-  drawn as `object-position`. Two ways to say one thing.
-- **Clears it:** express Ajrakh's crops as focal boxes and drop the crop classes.
+- **What:** three of Ajrakh's plate specs carry a crop class (`natural-dye-materials-photo` `tall`,
+  `banni-grasslands-photo` `r32`, `madder-roots-and-dyed-silk-photo` `r43`), which the kit draws as
+  the frame's aspect ratio (3 / 4, 3 / 2, 4 / 3, `.ph.tall`, `.ph.r32`, `.ph.r43`); a generated plate
+  carries the layout's focal box, which `SpecPicture.focalPosition` draws as `object-position` only
+  and which sets no frame. Two ways to say one thing, and a focal box cannot yet say what a class
+  says (checked 2026-11-23, monograph follow-up lane).
+- **Clears it:** a focal box that also sets its frame's aspect ratio (the box's width and height
+  times the picture's), the three crops written as such boxes and `crop` dropped from
+  `component_specs_plates` and `PicturePlateView`, proven by Monograph parity (`check=all`) and a
+  generated page's capture, since every generated plate with a focal box would then be framed by it.
 
 ### Kutch Ajrakh's React page draws the authored shell
 
@@ -1297,16 +1304,16 @@ Last reviewed: 2026-11-22.
 ### Curated craft documents: what they do not carry yet
 
 - **What:** a generated craft document draws its curated plates, its contributed plates and its
-  record (key facts as the fact grid, the record strip), but not the craft page's reviewed field
-  photographs (decision 0112) or its kin crafts (`relatives`), which `GET /crafts/{slug}/page`
-  still carries in its chapters. AI images and videos made from a craft's claims are not carried
-  either.
-- **Why left:** field photographs and kin crafts need a placement each in the document's layout
-  (a `picture_plate` per reviewed photograph with its consent credit, a `related_crafts` component
-  in the kin chapter) and a parity check of the generated pages; AI imagery on a page waits on the
-  owner's ruling on principle 9 (see the production E2E defects below).
-- **Clears it:** both as generated document components with their tests and a capture of a
-  generated page; the owner's ruling for AI media.
+  record (key facts as the fact grid, the record strip), and its page draws the reviewed field
+  photographs and quotes after the chapters (`FieldVoicesPart`, decision 0156), but not its kin
+  crafts (`relatives`), which `GET /crafts/{slug}/page` still carries in its chapters. AI images and
+  videos made from a craft's claims are not carried either.
+- **Why left:** a `related_crafts` spec per generated document needs each kin craft's swatch, shared
+  materials and cited sentence from stored rows (Kutch Ajrakh's are authored), and a capture of a
+  generated page; AI imagery on a page waits on the owner's ruling on principle 9 (see the production
+  E2E defects below).
+- **Clears it:** a `related_crafts` component in the kin chapter of a generated document, from the
+  page's relatives, with its tests and a capture; the owner's ruling for AI media.
 
 ## Round 6 (2026-11-20)
 
