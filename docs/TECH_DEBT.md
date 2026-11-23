@@ -707,19 +707,14 @@ Last reviewed: 2026-11-22.
   styles in the views), or prefix the kit's classes so no name can collide, which renames classes in
   the approved page's markup and so needs the owner's leave (decision 0100 serves it as built).
 
-### Curated craft documents: what they do not carry yet
+### Curated craft documents: the kin crafts not yet captured, and no AI imagery
 
-- **What:** a generated craft document draws its curated plates, its contributed plates and its
-  record (key facts as the fact grid, the record strip), and its page draws the reviewed field
-  photographs and quotes after the chapters (`FieldVoicesPart`, decision 0156), but not its kin
-  crafts (`relatives`), which `GET /crafts/{slug}/page` still carries in its chapters. AI images and
-  videos made from a craft's claims are not carried either.
-- **Why left:** a `related_crafts` spec per generated document needs each kin craft's swatch, shared
-  materials and cited sentence from stored rows (Kutch Ajrakh's are authored), and a capture of a
-  generated page; AI imagery on a page waits on the owner's ruling on principle 9 (see the production
-  E2E defects below).
-- **Clears it:** a `related_crafts` component in the kin chapter of a generated document, from the
-  page's relatives, with its tests and a capture; the owner's ruling for AI media.
+- **What:** a generated craft document now draws its kin crafts as a `related_crafts` component in
+  the kin chapter (decision 0180), but no capture of a generated page showing it has been taken; and
+  AI images and videos made from a craft's claims are not carried on the page.
+- **Waits on:** the lead's capture of a generated craft page with kin crafts after the release (the
+  capture workflow against production); the owner's ruling on principle 9 (pictures are plates: no
+  AI imagery) before any AI media joins a page (see the production E2E defects below).
 
 ## Round 6 (2026-11-20)
 

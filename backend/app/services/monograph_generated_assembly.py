@@ -32,6 +32,7 @@ from .drawing_themes import themed_spec
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings, spec_unit_keys
 from .monograph_generated_grids import StatedValue, fact_grid
+from .monograph_generated_kin import KinRead, place_kin
 from .monograph_generated_parts import RegisteredComponent, StoredSection, component_binding_of
 from .monograph_generated_pictures import PICTURE_KIND, PlateSource, plate_spec
 from .monograph_generated_structure import CHAPTER_FIELDS, BlockSpecs, PlacedStructure, placed_structure
@@ -78,6 +79,7 @@ class GeneratedParts:
     places: PlacesHeld = field(default_factory=PlacesHeld)
     ground: CraftGround | None = None
     unwritten: Mapping[str, tuple[ClaimView, ...]] = field(default_factory=dict)
+    kin: KinRead = field(default_factory=KinRead)
 
 
 @dataclass
@@ -106,6 +108,7 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
     pictures = _pictures(parts, page)
     components = _components(parts, page, drawings)
     place_why_here(parts.ground, parts.subject_slug, page, (texts, components))
+    place_kin(parts.kin, parts.subject_slug, page, components)
     _lay_out(page, (texts, pictures, components, placed.leading, placed.trailing))
     arranged = _headed(
         parts.record, page, [*_opening(parts, page), *arranged_layout(page.default, parts.layout)]

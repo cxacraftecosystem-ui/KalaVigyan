@@ -34,7 +34,9 @@ One kind per job (decision 0114): the general_* names are retired. `chart`, `fac
 `timeline` and `map_layer` each take two forms of spec: a spec with a `head` is declared and drawn
 by the general view, a spec without one is the authored figure of a page (Kutch Ajrakh's) and drawn
 by the kind's own view (`component_specs_either.EITHER_FORMS`, `form_model`;
-`frontend/components/monograph/eitherView.tsx`). `drawing` has only the declared form. The page
+`frontend/components/monograph/eitherView.tsx`). `drawing` has only the declared form, and the page
+tool `related_crafts` takes both too: its declared form is the kin crafts the site builds for a
+generated craft document (`research/kin_crafts.KinCraftsSpec`, decision 0180). The page
 tools (`PAGE_TOOL_KINDS`), the authored art (`AUTHORED_ART_KINDS`) and the authored scripts
 (`AUTHORED_SCRIPT_KINDS`: `model_explainer`, `timeline_map`) are refused with a reason
 (`component_specs.not_contributable`). Each contributable kind has a fixture for a craft other
