@@ -109,7 +109,7 @@ their types) so a client can read the structured result.
 |---|---|---|
 | `kalavigyan://design/answer-kit.md` | `text/markdown` | How an answer is drawn: the order, sentences and citation clusters, component cards, sources, the rules, and a table of the light and dark values of the colours an answer uses and the font stacks, generated from `tokens.json` |
 | `ui://kalavigyan/answer.html` | `text/html;profile=mcp-app` | The MCP App that draws an `ask` result in our design |
-| `ui://kalavigyan/page-preview.html` | `text/html;profile=mcp-app` | The MCP App that draws a `preview_page` result: the private link, the checklist report and each part's outcome (`open-work.md`) |
+| `ui://kalavigyan/page-preview.html` | `text/html;profile=mcp-app` | The MCP App that draws a `preview_page` result: the private link, the checklist report and each part's outcome (`open-work.md`). The head and its tiles always show; the report folds behind "Show the full report". The previews of one chat tell each other on the `kalavigyan-page-preview` broadcast channel when they draw (stamped by their link's expiry) and when one is opened, so only the newest opens on its own and opening one folds the rest; where the host gives views no shared channel, every preview starts folded |
 
 The view is one self-contained page: no network (`_meta.ui.csp` lists no domains; its own
 Content-Security-Policy is `default-src 'none'` with the one inline script allowed by its SHA-256),

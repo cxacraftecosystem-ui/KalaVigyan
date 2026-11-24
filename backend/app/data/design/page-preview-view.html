@@ -55,6 +55,10 @@ td.kv-num,th.kv-num{text-align:end}
 .kv-pairs dd{margin:0;text-align:end;color:var(--ink-1)}
 .kv-list{margin:0;padding-inline-start:1.5em;font-size:0.875rem}
 .kv-list li{margin:0 0 8px}
+.kv-toggle{margin:20px 0 0;min-height:44px;padding:0 20px;border-radius:999px;font:inherit;font-weight:600;color:var(--ink-1);background:var(--raised);border:1px solid var(--rule-strong);cursor:pointer}
+.kv-toggle:hover{background:var(--sunk)}
+.kv-toggle:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+.kv-full[hidden]{display:none}
 footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--rule);font-size:var(--text-caption);color:var(--ink-3)}
 @media (min-width:640px){.kv-actions{display:flex;flex-wrap:wrap}.kv-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}main{padding:32px 24px 40px}.kv-table-wrap{margin:0;padding:0}}
 @media (min-width:1024px){.kv-tiles{grid-template-columns:repeat(8,minmax(0,1fr))}.kv-split{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}
@@ -73,8 +77,14 @@ footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--rule);font-si
     JUDGE: { word: "Yours to judge", css: "kv-judge", path: "M12 16v-4M12 8h.01" }
   };
   var OUTCOMES = { SHOWN: "Shown", LISTED: "Listed", REFUSED: "Refused", ACCEPTED: "Accepted" };
+  var CHANNEL = "kalavigyan-page-preview";
+  var SHOW = "Show the full report";
+  var HIDE = "Hide the full report";
   var nextId = 1;
   var initId = null;
+  var shown = { id: null, at: 0, full: null, toggle: null, open: false };
+  var channel = null;
+  try { channel = typeof BroadcastChannel === "function" ? new BroadcastChannel(CHANNEL) : null; } catch (refused) { channel = null; }
 
   function send(message) { window.parent.postMessage(message, "*"); }
   function request(method, params) { var id = nextId; nextId += 1; send({ jsonrpc: "2.0", id: id, method: method, params: params }); return id; }
@@ -278,17 +288,64 @@ footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--rule);font-si
     return block;
   }
 
+  function post(kind) {
+    if (!channel || !shown.id) return;
+    try { channel.postMessage({ kind: kind, id: shown.id, at: shown.at }); } catch (refused) { channel = null; }
+  }
+
+  function setOpen(open) {
+    if (!shown.full) return;
+    shown.open = open;
+    shown.full.hidden = !open;
+    shown.toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    shown.toggle.textContent = open ? HIDE : SHOW;
+    report_size();
+  }
+
+  function heard(message) {
+    if (!message || !shown.id || message.id === shown.id) return;
+    if (message.kind === "opened") { setOpen(false); return; }
+    if (message.kind !== "shown") return;
+    if (message.at > shown.at) { setOpen(false); return; }
+    if (shown.open) post("shown");
+  }
+
+  function folded(contents) {
+    var full = el("div", "kv-full");
+    full.id = "kv-full";
+    contents.forEach(function (part) { full.appendChild(part); });
+    var toggle = el("button", "kv-toggle", SHOW);
+    toggle.type = "button";
+    toggle.setAttribute("aria-controls", "kv-full");
+    toggle.addEventListener("click", function () {
+      var open = !shown.open;
+      setOpen(open);
+      if (open) post("opened");
+    });
+    shown.full = full;
+    shown.toggle = toggle;
+    return [toggle, full];
+  }
+
   function render(result) {
     var report = result.report && typeof result.report === "object" ? result.report : null;
     var parts = head(result, report);
-    if (report) parts.push(rules(report), details(report));
-    if (list(result.parts).length) parts.push(bundleParts(result));
+    var contents = [];
+    if (report) contents.push(rules(report), details(report));
+    if (list(result.parts).length) contents.push(bundleParts(result));
     var foot = el("footer");
-    foot.appendChild(el("p", null, "Drawn from the preview's own result; every text is shown as text and nothing is loaded from the network."));
+    foot.appendChild(el("p", null, "Drawn from the preview's own result; every text is shown as text and nothing is loaded from the network. Only the newest preview opens on its own; opening one folds the others."));
+    shown.id = String(result.previewUrl || "");
+    shown.at = Date.parse(String(result.expiresAt || "")) || 0;
+    if (contents.length) parts = parts.concat(folded(contents));
     parts.push(foot);
     root.replaceChildren.apply(root, parts);
+    setOpen(Boolean(channel));
+    post("shown");
     report_size();
   }
+
+  if (channel) channel.addEventListener("message", function (event) { heard(event.data); });
 
   function theme(context) {
     var chosen = context && context.theme;
