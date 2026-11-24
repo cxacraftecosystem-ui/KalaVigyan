@@ -209,6 +209,32 @@ async def test_a_code_dies_when_the_account_signs_out_everywhere_before_it_is_us
     assert refused.value.error == "invalid_grant"
 
 
+async def test_a_code_dies_when_a_password_change_moves_the_token_version_before_it_is_used(
+    session: AsyncSession,
+) -> None:
+    user = await person(session)
+    client_id = await registered(session)
+    code = await approved(session, user, client_id)
+    user.tokenVersion += 1
+    await session.flush()
+    with pytest.raises(OAuthError) as refused:
+        await exchanged(session, client_id, code, at=NOW + timedelta(minutes=1))
+    assert refused.value.error == "invalid_grant"
+    assert await oauth_connections.connections(session, user, now=NOW) == []
+
+
+async def test_a_code_keeps_the_token_version_its_approver_held(session: AsyncSession) -> None:
+    user = await person(session)
+    user.tokenVersion = 4
+    client_id = await registered(session)
+    code = await approved(session, user, client_id)
+    [stored] = (await session.execute(select(OAuthCode).where(OAuthCode.userId == user.id))).scalars()
+    assert stored.userTokenVersion == 4
+    reply = await exchanged(session, client_id, code)
+    caller = await oauth_bearer.caller_for(session, reply.access_token, resource=RESOURCE, now=NOW)
+    assert caller.user.id == user.id
+
+
 async def test_refresh_rotates_and_a_replayed_refresh_token_revokes_the_connection(
     session: AsyncSession,
 ) -> None:

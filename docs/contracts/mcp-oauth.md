@@ -172,7 +172,8 @@ The client sends the person to `<WEB>/oauth/authorize` with `response_type=code`
 4. Approve posts `POST /api/oauth/authorize/approve {request, scopes, termsVersion}`. The request
    is checked again; a scope not asked for or not held by the role, or `review` without two-step
    verification or a sign-in within 15 minutes, is 422, a terms version that
-   is not the current one 409. The acceptance is recorded, a code is stored and the reply is
+   is not the current one 409. The acceptance is recorded, a code is stored with the account's
+   token version (`OAuthCode.userTokenVersion`, decision 0185) and the reply is
    `{kind: "redirect", redirectTo: <redirect_uri>?code&state&iss}`, which the page opens.
    Cancel posts `POST /api/oauth/authorize/deny {request}` and returns `error=access_denied`.
 
@@ -190,7 +191,12 @@ it equals its `iss` (the assertion is otherwise not read; decision 0148).
 - `grant_type=authorization_code` with `code`, `redirect_uri` (exactly the one the code was
   issued for), `code_verifier` (43 to 128 unreserved characters whose base64url SHA-256 is the
   challenge) and optional `resource`. A code lives 5 minutes and works once: a second use is
-  refused and revokes the connection it made.
+  refused and revokes the connection it made. A code not yet exchanged dies with the sessions
+  of the account that approved it: when the account's token version has moved since (a password,
+  two-step or role change, or an admin asking for a new password) or its sessions were ended
+  after it (Sign out everywhere, a suspension), or it was deleted, the exchange is
+  `invalid_grant` (`oauth_tokens.grant_matches_user`, the rule a connection is held to), and the
+  connection it makes keeps the code's token version.
 - `grant_type=refresh_token` with `refresh_token`, optional `scope` (narrower only, else
   `invalid_scope`) and optional `resource`. Every refresh rotates: the old refresh token is
   spent, and presenting a spent one revokes the whole connection.
@@ -331,7 +337,11 @@ resource, the account's token version, connected, last used, expires, revoked), 
 with row-level security on and no grants to `anon` or `authenticated`. Migration
 `0074_mcp_activity` adds `McpToolCall.clientName` (filled from each call's connection) and
 `reason` (300 characters, only on a failure) and the table `McpToolCallDay` (primary key day,
-client name, tool and outcome; `calls` at least 1), the same way protected. Codes and tokens are
+client name, tool and outcome; `calls` at least 1), the same way protected. Migration
+`0101_oauth_code_token_version` adds `OAuthCode.userTokenVersion`, the approving account's token
+version, with a server default of 0 for a code the release before stores: such a code exchanges
+only for an account whose version is still 0, the version no password, two-step or role change
+has moved, and any other is refused and signed in again (decision 0185). Codes and tokens are
 random (`kvmcp_ac_`, `kvmcp_at_`, `kvmcp_rt_` and 32 random bytes) and stored only as their
 SHA-256; they are never logged, and `redact_secrets` masks their shape in any log line.
 

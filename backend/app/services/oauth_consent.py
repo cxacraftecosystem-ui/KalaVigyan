@@ -134,6 +134,7 @@ async def approve(
             codeChallenge=checked.challenge,
             scopes=list(scopes),
             resource=checked.resource,
+            userTokenVersion=int(user.tokenVersion or 0),
             expiresAt=now + timedelta(seconds=CODE_SECONDS),
             createdAt=now,
         )

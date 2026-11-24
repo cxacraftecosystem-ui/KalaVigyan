@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import ssl
+import zlib
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -11,6 +13,7 @@ from app.core.retry_after import parse_headers
 from app.research.fetcher import FetchRefused
 
 from .addresses import IpAddress, Resolver, public_addresses, system_resolver
+from .content_codings import INFLATED_CODINGS, Inflater, content_codings
 from .targets import Target
 
 __all__ = [
@@ -173,18 +176,7 @@ async def _read(response: httpx.Response, target: Target, max_bytes: int) -> Hop
     declared = response.headers.get("content-length", "")
     if declared.isdigit() and int(declared) > max_bytes:
         raise FetchRefused(target.url, "TOO_LARGE", f"declares {declared} bytes; the cap is {max_bytes}")
-    body = bytearray()
-    try:
-        async for chunk in response.aiter_bytes():
-            body.extend(chunk)
-            if len(body) > max_bytes:
-                raise FetchRefused(target.url, "TOO_LARGE", f"sent more than {max_bytes} bytes")
-    except httpx.TimeoutException:
-        raise FetchRefused(target.url, "TIME_LIMIT", f"{target.host} stopped sending") from None
-    except httpx.HTTPError:
-        raise ExternalFailure(
-            f"{target.host} broke the connection", kind="unavailable", retryable=True, service=SERVICE
-        ) from None
+    body = await _body(response, target, max_bytes)
     content_type, charset = _media_type(response.headers.get("content-type", ""))
     cache_control = response.headers.get("cache-control")
     return Hop(
@@ -192,9 +184,40 @@ async def _read(response: httpx.Response, target: Target, max_bytes: int) -> Hop
         status,
         content_type=content_type,
         charset=charset,
-        body=bytes(body),
+        body=body,
         cache_control=cache_control,
     )
+
+
+async def _body(response: httpx.Response, target: Target, max_bytes: int) -> bytes:
+    inflate = _inflater(response, target, max_bytes)
+    chunks = response.aiter_bytes() if inflate is None else response.aiter_raw()
+    body = bytearray()
+    try:
+        async for chunk in chunks:
+            body.extend(chunk if inflate is None else inflate(chunk))
+            if len(body) > max_bytes:
+                raise FetchRefused(target.url, "TOO_LARGE", f"sent more than {max_bytes} bytes")
+    except httpx.TimeoutException:
+        raise FetchRefused(target.url, "TIME_LIMIT", f"{target.host} stopped sending") from None
+    except httpx.HTTPError, zlib.error:
+        raise ExternalFailure(
+            f"{target.host} broke the connection", kind="unavailable", retryable=True, service=SERVICE
+        ) from None
+    return bytes(body)
+
+
+def _inflater(response: httpx.Response, target: Target, max_bytes: int) -> Callable[[bytes], bytes] | None:
+    codings = content_codings(response.headers.get_list("content-encoding", split_commas=True))
+    if not codings:
+        return None
+    if len(codings) > 1 or codings[0] not in INFLATED_CODINGS:
+        raise FetchRefused(
+            target.url,
+            "CONTENT_TYPE",
+            f"sent {', '.join(codings)} coded content; the fetcher inflates gzip or deflate",
+        )
+    return Inflater(codings[0], limit=max_bytes).inflate
 
 
 def _media_type(header: str) -> tuple[str, str | None]:

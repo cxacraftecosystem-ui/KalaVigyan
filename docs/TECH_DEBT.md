@@ -101,19 +101,23 @@ Last reviewed: 2026-11-22.
 ### ElevenLabs behaviour not yet verified
 
 - **What:** the voice binding rests on `custom_llm.request_headers` substituting
-  `{{system__conversation_id}}` and on `custom_llm.api_key` arriving as a bearer, neither on
-  ElevenLabs' official pages; also unverified are the URL suffix, custom-LLM tool calls reaching
-  `end_call` and client tools, Hindi in agents, CSP hosts and the plan's retention minimum
-  (`docs/contracts/voice.md`). Relay text to speech cannot run with zero retention
-  (`enable_logging=false` is enterprise only).
-- **Waits on:** the agent spike, which is the switched-off voice call (decision 0035), not another
-  paid run: the paid check of 2026-11-23 (run 45112123057) refused its agent turn because no
-  ElevenLabs agent, agent key or voice session key is provisioned. Once the spike provisions them,
-  the paid check's agent turn settles the header, the bearer and the suffix (commit its
-  `agent_turn_events.json` as `backend/tests/voice/fixtures/agent_turn_events.json`;
-  `voice.transport` stays `RELAY` until it passes). Tool calls, Hindi in agents, the CSP hosts and
-  retention need a browser call on the box; retention also needs an enterprise plan or the Gemini
-  voice.
+  `{{system__conversation_id}}` into `X-KV-Conversation-Id`, which ElevenLabs' official pages do
+  not state. The bearer is settled: with the call switched on for the paid check of 2026-11-24
+  (run 45304855493, release db1efa4a), ElevenLabs' three custom-LLM requests passed the bearer
+  check, and decision 0184's refusal log shows each was refused at the session record check ("no
+  session holds this conversation"), although the check had bound its session (a 33-character
+  `conv_` id) before it sent the question. Either the header arrives without substitution or
+  ElevenLabs calls the model before the bind commits; the log does not yet say which. Also
+  unverified are custom-LLM tool calls reaching `end_call` and client tools, Hindi in agents, the
+  CSP hosts and the plan's retention minimum (`docs/contracts/voice.md`). Relay text to speech
+  cannot run with zero retention (`enable_logging=false` is enterprise only).
+- **Waits on:** the media review lane (decision 0189), which logs the header's length and prefix and
+  waits briefly for a bind that races the call; then the lead runs the agent-only paid check once
+  more with the call switched on (`/kalavigyan/env/VOICE_CALL_ENABLED`, `box_voice_toggle.sh`)
+  and commits the agent turn's events as `backend/tests/voice/fixtures/agent_turn_events.json`
+  once a turn is answered (`voice.transport` stays `RELAY` until it passes). Tool calls, Hindi in
+  agents, the CSP hosts and retention need a browser call on the box; retention also needs an
+  enterprise plan or the Gemini voice.
 
 ## Voice backend (decision 0017)
 

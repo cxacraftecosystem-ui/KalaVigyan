@@ -462,12 +462,19 @@ How the sandbox applies the rules:
 - robots.txt (RFC 9309, `fetcher/robots_txt`), agent `KalaVigyan`: the longest matching rule
   wins and `Allow` wins a tie, `*` and `$` patterns, the RFC's percent-encoding, the groups naming
   the agent merged (else `*`), at most five redirects; a rule not starting with `/` or `*` is read
-  with a leading `/` (fails closed). Read for each host the fetch touches and cached for
+  with a leading `/` (fails closed). A rule is matched as its literal pieces between the `*`s,
+  each found leftmost after the one before (the last one ending the path under `$`), never as a
+  regular expression, so a rule of many wildcards costs at most a scan of the path per piece
+  (decision 0185). Read for each host the fetch touches and cached for
   an hour; 4xx other than 429 allows all; 429, 5xx, an unreachable server or an unreadable file
   disallows all (`ROBOTS_DISALLOWED`) and is not cached.
 - Size and time: one time limit for the whole fetch including robots, redirects and parsing
   (`TIME_LIMIT`); one client per host and address for the whole fetch, every hop resolved and
-  checked again; a declared or streamed body over `maxBytes` is `TOO_LARGE`.
+  checked again; a declared or streamed body over `maxBytes` is `TOO_LARGE`. Every hop asks for
+  `Accept-Encoding: identity`; a body sent `gzip` (or `x-gzip`) or `deflate` anyway is inflated
+  with its output held to `maxBytes` plus one byte, so `maxBytes` caps the decoded body and not
+  just the bytes on the wire, and any other coding, or more than one, is `CONTENT_TYPE` before the
+  body is read (`fetcher/content_codings`, decision 0185).
 - Content: `text/html` and `application/xhtml+xml` (reported as `text/html`), `application/pdf`
   and `text/plain`, and a body starting `%PDF-` declared `application/octet-stream` or
   `binary/octet-stream` (as Zenodo serves its files) read as a PDF; anything else `CONTENT_TYPE`. HTML main text by trafilatura after scripts,
