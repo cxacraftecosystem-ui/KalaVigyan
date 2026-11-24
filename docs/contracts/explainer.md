@@ -214,7 +214,13 @@ fewer sentences than the live page, never more.
 - **Sources** merge (`services/source_merge.SourceMerge`) by DOI (the field or a doi.org link), by
   address (host without `www.`, path without its last slash, query without `utm_`) or by title
   (asides in brackets left out, at least `TITLE_KEY_WORDS_MIN` distinct words, in any order), never
-  across two different DOIs, and by title alone never across two different stated years. The first cited keeps its id, kind and title; the others fill its gaps and the
+  across two different DOIs, and by title alone never across two different stated years. By address
+  or title it never joins two records that both state authors and share no surname
+  (`research/evidence.shares_an_author`, either way round), and by address never two book chapters
+  or two GI journal entries whose title keys differ (`PART_KINDS`), since one address can hold a
+  book's chapters or a journal issue's applications (decision 0188). A record is compared with every
+  work that already holds one of its keys, in key order, so a second record of one chapter still
+  joins that chapter. The first cited keeps its id, kind and title; the others fill its gaps and the
   year is the earliest stated. Citations, pictures, molecules and open questions are remapped to
   it, so `sources` and the `source` events list each work once.
 - **The lede** goes through first (`admit_lede`): its sources become the canonical ones and its
@@ -2189,7 +2195,7 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
 | Each kind's renderer | `frontend/e2e/place-renderers-unit.spec.ts`, `matter-renderers-unit.spec.ts`, `expert-panel-unit.spec.ts`, `journey-renderers-unit.spec.ts`, `learning-renderers-unit.spec.ts`, `insight-renderers-unit.spec.ts` and `sandbox-frame-unit.spec.ts` |
 | Each sentence once in a block, on the page and for the judge | `frontend/e2e/sentence-once-unit.spec.ts`, `sentence-once-figures-unit.spec.ts` and `backend/tests/research/test_shown_sentences.py` |
 | The block builders and their checks | `backend/tests/answering/test_block_builders.py`, `test_section_blocks.py` and `backend/tests/research/test_explainer_blocks.py` |
-| One claim, one rendering | `backend/tests/ledger/test_ledger_rules.py`, `test_ledger_kinds.py` and `test_restated_facts.py` |
+| One claim, one rendering, and sources merged as works | `backend/tests/ledger/test_ledger_rules.py`, `test_ledger_kinds.py`, `test_restated_facts.py` and `test_source_merge.py` |
 | No gap on the page, and a question's named stages on its ladder | `backend/tests/ledger/test_gap_routing.py`, `backend/tests/research/test_gap_admissions.py`, `test_named_stages.py` and `backend/tests/answering/test_reused_stages.py` |
 | The lede's search, its answer sentence, a sentence's Sources differ flag, what its sources differ on, its tag and its readings after the paragraph | `backend/tests/answering/test_lede_answer.py`, `test_lede_flow.py`, `test_grounded_blocks.py`, `test_lede_english.py`, `backend/tests/composer/test_lede_compose.py`, `backend/tests/db/test_claim_view_reads_db.py` (a stored claim's flag reaching its sentence), `backend/tests/curation/test_curation_claim_rules.py`, `backend/tests/db/test_structure_writes_db.py` and `test_review_queue_decisions_db.py` (what the sources differ on stored with the flag) and `frontend/e2e/sentence-differ-unit.spec.ts` |
 | A section a withdrawn field interview shortened: its count and its note | `backend/tests/field_voices/test_readback.py` and `frontend/e2e/sentence-differ-unit.spec.ts` |

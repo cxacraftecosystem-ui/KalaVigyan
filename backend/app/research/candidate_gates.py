@@ -249,7 +249,8 @@ def _compared(comparisons: Sequence[FactComparison], model: str | None) -> GateO
         else f"distinct from fact {item.held}: {item.reason}"
         for item in comparisons
     ]
-    about = next((item.about for item in differ if item.about), None)
+    subjects = {item.about for item in differ}
+    about = subjects.pop() if len(subjects) == 1 else None
     kept = _outcome(
         DUPLICATE_GATE, passed=True, reasons=reasons, model=model, related=[i.held for i in differ]
     )

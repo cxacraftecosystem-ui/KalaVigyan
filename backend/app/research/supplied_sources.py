@@ -10,7 +10,7 @@ from typing import Literal, Self
 from pydantic import Field, field_validator, model_validator
 
 from .base import ContractModel, HttpsUrl
-from .evidence import DOI_PATTERN, EvidenceItem, canonical_url
+from .evidence import DOI_PATTERN, EvidenceItem, canonical_url, shares_an_author
 from .fetcher import FETCH_TEXT_MAX_CHARS
 from .monograph_document import LANGUAGE_TAG
 from .vocabulary import TrustTier
@@ -330,9 +330,7 @@ def _same_year(identity: SourceIdentity, item: EvidenceItem) -> bool:
 def _same_author(identity: SourceIdentity, item: EvidenceItem) -> bool:
     if not identity.authors or not item.authors:
         return True
-    indexed = {word for name in item.authors for word in _words(name)}
-    surnames = {words[-1] for words in map(_words, identity.authors) if words}
-    return bool(surnames & indexed)
+    return shares_an_author(identity.authors, item.authors)
 
 
 def _words(text: str) -> tuple[str, ...]:

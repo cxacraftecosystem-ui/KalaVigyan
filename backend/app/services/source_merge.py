@@ -6,13 +6,24 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from app.data.craft_text import fold
+from app.research.evidence import shares_an_author
 from app.research.images import without_tracking
 
-__all__ = ["SOURCE_ID_KEY", "TITLE_KEY_WORDS_MIN", "SourceMerge", "reconciled_source", "source_keys"]
+__all__ = [
+    "PART_KINDS",
+    "SOURCE_ID_KEY",
+    "TITLE_KEY_WORDS_MIN",
+    "SourceMerge",
+    "reconciled_source",
+    "source_keys",
+]
 
 SOURCE_ID_KEY = "sourceId"
 TITLE_KEY_WORDS_MIN = 5
+DOI_PREFIX = "doi:"
+URL_PREFIX = "url:"
 TITLE_PREFIX = "title:"
+PART_KINDS = frozenset({"BOOK_CHAPTER", "GI_JOURNAL"})
 DOI_HOSTS = frozenset({"doi.org", "dx.doi.org"})
 DOI_PREFIXES = ("https://doi.org/", "http://doi.org/", "https://dx.doi.org/", "http://dx.doi.org/", "doi:")
 ASIDE = re.compile(r"\([^()]*\)|\[[^\[\]]*\]")
@@ -25,10 +36,10 @@ def source_keys(ref: SourceRef) -> list[str]:
     keys = []
     doi = _doi(ref.get("doi")) or _doi_of_url(ref.get("url"))
     if doi:
-        keys.append(f"doi:{doi}")
+        keys.append(f"{DOI_PREFIX}{doi}")
     url = _url_key(ref.get("url"))
     if url:
-        keys.append(f"url:{url}")
+        keys.append(f"{URL_PREFIX}{url}")
     title = _title_key(ref.get("title"))
     if title:
         keys.append(f"{TITLE_PREFIX}{title}")
@@ -48,7 +59,7 @@ def reconciled_source(kept: SourceRef, other: SourceRef) -> dict[str, Any]:
 class SourceMerge:
     def __init__(self) -> None:
         self._canonical: dict[str, str] = {}
-        self._owners: dict[str, str] = {}
+        self._owners: dict[str, list[str]] = {}
         self._refs: dict[str, dict[str, Any]] = {}
 
     def register(self, source_id: str, ref: SourceRef | None) -> str:
@@ -64,7 +75,9 @@ class SourceMerge:
             self._refs[owner] = reconciled_source(self._refs[owner], ref)
         self._canonical[source_id] = owner
         for key in keys:
-            self._owners.setdefault(key, owner)
+            owners = self._owners.setdefault(key, [])
+            if owner not in owners:
+                owners.append(owner)
         return owner
 
     def canonical(self, source_id: str) -> str:
@@ -89,23 +102,46 @@ class SourceMerge:
         return payload
 
     def _owner_of(self, ref: SourceRef, keys: list[str]) -> str | None:
-        matched = next((key for key in keys if key in self._owners), None)
-        if matched is None:
-            return None
-        owner = self._owners[matched]
-        return owner if _same_work(self._refs[owner], ref, matched) else None
+        found = ((key, owner) for key in keys for owner in self._owners.get(key, ()))
+        return next((owner for key, owner in found if _same_work(self._refs[owner], ref, key)), None)
 
 
 def _same_work(kept: SourceRef, other: SourceRef, matched_key: str) -> bool:
     mine, theirs = _doi(kept.get("doi")), _doi(other.get("doi"))
     if mine and theirs and mine != theirs:
         return False
-    return not matched_key.startswith(TITLE_PREFIX) or not _different_years(kept, other)
+    if matched_key.startswith(DOI_PREFIX):
+        return True
+    if _different_authors(kept, other):
+        return False
+    if matched_key.startswith(TITLE_PREFIX):
+        return not _different_years(kept, other)
+    return not _different_parts(kept, other)
+
+
+def _different_authors(kept: SourceRef, other: SourceRef) -> bool:
+    mine, theirs = _names(kept.get("authors")), _names(other.get("authors"))
+    if not mine or not theirs:
+        return False
+    return not (shares_an_author(mine, theirs) or shares_an_author(theirs, mine))
+
+
+def _different_parts(kept: SourceRef, other: SourceRef) -> bool:
+    if kept.get("kind") not in PART_KINDS or other.get("kind") != kept.get("kind"):
+        return False
+    mine, theirs = _title_key(kept.get("title")), _title_key(other.get("title"))
+    return bool(mine and theirs and mine != theirs)
 
 
 def _different_years(kept: SourceRef, other: SourceRef) -> bool:
     years = {kept.get("year"), other.get("year")}
     return None not in years and len(years) > 1
+
+
+def _names(value: Any) -> list[str]:
+    if not isinstance(value, list | tuple):
+        return []
+    return [name for name in value if isinstance(name, str) and name.strip()]
 
 
 def _doi(value: Any) -> str | None:

@@ -16,6 +16,7 @@ lanes and the retrieval lanes"). The contracts are `docs/contracts/retrieval.md`
 | The answer floors | [answer-eval.md](../contracts/answer-eval.md) |
 | The duplicate gate whose sameness the restatements follow | [knowledge-writes.md](../contracts/knowledge-writes.md) |
 | Both orders scored, floors per order, the release sample's own floors and the answer floors re-based (amends this record) | [decision 0133](0133-the-evaluation-scores-what-answers-read.md) |
+| A whole answer run with an unscored question below its floors (amends item 3) | [decision 0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

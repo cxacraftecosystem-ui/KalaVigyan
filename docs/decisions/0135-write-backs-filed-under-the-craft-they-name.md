@@ -20,6 +20,7 @@ answering service) and `docs/contracts/knowledge-writes.md` (The research write-
 | The write-back's gates | [knowledge-writes.md](../contracts/knowledge-writes.md), The research write-back |
 | The filing reads the passage and the source's title, holds what nothing names, keys family science by its family (amends items 3 and 5) | [decision 0136](0136-write-backs-filed-by-their-source.md) |
 | The cost settled after an answer finishes, and a request id for every answer | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
+| Research for any craft filed by the craft it names (amends item 3) | [decision 0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

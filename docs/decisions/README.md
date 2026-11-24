@@ -118,7 +118,7 @@ flowchart LR
 | [0077](0077-lede-headings-and-question-order.md) | Every answer opens with a lede, its sections carry headings shaped by the question | [0140](0140-voice-and-listen-kept-true.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0078](0078-category-dossiers-in-the-app.md) | Category dossiers are imported keyed to their category and served as public category pages | · |
 | [0079](0079-public-reading.md) | Craft, category, map and science pages read without signing in | [0084](0084-field-voices-v2.md), [0091](0091-field-voices-kalavigyan-side.md) and [0095](0095-craft-page-chapters.md) |
-| [0080](0080-claim-ledger.md) | An answer renders each claim once: the claim ledger | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
+| [0080](0080-claim-ledger.md) | An answer renders each claim once: the claim ledger | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) and [0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | [0081](0081-craft-page-contract-v2.md) | Craft page contract version 2: a page whose structure is final at first paint | [0095](0095-craft-page-chapters.md) |
 | [0082](0082-catalogue-v2-and-server-fetch.md) | Catalogue v2: reader names, depth, concepts and one count, and server fetch | [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) |
 | [0083](0083-students-and-artisans.md) | Students and artisans: profiles at first entry, the Artisan role, conversations and testimony | · |
@@ -171,7 +171,7 @@ flowchart LR
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
 | [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
-| [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) |
+| [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) and [0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | [0138](0138-answers-composed-from-the-asked-fields.md) and [0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | [0129](0129-first-stage-retrieval.md) | The stored search finds the right facts as the knowledge grows | · |
 | [0130](0130-a-craft-release.md) | One craft can be released as its own dataset with its own DOI | · |
@@ -179,7 +179,7 @@ flowchart LR
 | [0132](0132-a-ranking-votes-with-its-first-thirty.md) | A ranking votes with its first thirty; deeper finds only fill the rerank pool | [0151](0151-a-release-the-live-side-can-read.md) |
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | [0151](0151-a-release-the-live-side-can-read.md) |
 | [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | [0147](0147-time-market-and-figures-kept-true.md), [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
-| [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
+| [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md), [0146](0146-answers-recorded-and-bounded-on-the-box.md) and [0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) and [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
 | [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | [0165](0165-answers-counted-as-settled-asked-as-asked.md), [0167](0167-answer-leftovers-kept-true.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
@@ -221,7 +221,7 @@ flowchart LR
 | [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
 | [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
 | [0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) | Listen plays as it narrates, the admin build waits for the API main needs, evaluation runs are kept, and the Gemini voice is a fixture | · |
-| [0177](0177-differences-named-and-the-monograph-shell-measured.md) | A difference is named from what the judge already answers, the kind preview is served its themes, and what holds Kutch Ajrakh's authored shell is measured | [0183](0183-the-shared-template-draws-the-approved-page.md) |
+| [0177](0177-differences-named-and-the-monograph-shell-measured.md) | A difference is named from what the judge already answers, the kind preview is served its themes, and what holds Kutch Ajrakh's authored shell is measured | [0183](0183-the-shared-template-draws-the-approved-page.md) and [0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | [0178](0178-seed-authors-whole-and-goldens-from-recorded-data.md) | The seed names an organisation as one author, Kutch Ajrakh's fixture market shows its curated price, and the goldens show recorded rain, a placed component and a craft's own names | · |
 | [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) | A transcript window is a chunk kind, a craft reads the shared concepts the graph links to it, and the paid checks make one Gemini clip when asked | [0184](0184-a-measured-rubric-floor-the-recorded-clip-one-open-acl-and-a-named-refusal.md) |
 | [0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) | A place abroad sits in its own inset, a yearly series is one row, picture levels come from glossary tags, the fibre asks paper figures, and a generated page shows its kin crafts | · |
@@ -230,6 +230,7 @@ flowchart LR
 | [0183](0183-the-shared-template-draws-the-approved-page.md) | The shared template draws the approved page's masthead, contents, margin notes, sub-rail and source groups for every generated page | · |
 | [0184](0184-a-measured-rubric-floor-the-recorded-clip-one-open-acl-and-a-named-refusal.md) | The rubric floor rises to a measured whole run, the recorded clip is the video fixture, every reader's chunk ACL is `PUBLIC` alone, and a refused agent turn names its check | · |
 | [0185](0185-a-code-bound-to-its-approver-robots-rules-without-backtracking-and-a-cap-on-inflated-bodies.md) | An authorization code keeps its approver's token version, a robots.txt rule is matched without a regular expression, and the fetcher's byte cap holds on the inflated body | · |
+| [0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) | An unscored answer breaks the floors, research for any craft is filed by the craft it names, chapters behind one address stay apart, and a difference is named only when every pair names it | · |
 
 ## How this document is kept true
 

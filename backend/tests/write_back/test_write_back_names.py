@@ -10,6 +10,7 @@ from app.services.write_back_crafts import (
     HELD_OTHER_PLACE,
     HELD_UNNAMED,
     SKIP_ABROAD,
+    SKIP_SEVERAL_CATALOGUED,
     SKIP_SEVERAL_CRAFTS,
     CraftFiling,
     FilingTexts,
@@ -35,6 +36,8 @@ KILN_SCHEDULE = "A kiln-schedule guide likewise says damp or thick-walled work n
 POLYMER = "It adds that synthetic and polymer clays offer greater consistency, durability, and ease of use."
 IN_KHURJA = "In Khurja, shaped items are air-dried and then fired in kilns, often wood-fired or coal-fired."
 KHURJA_STUDY = "Clay bodies and glazes of Khurja pottery"
+BAGH_BOILED = "Bagh print cloth is boiled with alum and madder for three hours."
+ANY_CRAFT = names_for(None, family=None)
 
 
 def filed(text: str, *quotes: str, field: str | None = "MATERIALS", names=KHURJA_NAMES) -> CraftFiling:
@@ -110,8 +113,33 @@ def test_names_match_as_whole_words() -> None:
     assert filed("Ochre gives a brown colour.") == CraftFiling(None, family=MUD_FAMILY)
 
 
-def test_research_for_no_craft_files_nothing_under_a_craft() -> None:
-    assert filed(KHOREZM, names=names_for(None)) == CraftFiling(None)
+def test_research_for_any_craft_files_a_fact_naming_one_catalogued_craft_under_that_craft() -> None:
+    assert filed(BAGH_BOILED, field="PROCESS", names=ANY_CRAFT) == CraftFiling(BAGH.slug)
+    blue = "Jaipur blue pottery is made of quartz frit rather than clay."
+    assert filed(blue, names=ANY_CRAFT) == CraftFiling(BLUE_POTTERY.slug)
+
+
+def test_research_for_any_craft_refuses_a_fact_naming_several_crafts_or_a_practice_abroad() -> None:
+    both = filed("Khurja pottery and Jaipur blue pottery both use quartz.", names=ANY_CRAFT)
+    assert both == CraftFiling(
+        None, SKIP_SEVERAL_CATALOGUED.format(crafts="Blue Pottery of Jaipur, Khurja Pottery")
+    )
+    assert filed(KHOREZM, names=ANY_CRAFT) == CraftFiling(None, SKIP_ABROAD.format(places="Khorezm"))
+
+
+def test_research_for_any_craft_reads_the_passage_then_the_title_when_the_sentence_names_no_craft() -> None:
+    unnamed = "The cloth is boiled with alum and madder for three hours."
+    passage = FilingTexts(unnamed, passages=(BAGH_BOILED,), titles=(KHURJA_STUDY,))
+    assert craft_filing(passage, field="PROCESS", names=ANY_CRAFT) == CraftFiling(BAGH.slug)
+    titled = FilingTexts(unnamed, titles=("Bagh Prints of Madhya Pradesh: dyeing with alum",))
+    assert craft_filing(titled, field="PROCESS", names=ANY_CRAFT) == CraftFiling(BAGH.slug)
+
+
+def test_research_for_any_craft_keeps_what_names_no_craft_on_the_shared_concepts() -> None:
+    plain = "Printers boil the cloth with alum and madder for three hours."
+    assert filed(plain, field="PROCESS", names=ANY_CRAFT) == CraftFiling(None)
+    assert filed("Clays from Azamgarh fire black.", names=ANY_CRAFT) == CraftFiling(None)
+    assert filed(PORCELAIN, names=ANY_CRAFT) == CraftFiling(None)
 
 
 def test_in_a_comparison_one_named_craft_takes_the_fact_and_two_skip_it() -> None:

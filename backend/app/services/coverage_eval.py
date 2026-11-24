@@ -51,8 +51,10 @@ __all__ = [
     "answer_checks",
     "floor_report",
     "floors_applied",
+    "floors_hold",
     "load_questions",
     "run_answer_eval",
+    "unscored_questions",
 ]
 
 logger = logging.getLogger(__name__)
@@ -168,6 +170,14 @@ def floors_applied(report: EvalReport, *, whole: bool) -> bool:
     return whole and report.stopped is None
 
 
+def unscored_questions(report: EvalReport) -> list[str]:
+    return [result.id for result in report.questions if result.rubric is None or result.judge_share is None]
+
+
+def floors_hold(report: EvalReport, checks: Sequence[FloorCheck]) -> bool:
+    return not broken(checks) and not unscored_questions(report)
+
+
 def answer_checks(report: EvalReport, floors: EvalFloors | None = None) -> tuple[FloorCheck, ...]:
     means = {JUDGE_MEAN: report.judge_mean, RUBRIC_MEAN: report.rubric_mean}
     return floor_checks(means, (floors or eval_floors()).answers.named())
@@ -179,7 +189,8 @@ def floor_report(report: EvalReport, *, whole: bool, floors: EvalFloors | None =
     return {
         "floorsApplied": applied,
         "floors": [check.as_dict() for check in checks],
-        "belowFloor": applied and bool(broken(checks)),
+        "unscored": unscored_questions(report),
+        "belowFloor": applied and not floors_hold(report, checks),
     }
 
 

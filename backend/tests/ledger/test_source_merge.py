@@ -15,6 +15,60 @@ from .indigo_claims import (
     source,
 )
 
+FAO_RATTAN = "https://www.fao.org/3/y2783e/y2783e.pdf"
+RATTAN_BOOK = (
+    "in Rattan: current research issues and prospects for conservation and sustainable development "
+    "(Non-Wood Forest Products 14)"
+)
+RENUKA = source(
+    "cane-s04",
+    "BOOK_CHAPTER",
+    f"Status of Rattan Resources and Use in South Asia, {RATTAN_BOOK}",
+    url=FAO_RATTAN,
+    year=2002,
+    authors=("C. Renuka",),
+)
+LIESE = source(
+    "cane-s39",
+    "BOOK_CHAPTER",
+    f"Challenges and Constraints in Rattan Processing and Utilization, {RATTAN_BOOK}",
+    url=FAO_RATTAN,
+    year=2002,
+    authors=("Walter Liese",),
+)
+SUNDERLAND = source(
+    "cane-s40",
+    "BOOK_CHAPTER",
+    f"Species Profiles Rattan, {RATTAN_BOOK}",
+    url=FAO_RATTAN,
+    year=2002,
+    authors=("Terry C.H. Sunderland", "John Dransfield"),
+)
+LIESE_AGAIN = source(
+    "fibre-s05",
+    "BOOK_CHAPTER",
+    f"Challenges and constraints in rattan processing and utilization, {RATTAN_BOOK}",
+    url=FAO_RATTAN,
+    year=2002,
+    authors=("W. Liese",),
+)
+GI_SUPPLEMENT = "https://ipindia.nic.in/girindia/journal/Supplementary_Journal_1.pdf"
+AGATES_GI = source(
+    "agates-s01",
+    "GI_JOURNAL",
+    "Geographical Indications Journal (Supplementary - 1): Agates of Cambay, G.I. Application Number 101",
+    url=GI_SUPPLEMENT,
+    year=2008,
+)
+KONARK_GI = source(
+    "konark-s02",
+    "GI_JOURNAL",
+    "Geographical Indications Journal (Supplementary - 1), 24 March 2008: G.I. Application Number 87, "
+    "Konark Stone Carving",
+    url=GI_SUPPLEMENT,
+    year=2008,
+)
+
 
 def merged(*refs: dict[str, Any]) -> SourceMerge:
     merge = SourceMerge()
@@ -95,3 +149,44 @@ def test_every_source_id_in_a_payload_is_remapped() -> None:
         "media": {"sourceId": None},
         "x": [GI_JOURNAL["id"]],
     }
+
+
+def test_chapters_of_one_book_behind_one_address_stay_their_own_works() -> None:
+    merge = merged(RENUKA, LIESE, SUNDERLAND)
+    assert [merge.canonical(ref["id"]) for ref in (RENUKA, LIESE, SUNDERLAND)] == [
+        RENUKA["id"],
+        LIESE["id"],
+        SUNDERLAND["id"],
+    ]
+    kept = merge.refs()
+    assert [(kept[ref["id"]]["title"], kept[ref["id"]]["authors"]) for ref in (LIESE, SUNDERLAND)] == [
+        (LIESE["title"], ["Walter Liese"]),
+        (SUNDERLAND["title"], ["Terry C.H. Sunderland", "John Dransfield"]),
+    ]
+    payload = {"citations": [{"sourceId": LIESE["id"]}, {"sourceId": SUNDERLAND["id"]}]}
+    assert merge.remapped(payload) == payload
+
+
+def test_a_second_record_of_one_chapter_joins_that_chapter_behind_a_shared_address() -> None:
+    merge = merged(RENUKA, LIESE, SUNDERLAND, LIESE_AGAIN)
+    assert merge.canonical(LIESE_AGAIN["id"]) == LIESE["id"]
+    assert len(merge.refs()) == 3
+
+
+def test_two_applications_in_one_gi_journal_issue_stay_apart() -> None:
+    merge = merged(AGATES_GI, KONARK_GI)
+    assert merge.canonical(KONARK_GI["id"]) == KONARK_GI["id"]
+    assert [ref["title"] for ref in merge.refs().values()] == [AGATES_GI["title"], KONARK_GI["title"]]
+
+
+def test_two_records_at_one_address_whose_authors_share_no_surname_stay_apart() -> None:
+    proceedings = "https://example.org/proceedings-2019.pdf"
+    first = source("first", "PAPER", "Natural dyes", url=proceedings, authors=("Anita Rao",))
+    second = source("second", "PAPER", "Lac", url=proceedings, authors=("Rao Anita", "M. Iyer"))
+    third = source("third", "PAPER", "Resists", url=proceedings, authors=("Sunil Mehta",))
+    merge = merged(first, second, third)
+    assert [merge.canonical(ref["id"]) for ref in (first, second, third)] == [
+        first["id"],
+        first["id"],
+        third["id"],
+    ]

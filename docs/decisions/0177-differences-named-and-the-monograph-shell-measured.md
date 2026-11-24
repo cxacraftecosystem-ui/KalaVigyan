@@ -25,6 +25,7 @@ left of the authored shell. The contracts are `docs/contracts/knowledge-writes.m
 | The gates, the judge and the flag | [knowledge-writes.md](../contracts/knowledge-writes.md) |
 | The general kinds and the kind fixtures | [component-specs-general.md](../contracts/component-specs-general.md) |
 | The shared template drawing the parts the shell held for every generated page (amends item 5) | [decision 0183](0183-the-shared-template-draws-the-approved-page.md) |
+| A difference named only when every differing pair names it (amends item 2) | [decision 0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

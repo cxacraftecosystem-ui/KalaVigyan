@@ -20,7 +20,7 @@ __all__ = [
 
 MATERIAL_SCIENCE_FIELDS = frozenset({"CHEMISTRY", "PHYSICS", "MATERIALS"})
 SKIP_SEVERAL_CRAFTS = "names more than one of the compared crafts, so no one craft's page can hold it"
-SKIP_SEVERAL_CATALOGUED = "names {crafts} and not the craft researched, so no one craft's page can hold it"
+SKIP_SEVERAL_CATALOGUED = "names {crafts}, so no one craft's page can hold it"
 SKIP_ABROAD = "is about {places}, outside India or another culture's practice, so no Indian craft holds it"
 HELD_OTHER_PLACE = "names {places} but no craft of it"
 HELD_UNNAMED = (
@@ -46,7 +46,7 @@ class CraftFiling:
 
 def craft_filing(said: FilingTexts, *, field: str | None, names: CraftNames) -> CraftFiling:
     if names.lead is None:
-        return CraftFiling(None)
+        return _any_craft_filing(said, names)
     own = _filed_by(((said.text,), said.quotes), names)
     if own is not None:
         return own
@@ -63,6 +63,12 @@ def craft_filing(said: FilingTexts, *, field: str | None, names: CraftNames) -> 
 
 def researched_craft(names: CraftNames) -> CraftFiling:
     return CraftFiling(names.lead_slug)
+
+
+def _any_craft_filing(said: FilingTexts, names: CraftNames) -> CraftFiling:
+    levels = ((said.text,), said.quotes, said.passages, said.titles)
+    found = (_named(level, names) or _abroad(level, names) for level in levels)
+    return next((filing for filing in found if filing is not None), CraftFiling(None))
 
 
 def _filed_by(levels: Sequence[Sequence[str]], names: CraftNames) -> CraftFiling | None:

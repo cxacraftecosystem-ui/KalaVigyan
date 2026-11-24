@@ -9,6 +9,7 @@ Date: 2026-11-18. Status: accepted.
 | For | Read |
 |---|---|
 | The ledger hears only of blocks the stream can send, and a section's pictures meet its final blocks | [decision 0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
+| Chapters, GI journal entries and different authors' works behind one address kept apart (amends item 8) | [decision 0188](0188-an-unscored-answer-any-craft-filing-chapters-apart-and-one-named-difference.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -807,7 +807,9 @@ fixture or the category page (`docs/contracts/category-page.md`).
   `-f fresh=true` answers each question afresh, reusing no stored section, so two routes compare on
   equal terms).
   A run that asks every question compares the judge and rubric means with the answer floors and
-  keeps the issue `Answers fell below their floor`.
+  keeps the issue `Answers fell below their floor`; a question it asked and did not score (a
+  failed or timed-out answer, or one the judge did not score) breaks the floors too, and the
+  report's `unscored` lists them (decision 0188).
 - **Floors**: raise a floor in `backend/app/data/eval/floors.json` (version 2: per question set,
   `handWritten`, `generated` for the weekly whole set and `releaseSample` for the release check's
   sample, and per order, `reranked` and `fused`) as the live numbers improve; a `null` floor is

@@ -928,6 +928,8 @@ faster.
   finds it. A null `craftSlug` (research for any craft) attaches it to a shared concept, owned by
   no craft and no sub-category, and the dedupe key takes an empty craft (decision 0031); a craft's
   stored search reads it once the concept graph links that concept to the craft (decision 0179).
+  Research for any craft gives a fact naming one catalogued craft that craft's slug instead
+  (decision 0188).
 - `WriteBackCitation {evidence: EvidenceItem, quote: Quote?, quoteCheck, relation}`: the
   source row is found or created by `evidence.source_key` with `origin=LIVE_RESEARCH`; the
   quote must be one of `evidence.quotes` (already matched against the document); no quote
@@ -1032,8 +1034,13 @@ faster.
   (`HELD_OTHER_PLACE`, naming the place). Any other is held (`HELD_UNNAMED`). A held write-back is filed under the craft researched with
   `heldBecause` set to the reason: it is written hidden (`DRAFT`) for a reviewer whatever the
   review switch (knowledge-writes.md, The research write-back). A sentence resting on field
-  interviews alone stays with the craft researched (`researched_craft`). Research for no craft
-  is filed as before, on shared concepts. Predicate
+  interviews alone stays with the craft researched (`researched_craft`). Research for any craft
+  reads the same levels by the same naming rules (decision 0188): a fact goes under the one
+  catalogued craft a level names, and nowhere when a level names several or a place abroad as
+  where the practice is; what names neither stays on the shared concepts, since there is no craft
+  to hold it for and no family it shares. So a fact whose sentence, quote, passage or title names
+  a craft never lands on a shared concept the graph links to other crafts (decision 0179).
+  Predicate
   `WRITE_BACK_PREDICATE` (`states`). Sentences citing stored claims only, only evidence that could
   not be kept, a stored claim beside live evidence (a new fact would not carry its citations), or
   breaking the contract are `skipped` with a reason.

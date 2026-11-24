@@ -24,7 +24,7 @@ from app.retrieval.eval_floors import JUDGE_MEAN, RUBRIC_MEAN, FloorCheck, broke
 from app.retrieval.eval_runs import WeeklyRun, set_measures
 from app.retrieval.release_check import ReleaseCheck
 
-from .coverage_eval import answer_checks, floors_applied
+from .coverage_eval import answer_checks, floors_applied, floors_hold
 
 __all__ = [
     "ANSWERS",
@@ -114,7 +114,7 @@ def answers_record(report: EvalReport, times: RunTimes, *, whole: bool, fresh: b
         cap_usd=Decimal(report.cap_usd),
         means={name: value for name, value in means.items() if value is not None},
         floors=checks,
-        floors_held=not broken(checks) if floors_applied(report, whole=whole) else None,
+        floors_held=floors_hold(report, checks) if floors_applied(report, whole=whole) else None,
         fresh=fresh,
     )
 

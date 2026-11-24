@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from app.research.candidate_gates import (
@@ -140,24 +142,33 @@ def test_a_judged_same_fact_is_refused_and_a_differing_one_is_kept_as_sources_di
     assert (refused.about, kept.about) == (None, None)
 
 
-def test_the_duplicate_gate_names_what_the_first_named_differing_fact_differs_on() -> None:
-    near, other = (
-        held("near", "Ajrakh is dipped four times.", 0.93),
-        held("other", "Ajrakh dips five times.", 0.9),
-    )
-    unnamed = FactComparison(held=near.id, relation="DIFFERS", reason="Three dips against four.")
-    named = FactComparison(
-        held=other.id,
-        relation="DIFFERS",
-        reason="Three dips against five.",
-        about="The indigo vat, number of dips",
-    )
-    kept = duplicate_outcome(CANDIDATE, twin=None, close=[near, other], comparisons=[unnamed, named])
-    assert (kept.passed, kept.related, kept.about) == (
-        True,
-        [near.id, other.id],
-        "The indigo vat, number of dips",
-    )
+DIPS = "The indigo vat, number of dips"
+NEAR = held("near", "Ajrakh is dipped four times.", 0.93)
+OTHER = held("other", "Ajrakh dips five times.", 0.9)
+
+
+def differs(fact_id: uuid.UUID, about: str | None) -> FactComparison:
+    return FactComparison(held=fact_id, relation="DIFFERS", reason="The two values differ.", about=about)
+
+
+def test_the_duplicate_gate_names_what_its_one_differing_fact_differs_on() -> None:
+    kept = duplicate_outcome(CANDIDATE, twin=None, close=[NEAR], comparisons=[differs(NEAR.id, DIPS)])
+    assert (kept.passed, kept.related, kept.about) == (True, [NEAR.id], DIPS)
+
+
+def test_the_duplicate_gate_names_a_subject_every_differing_fact_differs_on() -> None:
+    both = [differs(NEAR.id, DIPS), differs(OTHER.id, DIPS)]
+    kept = duplicate_outcome(CANDIDATE, twin=None, close=[NEAR, OTHER], comparisons=both)
+    assert (kept.passed, kept.related, kept.about) == (True, [NEAR.id, OTHER.id], DIPS)
+
+
+@pytest.mark.parametrize("second", ["Resist paste, ingredients", None])
+def test_the_duplicate_gate_names_no_subject_when_its_differing_facts_differ_on_different_things(
+    second: str | None,
+) -> None:
+    mixed = [differs(NEAR.id, DIPS), differs(OTHER.id, second)]
+    kept = duplicate_outcome(CANDIDATE, twin=None, close=[NEAR, OTHER], comparisons=mixed)
+    assert (kept.passed, kept.related, kept.about) == (True, [NEAR.id, OTHER.id], None)
 
 
 def test_without_close_facts_vectors_or_a_judge_the_duplicate_gate_says_what_it_did() -> None:

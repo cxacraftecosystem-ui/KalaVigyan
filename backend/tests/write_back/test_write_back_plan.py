@@ -6,7 +6,13 @@ from app.composer.composer import ModelComposer
 from app.research.composition import ComposedAnswer, ComposedSection, ComposedSentence, QuotedSpan
 from app.research.evidence import Quote
 from app.research.write_back import ClaimWriteBack
-from app.services.write_back_plan import INFERRED_REASON, QUOTED_REASON, SKIP_BESIDE_STORED, write_back_plan
+from app.services.write_back_plan import (
+    INFERRED_REASON,
+    QUOTED_REASON,
+    SKIP_BESIDE_STORED,
+    WriteBackPlan,
+    write_back_plan,
+)
 
 from ..composer.fixtures import (
     ALUM_CLAIM_ID,
@@ -27,6 +33,7 @@ ABSTRACT_ID = "crossref:10.1000/lake"
 PAGE_ID = "searxng:https://crafts.example.org/ajrakh"
 FIGURE_QUOTE = "Mordanting baths of 8 g/L alum were heated to 60 °C"
 FIGURE_TEXT = "Ajrakh mordant baths held 8 g/L alum and were heated to 60 °C."
+UNNAMED_FIGURE_TEXT = "Mordant baths held 8 g/L alum and were heated to 60 °C."
 WASH_QUOTE = "the lake withstood 20 washes"
 
 
@@ -245,18 +252,27 @@ async def test_composer_output_feeds_the_write_back_contract() -> None:
     assert claim.passing_quotes == [FIGURE_QUOTE]
 
 
-def test_research_for_any_craft_writes_claims_that_name_no_craft() -> None:
+def any_craft_plan(text: str) -> WriteBackPlan:
     any_craft = pack(
         plan=PLAN.model_copy(update={"craft": None}),
         stored=STORED.model_copy(update={"craft_slug": None}),
     )
-    plan = write_back_plan(
+    return write_back_plan(
         any_craft,
-        composed(cited(FIGURE_TEXT, (ABSTRACT_ID, FIGURE_QUOTE))),
+        composed(cited(text, (ABSTRACT_ID, FIGURE_QUOTE))),
         found_by="ANSWER",
         answer_id=ANSWER_ID,
-        names=names_for(None),
+        names=names_for(None, family=None),
     )
-    (claim,) = plan.claims
+
+
+def test_research_for_any_craft_writes_claims_that_name_no_craft_on_shared_concepts() -> None:
+    (claim,) = any_craft_plan(UNNAMED_FIGURE_TEXT).claims
     assert claim.craft_slug is None
-    assert claim.dedupe_key == expected_key(FIGURE_TEXT.casefold().rstrip(" ."), craft="")
+    assert claim.dedupe_key == expected_key(UNNAMED_FIGURE_TEXT.casefold().rstrip(" ."), craft="")
+
+
+def test_research_for_any_craft_files_a_sentence_naming_one_craft_under_that_craft() -> None:
+    (claim,) = any_craft_plan(FIGURE_TEXT).claims
+    assert (claim.craft_slug, claim.category_slug, claim.held_because) == ("Kutch-Ajrakh", None, None)
+    assert claim.dedupe_key == expected_key("ajrakh mordant baths held 8 g/l alum and were heated to 60 °c")

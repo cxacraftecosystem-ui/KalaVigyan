@@ -117,7 +117,8 @@ it. Each answer has the MCP ask's limit, `ASK_TIMEOUT_SECONDS` (600).
 spentUsd, stopped, asked, answered, rubricMean, judgeMean, questions[{id, craftSlug, depth,
 answerId, problem, measures {expected, consulted, missed, sentences, unresolved, figures, gaps,
 fields[], offQuestion}, rubric, judge, judgeShare, spentUsd}]}`. A question whose answer fails is kept with its
-problem and the run goes on. The exit status is 0 when at least one question was scored.
+problem and the run goes on; `rubricMean` and `judgeMean` are the means over the questions each scored.
+The exit status is 0 when at least one question was scored.
 
 **The workflow** `.github/workflows/answer-quality.yml` (dispatched by hand, inputs `limit`, `only`,
 `cap`, each checked) runs the script on the box over SSM as the other upkeep workflows do, keeps
@@ -125,7 +126,7 @@ problem and the run goes on. The exit status is 0 when at least one question was
 and writes the asked, answered, means and spend into the run summary.
 
 **The floors.** The printed line also carries `{floorsApplied, floors[{measure, floor, value, held}],
-belowFloor}` (`services/coverage_eval.floor_report`): the judge's and rubric means compared with the
+unscored, belowFloor}` (`services/coverage_eval.floor_report`): the judge's and rubric means compared with the
 answer floors of `backend/app/data/eval/floors.json` (judge 0.76 and rubric 0.88). The judge floor
 was re-based on 2026-11-22 when the judge changed from Gemini 4 Argon to Claude Opus 5.5, a stricter
 judge: run 44994632550 scored judge 0.815, less 0.05 and rounded down. The rubric floor was raised on
@@ -133,7 +134,11 @@ judge: run 44994632550 scored judge 0.815, less 0.05 and rounded down. The rubri
 the shown quantities table (decision 0168) and the everyCited share (decision 0174), answered all 24
 questions at rubric 0.930 and judge 0.807, and the rubric's 0.930 less 0.05, rounded down, is 0.88
 (decisions 0126, 0133, 0147 and 0174 and [retrieval.md](retrieval.md), Floors). They are compared only for a run that asked every
-question and was not stopped by the cap; a mean that is missing breaks its floor. The workflow then fails
+question and was not stopped by the cap; a mean that is missing breaks its floor, and so does any question
+such a run asked and did not score (`unscored`, the ids of the questions with no rubric score or no judge's
+share: an answer that failed, timed out or kept no explainer, or one the judge did not score;
+`coverage_eval.floors_hold`, decision 0188), since a mean leaves those questions out. The stored run's
+`floorsHeld` follows the same rule (`eval_run_store.answers_record`). The workflow then fails
 when a floor is broken and keeps one issue, `Answers fell below their floor`, through
 `.github/actions/release-issue`: opened or commented on while a floor is broken, closed when a whole
 run passes, left as it is after a partial run.

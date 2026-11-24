@@ -155,8 +155,11 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    resolved, its reason naming the two values; DISTINCT passes. A DIFFERS pair also names what the
    facts differ on, from the judge's own `subject` and `property` ("The indigo vat, number of
    dips", `candidate_verdicts.differs_about`), so no prompt or schema word is added to the call
-   (decision 0165); the outcome stores the first pair's in `CandidateCheck.differsOn` (decision
-   0177). Held facts without a vector are found only by the identical text.
+   (decision 0165); the outcome stores it in `CandidateCheck.differsOn` (decision 0177) only when
+   every DIFFERS pair names that one subject, and none when the pairs name different subjects or
+   one names none, since the outcome keeps one subject for all its pairs and each is written onto
+   every fact it differs from (decision 0188). Held facts without a vector are found only by the
+   identical text.
 4. **NOVELTY.** The judge lists the details the fact states that the subject's 12 nearest held
    facts in the field do not (`newDetails`) and says whether it is specific to the craft; it adds
    exactly when the list is not empty and it is specific (`candidate_verdicts.novelty_adds`), and
@@ -765,7 +768,10 @@ craft researched is never named by an ordinary English word of its own name (cas
 Casting). Only after every
 level does a fact naming nothing go to its craft family's science (the shared concept named as
 the category, which a craft's scope reads, decision 0122) when it is chemistry, physics or
-materials. A refused sentence is in the write-back's `skipped` list with its reason, which the
+materials. Research for any craft is filed by the same levels and naming rules: a fact naming one
+catalogued craft goes under it, one naming several or a practice abroad nowhere, and one naming
+neither on the shared concepts, which a craft's search reads once the concept graph links them to
+it (decision 0188). A refused sentence is in the write-back's `skipped` list with its reason, which the
 answer's write-back logs. The text the write-back stores is storable text
 (`research/storable.storable_text`).
 

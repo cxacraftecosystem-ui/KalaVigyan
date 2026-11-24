@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Literal, Protocol, Self, runtime_checkable
 from urllib.parse import urlsplit, urlunsplit
 
@@ -31,6 +31,7 @@ __all__ = [
     "SourceDocument",
     "canonical_url",
     "personal_data_in",
+    "shares_an_author",
     "without_personal_data",
 ]
 
@@ -46,6 +47,7 @@ PERSONAL_DATA = {
     "Aadhaar-like number": re.compile(r"(?<!\d)\d{4}[ -]?\d{4}[ -]?\d{4}(?!\d)"),
     "phone-like number": re.compile(r"(?<!\d)(?:\+?\d[ -]?){10,}(?!\d)"),
 }
+NAME_WORD = re.compile(r"[^\W_]+")
 PERSONAL_DATA_PLACEHOLDERS = {
     "email address": "[email]",
     "spoken email address": "[email]",
@@ -159,6 +161,16 @@ def _replacement(placeholder: str) -> Callable[[re.Match[str]], str]:
         return placeholder + (" " if found.group()[-1] in " -" else "")
 
     return replace
+
+
+def shares_an_author(declared: Sequence[str], listed: Sequence[str]) -> bool:
+    words = {word for name in listed for word in _name_words(name)}
+    surnames = {found[-1] for found in map(_name_words, declared) if found}
+    return bool(surnames & words)
+
+
+def _name_words(name: str) -> tuple[str, ...]:
+    return tuple(word.casefold() for word in NAME_WORD.findall(name))
 
 
 def canonical_url(url: str) -> str:
