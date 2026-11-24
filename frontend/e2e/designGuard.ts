@@ -115,11 +115,16 @@ function sourceFiles(folder: string): string[] {
   });
 }
 
+export type ScannedFile = { key: string; text: string };
+
+export function scannedFiles(frontend: string): ScannedFile[] {
+  return SCANNED_FOLDERS.flatMap((folder) => sourceFiles(join(frontend, folder))).map((file) => ({ key: relative(frontend, file).replace(/\\/g, "/"), text: readFileSync(file, "utf8") }));
+}
+
 export function scanFrontend(frontend: string): GuardBaseline {
   const counts: GuardBaseline = {};
-  for (const file of SCANNED_FOLDERS.flatMap((folder) => sourceFiles(join(frontend, folder)))) {
-    const key = relative(frontend, file).replace(/\\/g, "/");
-    const found = guardCounts(key, readFileSync(file, "utf8"));
+  for (const { key, text } of scannedFiles(frontend)) {
+    const found = guardCounts(key, text);
     if (Object.keys(found).length > 0) counts[key] = found;
   }
   return counts;

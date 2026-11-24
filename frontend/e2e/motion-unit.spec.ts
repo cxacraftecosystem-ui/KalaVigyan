@@ -8,9 +8,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { motionAllowedNow, useMotionAllowed } from "@/components/motion/useMotionAllowed";
 import { MOTION_CLASS, motionReduced, motionSwitches, parseDuration, VAT_STILL_STEP, vatSchedule, vatTimings } from "@/lib/motion";
 
+import { scannedFiles } from "./designGuard";
 import { FRONTEND } from "./moduleGraph";
 import { primitivesPage } from "./primitivesPage";
 
+const SCRIPT = /\.tsx?$/;
+const SMOOTH = /"smooth"/g;
+const GATED_SMOOTH = /\?\s*"smooth"\s*:\s*"auto"|\?\s*"auto"\s*:\s*"smooth"/g;
 const TOKENS = readFileSync(join(FRONTEND, "app", "tokens.css"), "utf8");
 const ROOT = TOKENS.slice(TOKENS.indexOf(":root {"), TOKENS.indexOf("}", TOKENS.indexOf(":root {")));
 const token = (name: string) => new RegExp(`${name}:\\s*([^;]+);`).exec(ROOT)?.[1] ?? "";
@@ -104,4 +108,12 @@ test("each named motion rests in its end state and plays only while neither swit
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setContent(primitivesPage(DEMO));
   expect(await playEverything(page)).toEqual({ dip: "none", oxidise: "none", press: "none", switch: "0s", vat: "0s" });
+});
+
+test("every scripted smooth scroll has an instant side, which either reduced-motion switch chooses", () => {
+  const scripts = scannedFiles(FRONTEND).filter(({ key }) => SCRIPT.test(key));
+  const ungated = scripts.filter(({ text }) => (text.match(SMOOTH)?.length ?? 0) > (text.match(GATED_SMOOTH)?.length ?? 0)).map(({ key }) => key);
+  expect(ungated).toEqual([]);
+  const roster = scripts.find(({ key }) => key === "app/(protected)/admin/access/page.tsx")?.text ?? "";
+  expect(roster).toContain('scrollIntoView({ block: "start", behavior: motionAllowedNow() ? "smooth" : "auto" })');
 });

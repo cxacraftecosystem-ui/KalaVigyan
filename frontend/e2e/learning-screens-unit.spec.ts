@@ -161,6 +161,17 @@ test("Check yourself asks for a quiz only when the finished stream did not say t
   expect(followingExplainer(none, { explainerId: EXPLAINER_ID, version: 1 }, "Why?").quizAvailable).toBeNull();
 });
 
+test("the client's own closing done keeps what the server's done said about the quiz and its answer", () => {
+  const closing: ExplainerEvent = { type: "done", data: { answerId: null } };
+  const closed = (frame: string) => reduceAnswerEvent(reduceAnswerEvent(askingExplainer("Why is ajrakh blue?", "en"), parseExplainerStreamBlock(frame)!), closing);
+  const none = closed(`event: done\ndata: {"answerId":"${EXPLAINER_ID}","quizAvailable":false}`);
+  const offered = closed(`event: done\ndata: {"answerId":"${EXPLAINER_ID}","quizAvailable":true}`);
+  const unknown = closed(`event: done\ndata: {"answerId":"${EXPLAINER_ID}"}`);
+  expect([none.answerId, none.quizAvailable, selfCheckOffered(none)]).toEqual([EXPLAINER_ID, false, false]);
+  expect([offered.quizAvailable, selfCheckOffered(offered)]).toEqual([true, true]);
+  expect([unknown.quizAvailable, selfCheckOffered(unknown)]).toEqual([null, true]);
+});
+
 test("an added section that found nothing shows what was searched until the version is stored, which leaves it out", () => {
   const base = explainerStateOf(FIRST_DOCUMENT);
   const asking = followingExplainer(base, { explainerId: EXPLAINER_ID, version: 1 }, LATEST.mark.question);

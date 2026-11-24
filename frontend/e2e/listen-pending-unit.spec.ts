@@ -95,8 +95,14 @@ test("the dock plays the first block, waits at a pending one and stops after the
   };
   const dock = withApp(createElement(ListenDock, { listen, language: ENGLISH }));
   expect(attribute(dock, "listen-dock", "data-status")).toEqual(["waiting"]);
-  expect(dock).toContain("Preparing the next part…");
-  expect(dock).toMatch(/aria-label="Play" disabled=""/);
+  expect(dock).toContain('<span role="status" class="flex-1 font-ui text-ui text-ink-3">Preparing the next part…</span>');
+  expect(dock).toMatch(/aria-label="Play" aria-disabled="true"/);
+  expect(dock).not.toContain('disabled=""');
+  const playing: Listen = { ...listen, status: "playing" };
+  const resumed = withApp(createElement(ListenDock, { listen: playing, language: ENGLISH }));
+  expect(resumed).toContain('aria-label="Pause">');
+  expect(resumed).toContain('<span role="status" class="sr-only"></span>');
+  expect([dock, resumed].map((html) => html.match(/role="status"/g)?.length)).toEqual([1, 1]);
 });
 
 test("the film plays the first block while the others are pending, holds at a pending scene and plays it once read", () => {

@@ -19,6 +19,8 @@ import { SECTION_TITLES, templateDocument, withoutKinds } from "./templateMonogr
 
 const KIT_CSS = readFileSync(join(FRONTEND, "public", "monographs", "kit", "monograph.css"), "utf8");
 const PAGE_CSS = readFileSync(join(FRONTEND, "components", "monograph", "documentPage.css"), "utf8");
+const KIT_JS = readFileSync(join(FRONTEND, "public", "monographs", "kit", "monograph.js"), "utf8");
+const LAST_SECTION_OF_MADE = "made-made-print-h";
 const WIDTHS = [360, 768, 1440] as const;
 const THEMES = ["light", "dark"] as const;
 const SPREAD_FROM = 1200;
@@ -146,4 +148,25 @@ test("at 360, 768 and 1440 in light and dark every part is drawn, margin notes f
     }
   }
   for (const width of WIDTHS) expect(grounds.get(`${width} light`)).not.toBe(grounds.get(`${width} dark`));
+});
+
+test("from 1200px the popover of a passage's closing sentence docks in its margin and is seen whole past the passage's edge", async ({ page }) => {
+  await drawn(page, 1440, "light", pageHtml());
+  await page.addScriptTag({ content: KIT_JS });
+  await page.evaluate((id) => {
+    const spread = document.getElementById(id)?.closest(".spread");
+    const cites = spread ? Array.from(spread.querySelectorAll<HTMLElement>(":scope > .main .kcite")) : [];
+    cites[cites.length - 1]?.click();
+  }, LAST_SECTION_OF_MADE);
+  const pop = page.locator("#kv-pop.docked");
+  await expect(pop).toBeVisible();
+  const seen = await pop.evaluate((node) => {
+    const foot = node.querySelector(".pop-foot") as HTMLElement;
+    foot.scrollIntoView({ block: "center" });
+    const box = foot.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    const passage = node.closest(".bx-pt > .screen") as HTMLElement;
+    return { past: node.getBoundingClientRect().bottom > passage.getBoundingClientRect().bottom, whole: hit !== null && node.contains(hit) };
+  });
+  expect(seen).toEqual({ past: true, whole: true });
 });
