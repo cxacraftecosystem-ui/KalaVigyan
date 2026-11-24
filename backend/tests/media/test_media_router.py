@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from app.providers import media_router, router as provider_router
-from app.providers.base import Adapter, MediaPoll, MediaRequest, MediaResult, ProviderError
+from app.providers.base import Adapter, BilledFailure, MediaPoll, MediaRequest, MediaResult, ProviderError
 from app.providers.budget import BudgetDecision
 from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaRouter
@@ -192,3 +192,54 @@ async def test_a_call_cut_off_by_the_timeout_is_settled_at_its_estimate(ledger: 
         {"outcome": "CANCELLED", "cost_usd": Decimal("0.560000"), "error_kind": "abandoned"}
     ]
     assert calls[-1] == "forget:v1_video"
+
+
+async def test_a_clip_lost_after_the_provider_took_it_is_settled_at_its_estimate(ledger: Ledger) -> None:
+    ledger.routes = [route(1, "gemini-omni-1.2-flash")]
+    calls: list[str] = []
+    lost = BilledFailure("Cannot reach Gemini (ReadTimeout)", kind="unavailable", retryable=True)
+    video = MediaAsk(AiTask.VIDEO, "Show one stage.", {"duration": "8s"}, 8.0, ASK.principal)
+    with pytest.raises(RouterError) as exhausted:
+        await router({"poll": [lost]}, calls).generate(video)
+    assert exhausted.value.kind == "exhausted"
+    assert calls == ["start", "poll", "forget:v1_video"]
+    [settled] = ledger.settled
+    assert (settled["outcome"], settled["error_kind"], settled["cost_usd"]) == (
+        "ERROR",
+        "unavailable",
+        Decimal("0.560000"),
+    )
+
+
+async def test_an_image_lost_after_it_was_made_counts_its_estimate_and_the_next_route_answers(
+    ledger: Ledger,
+) -> None:
+    calls: list[str] = []
+    outcomes = {
+        "gemini-3.1-flash-image": [BilledFailure("Gemini answered 503", kind="unavailable")],
+        "gemini-nano-banana-2.1": [media_result(png_bytes())],
+    }
+    made = await router(outcomes, calls).generate(ASK)
+    assert made.model == "gemini-nano-banana-2.1"
+    assert [(s["outcome"], s["cost_usd"]) for s in ledger.settled] == [
+        ("ERROR", Decimal("0.067000")),
+        ("OK", Decimal("0.034050")),
+    ]
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        ProviderError("Gemini answered 503", kind="unavailable", retryable=True),
+        ProviderError("Gemini declined the media (failed)", kind="refusal"),
+        ProviderError("Gemini stopped the media (failed)", kind="error", retryable=True),
+    ],
+)
+async def test_a_failure_before_the_work_was_taken_or_the_provider_s_own_verdict_costs_nothing(
+    ledger: Ledger, failure: ProviderError
+) -> None:
+    ledger.routes = [route(1, "gemini-3.1-flash-image")]
+    with pytest.raises(RouterError):
+        await router({"gemini-3.1-flash-image": [failure]}, []).generate(ASK)
+    [settled] = ledger.settled
+    assert (settled["error_kind"], settled["cost_usd"]) == (failure.kind, Decimal(0))

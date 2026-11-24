@@ -112,11 +112,81 @@ async def test_every_unbound_request_is_refused_alike_and_the_log_names_the_chec
         caplog.at_level(logging.WARNING, logger="app.voice.agent_turn"),
         pytest.raises(VoiceRefused) as refused,
     ):
-        await authorised_session(store, settings(), request, now=now)
+        await authorised_session(store, settings(), request, now=now, sleep=Sleeps())
     assert (refused.value.reason, refused.value.message) == ("unauthorized", "unauthorized")
     (logged,) = caplog.records
     assert logged.getMessage().startswith(f"a voice agent turn was refused at the {check} check: ")
     assert check in REFUSAL_CHECKS and BEARER not in logged.getMessage()
+    assert not request.conversation_id or request.conversation_id not in logged.getMessage()
+
+
+@dataclass
+class Sleeps:
+    taken: list[float] = field(default_factory=list)
+
+    async def __call__(self, seconds: float) -> None:
+        self.taken.append(seconds)
+
+
+@dataclass
+class LateBinding(MemoryStore):
+    bound_after: int | None = None
+    reads: int = 0
+
+    async def by_conversation(self, conversation_id: str) -> Any:
+        self.reads += 1
+        if self.bound_after is None or self.reads <= self.bound_after:
+            return None
+        return await super().by_conversation(conversation_id)
+
+
+def late_store(bound_after: int | None) -> LateBinding:
+    store = LateBinding(bound_after=bound_after)
+    store.sessions[SESSION_ID] = agent_session()
+    return store
+
+
+async def test_a_call_that_races_the_bind_finds_its_session_within_the_wait() -> None:
+    store, sleeps = late_store(bound_after=1), Sleeps()
+    record = await authorised_session(store, settings(), call(), now=NOW, sleep=sleeps)
+    assert record.id == SESSION_ID
+    assert (store.reads, sleeps.taken) == (2, [0.5])
+
+
+async def test_a_conversation_never_bound_is_refused_after_two_seconds_and_logs_its_shape(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    store, sleeps = late_store(bound_after=None), Sleeps()
+    with (
+        caplog.at_level(logging.WARNING, logger="app.voice.agent_turn"),
+        pytest.raises(VoiceRefused),
+    ):
+        await authorised_session(store, settings(), call(), now=NOW, sleep=sleeps)
+    assert (store.reads, sleeps.taken, sum(sleeps.taken)) == (5, [0.5] * 4, 2.0)
+    (logged,) = caplog.records
+    assert logged.getMessage() == (
+        "a voice agent turn was refused at the session record check: no session held this conversation "
+        "within 2 s (21 characters, starts with conv_)"
+    )
+    assert CONVERSATION_ID not in logged.getMessage() and len(CONVERSATION_ID) == 21
+
+
+async def test_an_unsubstituted_header_is_refused_at_once_and_logs_its_shape(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    store, sleeps = late_store(bound_after=0), Sleeps()
+    template = "{{system__conversation_id}}"
+    with (
+        caplog.at_level(logging.WARNING, logger="app.voice.agent_turn"),
+        pytest.raises(VoiceRefused),
+    ):
+        await authorised_session(store, settings(), call(template), now=NOW, sleep=sleeps)
+    assert (store.reads, sleeps.taken) == (1, [])
+    (logged,) = caplog.records
+    assert logged.getMessage() == (
+        "a voice agent turn was refused at the session record check: no session holds this conversation "
+        "(27 characters, does not start with conv_)"
+    )
 
 
 def test_the_question_is_the_last_user_message_scrubbed() -> None:

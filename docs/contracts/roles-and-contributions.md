@@ -609,6 +609,10 @@ daily upkeep, as calls are.
 - **Audio.** In `RELAY` each artisan upload is kept as uploaded, in the private bucket at
   `media/<userId>/<uuid32hex>/<leaf>` (`services/naming.artisan_audio_key`), with one
   `ArtisanConversationAudio` row per upload.
+  - The object and its turn's row are written as one piece of work that outlives an artisan who
+    closes the tab (`ShieldedWork`), and an object whose turn cannot be saved (the conversation is
+    gone, the database fails) is deleted again, so every kept recording has the row retention and
+    withdrawal delete it by (decision 0189).
   - The leaf is `KalaVigyan_Artisan-Conversation_<YYYY-MM-DD>_<HHMM>_<District>_<Craft>_Recording_T<nn>.<ext>`
     in IST, with no subject field, so no name is in any key. It gets a row in
     `shared/naming-golden.json`.

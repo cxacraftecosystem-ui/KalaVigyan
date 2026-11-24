@@ -1,10 +1,14 @@
 import json
 import uuid
+from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 
 from app.core.errors import ExternalFailure
-from app.providers.elevenlabs import NARRATION_MAX_CHARACTERS, NARRATION_MODEL
+from app.providers.budget import day_start
+from app.providers.elevenlabs import NARRATION_MAX_CHARACTERS, NARRATION_MODEL, TimedSpeech
 from app.schemas.listen import ListenScript
 from app.services.explainer_payload import stored_explainer
 from app.voice.listen import NARRATION_LINK_SECONDS, listen_script
@@ -12,7 +16,15 @@ from app.voice.listen_ask import ListenRefused
 from app.voice.narration import PART_CHARACTERS
 
 from ..contracts.golden import dumped, golden_json, golden_text
-from .listen_fakes import BUCKET_HOST, Listening, MemoryLedger, ask, golden_explainer
+from .listen_fakes import (
+    BUCKET_HOST,
+    LISTENED_AT,
+    Listening,
+    MemoryLedger,
+    Narrations,
+    ask,
+    golden_explainer,
+)
 
 WATER_CHARACTERS = 294
 CHEMISTRY_CHARACTERS = 312
@@ -68,6 +80,31 @@ async def test_a_miss_holds_the_estimate_then_refunds_what_the_audio_did_not_use
     assert (held.ref_type, held.ref_id) == ("Answer", str(golden_explainer().answer_id))
 
 
+@dataclass
+class PastMidnight(Narrations):
+    moments: list[datetime] = field(default_factory=list)
+    late: datetime | None = None
+
+    async def narration(self, text: str, **asked: Any) -> TimedSpeech:
+        if self.late is not None:
+            self.moments.append(self.late)
+        return await super().narration(text, **asked)
+
+
+async def test_a_hold_taken_before_midnight_is_refunded_to_its_own_day() -> None:
+    held_at = datetime(2026, 11, 17, 18, 29, 30, tzinfo=UTC)
+    settled_at = held_at + timedelta(minutes=1)
+    assert day_start(settled_at) - day_start(held_at) == timedelta(days=1)
+    moments = [held_at]
+    listening = Listening(narrator=PastMidnight(moments=moments, late=settled_at))
+    deps = replace(listening.deps(), clock=lambda: moments[-1])
+    await listen_script(ask(golden_explainer(), "s3", request=7), deps)
+    await listening.shield.drain()
+    held, refund = listening.ledger.rows
+    assert moments[-1] == settled_at
+    assert (held.counted_at, refund.counted_at, refund.units) == (held_at, held_at, -3)
+
+
 async def test_audio_longer_than_its_estimate_is_settled_within_what_is_left() -> None:
     listening = Listening(ledger=MemoryLedger(allowance=40, used=0))
     listening.narrator.seconds_per_character = 0.1
@@ -79,6 +116,7 @@ async def test_audio_longer_than_its_estimate_is_settled_within_what_is_left() -
         "listen-settle:00000000-0000-0000-0000-000000000008:elevenlabs",
         13,
     )
+    assert held.counted_at == settled.counted_at == LISTENED_AT
 
 
 async def test_not_enough_seconds_left_refuses_before_any_speech_until_midnight() -> None:

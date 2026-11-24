@@ -24,6 +24,7 @@ approved the paid clip on 2026-11-23 and the voice check window on 2026-11-24). 
 | Why a label is dropped only a release later | [decision 0151](0151-a-release-the-live-side-can-read.md) |
 | The voice binding | [decision 0017](0017-voice-backend.md) |
 | What is left | `docs/TECH_DEBT.md`: A Gemini clip's first frame and its safety block are not yet seen live; ElevenLabs behaviour not yet verified |
+| A turn that races the bind, and the refused header's shape | [decision 0189](0189-lost-media-counted-a-recording-kept-with-its-row-refunds-on-the-hold-day-bands-as-read-and-a-bind-awaited.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

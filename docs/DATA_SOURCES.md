@@ -417,6 +417,19 @@ These sources were considered and not used:
 - **GSI Bhukosh / NGDR** (1:2M geology and mineral occurrences): downloads need a registered Bhukosh account, and there is no bulk download without logging in. That breaks the owner's no-registration rule. Revisit if GSI publishes an open bulk download; it would replace both MRDS and GLiM for India.
 - **OneGeology**: a portal over national map services, with no bulk download for India. Reading it would mean scraping WMS tiles, which gives pictures, not attributes.
 
+### Relief bands (decision 0189)
+
+The map's hypsometric bands (`relief.json`: 100, 300, 600, 1000, 2000 and 4000 m, clipped to the
+Survey of India outline) are also what the API reads a craft place's elevation band from, through
+the copy mirrored into `backend/app/data/layers`. `tools/maplayers/relief.py` draws them
+(`relief_bands`) from the ETOPO1 1 arc-minute grid as it was read, each band simplified at 0.018
+degree (about 2 km, the `RELIEF_BANDS` tolerance) and nothing else, so a place reads the band of
+the ETOPO1 cells it stands on, within that simplification. Only the shaded relief is smoothed (one
+3 by 3 mean), since it is drawn and never read as a value. The layer files in the repository were
+last built before this rule, from a grid smoothed twice by a 3 by 3 mean and halved, and stay so
+until `tools/maplayers_build.py` is run again with the downloads it names; that run replaces this
+sentence.
+
 ### River lines (decision 0043)
 
 The river story draws HydroRIVERS v1.0 (Asia) lines, not just their district totals.

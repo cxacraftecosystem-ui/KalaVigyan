@@ -226,6 +226,15 @@ shows on Usage. The official reference was read on 2026-11-18 (decision 0058 lis
   the hold of every queued job older than half that, once a minute, until the job starts
   (`media/queue.py`, `queue_store.renew_holds`). `MediaJob.costUsd` holds the call that made the
   asset; every call, failed or abandoned too, is in `UsageEvent`.
+- A failed call is settled at nothing when the provider never took the work (the create or the
+  one-call image request failed) or gave its own verdict (a refusal, a `failed`, `cancelled` or
+  moderated generation). It is settled `ERROR` at its estimate, as an abandoned call is, when the
+  provider took the work and its output was lost: a poll of a started clip or generation that
+  fails, a finished output whose download fails or whose shape is off the documented one, an image
+  Gemini leaves open, an ElevenLabs image still unfinished after its 90 polls. The adapters raise
+  these as `providers/base.BilledFailure` and the media router settles them, so the media sub-cap
+  and the monthly ceiling count every clip the provider may have billed, and the route walk and the
+  job's retries go on as before (decision 0189).
 - The worker writes a heartbeat (`AppSetting` `worker.heartbeat`, every 60 s) and pings systemd's
   watchdog (`kv-worker.service` `WatchdogSec=300`); options offer no kind and a new job is refused
   `not_configured` while the last beat is more than 5 minutes old (`media/heartbeat.py`).

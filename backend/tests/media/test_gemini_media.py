@@ -9,7 +9,7 @@ import pytest
 from app.core.errors import InvalidInput
 from app.media.output import checked_output
 from app.media.prompt import REQUESTED_OUTPUT
-from app.providers.base import MediaRequest, MediaResult, ProviderError
+from app.providers.base import BilledFailure, MediaRequest, MediaResult, ProviderError
 from app.providers.gemini_media import GeminiMediaWire
 from app.providers.gemini_p import GeminiAdapter
 
@@ -160,7 +160,7 @@ async def test_refusals_and_limits_map_to_the_shared_kinds(
     wire = answering(name, status, {"Retry-After": "7"} if status == 429 else None).wire()
     with pytest.raises(ProviderError) as failure:
         await (wire.generate_image(IMAGE) if call == "image" else wire.poll_video("v1_x"))
-    assert failure.value.kind == kind
+    assert failure.value.kind == kind and not isinstance(failure.value, BilledFailure)
     assert KEY not in str(failure.value)
     if status == 429:
         assert failure.value.retry_after == 7.0 and failure.value.retryable
@@ -170,9 +170,55 @@ async def test_a_uri_outside_the_files_api_is_never_fetched_with_the_key() -> No
     body = json.loads(fixture("video_completed_uri.json"))
     body["steps"][0]["content"][0]["uri"] = "https://example.com/clip.mp4"
     recorder = Recorder(lambda _: httpx.Response(200, json=body))
-    with pytest.raises(ProviderError, match="outside the Files API"):
+    with pytest.raises(BilledFailure, match="outside the Files API"):
         await recorder.wire().poll_video("v1_y")
     assert len(recorder.requests) == 1
+
+
+def failing_download(request: httpx.Request) -> httpx.Response:
+    if request.url.path.endswith(":download"):
+        return httpx.Response(503, json={"error": {"message": "Service unavailable"}})
+    return httpx.Response(200, content=fixture("video_completed_uri.json"))
+
+
+async def test_a_finished_clip_whose_download_fails_is_billed_work_lost() -> None:
+    recorder = Recorder(failing_download)
+    with pytest.raises(BilledFailure) as lost:
+        await recorder.wire().poll_video("v1_ChdvbW5pLWludGVyYWN0aW9uLTAwMDQ")
+    assert (lost.value.kind, lost.value.status, lost.value.retryable) == ("unavailable", 503, True)
+    assert len(recorder.requests) == 2
+
+
+@pytest.mark.parametrize("status", [503, 429])
+async def test_a_poll_of_a_started_clip_that_fails_is_billed_work_lost(status: int) -> None:
+    recorder = answering("error_429.json", status)
+    with pytest.raises(BilledFailure) as lost:
+        await recorder.wire().poll_video(RECORDED_CLIP)
+    assert lost.value.status == status and lost.value.retryable
+
+
+async def test_a_poll_that_cannot_reach_gemini_is_billed_work_lost() -> None:
+    def unreachable(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("timed out", request=request)
+
+    with pytest.raises(BilledFailure) as lost:
+        await Recorder(unreachable).wire().poll_video(RECORDED_CLIP)
+    assert lost.value.kind == "unavailable"
+
+
+async def test_an_image_left_open_or_answered_in_an_unknown_status_is_billed_work_lost() -> None:
+    body = json.loads(fixture("image_completed.json"))
+    for status in ("in_progress", "queued"):
+        recorder = Recorder(lambda _, status=status: httpx.Response(200, json=body | {"status": status}))
+        with pytest.raises(BilledFailure):
+            await recorder.wire().generate_image(IMAGE)
+
+
+async def test_a_started_clip_that_was_never_accepted_is_not_billed() -> None:
+    recorder = answering("error_429.json", 503)
+    with pytest.raises(ProviderError) as refused:
+        await recorder.wire().start_video(VIDEO)
+    assert refused.value.kind == "unavailable" and not isinstance(refused.value, BilledFailure)
 
 
 async def test_the_gemini_adapter_reaches_the_wire_with_its_key() -> None:

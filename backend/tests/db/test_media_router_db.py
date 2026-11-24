@@ -4,14 +4,15 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.db import get_engine
 from app.models import UsageEvent, User
-from app.providers.base import Adapter, MediaRequest, MediaResult
+from app.providers.base import Adapter, BilledFailure, MediaRequest, MediaResult
 from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaRouter
-from app.providers.router import Principal
+from app.providers.router import Principal, RouterError, current_spend
 
 from ..media.fakes import media_result, png_bytes
 
@@ -75,3 +76,22 @@ async def test_a_generated_image_settles_its_call_at_the_billed_cost(sessions: A
     assert row is not None and (row.outcome, row.model, row.isMedia) == ("OK", "gemini-3.1-flash-image", True)
     assert row.costUsd == Decimal("0.067350") == made.cost_usd
     assert (row.inputTokens, row.outputTokens) == (300, 1120)
+
+
+class LostImage(OneImage):
+    async def generate_image(self, req: MediaRequest) -> MediaResult:
+        raise BilledFailure("Gemini answered 503", kind="unavailable", retryable=True, status=503)
+
+
+async def test_an_image_lost_after_it_was_made_counts_its_estimate_against_the_spend(sessions: Any) -> None:
+    factory, session = sessions
+    ask = await asker(session)
+    media = MediaRouter(session_factory=factory, adapter_factory=lambda choice, key: LostImage())
+    with pytest.raises(RouterError) as exhausted:
+        await media.generate(ask)
+    assert exhausted.value.kind == "exhausted"
+    rows = list(await session.scalars(select(UsageEvent).where(UsageEvent.userId == ask.principal.user_id)))
+    assert rows and all(row.outcome == "ERROR" and row.costUsd == row.estimatedCostUsd for row in rows)
+    assert {row.model: row.costUsd for row in rows}["gemini-3.1-flash-image"] == Decimal("0.067000")
+    spend = await current_spend(session, ask.principal)
+    assert spend.user_day_usd == sum(row.costUsd for row in rows) > 0

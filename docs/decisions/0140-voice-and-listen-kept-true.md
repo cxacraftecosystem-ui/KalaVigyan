@@ -27,6 +27,7 @@ being read reaches a sentence), [decision 0056](0056-what-if-lab.md) (a hypothes
 | What Listen reads and how it is cached | [voice.md](../contracts/voice.md), Listen |
 | Passages a hybrid turn offers and writes back before it speaks them | [decision 0144](0144-stored-passages-as-evidence.md) |
 | The lease renewed while a block waits or is read | [decision 0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
+| Relay and Listen refunds dated to their hold | [decision 0189](0189-lost-media-counted-a-recording-kept-with-its-row-refunds-on-the-hold-day-bands-as-read-and-a-bind-awaited.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

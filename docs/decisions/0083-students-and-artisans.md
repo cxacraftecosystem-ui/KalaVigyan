@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted; the items under "Owner to confirm" wait for 
 | For | Read |
 |---|---|
 | The contracts it names | [roles-and-contributions.md](../contracts/roles-and-contributions.md), [voice.md](../contracts/voice.md), [craft-page.md](../contracts/craft-page.md) |
+| An artisan's recording kept only with its row | [decision 0189](0189-lost-media-counted-a-recording-kept-with-its-row-refunds-on-the-hold-day-bands-as-read-and-a-bind-awaited.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

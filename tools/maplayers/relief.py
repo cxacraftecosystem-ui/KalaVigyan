@@ -17,7 +17,7 @@ from .geo import encoded_rings, screen
 from .labels import PEAKS_HELD_BACK, RANGES, label_angle, peak_text
 from .sources import BOUNDS, BREAKS, ETOPO, Downloads
 
-__all__ = ["Grid", "hillshade", "read_grid", "relief_body", "shade_webp"]
+__all__ = ["Grid", "hillshade", "read_grid", "relief_bands", "relief_body", "shade_webp"]
 
 BAND_TOLERANCE = 0.018
 PEAK_FLOOR = 1000
@@ -59,11 +59,8 @@ def _smoothed(values: np.ndarray) -> np.ndarray:
     return total / 9.0
 
 
-def _halved(grid: Grid) -> Grid:
-    rows, columns = (size // 2 * 2 for size in grid.values.shape)
-    cut = grid.values[:rows, :columns]
-    blocks = cut.reshape(rows // 2, 2, columns // 2, 2).mean(axis=(1, 3))
-    return Grid(blocks, grid.transform * Affine.scale(2))
+def relief_bands(grid: Grid, india: BaseGeometry) -> list[dict[str, Any]]:
+    return [{"min": threshold, "rings": _band(grid, threshold, india)} for threshold in BREAKS]
 
 
 def _band(grid: Grid, threshold: float, india: BaseGeometry) -> list[str]:
@@ -185,7 +182,6 @@ def _peaks(downloads: Downloads, india: BaseGeometry) -> list[dict[str, Any]]:
 def relief_body(
     downloads: Downloads, grid: Grid, india: BaseGeometry, shade: dict[str, Any]
 ) -> dict[str, Any]:
-    coarse = _halved(Grid(_smoothed(_smoothed(grid.values)), grid.transform))
     return {
         "source": "ETOPO1 elevations in hypsometric bands and shaded relief, clipped to the Survey of India outline; range names and spot heights from Natural Earth",
         "licence": "Public domain",
@@ -195,7 +191,7 @@ def relief_body(
             downloads.natural_earth("peaks"),
         ],
         "breaks": list(BREAKS),
-        "bands": [{"min": threshold, "rings": _band(coarse, threshold, india)} for threshold in BREAKS],
+        "bands": relief_bands(grid, india),
         "shade": shade,
         "ranges": _ranges(downloads),
         "peaks": _peaks(downloads, india),

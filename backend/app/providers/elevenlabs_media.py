@@ -8,7 +8,17 @@ import httpx
 
 from app.core.errors import ExternalFailure, InvalidInput
 
-from .base import Adapter, ChatRequest, ChatResult, MediaPoll, MediaRequest, MediaResult, ProviderError
+from .base import (
+    Adapter,
+    BilledFailure,
+    ChatRequest,
+    ChatResult,
+    MediaPoll,
+    MediaRequest,
+    MediaResult,
+    ProviderError,
+    billed_on_failure,
+)
 from .elevenlabs import ELEVENLABS_API, ELEVENLABS_SERVICE, ElevenLabs, Generation
 
 __all__ = [
@@ -77,7 +87,7 @@ class ElevenLabsMediaAdapter(Adapter):
             if poll.result is not None:
                 return poll.result
             await self._sleep(IMAGE_POLL_SECONDS)
-        raise ProviderError(
+        raise BilledFailure(
             f"ElevenLabs left image generation {ref} unfinished",
             kind="unavailable",
             retryable=True,
@@ -97,12 +107,14 @@ class ElevenLabsMediaAdapter(Adapter):
 
     async def _poll(self, kind: str, ref: str) -> MediaPoll:
         api = self._api()
-        generation = await _translated(api.generation(kind, ref))
+        with billed_on_failure():
+            generation = await _translated(api.generation(kind, ref))
         if generation.open:
             return MediaPoll(done=False)
         if generation.status == "failed":
             raise _failed(generation)
-        data = await _translated(api.download(generation.content_url or "", limit=DOWNLOAD_MAX_BYTES))
+        with billed_on_failure():
+            data = await _translated(api.download(generation.content_url or "", limit=DOWNLOAD_MAX_BYTES))
         mime = generation.mime or ""
         return MediaPoll(done=True, result=MediaResult(data, mime, None, None, None, ref, None))
 

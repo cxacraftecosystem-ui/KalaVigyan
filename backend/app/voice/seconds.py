@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from app.providers.quota import LedgerEntry
 from app.schemas.voice import MAX_SESSION_SECONDS
@@ -81,7 +82,9 @@ def time_left(remaining: int | None, charged: int) -> int | None:
     return None if remaining is None else max(0, remaining - charged)
 
 
-def ledger_entry(record: SessionRecord, *, units: int, key: str) -> LedgerEntry:
+def ledger_entry(
+    record: SessionRecord, *, units: int, key: str, counted_at: datetime | None = None
+) -> LedgerEntry:
     return LedgerEntry(
         user_id=record.user_id,
         resource=VOICE_SECONDS,
@@ -89,4 +92,5 @@ def ledger_entry(record: SessionRecord, *, units: int, key: str) -> LedgerEntry:
         key=key,
         ref_type=LEDGER_REF_TYPE,
         ref_id=str(record.id),
+        counted_at=counted_at,
     )

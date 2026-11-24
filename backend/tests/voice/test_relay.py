@@ -3,13 +3,14 @@ import json
 import uuid
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
 import pytest
 
 from app.core.shielded import ShieldedWork
+from app.providers.budget import day_start
 from app.providers.elevenlabs import ElevenLabs
 from app.voice.relay import NOT_HEARD, SPEECH_GRACE, RelayAudio, RelayDeps, relay_turn_events, turn_speech
 from app.voice.reply_audio import ReplyAudio
@@ -299,3 +300,18 @@ async def test_a_caller_who_leaves_during_speech_to_text_still_gets_the_unheard_
     assert await relay.shield.drain() == 0
     assert store.ledger[f"voice-refund:{SESSION_ID}:{TURN_ID}"].units == -(60 - 5)
     assert store.sessions[SESSION_ID].reserved_seconds == 5
+
+
+async def test_the_unheard_part_of_a_turn_is_refunded_to_the_day_its_hold_was_taken() -> None:
+    claimed = datetime(2026, 11, 16, 18, 29, 30, tzinfo=UTC)
+    later = claimed + timedelta(minutes=2)
+    assert day_start(later) - day_start(claimed) == timedelta(days=1)
+    store = live_store(
+        started_at=claimed - timedelta(seconds=20), expires_at=claimed + timedelta(seconds=100)
+    )
+    moments = iter([claimed])
+    relay = replace(deps(store, elevenlabs()[0]), clock=lambda: next(moments, later))
+    await turn_text(store, relay)
+    hold = store.ledger[f"voice:{SESSION_ID}:{TURN_ID}"]
+    refund = store.ledger[f"voice-refund:{SESSION_ID}:{TURN_ID}"]
+    assert (hold.counted_at, refund.counted_at, refund.units) == (claimed, claimed, -(60 - 3))

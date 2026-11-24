@@ -5,7 +5,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from app.providers.base import ChatRequest, MediaPoll, MediaRequest, ProviderError
+from app.providers.base import BilledFailure, ChatRequest, MediaPoll, MediaRequest, ProviderError
 from app.providers.elevenlabs_media import IMAGE_POLL_SECONDS, IMAGE_POLLS_MAX, ElevenLabsMediaAdapter
 from app.providers.registry import build_adapter
 
@@ -197,7 +197,7 @@ async def test_an_image_that_never_finishes_is_given_up_after_the_poll_limit() -
     answers = [answer("elevenlabs_flow_created.json")]
     answers += [answer("elevenlabs_flow_generating.json") for _ in range(IMAGE_POLLS_MAX)]
     made, seen = adapter(flow(*answers), slept)
-    with pytest.raises(ProviderError) as unfinished:
+    with pytest.raises(BilledFailure) as unfinished:
         await made.generate_image(image_ask())
     assert (unfinished.value.kind, unfinished.value.retryable) == ("unavailable", True)
     assert len(seen) == 1 + 90 and len(slept) == 90
@@ -209,13 +209,43 @@ async def test_a_moderated_generation_is_a_refusal_and_other_failures_try_the_ne
     )
     with pytest.raises(ProviderError) as refused:
         await made.generate_image(image_ask())
-    assert refused.value.kind == "refusal"
+    assert refused.value.kind == "refusal" and not isinstance(refused.value, BilledFailure)
     failed = json.loads(recorded("elevenlabs_flow_failed_moderated.json")) | {"failure_reason": "model_error"}
     broken = httpx.Response(200, json=failed)
     made, _ = adapter(flow(answer("elevenlabs_flow_created.json"), broken))
     with pytest.raises(ProviderError) as errored:
         await made.generate_image(image_ask())
     assert (errored.value.kind, errored.value.retryable) == ("error", False)
+    assert not isinstance(errored.value, BilledFailure)
+
+
+async def test_a_finished_generation_whose_download_fails_is_billed_work_lost() -> None:
+    queue = [answer("elevenlabs_flow_created.json"), answer("elevenlabs_flow_completed_image.json")]
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "storage.googleapis.com":
+            return httpx.Response(503, content=b"")
+        return queue.pop(0)
+
+    made, seen = adapter(handle)
+    with pytest.raises(BilledFailure) as lost:
+        await made.generate_image(image_ask())
+    assert lost.value.retryable and len(seen) == 3
+
+
+async def test_a_poll_of_a_started_generation_that_fails_is_billed_work_lost() -> None:
+    limited = answer("elevenlabs_validation_error.json", 503)
+    made, _ = adapter(flow(answer("elevenlabs_flow_created.json"), limited))
+    with pytest.raises(BilledFailure) as lost:
+        await made.generate_image(image_ask())
+    assert (lost.value.kind, lost.value.status) == ("unavailable", 503)
+
+
+async def test_a_generation_that_was_never_started_is_not_billed() -> None:
+    made, _ = adapter(lambda request: answer("elevenlabs_validation_error.json", 503))
+    with pytest.raises(ProviderError) as refused:
+        await made.generate_image(image_ask())
+    assert refused.value.kind == "unavailable" and not isinstance(refused.value, BilledFailure)
 
 
 async def test_a_content_link_that_is_not_https_is_never_fetched() -> None:

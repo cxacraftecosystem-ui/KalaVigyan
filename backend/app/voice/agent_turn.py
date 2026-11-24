@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -33,7 +34,11 @@ CONVERSATION_ID_MAX_CHARS = 120
 ASK_PURPOSE = "ASK"
 AGENT_TRANSPORT = "AGENT"
 REFUSAL_CHECKS = ("bearer", "conversation header", "session record", "binding")
+ELEVENLABS_CONVERSATION_PREFIX = "conv_"
+BIND_READ_SECONDS = 0.5
+BIND_REREADS = 4
 Clock = Callable[[], datetime]
+Sleep = Callable[[float], Awaitable[None]]
 logger = logging.getLogger(__name__)
 
 
@@ -44,22 +49,47 @@ class AgentCall:
 
 
 async def authorised_session(
-    store: VoiceStore, voice: VoiceSettings, call: AgentCall, *, now: datetime
+    store: VoiceStore, voice: VoiceSettings, call: AgentCall, *, now: datetime, sleep: Sleep = asyncio.sleep
 ) -> SessionRecord:
     conversation_id = (call.conversation_id or "").strip()
     if not bearer_matches(call.authorization, voice.llm_bearer) or voice.hmac_key is None:
         raise _refused("bearer", _bearer_detail(call.authorization, voice))
     if not conversation_id or len(conversation_id) > CONVERSATION_ID_MAX_CHARS:
         raise _refused("conversation header", f"{len(conversation_id)} characters")
-    record = await store.by_conversation(conversation_id)
+    record = await _held_record(store, conversation_id, sleep)
     if record is None:
-        raise _refused("session record", "no session holds this conversation")
+        raise _refused("session record", _unheld_detail(conversation_id))
     unfit = _unfit(record, now)
     if unfit:
         raise _refused("session record", unfit)
     if not session_is_bound(voice.hmac_key, record, conversation_id):
         raise _refused("binding", "the stored nonce or conversation does not match")
     return record
+
+
+async def _held_record(store: VoiceStore, conversation_id: str, sleep: Sleep) -> SessionRecord | None:
+    record = await store.by_conversation(conversation_id)
+    if not _names_a_conversation(conversation_id):
+        return record
+    for _ in range(BIND_REREADS):
+        if record is not None:
+            return record
+        await sleep(BIND_READ_SECONDS)
+        record = await store.by_conversation(conversation_id)
+    return record
+
+
+def _names_a_conversation(conversation_id: str) -> bool:
+    return conversation_id.startswith(ELEVENLABS_CONVERSATION_PREFIX)
+
+
+def _unheld_detail(conversation_id: str) -> str:
+    size = f"{len(conversation_id)} characters"
+    prefix = ELEVENLABS_CONVERSATION_PREFIX
+    if not _names_a_conversation(conversation_id):
+        return f"no session holds this conversation ({size}, does not start with {prefix})"
+    waited = BIND_READ_SECONDS * BIND_REREADS
+    return f"no session held this conversation within {waited:g} s ({size}, starts with {prefix})"
 
 
 def _refused(check: str, detail: str) -> VoiceRefused:

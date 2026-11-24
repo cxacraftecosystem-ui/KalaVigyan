@@ -12,7 +12,15 @@ import httpx
 from app.core.errors import RETRYABLE_KINDS, InvalidInput, failure_kind
 from app.core.retry_after import parse_headers
 
-from .base import MediaPoll, MediaRequest, MediaResult, ProviderError
+from .base import (
+    BilledFailure,
+    MediaPoll,
+    MediaRequest,
+    MediaResult,
+    ProviderError,
+    billed_failure,
+    billed_on_failure,
+)
 
 __all__ = [
     "API_REVISION",
@@ -59,7 +67,7 @@ class GeminiMediaWire:
         body = await self._json("POST", "/interactions", json=interaction_body(req, background=False))
         poll = interaction_poll(body, req.kind)
         if not poll.done or poll.result is None:
-            raise ProviderError("Gemini left an image interaction open", kind="error", service=SERVICE)
+            raise BilledFailure("Gemini left an image interaction open", kind="error", service=SERVICE)
         return await self._with_data(poll.result, body, req.kind)
 
     async def start_video(self, req: MediaRequest) -> str:
@@ -70,7 +78,8 @@ class GeminiMediaWire:
         return ref
 
     async def poll_video(self, ref: str) -> MediaPoll:
-        body = await self._json("GET", f"/interactions/{_segment(ref)}")
+        with billed_on_failure():
+            body = await self._json("GET", f"/interactions/{_segment(ref)}")
         poll = interaction_poll(body, "VIDEO")
         if poll.result is None:
             return poll
@@ -87,12 +96,13 @@ class GeminiMediaWire:
     async def _with_data(self, result: MediaResult, body: Mapping[str, Any], kind: str) -> MediaResult:
         if result.data:
             return result
-        uri = (_output_block(body, OUTPUT_TYPES[kind]) or {}).get("uri")
-        if not isinstance(uri, str):
-            raise _off_contract("a media block with neither data nor uri")
-        data = (await self._send("GET", _download_path(self._base, uri), params={"alt": "media"})).content
-        if not data:
-            raise _off_contract("an empty media download")
+        with billed_on_failure():
+            uri = (_output_block(body, OUTPUT_TYPES[kind]) or {}).get("uri")
+            if not isinstance(uri, str):
+                raise _off_contract("a media block with neither data nor uri")
+            data = (await self._send("GET", _download_path(self._base, uri), params={"alt": "media"})).content
+            if not data:
+                raise _off_contract("an empty media download")
         return replace(result, data=data)
 
     async def _json(self, method: str, path: str, **request: Any) -> dict[str, Any]:
@@ -169,13 +179,15 @@ def interaction_poll(body: Mapping[str, Any], kind: str) -> MediaPoll:
     if status in STOPPED_STATUSES:
         raise _stopped(body, str(status))
     if status not in DONE_STATUSES:
-        raise _off_contract(f"an interaction status {status!r}")
+        raise billed_failure(_off_contract(f"an interaction status {status!r}"))
     block = _output_block(body, OUTPUT_TYPES[kind])
     if block is None:
         raise ProviderError(
             f"Gemini finished without {OUTPUT_TYPES[kind]} output ({status})", kind="refusal", service=SERVICE
         )
-    return MediaPoll(done=True, result=_result(body, block, kind))
+    with billed_on_failure():
+        result = _result(body, block, kind)
+    return MediaPoll(done=True, result=result)
 
 
 def _result(body: Mapping[str, Any], block: Mapping[str, Any], kind: str) -> MediaResult:

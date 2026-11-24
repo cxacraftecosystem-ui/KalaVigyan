@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 from dataclasses import dataclass, field, replace
@@ -7,6 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
+from app.core.shielded import ShieldedWork
 from app.providers.elevenlabs import ElevenLabs
 from app.schemas.artisan import parse_artisan_event
 from app.voice.artisan_records import ConversationRecord
@@ -68,6 +70,20 @@ class Bucket:
 
     async def put(self, key: str, body: bytes, *, content_type: str) -> None:
         self.objects[key] = body
+
+    async def delete(self, key: str) -> None:
+        self.objects.pop(key, None)
+
+
+@dataclass
+class GatedBucket(Bucket):
+    entered: asyncio.Event = field(default_factory=asyncio.Event)
+    gate: asyncio.Event = field(default_factory=asyncio.Event)
+
+    async def put(self, key: str, body: bytes, *, content_type: str) -> None:
+        self.entered.set()
+        await self.gate.wait()
+        await super().put(key, body, content_type=content_type)
 
 
 def interview(**fields: Any) -> str:
@@ -211,3 +227,46 @@ async def test_a_reply_is_replayed_from_the_transcript_and_gone_after_the_grace(
     with pytest.raises(ArtisanRefused) as refused:
         await conversation_speech(record, ended, turn_id, late)
     assert refused.value.reason == "speech_gone"
+
+
+async def test_a_recording_whose_turn_cannot_be_saved_is_deleted_again(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chosen = setup()
+
+    async def gone(conversation_id: uuid.UUID, write: Any) -> None:
+        raise LookupError(f"Artisan conversation {conversation_id} is gone")
+
+    monkeypatch.setattr(chosen.artisans, "save_turn", gone)
+    seen = await events(chosen)
+    assert [name for name, _ in seen] == ["status", "error", "done"]
+    assert chosen.bucket.objects == {} and chosen.artisans.audio == []
+
+
+async def test_a_caller_who_leaves_while_the_recording_is_stored_still_gets_its_row() -> None:
+    chosen = setup()
+    bucket = GatedBucket()
+    left = replace(chosen, bucket=bucket, deps=replace(chosen.deps, bucket=bucket, shield=ShieldedWork()))
+    consumer = asyncio.create_task(events(left, continued=True))
+    await asyncio.wait_for(bucket.entered.wait(), timeout=5)
+    consumer.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await consumer
+    bucket.gate.set()
+    assert await left.deps.shield.drain() == 0
+    [key] = bucket.objects
+    assert [audio.object_key for audio in left.artisans.audio] == [key]
+    turns = open_transcript(cipher(), left.artisans.conversations[CONVERSATION_ID].transcript).turns
+    assert [(turn.speaker, turn.audio_id is not None) for turn in turns[1:]] == [("ARTISAN", True)]
+
+
+async def test_the_unheard_part_of_an_artisan_turn_is_refunded_to_the_time_of_its_claim() -> None:
+    chosen = setup()
+    claimed, later = START + timedelta(seconds=40), START + timedelta(seconds=95)
+    moments = iter([claimed])
+    base = replace(chosen.deps.conversation, clock=lambda: next(moments, later))
+    await events(replace(chosen, deps=replace(chosen.deps, conversation=base)), continued=True)
+    rows = chosen.store.ledger
+    [refund] = [row for key, row in rows.items() if key.startswith("voice-refund:")]
+    hold = rows[refund.key.replace("voice-refund:", "voice:")]
+    assert (hold.units, hold.counted_at, refund.counted_at) == (60, claimed, claimed)

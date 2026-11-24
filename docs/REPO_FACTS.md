@@ -113,9 +113,9 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 772 | 5702 |
-| Backend, on Postgres | 215 | 956 |
-| Tools | 25 | 203 |
+| Backend, without a database | 772 | 5721 |
+| Backend, on Postgres | 215 | 957 |
+| Tools | 26 | 204 |
 | Craft data ETL | 7 | 51 |
 | Geo ETL | 21 | 223 |
 
@@ -130,7 +130,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 183 |
+| Decision records (`docs/decisions/`) | 184 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 28 |
 | Curated craft dossiers | 32 |
@@ -140,15 +140,15 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1445 | 202,976 |
-| `backend/tests` | 1155 | 147,475 |
+| `backend/app` | 1445 | 203,097 |
+| `backend/tests` | 1155 | 147,805 |
 | `backend/migrations` | 87 | 11,307 |
 | `frontend/app` | 111 | 10,087 |
 | `frontend/components` | 635 | 43,348 |
 | `frontend/lib` | 272 | 27,146 |
 | `frontend/e2e` | 322 | 35,001 |
 | `etl` | 80 | 11,545 |
-| `tools` | 101 | 8,496 |
+| `tools` | 102 | 8,546 |
 | `infra` | 17 | 2,292 |
 
 Code files are `.py`, `.ts`, `.tsx`, `.mjs`, `.css`, `.sh`, `.tf` and `.sql`; lines are newlines.

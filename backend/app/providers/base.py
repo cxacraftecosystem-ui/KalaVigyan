@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from app.core.errors import ExternalFailure
@@ -39,6 +40,29 @@ class ChatResult:
 
 class ProviderError(ExternalFailure):
     pass
+
+
+class BilledFailure(ProviderError):
+    pass
+
+
+def billed_failure(failure: ExternalFailure) -> BilledFailure:
+    return BilledFailure(
+        str(failure),
+        kind=failure.kind,
+        retryable=failure.retryable,
+        status=failure.status,
+        retry_after=failure.retry_after,
+        service=failure.service,
+    )
+
+
+@contextmanager
+def billed_on_failure() -> Iterator[None]:
+    try:
+        yield
+    except ProviderError as failure:
+        raise billed_failure(failure) from None
 
 
 def names_the_format(message: str, needles: Sequence[str]) -> bool:

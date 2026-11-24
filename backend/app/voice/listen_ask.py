@@ -44,6 +44,7 @@ class ListenHold:
     held: int
     remaining_after: int | None
     refused: bool = False
+    counted_at: datetime | None = None
 
 
 class ListenLedger(Protocol):
@@ -79,7 +80,7 @@ class ListenAsk:
     def language(self) -> str:
         return self.explainer.understood.language
 
-    def entry(self, units: int, key: str) -> LedgerEntry:
+    def entry(self, units: int, key: str, *, counted_at: datetime | None = None) -> LedgerEntry:
         return LedgerEntry(
             user_id=self.user_id,
             resource=VOICE_SECONDS,
@@ -87,4 +88,5 @@ class ListenAsk:
             key=key,
             ref_type=LISTEN_LEDGER_REF,
             ref_id=str(self.explainer.answer_id),
+            counted_at=counted_at,
         )

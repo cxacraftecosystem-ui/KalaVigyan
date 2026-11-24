@@ -50,6 +50,8 @@ MS = 1000
 class AudioBucket(Protocol):
     async def put(self, key: str, body: bytes, *, content_type: str) -> None: ...
 
+    async def delete(self, key: str) -> None: ...
+
 
 @dataclass(frozen=True)
 class ArtisanUpload:
@@ -127,6 +129,7 @@ class _ArtisanTurn:
         self.session: SessionRecord | None = None
         self.billed = 0
         self.ended = False
+        self.claimed_at: datetime | None = None
 
     async def frames(self, upload: ArtisanUpload) -> AsyncIterator[str]:
         claim = await self._claimed(upload)
@@ -174,9 +177,11 @@ class _ArtisanTurn:
         record = await self.base.store.by_id(session_id)
         if record is None:
             return TurnClaim(None, refusal="ended")
-        cap = ledger_entry(record, units=RELAY_MAX_TURN_SECONDS, key=relay_audio_key(record.id, self.turn_id))
+        self.claimed_at = self.base.clock()
+        key = relay_audio_key(record.id, self.turn_id)
+        cap = ledger_entry(record, units=RELAY_MAX_TURN_SECONDS, key=key, counted_at=self.claimed_at)
         claim = await self.base.store.claim_turn(
-            record.id, self.base.clock(), TurnHold(entry=cap, least=upload.least_seconds)
+            record.id, self.claimed_at, TurnHold(entry=cap, least=upload.least_seconds)
         )
         if claim.session is None:
             self.ended = claim.refusal == "ended"
@@ -205,10 +210,14 @@ class _ArtisanTurn:
         unused = held - min(held, used)
         if unused > 0 and self.session is not None:
             key = relay_refund_key(self.session.id, self.turn_id)
-            await self.base.store.reserve(self.session.id, ledger_entry(self.session, units=-unused, key=key))
+            refund = ledger_entry(self.session, units=-unused, key=key, counted_at=self.claimed_at)
+            await self.base.store.reserve(self.session.id, refund)
             self.billed -= unused
 
     async def _kept_turn(self, upload: ArtisanUpload, heard: HeardSpeech, text: str) -> None:
+        await self.deps.shield.run(self._saved_turn(upload, heard, text), name="artisan turn kept")
+
+    async def _saved_turn(self, upload: ArtisanUpload, heard: HeardSpeech, text: str) -> None:
         session = self._live()
         transcript = open_transcript(self.base.cipher, self.conversation.transcript)
         previous_end = transcript.turns[-1].end_ms if transcript.turns else 0
@@ -223,21 +232,36 @@ class _ArtisanTurn:
             if scrubbed
             else await self._stored_audio(upload, session, len(transcript.turns), offset, duration_ms)
         )
-        turn = TranscriptTurn(
-            id=self.turn_id,
-            ordinal=len(transcript.turns),
-            speaker="ARTISAN",
-            text=text,
-            start_ms=offset,
-            end_ms=max(offset, end_ms),
-            words=words,
-            audio_id=uuid.uuid4() if audio else None,
-            scrubbed=scrubbed,
-            continued=upload.continued,
-        )
-        await self.base.artisans.save_turn(
-            self.conversation.id, TurnWrite(merge=sealed_merge(self.base.cipher, turn), audio=audio)
-        )
+        try:
+            turn = TranscriptTurn(
+                id=self.turn_id,
+                ordinal=len(transcript.turns),
+                speaker="ARTISAN",
+                text=text,
+                start_ms=offset,
+                end_ms=max(offset, end_ms),
+                words=words,
+                audio_id=uuid.uuid4() if audio else None,
+                scrubbed=scrubbed,
+                continued=upload.continued,
+            )
+            write = TurnWrite(merge=sealed_merge(self.base.cipher, turn), audio=audio)
+            await self.base.artisans.save_turn(self.conversation.id, write)
+        except BaseException:
+            await self._unkept(audio)
+            raise
+
+    async def _unkept(self, audio: AudioWrite | None) -> None:
+        if audio is None or self.deps.bucket is None:
+            return
+        try:
+            await self.deps.bucket.delete(audio.object_key)
+        except AppError as error:
+            logger.warning(
+                "a recording of artisan conversation %s whose turn was not saved stays in the bucket: %s",
+                self.conversation.id,
+                error,
+            )
 
     async def _stored_audio(
         self, upload: ArtisanUpload, session: SessionRecord, ordinal: int, offset: int, duration_ms: int

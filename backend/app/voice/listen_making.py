@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Iterable
+from dataclasses import replace
 from datetime import datetime
 from functools import partial
 
@@ -114,10 +115,11 @@ class _Making:
         characters = sum(len(part.text) for block in self._ours.values() for part in narration_parts(block))
         now = self._deps.clock()
         key = listen_hold_key(self._ask.request_id, self._voice.service)
-        hold = await self._deps.ledger.hold(self._ask.entry(estimated_seconds(characters), key), now)
+        entry = self._ask.entry(estimated_seconds(characters), key, counted_at=now)
+        hold = await self._deps.ledger.hold(entry, now)
         if hold.refused:
             raise ListenRefused("quota", QUOTA_MESSAGE, retry_after=seconds_until_next_day(now))
-        return hold
+        return replace(hold, counted_at=now)
 
     async def _finished(self, hold: ListenHold) -> None:
         keeper = asyncio.create_task(self._kept_alive())
@@ -208,8 +210,10 @@ async def _released(objects: LeasedObjects, cache_ids: Iterable[str]) -> None:
 async def _settled(ask: ListenAsk, ledger: ListenLedger, hold: ListenHold, billed: int, voice: str) -> None:
     unused = hold.held - billed
     if unused > 0:
-        await ledger.record(ask.entry(-unused, listen_refund_key(ask.request_id, voice)))
+        key = listen_refund_key(ask.request_id, voice)
+        await ledger.record(ask.entry(-unused, key, counted_at=hold.counted_at))
     elif unused < 0:
         extra = capped_seconds(-unused, hold.remaining_after)
         if extra:
-            await ledger.record(ask.entry(extra, listen_settle_key(ask.request_id, voice)))
+            key = listen_settle_key(ask.request_id, voice)
+            await ledger.record(ask.entry(extra, key, counted_at=hold.counted_at))

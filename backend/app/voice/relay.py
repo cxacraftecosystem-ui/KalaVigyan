@@ -94,6 +94,7 @@ class _RelayTurn:
         self.billed = 0
         self.turn_count = record.turn_count
         self.ended = False
+        self.claimed_at: datetime | None = None
 
     async def frames(self, audio: RelayAudio) -> AsyncIterator[str]:
         claim = await self._claimed(audio)
@@ -135,11 +136,11 @@ class _RelayTurn:
         return relay_frame("done", payload)
 
     async def _claimed(self, audio: RelayAudio) -> TurnClaim:
-        cap = ledger_entry(
-            self.record, units=RELAY_MAX_TURN_SECONDS, key=relay_audio_key(self.record.id, self.turn_id)
-        )
+        self.claimed_at = self.deps.clock()
+        key = relay_audio_key(self.record.id, self.turn_id)
+        cap = ledger_entry(self.record, units=RELAY_MAX_TURN_SECONDS, key=key, counted_at=self.claimed_at)
         hold = TurnHold(entry=cap, least=audio.least_seconds)
-        claim = await self.deps.store.claim_turn(self.record.id, self.deps.clock(), hold)
+        claim = await self.deps.store.claim_turn(self.record.id, self.claimed_at, hold)
         if claim.session is None:
             self.ended = claim.refusal == "ended"
         else:
@@ -160,7 +161,8 @@ class _RelayTurn:
         unused = held - charge
         if unused > 0:
             key = relay_refund_key(self.record.id, self.turn_id)
-            await self.deps.store.reserve(self.record.id, ledger_entry(self.record, units=-unused, key=key))
+            refund = ledger_entry(self.record, units=-unused, key=key, counted_at=self.claimed_at)
+            await self.deps.store.reserve(self.record.id, refund)
             self.billed -= unused
 
     async def _heard(self, audio: RelayAudio) -> HeardSpeech | None:

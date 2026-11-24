@@ -169,10 +169,16 @@ is when the session may last start. The client shows the voice button only when
 5. On every custom-LLM request the server requires, in constant time, the bearer
    `VOICE_LLM_BEARER`; then finds the live session whose `elConversationId` equals the header;
    then recomputes the nonce from that row and compares its hash with `nonceHash`; then checks
-   `exp` and that the session has not ended or passed `MAX_TURNS`. Any failure is 401 with one
+   `exp` and that the session has not ended or passed `MAX_TURNS`. A header that starts `conv_`
+   (an ElevenLabs conversation id) and that no session holds yet is read again four times, half a
+   second apart (2 s at most), so a call that races the bind finds its session; any other header
+   is read once. Any failure is 401 with one
    `LlmError` (`code` `unauthorized`) and the same message, whichever check failed; the server
    logs one warning naming the check that refused (`REFUSAL_CHECKS`: bearer, conversation header,
-   session record, binding) and why, never a bearer, key or nonce (decision 0184). User, role,
+   session record, binding) and why, never a bearer, key, nonce or conversation id (decision
+   0184); a session-record refusal for want of a session names the header's length and whether
+   it starts `conv_`, which tells a header ElevenLabs sent unsubstituted (the 27 characters of
+   `{{system__conversation_id}}`) from a conversation no session was bound to (decision 0189). User, role,
    mode, craft and language come only from the row. `elevenlabs_extra_body` and dynamic
    variables are never read (`LlmChatRequest` ignores unknown fields).
 6. Ending the session sets `endedAt` and clears `nonceHash`, so any later request is 401.
@@ -235,6 +241,9 @@ session must be live and below `MAX_TURNS`, the day must have at least the uploa
 counts one of the 40 turns. So every upload, heard or not, takes a turn, and parallel uploads
 each hold their own minute. After speech to text the turn keeps the larger of the floor and the
 heard seconds (the last word's end) and writes the rest back as `voice-refund:<sessionId>:<turnId>`.
+The hold and its refund are both dated to the claim, so a turn claimed before midnight IST and
+heard after it returns its unheard part to the day that held it (decision 0189); an artisan's
+relay turn does the same.
 The floor is the recording's length rounded up, at least 1 s: a WAV's from its header, any other
 upload's as `ffmpeg` decodes it (`voice/audio_decode.py`, the last `out_time_us` of its progress),
 so an upload encoded below the asked bit rate that decodes past `RELAY_MAX_TURN_SECONDS` is refused
@@ -385,7 +394,7 @@ Gemini the twelve its documented table lists (no Urdu), and a language no offere
 | Sentences | (Gemini) each sentence read alone; `start` its first sample's time in the part, `end` its last, seconds to the millisecond; the part lasts its samples' time; a sentence read at another sample rate than its part's, or audio that is not mono 16-bit WAV, is off the shape and fails |
 | One maker | a request that misses a block puts `media/narration/<cacheId>/lease.json` (`NarrationLease {schemaVersion 1, cacheId, takenAt}`) only where none is (`If-None-Match: *`) and renews it every 30 s while that block waits or is read (`listen_making.LEASE_RENEW_SECONDS`, a quarter of the 120 s lease); a request that finds a live lease on a later block lists it as `pending` and holds nothing; one that finds it on the first block polls for the manifest each second until the lease it saw lapses at 120 s, then takes the lapsed lease over and makes the block, or answers 503 while a renewed lease still covers it; the maker deletes each lease once its manifest is stored or its making fails (decisions 0140, 0176) |
 | Cache | per block and voice: SHA-256 of `kalavigyan-narration`, `NARRATION_VERSION` (3 since ElevenLabs is sent no square brackets), the voice's model, voice id, explainer language and piece content hash (U+001F between); parts at `media/narration/<cacheId>/KalaVigyan_Explainer_<date>_<HHMM>_Narration_Part-NN.mp3` (`.wav` for Gemini), then `narration.json` (the `NarrationManifest`, its parts timed by `words` or by `sentences`) last; presigned GET links of 3,600 s |
-| Seconds | a cache hit is free; the blocks an ask makes, the first and every later one it leased, hold `ceil(characters × 60 / 1000)` at once (the documented rate; the paid checks measured `eleven_v4` at 882 characters a minute in English and 765 in Hindi, and `gemini-3.8-flash-tts` at 893 in English, so the hold runs short and the settle adds the rest within what is left), settled once they are all made or failed `VOICE_SECONDS` under `listen:<requestId>:<voice>:hold` (`elevenlabs` or `gemini`; 429 + `Retry-After` until midnight IST when less is left, and no voice speaks), then `listen-refund:<requestId>:<voice>` or `listen-settle:<requestId>:<voice>` settle to the audio (MP3 bytes at 128 kbit/s, a WAV part's seconds rounded up); a voice that fails bills only the audio it made before the next voice holds its own; Master Admin never refused |
+| Seconds | a cache hit is free; the blocks an ask makes, the first and every later one it leased, hold `ceil(characters × 60 / 1000)` at once (the documented rate; the paid checks measured `eleven_v4` at 882 characters a minute in English and 765 in Hindi, and `gemini-3.8-flash-tts` at 893 in English, so the hold runs short and the settle adds the rest within what is left), settled once they are all made or failed `VOICE_SECONDS` under `listen:<requestId>:<voice>:hold` (`elevenlabs` or `gemini`; 429 + `Retry-After` until midnight IST when less is left, and no voice speaks), then `listen-refund:<requestId>:<voice>` or `listen-settle:<requestId>:<voice>` settle to the audio (MP3 bytes at 128 kbit/s, a WAV part's seconds rounded up), dated with the hold to the moment it was taken, so narration settled after midnight IST counts on the day that held it (decision 0189); a voice that fails bills only the audio it made before the next voice holds its own; Master Admin never refused |
 | Answers | 200 `ListenScript {schemaVersion 1, answerId, language, voice (ELEVENLABS or GEMINI), tracks[{blockId, audioUrl, durationSeconds, words[{sentenceId, text, start, end}], sentences?[{sentenceId, start, end}]}], pending?[blockId], pollAfterSeconds?}`, a track timed by its words or, with `words` empty, by its `sentences`; `tracks` are the blocks narrated from the first up to the first one not yet stored, `pending` every block from there on in reading order, and `pollAfterSeconds` (3) is sent exactly when `pending` is (`schemas/listen.py`, `shared/listen.script.golden.json`, `listen.script-sentences.golden.json` and `listen.script-pending.golden.json`, `frontend/lib/listen.ts`); 404 another reader's answer, no explainer, another language or nothing to read; 422 a malformed `language`, `section` or `voice`; 429 a making past the 30 in 10 minutes, or seconds left too few; 503 the bucket failing, no voice offered for the language or the named voice, every voice failing on the first block, or the first block still being made by another ask after 120 s |
 
 `/answers/config` carries `listen {languages, voice?}`: the answer languages the offered voices read,

@@ -15,7 +15,7 @@ from app.core.errors import SPEND_REFUSAL_KIND, STOP_KINDS
 from app.providers.catalogue import AUDIO_TASKS, MEDIA_TASKS, AiTask, model_for
 
 from . import budget, spend_settings
-from .base import Adapter, MediaRequest, MediaResult, ProviderError
+from .base import Adapter, BilledFailure, MediaRequest, MediaResult, ProviderError
 from .registry import build_adapter
 from .router import (
     Principal,
@@ -157,16 +157,16 @@ class MediaRouter:
 
     async def _call(self, choice: RouteChoice, ask: MediaAsk, overrides: dict[str, Any]) -> MediaCall:
         event_id = await self._reserve(choice, ask, overrides)
+        estimate = _estimate(choice, ask, overrides)
         key = managed_keys.peek_secret(choice.key_name)
         adapter: Adapter | None = None
         try:
             adapter = self._adapter_factory(choice, key)
             result = await self._produce(adapter, choice, ask)
         except ProviderError as failure:
-            await self._settle_failure(event_id, choice, key, failure)
+            await self._settle_failure(event_id, choice, key, failure, estimate=estimate)
             raise
         except BaseException:
-            estimate = _estimate(choice, ask, overrides)
             await settle_abandoned(self._sessions, event_id, estimate, answer=ask.principal.answer)
             raise
         finally:
@@ -205,13 +205,20 @@ class MediaRouter:
             await _forget(adapter, ref)
 
     async def _settle_failure(
-        self, event_id: uuid.UUID, choice: RouteChoice, key: str | None, failure: ProviderError
+        self,
+        event_id: uuid.UUID,
+        choice: RouteChoice,
+        key: str | None,
+        failure: ProviderError,
+        *,
+        estimate: Decimal,
     ) -> None:
         async with self._sessions() as session:
             await settle(
                 session,
                 event_id,
                 outcome="REFUSED_PROVIDER" if failure.kind == "refusal" else "ERROR",
+                cost_usd=estimate if isinstance(failure, BilledFailure) else Decimal(0),
                 error_kind=failure.kind,
                 detail={"status": failure.status},
             )

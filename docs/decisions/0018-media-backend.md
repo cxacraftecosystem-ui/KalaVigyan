@@ -13,6 +13,7 @@ Date: 2026-11-16. Status: accepted.
 | The contracts it names | [media.md](../contracts/media.md) |
 | The worker's heartbeat, renewed holds, refunds dated to their job, page copies and sharing on the craft page | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
 | A Gemini JPEG stored as PNG, and an image's tokens priced by modality | [decision 0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
+| A clip or picture lost after the provider took it, settled at its estimate | [decision 0189](0189-lost-media-counted-a-recording-kept-with-its-row-refunds-on-the-hold-day-bands-as-read-and-a-bind-awaited.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
