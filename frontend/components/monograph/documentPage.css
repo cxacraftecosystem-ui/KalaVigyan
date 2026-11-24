@@ -5,3 +5,7 @@
 .kv-monograph .kv-open-photo .ph > .kv-plate {
   block-size: 100%;
 }
+
+.kv-monograph .bx-pt > .screen:has(.pop.docked) {
+  overflow-y: visible;
+}

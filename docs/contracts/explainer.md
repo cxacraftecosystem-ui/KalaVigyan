@@ -1639,7 +1639,9 @@ neither spends: the server chooses by fixed rules and fills every value.
 - **`quiz`** has no builder: it is made on request for an explainer the reader has (`GET
   /api/answers/{answerId}/quiz`) and inside lesson packs, by `research/quiz.quiz_block`
   (`docs/contracts/learning.md`). A finished stream says in `done.quizAvailable` whether the route
-  has one, so Check yourself asks only then (`services/answer_quiz.with_quiz_offer`).
+  has one, so Check yourself asks only then (`services/answer_quiz.with_quiz_offer`); the client's
+  own closing `done`, which names no answer, keeps what the server's said (`lib/explainerState`,
+  decision 0187).
 
 `compare` and `concept_graph` joined `BUILT_BLOCK_KINDS` on both sides with this lane, their
 renderers being in place (decision 0068). `quiz` is never streamed in an answer, so it stays out

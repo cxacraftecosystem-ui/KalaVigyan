@@ -12,6 +12,7 @@ import { CUT_NOTICE_LIVE_REGION, searchCutNotice } from "@/components/data/cappe
 import { useConfirm, type ConfirmOptions } from "@/components/dialogs/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { refreshPendingAccessCount, usePendingAccessCount } from "@/components/hooks/usePendingAccessCount";
+import { motionAllowedNow } from "@/components/motion/useMotionAllowed";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
 import { RecordDetailsDialog } from "@/components/records/RecordDetailsDialog";
@@ -251,7 +252,7 @@ function PlatformAccessScreen() {
     setEditing(entry);
     setError(null);
     setNotice(null);
-    requestAnimationFrame(() => formRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
+    requestAnimationFrame(() => formRef.current?.scrollIntoView({ block: "start", behavior: motionAllowedNow() ? "smooth" : "auto" }));
   }
 
   if (!permitted) {

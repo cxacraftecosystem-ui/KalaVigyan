@@ -29,6 +29,7 @@ reports) and `docs/contracts/retrieval.md` (Evaluation).
 | `api_ready.sh`, the gate the deploy workflows build through | [decision 0173](0173-a-release-that-keeps-serving-and-its-way-back.md) |
 | The film control's 300 s wait on production | [decision 0175](0175-production-checks-read-what-the-page-shows.md) |
 | A field the web reads ships with its web shape | [decision 0151](0151-a-release-the-live-side-can-read.md) |
+| The feed asking only when Listen is pressed, for the answer then shown (amends item 4) | [decision 0187](0187-listen-asked-when-pressed-and-a-docked-popover-seen-whole.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

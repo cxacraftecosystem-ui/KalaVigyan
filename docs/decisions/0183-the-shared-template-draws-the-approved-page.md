@@ -23,6 +23,7 @@ item 3 (the one renderer). The contracts are `docs/contracts/monograph-renderer.
 | A generated page's kin crafts | [decision 0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) |
 | The design system the kit's look belongs to | [decision 0092](0092-design-system.md) |
 | How the web draws a document | [monograph-renderer.md](../contracts/monograph-renderer.md) |
+| A popover docked in a run's margin seen whole past its passage's foot (amends item 4) | [decision 0187](0187-listen-asked-when-pressed-and-a-docked-popover-seen-whole.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

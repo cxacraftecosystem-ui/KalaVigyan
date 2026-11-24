@@ -138,7 +138,7 @@ function reduceSettling(state: ExplainerState, event: ExplainerEvent): Explainer
     case "not_enough_evidence":
       return { ...state, phase: "empty", status: null, notice: event.data.message };
     case "done":
-      return { ...state, phase: SETTLED.has(state.phase) ? state.phase : "done", status: null, answerId: event.data.answerId ?? state.answerId, quizAvailable: event.data.quizAvailable ?? null };
+      return { ...state, phase: SETTLED.has(state.phase) ? state.phase : "done", status: null, answerId: event.data.answerId ?? state.answerId, quizAvailable: event.data.quizAvailable ?? state.quizAvailable };
     case "error":
       return { ...state, phase: "failed", status: null, error: event.data.message };
     default:

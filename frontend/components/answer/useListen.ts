@@ -85,10 +85,12 @@ export function useListen(answerId: string | null, language: string): Listen {
     setError(null);
   }, [marks]);
 
+  useEffect(() => stop(), [answerId, language, stop]);
+
   const toggle = useCallback(() => {
     if (status === "playing") setStatus("paused");
     else if (status === "paused") setStatus("playing");
-    else start();
+    else if (status === "idle" || status === "failed") start();
   }, [status, start]);
 
   const onTime = useCallback((time: number) => marks.follow(script?.tracks[track] ?? null, time), [marks, script, track]);

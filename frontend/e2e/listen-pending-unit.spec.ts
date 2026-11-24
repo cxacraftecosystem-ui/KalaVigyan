@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { hasRenderer } from "@/components/answer/blockRenderers";
 import { ListenDock } from "@/components/answer/ListenDock";
 import type { Listen } from "@/components/answer/useListen";
+import { heldFor, replied, scriptAsked, type ListenAsk } from "@/components/answer/useListenScript";
 import { ENGLISH } from "@/lib/answerLanguages";
 import { explainerShape, type Explainer } from "@/lib/explainerContract";
 import type { SectionView } from "@/lib/explainerState";
@@ -16,6 +17,7 @@ import { attribute, withApp } from "./explainerRender";
 import { readRepo } from "./phaseBFixture";
 
 const ANSWER_ID = "0c5e7a1d-2b3f-4c6d-8e9f-a0b1c2d3e4f5";
+const FOLLOW_UP_ID = "5b2d9c4e-7a1f-4e3b-9c8d-1f2e3a4b5c6d";
 
 function golden(name: string): Record<string, unknown> {
   return JSON.parse(readRepo("shared", name)) as Record<string, unknown>;
@@ -103,6 +105,20 @@ test("the dock plays the first block, waits at a pending one and stops after the
   expect(resumed).toContain('aria-label="Pause">');
   expect(resumed).toContain('<span role="status" class="sr-only"></span>');
   expect([dock, resumed].map((html) => html.match(/role="status"/g)?.length)).toEqual([1, 1]);
+});
+
+test("Listen holds the script of the answer it was pressed on, so a follow-up's answer is neither asked for nor played from the last one", () => {
+  const first = firstAsk();
+  const pressed: ListenAsk = { answerId: ANSWER_ID, language: "en" };
+  const playing = replied(scriptAsked(pressed), pressed, { script: first, load: "ready" });
+  const nothing = { ask: null, script: null, load: "idle", error: null, stalled: null };
+  expect(heldFor(playing, ANSWER_ID, "en")).toBe(playing);
+  expect([heldFor(playing, null, "en"), heldFor(playing, FOLLOW_UP_ID, "en"), heldFor(playing, ANSWER_ID, "hi")]).toEqual([nothing, nothing, nothing]);
+  const followUp: ListenAsk = { answerId: FOLLOW_UP_ID, language: "en" };
+  const asking = scriptAsked(followUp);
+  expect(replied(asking, pressed, { script: first, load: "ready" })).toBe(asking);
+  expect(heldFor(asking, FOLLOW_UP_ID, "en")).toEqual({ ask: followUp, script: null, load: "loading", error: null, stalled: null });
+  expect(heldFor(replied(asking, followUp, { error: "Couldn't start listening. Try again.", load: "failed" }), FOLLOW_UP_ID, "en")).toMatchObject({ load: "failed", script: null });
 });
 
 test("the film plays the first block while the others are pending, holds at a pending scene and plays it once read", () => {

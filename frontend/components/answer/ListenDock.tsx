@@ -12,7 +12,7 @@ import type { AnswerLanguage } from "@/lib/answerLanguages";
 import { formatClock } from "@/lib/format";
 import { elapsedOf, scriptDuration } from "@/lib/listen";
 
-const PLAY_BUTTON = "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-indigo text-indigo-on transition-colors duration-state hover:bg-indigo-hover disabled:bg-sunk disabled:text-ink-3";
+const PLAY_BUTTON = "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-indigo text-indigo-on transition-colors duration-state hover:bg-indigo-hover aria-disabled:cursor-wait aria-disabled:bg-sunk aria-disabled:text-ink-3";
 const DOCK_PLACE = { bottom: "calc(var(--bottom-nav-h, 0px) + 0.75rem)" };
 
 function Timing({ listen }: { listen: Listen }) {
@@ -38,16 +38,13 @@ function Player({ listen }: { listen: Listen }) {
   const preparing = PREPARING[listen.status];
   return (
     <div className="flex items-center gap-3">
-      <button type="button" className={PLAY_BUTTON} aria-label={playing ? "Pause" : "Play"} disabled={preparing !== undefined} onClick={listen.toggle}>
+      <button type="button" className={PLAY_BUTTON} aria-label={playing ? "Pause" : "Play"} aria-disabled={preparing !== undefined || undefined} onClick={listen.toggle}>
         {preparing ? <span className="kv-spin" aria-hidden /> : playing ? <Pause className="h-5 w-5" aria-hidden /> : <Play className="h-5 w-5" aria-hidden />}
       </button>
-      {preparing ? (
-        <span role="status" className="flex-1 font-ui text-ui text-ink-3">
-          {preparing}
-        </span>
-      ) : (
-        <Timing listen={listen} />
-      )}
+      <span role="status" className={preparing ? "flex-1 font-ui text-ui text-ink-3" : "sr-only"}>
+        {preparing}
+      </span>
+      {preparing ? null : <Timing listen={listen} />}
       <Button variant="quiet" size="sm" aria-label={`Speed ${listen.rate} times`} onClick={listen.cycleRate}>
         {listen.rate}×
       </Button>

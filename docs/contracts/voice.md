@@ -394,7 +394,10 @@ offered (the ElevenLabs key and its probe, or the Gemini key), else `{languages:
 client draws no Listen control. The web accepts `voice`, `sentences`, `pending` and
 `pollAfterSeconds` as optional, so a script from an older backend still plays; it highlights the
 sentence being read and, when the track has words, the word. The dock and the film share one feed
-(`components/answer/useListenScript.ts`): it asks again with the script's voice every
+(`components/answer/useListenScript.ts`): it first asks only when the reader presses Listen or
+opens the film, for the answer then shown, and holds the script for that answer alone, so a
+follow-up's new answer is not narrated, and no making is held against the reader's seconds, until
+Listen is pressed on it (decision 0187). It asks again with the script's voice every
 `pollAfterSeconds` while blocks are pending, at most 100 times, keeps the tracks it holds and adds
 the new ones (`lib/listen.extendedScript`); the dock plays on and, at the end of what is narrated,
 says "Preparing the next part…" until the next part arrives (`lib/listen.afterTrack`), and a poll

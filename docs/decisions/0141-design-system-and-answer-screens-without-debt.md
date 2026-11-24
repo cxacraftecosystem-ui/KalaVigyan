@@ -19,7 +19,7 @@ lesson builder). The contracts are `docs/contracts/region.md` (Map layers),
 | The themed drawings and pictures | [decision 0131](0131-drawings-in-the-design.md) |
 | The learning screens | [decision 0069](0069-learning-screens.md) |
 | The boundary caption's one home on the server | [decision 0042](0042-phase-b-contract.md) |
-| What amended it | [0156 The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run](0156-expert-panel-and-field-voices-kept-true.md): the Sources differ readings after their paragraph, naming what the sources differ on |
+| What amended it | [0156 The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run](0156-expert-panel-and-field-voices-kept-true.md): the Sources differ readings after their paragraph, naming what the sources differ on; [0187](0187-listen-asked-when-pressed-and-a-docked-popover-seen-whole.md): the client's closing `done` keeping `quizAvailable` (item 6), and every scripted smooth scroll given an instant side (item 12) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

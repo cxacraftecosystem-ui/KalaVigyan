@@ -143,7 +143,10 @@ The plan (`pagePlan`) is pure and tested:
   head run `div.spread.railed.sec-head.kv-run`), with `aside.margin.note` listing, as
   `li[data-g] > b + span` ("title, year"), the sources its sentences cite that no earlier run of
   the chapter has listed, in number order (`chapterNotes`). From 1200px they stand in the margin
-  column beside the run; below it the kit folds them away, as on the approved page.
+  column beside the run; below it the kit folds them away, as on the approved page. The kit docks
+  a citation's popover in that margin, so while it is docked the passage's `div.screen` lets it run
+  past the passage's foot over the next one, clipping only sideways (`documentPage.css`, decision
+  0187).
 - **A chapter's sections**: each `h3` (a heading unit or a group's heading) carries the id
   `<chapter>-<unit id>`; a chapter of two or more such sections draws the approved sub-rail after
   its head (`div.bx.bx-chem > nav.subrail` named "In this chapter: <chapter>", one link per
@@ -375,7 +378,7 @@ when any of them changes (`kv-prefs`). The menu's display tools change the app's
 | The rail and chapter menu, and Kutch Ajrakh's chapter names as the approved page gives them | `frontend/e2e/monograph-rail-unit.spec.ts` |
 | A craft's route draws its document or its record | `frontend/e2e/craft-monograph-unit.spec.ts` and `craft-without-monograph-unit.spec.ts` |
 | Generated documents and the answer block kind | `frontend/e2e/monograph-generated-unit.spec.ts` and `monograph-blocks-unit.spec.ts` |
-| The approved page's masthead, contents, margin notes, sub-rail and source groups on a generated page, at 360, 768 and 1440 in light and dark | `frontend/e2e/monograph-template-unit.spec.ts`, and `monograph-template.smoke.spec.ts` against the built site |
+| The approved page's masthead, contents, margin notes, sub-rail and source groups on a generated page, at 360, 768 and 1440 in light and dark, and a passage's last popover docked whole at 1440 | `frontend/e2e/monograph-template-unit.spec.ts`, and `monograph-template.smoke.spec.ts` against the built site |
 | A chapter's listed facts drawn as one cited list after its prose | `frontend/e2e/cited-list-unit.spec.ts` |
 | Native views and the whole shell | `frontend/e2e/monograph-native-unit.spec.ts`, and `monograph-native.smoke.spec.ts` against the built site |
 | The page tools | `frontend/e2e/monograph-tools-unit.spec.ts` and `backend/tests/research/test_component_specs_tools.py` |
