@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 
 __all__ = [
@@ -32,7 +32,8 @@ PRINTABLE_ASCII = range(0x21, 0x7F)
 class RobotsRule:
     allow: bool
     pattern: str
-    matcher: re.Pattern[str]
+    pieces: tuple[str, ...]
+    anchored: bool
 
     @classmethod
     def of(cls, value: str, *, allow: bool) -> RobotsRule:
@@ -40,13 +41,21 @@ class RobotsRule:
         body = value.removesuffix(END_ANCHOR) if anchored else value
         if not body.startswith((PATH_START, WILDCARD)):
             body = PATH_START + body
-        pieces = [canonical_path(piece) for piece in body.split(WILDCARD)]
-        expression = ".*".join(re.escape(piece) for piece in pieces) + (r"\Z" if anchored else "")
+        pieces = tuple(canonical_path(piece) for piece in body.split(WILDCARD))
         pattern = WILDCARD.join(pieces) + (END_ANCHOR if anchored else "")
-        return cls(allow=allow, pattern=pattern, matcher=re.compile(expression, re.DOTALL))
+        return cls(allow=allow, pattern=pattern, pieces=pieces, anchored=anchored)
 
     def matches(self, path: str) -> bool:
-        return self.matcher.match(path) is not None
+        head, *rest = self.pieces
+        if not path.startswith(head):
+            return False
+        if not self.anchored:
+            return _leftmost_end(path, rest, start=len(head)) is not None
+        if not rest:
+            return path == head
+        *between, tail = rest
+        at = _leftmost_end(path, between, start=len(head))
+        return at is not None and path.endswith(tail) and len(path) - len(tail) >= at
 
 
 @dataclass(frozen=True)
@@ -106,6 +115,16 @@ def _canonical_escape(found: re.Match[str]) -> str:
         return "".join(f"%{byte:02X}" for byte in found.group(0).encode("utf-8", "replace"))
     byte = int(hex_digits, 16)
     return chr(byte) if byte in PRINTABLE_ASCII else f"%{hex_digits.upper()}"
+
+
+def _leftmost_end(path: str, pieces: Sequence[str], *, start: int) -> int | None:
+    at = start
+    for piece in pieces:
+        found = path.find(piece, at)
+        if found < 0:
+            return None
+        at = found + len(piece)
+    return at
 
 
 def _outranks(rule: RobotsRule, best: RobotsRule) -> bool:

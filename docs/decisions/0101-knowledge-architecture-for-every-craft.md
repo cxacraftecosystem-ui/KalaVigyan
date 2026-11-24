@@ -23,6 +23,7 @@ Date: 2026-11-19. Status: accepted (owner direction, 2026-11-19).
 | The contracts it names | [knowledge-api.md](../contracts/knowledge-api.md), [research.md](../contracts/research.md), [knowledge-writes.md](../contracts/knowledge-writes.md), [nightly-upkeep.md](../contracts/nightly-upkeep.md), [review-queue.md](../contracts/review-queue.md), [mcp-oauth.md](../contracts/mcp-oauth.md), [open-work.md](../contracts/open-work.md), [mcp-ask-and-upload.md](../contracts/mcp-ask-and-upload.md), [dossier-export.md](../contracts/dossier-export.md), [contribution-screens.md](../contracts/contribution-screens.md) |
 | Pictures and testimony are decided only on the review queue | [decision 0145](0145-monograph-pages-and-speed-without-debt.md) |
 | `review` held only by Admins with two-step verification, given fresh, and what it lets an AI stage | [decision 0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
+| A code not yet exchanged ends with its approver's sessions, as a connection does | [decision 0185](0185-a-code-bound-to-its-approver-robots-rules-without-backtracking-and-a-cap-on-inflated-bodies.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

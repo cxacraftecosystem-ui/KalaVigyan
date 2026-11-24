@@ -10,6 +10,7 @@ Date: 2026-11-16. Status: accepted.
 |---|---|
 | The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
 | The fetcher's process runs as a user of its own that sees no other user's processes | [decision 0173](0173-a-release-that-keeps-serving-and-its-way-back.md) |
+| A robots.txt rule is matched without a regular expression, and the size cap holds on an inflated body | [decision 0185](0185-a-code-bound-to-its-approver-robots-rules-without-backtracking-and-a-cap-on-inflated-bodies.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

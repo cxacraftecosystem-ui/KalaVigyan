@@ -1,7 +1,13 @@
+import time
+
 import pytest
 
 from app.fetcher.robots import ROBOTS_AGENT, rules_for_answer
 from app.fetcher.robots_txt import parse_robots
+
+HOSTILE_WILDCARDS = 16
+LONGEST_PATH_CHARS = 2000
+HOSTILE_RULE_SECONDS = 1.0
 
 RFC_SIMPLE_EXAMPLE = """User-Agent: *
 Disallow: *.gif$
@@ -116,6 +122,39 @@ def test_the_wildcard_spans_slashes_and_the_end_anchor_ends_the_path() -> None:
     text = "User-agent: *\nDisallow: /this/*/exactly$\n"
     assert allowed(text, ROBOTS_AGENT, "/this/a/b/exactly") is False
     assert allowed(text, ROBOTS_AGENT, "/this/a/exactly/more") is True
+
+
+@pytest.mark.parametrize(
+    ("rule", "path", "expected"),
+    [
+        ("/a*a$", "/a", True),
+        ("/a*a$", "/aa", False),
+        ("/a*a$", "/ab", True),
+        ("/a*a$", "/aba", False),
+        ("/a*ab$", "/ab", True),
+        ("/a*ab$", "/aab", False),
+        ("/x*y*z", "/xzy", True),
+        ("/x*y*z", "/xyz", False),
+        ("/x*y*z", "/xyyz/more", False),
+        ("/x*y$", "/xyxy", False),
+        ("*", "/anything", False),
+        ("/exact$", "/exact", False),
+        ("/exact$", "/exact/more", True),
+    ],
+)
+def test_each_wildcard_spans_any_run_and_the_pieces_keep_their_order(
+    rule: str, path: str, expected: bool
+) -> None:
+    assert allowed(f"User-agent: *\nDisallow: {rule}\n", ROBOTS_AGENT, path) is expected
+
+
+def test_a_hostile_run_of_wildcards_is_matched_in_time_linear_in_the_path() -> None:
+    text = "User-agent: *\nDisallow: /" + "*a" * HOSTILE_WILDCARDS + "*!\n"
+    path = "/" + "a" * LONGEST_PATH_CHARS
+    started = time.perf_counter()
+    verdicts = (allowed(text, ROBOTS_AGENT, path), allowed(text, ROBOTS_AGENT, path + "!"))
+    assert time.perf_counter() - started < HOSTILE_RULE_SECONDS
+    assert verdicts == (True, False)
 
 
 def test_comments_and_other_lines_are_ignored_and_a_pattern_without_its_slash_keeps_its_intent() -> None:

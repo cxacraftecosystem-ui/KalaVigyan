@@ -35,7 +35,7 @@ flowchart LR
 | [0004](0004-craft-resolver.md) | The craft resolver | · |
 | [0005](0005-scholarly-source-adapters.md) | Scholarly source adapters | · |
 | [0006](0006-reference-source-adapters.md) | Reference source adapters: Wikipedia, Wikidata, PubChem, Wikimedia Commons | · |
-| [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) |
+| [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) and [0185](0185-a-code-bound-to-its-approver-robots-rules-without-backtracking-and-a-cap-on-inflated-bodies.md) |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | [0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) |
 | [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
@@ -146,7 +146,7 @@ flowchart LR
 
 | Decision | What was decided | Later changed by |
 |---|---|---|
-| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md), [0145](0145-monograph-pages-and-speed-without-debt.md), [0149](0149-a-fact-readers-can-see.md) and [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
+| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md), [0145](0145-monograph-pages-and-speed-without-debt.md), [0149](0149-a-fact-readers-can-see.md), [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) and [0185](0185-a-code-bound-to-its-approver-robots-rules-without-backtracking-and-a-cap-on-inflated-bodies.md) |
 | [0102](0102-knowledge-fields-schema-as-built.md) | Fields on facts, section records and the component registry: step 1 as built | · |
 | [0103](0103-mcp-server-read-slice.md) | The MCP server, slice 1: public read tools over our own JSON-RPC framing | [0111](0111-fewer-mcp-tools.md) |
 | [0104](0104-image-contributions-intake.md) | Image contributions: declared, read byte by byte, private until approved | [0109](0109-image-formats-and-screens.md) |
@@ -229,6 +229,7 @@ flowchart LR
 | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) | A section's pictures illustrate only what it shows and never end an answer, the citation numeral's touch area stays on the page, and the production checks read only our own frames | · |
 | [0183](0183-the-shared-template-draws-the-approved-page.md) | The shared template draws the approved page's masthead, contents, margin notes, sub-rail and source groups for every generated page | · |
 | [0184](0184-a-measured-rubric-floor-the-recorded-clip-one-open-acl-and-a-named-refusal.md) | The rubric floor rises to a measured whole run, the recorded clip is the video fixture, every reader's chunk ACL is `PUBLIC` alone, and a refused agent turn names its check | · |
+| [0185](0185-a-code-bound-to-its-approver-robots-rules-without-backtracking-and-a-cap-on-inflated-bodies.md) | An authorization code keeps its approver's token version, a robots.txt rule is matched without a regular expression, and the fetcher's byte cap holds on the inflated body | · |
 
 ## How this document is kept true
 

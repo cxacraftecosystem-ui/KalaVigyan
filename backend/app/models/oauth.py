@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -110,6 +111,7 @@ class OAuthCode(Base):
     codeChallenge: Mapped[str] = mapped_column(String(CHALLENGE_CHARS), nullable=False)
     scopes: Mapped[list[str]] = _scopes()
     resource: Mapped[str] = mapped_column(Text, nullable=False)
+    userTokenVersion: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     expiresAt: Mapped[datetime] = _stamp()
     usedAt: Mapped[datetime | None] = _optional_stamp()
     grantId: Mapped[uuid.UUID | None] = mapped_column(

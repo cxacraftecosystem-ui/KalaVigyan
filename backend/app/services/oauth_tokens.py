@@ -46,7 +46,6 @@ __all__ = [
     "new_secret",
     "revoke_grant",
     "revoke_token",
-    "sessions_live_since",
     "stored_secret",
 ]
 
@@ -67,17 +66,9 @@ def stored_secret(raw: str | None, prefix: str) -> str | None:
     return token_hash(raw)
 
 
-def grant_matches_user(grant: OAuthGrant, user: User | None) -> bool:
+def grant_matches_user(grant: OAuthGrant | OAuthCode, user: User | None) -> bool:
     claims = {TOKEN_VERSION_CLAIM: grant.userTokenVersion, "iat": grant.createdAt.timestamp()}
     return user is not None and token_matches_user(claims, user)
-
-
-def sessions_live_since(user: User | None, moment: datetime) -> bool:
-    if user is None:
-        return False
-    return token_matches_user(
-        {TOKEN_VERSION_CLAIM: int(user.tokenVersion or 0), "iat": moment.timestamp()}, user
-    )
 
 
 async def grant_tokens(
@@ -151,7 +142,7 @@ async def _exchange_code(
     if not await _claim(session, OAuthCode, code.id, now):
         raise OAuthError(INVALID_GRANT, UNKNOWN_CODE)
     user = await session.get(User, code.userId)
-    if user is None or not sessions_live_since(user, code.createdAt):
+    if user is None or not grant_matches_user(code, user):
         raise OAuthError(INVALID_GRANT, UNKNOWN_CODE)
     grant = await _new_grant(session, code, user, now=now)
     code.grantId = grant.id
@@ -229,7 +220,7 @@ async def _new_grant(session: AsyncSession, code: OAuthCode, user: User, *, now:
         userId=user.id,
         scopes=list(code.scopes),
         resource=code.resource,
-        userTokenVersion=int(user.tokenVersion or 0),
+        userTokenVersion=code.userTokenVersion,
         createdAt=now,
         expiresAt=now + timedelta(seconds=REFRESH_TOKEN_SECONDS),
     )
