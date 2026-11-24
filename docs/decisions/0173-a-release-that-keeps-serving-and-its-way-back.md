@@ -23,6 +23,7 @@ readiness; Migrations; Fetcher); the RUNBOOK's Deploy and Roll back say how to u
 | The pooler sessions each process may hold | [decision 0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) |
 | How a release migrates, seeds, checks and switches | [infra.md](../contracts/infra.md), Migrations and Seeds |
 | The admin build that waits for the API too | [decision 0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
+| Pages rebuilt only after the switch, a rollback's rebuild and a deploy that never goes back | [decision 0186](0186-pages-rebuilt-by-the-release-that-serves-and-a-deploy-that-never-goes-back.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

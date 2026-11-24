@@ -19,12 +19,25 @@ def called_in_order(body: str, *calls: str) -> bool:
     return all(place >= 0 for place in places) and places == sorted(places)
 
 
-def test_a_release_rebuilds_pages_before_it_goes_live_and_refreshes_the_web_after() -> None:
-    assert called_in_order(shell_function("seed"), "app.scripts.import_curation", 'rebuild_pages "$tree"')
+def test_a_release_rebuilds_pages_once_it_serves_and_refreshes_the_web_after() -> None:
+    assert "rebuild_pages" not in shell_function("seed")
     assert "app.scripts.rebuild_stale_pages" in shell_function("rebuild_pages")
     release = shell_function("cmd_release")
-    assert called_in_order(release, 'seed "$tree"', "start_and_promote", 'refresh_served_pages "$tree"')
-    assert called_in_order(shell_function("cmd_rollback"), "start_and_promote", "refresh_served_pages")
+    assert called_in_order(
+        release,
+        'seed "$tree"',
+        'check_retrieval "$tree"',
+        "start_and_promote",
+        'rebuild_pages "$tree"',
+        'refresh_served_pages "$tree"',
+    )
+    rollback = shell_function("cmd_rollback")
+    assert called_in_order(
+        rollback,
+        "start_and_promote",
+        'rebuild_pages "$target/backend"',
+        'refresh_served_pages "$target/backend"',
+    )
     refresh = shell_function("refresh_served_pages")
     assert "app.scripts.refresh_served_pages --state '$STATE/served-pages.json'" in refresh
 
@@ -52,9 +65,10 @@ def test_a_release_brings_stored_dataset_records_up_to_the_registry_before_the_c
 
 
 def test_a_release_refreshes_the_shared_terms_after_the_curation_import_and_before_the_pages() -> None:
-    seed = shell_function("seed")
-    assert called_in_order(seed, "app.scripts.import_curation", "app.scripts.refresh_shared_terms")
-    assert called_in_order(seed, "app.scripts.refresh_shared_terms", 'rebuild_pages "$tree"')
+    assert called_in_order(
+        shell_function("seed"), "app.scripts.import_curation", "app.scripts.refresh_shared_terms"
+    )
+    assert called_in_order(shell_function("cmd_release"), 'seed "$tree"', 'rebuild_pages "$tree"')
 
 
 def test_the_pages_step_rebuilds_stored_documents_within_their_own_budget() -> None:

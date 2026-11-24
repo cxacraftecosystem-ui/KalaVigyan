@@ -639,7 +639,8 @@ reranker, so every reranked ask falls back); a change that lowers either below i
 ### The release check
 
 `infra/deploy/blue_green.sh` runs `check_retrieval` after the seeds, the curated import, the craft
-sync, the embedding steps and the page rebuild, and before traffic moves:
+sync and the embedding steps, and before traffic moves (the page rebuild follows the switch,
+`docs/contracts/infra.md`, Stored pages):
 `python -m app.scripts.eval_retrieval --release --seconds $CHECK_SECONDS` (180) from the new
 colour's tree inside `timeout` of that plus `EMBED_GRACE` (60), against the same database, with the
 embedding and rerank routes only (no answer is composed and no judge is asked). It scores the

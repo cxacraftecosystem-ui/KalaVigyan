@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ORDER="$(dirname "${BASH_SOURCE[0]}")/../../scripts/release_order.sh"
+
 say() { printf '%s\n' "$*"; }
 decide() {
   printf 'api=%s\n' "$1" >> "$GITHUB_OUTPUT"
@@ -10,7 +12,7 @@ decide() {
 
 [ -n "${API_BASE_URL:-}" ] || { say "::error::api-base-url is not set, so the build cannot tell which API answers"; exit 1; }
 command -v yq > /dev/null || { say "::error::yq is not on the runner; cannot read the Backend checks paths"; exit 1; }
-live="$(curl -fsS -m 20 --retry 3 --retry-all-errors "$API_BASE_URL/health" | jq -r '.release // empty' || true)"
+live="$(bash "$ORDER" live)"
 [[ "$live" =~ ^[0-9a-f]{40}$ ]] \
   || decide waiting "::warning::the API at $API_BASE_URL names no release commit ('${live:-no answer}'); the web app waits for Deploy backend, which builds it once its release answers"
 git fetch --quiet --no-tags --depth=1 origin "+refs/heads/main:refs/remotes/origin/main"

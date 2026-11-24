@@ -15,6 +15,8 @@ SEEDED = (
     "app.scripts.eval_retrieval",
 )
 BELOW_FLOOR = "3"
+REBUILD = "app.scripts.rebuild_stale_pages"
+REFRESH = "app.scripts.refresh_served_pages"
 
 
 @pytest.fixture
@@ -64,6 +66,33 @@ def test_a_release_stopped_by_its_retrieval_check_leaves_the_release_before_for_
     assert not box.active("kv-api@8000")
 
 
+def test_a_release_rebuilds_the_stored_pages_only_once_its_own_colour_serves(box: FakeBox) -> None:
+    run = box.run("release", NEW)
+    assert run.code == 0, run.said
+    assert box.runs("app.scripts.import_curation") == [(NEW, LIVE)]
+    assert box.runs(REBUILD) == [(NEW, NEW)]
+    events = box.events()
+    assert events.index("stop kv-api@8000") < events.index(f"{REBUILD} served")
+    assert events.index(f"{REBUILD} served") < events.index(f"{REFRESH} served")
+
+
+def test_a_release_stopped_by_its_retrieval_check_rebuilds_no_stored_page(box: FakeBox) -> None:
+    box.mark("check-exit", BELOW_FLOOR)
+    run = box.run("release", NEW)
+    assert run.code == 1, run.said
+    assert box.runs("app.scripts.eval_retrieval") == [(NEW, LIVE)]
+    assert box.runs(REBUILD) == []
+
+
+def test_a_rollback_rebuilds_the_stored_pages_in_its_own_shape_once_it_serves(box: FakeBox) -> None:
+    run = box.run("rollback")
+    assert run.code == 0, run.said
+    assert box.runs(REBUILD) == [(PREVIOUS, PREVIOUS)]
+    events = box.events()
+    assert events.index("stop kv-api@8000") < events.index(f"{REBUILD} served")
+    assert events.index(f"{REBUILD} served") < events.index(f"{REFRESH} served")
+
+
 def test_a_plain_rollback_refuses_a_release_that_never_served(box: FakeBox) -> None:
     box.link("slot-8001", NEW)
     run = box.run("rollback")
@@ -107,10 +136,21 @@ def test_a_restart_moves_the_live_release_to_the_other_colour_and_keeps_the_one_
 
 
 def test_a_release_that_runs_out_of_its_time_stops_and_puts_the_box_back(box: FakeBox) -> None:
-    box.mark("slow-step", "app.scripts.rebuild_stale_pages")
+    box.mark("slow-step", "app.scripts.embed_knowledge")
     run = box.run("release", NEW, "--within", "3")
     assert run.code == 124, run.said
     assert run.seconds < 15
     assert serves_as_before(box)
     events = box.events()
     assert events.index("stop kv-worker") < events.index("start kv-worker")
+
+
+def test_a_release_that_runs_out_of_time_while_it_rebuilds_pages_keeps_its_own_colour_serving(
+    box: FakeBox,
+) -> None:
+    box.mark("slow-step", REBUILD)
+    run = box.run("release", NEW, "--within", "8")
+    assert run.code == 124, run.said
+    assert (box.proxied(), box.slot("current")) == ("8001", NEW)
+    assert box.active("kv-api@8001") and not box.active("kv-api@8000")
+    assert all(box.active(worker) for worker in WORKERS)

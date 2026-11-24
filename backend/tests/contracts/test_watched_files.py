@@ -6,6 +6,10 @@ from .golden import REPO
 
 WORKFLOW = REPO / ".github" / "workflows" / "backend-checks.yml"
 READ_OUTSIDE_THE_BACKEND = (
+    ".github/actions/await-build/action.yml",
+    ".github/actions/build-web-app/action.yml",
+    ".github/actions/build-web-app/api_ready.sh",
+    ".github/scripts/release_order.sh",
     "docs/PLAN.md",
     "docs/plans/answer-experience.md",
     "etl/geo/geo_etl/layers/chirps.py",

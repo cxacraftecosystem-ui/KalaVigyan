@@ -3,8 +3,15 @@ set -u
 module=""
 if [ "${1:-}" = -m ]; then module="$2"; fi
 port="$(sed -nE 's#^[[:space:]]*proxy_pass http://127\.0\.0\.1:([0-9]+);.*#\1#p' "$NGINX_SITE" | head -n1)"
-if [ -e "$BOX/units/kv-api@$port" ]; then serving=served; else serving=unserved; fi
+if [ -e "$BOX/units/kv-api@$port" ]; then
+  serving=served
+  served_by="$(basename "$(readlink -f "$APP/slot-$port")")"
+else
+  serving=unserved
+  served_by=nobody
+fi
 printf '%s %s\n' "$module" "$serving" >> "$BOX/events.log"
+printf '%s %s %s\n' "$module" "$(basename "$(dirname "$PWD")")" "$served_by" >> "$BOX/runs.log"
 if [ "$module" = alembic ]; then
   left="$(cat "$BOX/migration-failures" 2>/dev/null || echo 0)"
   if [ "$left" -gt 0 ]; then

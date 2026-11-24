@@ -69,7 +69,6 @@ seed() {
   sync_portal_crafts "$tree"
   embed_seeded "$tree" app.scripts.embed_craft_descriptors
   embed_seeded "$tree" app.scripts.embed_knowledge
-  rebuild_pages "$tree"
 }
 
 rebuild_pages() {
@@ -294,6 +293,7 @@ cmd_release() {
   seed "$tree" || die "seeding failed. nginx still proxies to $live."
   check_retrieval "$tree" || die "retrieval fell below its floor. nginx still proxies to $live."
   start_and_promote
+  rebuild_pages "$tree"
   refresh_served_pages "$tree"
   say "released: nginx -> $cand, current -> $(readlink "$APP/current")"
 }
@@ -314,6 +314,7 @@ cmd_rollback() {
   stop_workers
   if active "$UNIT@$cand"; then systemctl stop "$UNIT@$cand"; fi
   start_and_promote
+  rebuild_pages "$target/backend"
   refresh_served_pages "$target/backend"
   say "rolled back: nginx -> $cand ($target)"
 }

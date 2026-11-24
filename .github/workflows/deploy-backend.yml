@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Name the release
         run: |
@@ -46,6 +46,9 @@ jobs:
           for v in AWS_REGION INSTANCE_ID BUCKET API_BASE_URL; do
             [ -n "${!v}" ] || { echo "::error::repository variable for $v is not set (see docs/RUNBOOK.md)"; exit 1; }
           done
+
+      - name: Refuse a commit older than the release production serves
+        run: bash .github/scripts/release_order.sh descends "$SHA"
 
       - name: Refuse a tree that cannot start
         run: |

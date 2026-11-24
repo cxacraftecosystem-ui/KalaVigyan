@@ -55,6 +55,7 @@ class FakeBox:
         (root / "site.conf").write_text(SITE, encoding="utf-8")
         (root / "app.env").write_text("APP_ENV='test'\n", encoding="utf-8")
         (root / "events.log").touch()
+        (root / "runs.log").touch()
         for unit in ("kv-api@8000", *WORKERS):
             (self.units / unit).touch()
         self._commands()
@@ -93,6 +94,14 @@ class FakeBox:
 
     def events(self) -> list[str]:
         return (self.root / "events.log").read_text(encoding="utf-8").splitlines()
+
+    def runs(self, module: str) -> list[tuple[str, str]]:
+        found: list[tuple[str, str]] = []
+        for line in (self.root / "runs.log").read_text(encoding="utf-8").splitlines():
+            name, ran_from, served_by = line.split()
+            if name == module:
+                found.append((ran_from, served_by))
+        return found
 
     def run(self, *arguments: str) -> Run:
         env = {

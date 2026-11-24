@@ -21,6 +21,7 @@ question writer). The contracts are `docs/contracts/frontend.md`, `docs/contract
 | How the web parses a response | [frontend.md](../contracts/frontend.md) |
 | The golden field check leaving out what the web never parses | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | The review page skipping a review kind it does not know | [decision 0167](0167-answer-leftovers-kept-true.md) |
+| The probe read under the release production serves too | [decision 0186](0186-pages-rebuilt-by-the-release-that-serves-and-a-deploy-that-never-goes-back.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

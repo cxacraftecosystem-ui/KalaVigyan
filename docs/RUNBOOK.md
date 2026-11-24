@@ -53,9 +53,9 @@ edit the served file: change the content or the template, then run
 `cd backend && python -m app.scripts.build_monograph`. `--check` reports a page that differs from its
 build, and the backend tests fail until the two agree.
 
-Each backend deploy puts every authored monograph's content into the database (sections by field,
-the component registry and its `MonographDocument`) before the page snapshots and before the web
-builds: `app.scripts.rebuild_stale_pages` runs `load_monograph` for each first, within its
+Each backend deploy, once its own colour serves, puts every authored monograph's content into the
+database (sections by field, the component registry and its `MonographDocument`) before the page
+snapshots and before the web builds: `app.scripts.rebuild_stale_pages` runs `load_monograph` for each first, within its
 `--seconds`, and its report lists what each wrote (`monographs`, with `documentVersion`). Until a
 deploy stores it, the API serves the last stored version, which is what a Vercel preview shows. To
 load one by hand, run `python -m app.scripts.load_monograph` on the box; it can be run again at
@@ -77,8 +77,8 @@ figure, which the page then draws from its fragment, sized for 1440, so the API 
 ground figure in it. Before measuring the frame the capture removes the earlier capture from the
 approved page, so the rules the figure inherits from the app stay in the new fragment.
 
-Each backend deploy rebuilds the stale craft page snapshots after the import (`app.scripts.rebuild_stale_pages`,
-at most `PAGES_SECONDS`, 480 by default), because a curated craft's document reads its snapshot and a
+Each backend deploy rebuilds the stale craft page snapshots after its switch (`app.scripts.rebuild_stale_pages`,
+at most `PAGES_SECONDS`, 480 by default), before the web builds, because a curated craft's document reads its snapshot and a
 stale one is rebuilt on every read (about 9 s), which times the web build out. The nightly upkeep
 rebuilds whatever a deploy leaves.
 
@@ -251,7 +251,7 @@ Every secret and every repository variable is in GitHub and in Parameter Store (
 | Google OAuth client | Add `https://kalavigyan.vercel.app` to the client's Authorized JavaScript origins |
 | `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET`, `NEXT_PUBLIC_YAHOO_CLIENT_ID` | Register the Yahoo app and set the three names as in Yahoo sign-in, below. Until then there is no "Continue with Yahoo" button. |
 
-To change a secret: `gh secret set NAME --repo cxacraftecosystem-ui/KalaVigyan`, then run **Deploy backend**. The deploy copies changed GitHub secrets into Parameter Store and re-renders the box `.env`. For config that is not a GitHub secret:
+To change a secret: `gh secret set NAME --repo cxacraftecosystem-ui/KalaVigyan`, then run **Deploy backend** (re-run its newest run: a run whose commit is older than the release production serves is refused before it copies anything, decision 0186). The deploy copies changed GitHub secrets into Parameter Store and re-renders the box `.env`. For config that is not a GitHub secret:
 
 ```bash
 aws ssm put-parameter --region ap-south-1 --name /kalavigyan/env/NAME --type SecureString --overwrite --cli-input-json file://value.json
@@ -341,6 +341,8 @@ flowchart TD
   subgraph Actions["GitHub Actions"]
     P([Push to main])
     BC{Backend checks}
+    AF{"Comes after the release<br/>production serves?"}
+    RF["Refused,<br/>nothing changes"]
     DB["Deploy backend<br/>OIDC, secrets to SSM"]
     SM["Smoke test<br/>through CloudFront"]
     G{"Is the API main needs<br/>the one answering?"}
@@ -354,9 +356,12 @@ flowchart TD
     N["nginx switches"]
     K["The deploy rolls back"]
     W["Old colour stops,<br/>workers restart"]
+    RP["Stale pages rebuilt<br/>by the release that serves"]
   end
   P --> BC
-  BC -->|green| DB
+  BC -->|green| AF
+  AF -->|yes| DB
+  AF -->|no| RF
   DB --> R
   R --> M
   M --> S
@@ -364,7 +369,8 @@ flowchart TD
   H -->|yes| N
   H -->|no| K
   N --> W
-  W --> SM
+  W --> RP
+  RP --> SM
   SM --> G
   G -->|yes| V
   classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
@@ -375,16 +381,25 @@ Automatic: a push to `main` that touches `backend/**`, `shared/**`, `infra/deplo
 
 Deploy backend (`.github/workflows/deploy-backend.yml`):
 
-1. Assumes `kalavigyan-deploy` through GitHub OIDC (no static AWS keys in GitHub).
-2. Copies changed secrets into `/kalavigyan/env`.
-3. Uploads `git archive HEAD backend infra/deploy` to `s3://kalavigyan-media-626159998512/deploy/backend/<sha>/KalaVigyan_API_Release-Build_<sha12>.tar.gz`.
-4. Runs `infra/deploy/release.sh <sha>` on the box over SSM `AWS-RunShellScript`, logging to `deploy/logs/<sha>/`. The script installs units, renders the env, installs the CPython that `infra/deploy/python.pin` names into `/opt/cpython/<version>+<build>` unless it is there (over https, checksum checked before it is unpacked, staged then moved, root-owned; decision 0118), builds the venv with uv on that interpreter, writes `RELEASE=<sha>` to the release's `release.env` (the API colour reads it, so `/health` names the commit it runs), then `blue_green.sh release <sha> --within <seconds>`:
+1. Refuses a commit that does not come after the release production serves: it checks out the
+   whole history and runs `.github/scripts/release_order.sh descends <sha>` against the commit
+   `/health` names. The commit production serves (a re-run) and any commit after it go on; an
+   older or a sideways one fails before anything is changed, so re-running an old Backend checks
+   or Deploy backend run never ships older code. When `/health` names no commit the deploy goes on
+   with a warning; when it names one this repository does not hold, it is refused. To serve an
+   older release, roll back on the box (Roll back, below; decision 0186).
+2. Assumes `kalavigyan-deploy` through GitHub OIDC (no static AWS keys in GitHub).
+3. Copies changed secrets into `/kalavigyan/env`.
+4. Uploads `git archive HEAD backend infra/deploy` to `s3://kalavigyan-media-626159998512/deploy/backend/<sha>/KalaVigyan_API_Release-Build_<sha12>.tar.gz`.
+5. Runs `infra/deploy/release.sh <sha>` on the box over SSM `AWS-RunShellScript`, logging to `deploy/logs/<sha>/`. The script installs units, renders the env, installs the CPython that `infra/deploy/python.pin` names into `/opt/cpython/<version>+<build>` unless it is there (over https, checksum checked before it is unpacked, staged then moved, root-owned; decision 0118), builds the venv with uv on that interpreter, writes `RELEASE=<sha>` to the release's `release.env` (the API colour reads it, so `/health` names the commit it runs), then `blue_green.sh release <sha> --within <seconds>`:
    1. migrate (`alembic upgrade head`; after three failed tries the live colour is stopped to free its pooler sessions, five more tries follow, and the live colour starts again as soon as one passes, so it serves through the seeds and the checks), seed (`seed_crafts`, `seed_claims`, `seed_districts`), bring the stored dataset records up to the registry (`sync_dataset_registry`, decision 0114) and import the curated dossiers (`import_curation`, decision 0053; a refused dossier exits 2 and stops the release like a failed seed), then rebuild the shared-science explorer's per-term summary (`refresh_shared_terms`, `docs/contracts/learning.md`) while the old colour serves; a non-zero exit of any of these six stops the release with "seeding failed" and nginx keeps the live colour, then sync crafts from both portals (`sync_portal_crafts`; a failure is a warning, the release goes on) and embed what the seeds and the import wrote (`embed_craft_descriptors`, then `embed_knowledge`, each bounded to 240 seconds; a failure is a warning too);
    2. start the other colour;
    3. wait for `/health/ready`: the new colour must start and reach its database, or it is stopped and nginx stays where it was;
    4. switch nginx;
    5. stop the old colour;
-   6. restart the worker and fetcher.
+   6. restart the worker and fetcher;
+   7. rebuild the stale pages and stored documents (`rebuild_stale_pages`, below) now that only this
+      release serves, then refresh the pages the web holds (`refresh_served_pages`).
 
    It keeps the newest 5 releases.
 
@@ -394,10 +409,13 @@ Deploy backend (`.github/workflows/deploy-backend.yml`):
    `release.sh` gives `blue_green.sh` what is left of `RELEASE_SECONDS` (2700, the command's
    `executionTimeout`) less 300 seconds, refuses to switch with less than 600 left, and a release
    still running at its limit is sent SIGTERM, which runs the same clean-up, and SIGKILL 240
-   seconds later, a minute before SSM's own limit (decision 0173).
+   seconds later, a minute before SSM's own limit (decision 0173). A release that reaches its limit
+   after its switch, while it rebuilds pages, keeps serving: the deploy run fails, the pages it did
+   not reach are rebuilt by the nightly upkeep, and the release before is never started again on
+   documents it cannot read (decision 0186).
 
-   Pages (round 7): after the embeds, `rebuild_stale_pages` (bounded by `PAGES_SECONDS` = 480) rebuilds only the page snapshots whose stamp moved. A stamp hashes the page's data and a fingerprint of the code that builds pages (`services/page_code.py`), not the release, so a deploy that changes no page code rebuilds nothing; the report carries `pageCode`. The first deploy after a change to page code restales every page once.
-5. Smoke-tests `https://d89rsltpszebp.cloudfront.net/health/ready` and waits until `/health` names the deployed commit.
+   Pages (round 7): after the switch, once the old colour has stopped, `rebuild_stale_pages` (bounded by `PAGES_SECONDS` = 480, and `DOCUMENTS_SECONDS` = 420 for the stored documents) rebuilds only the page snapshots and stored documents whose stamp moved. It runs only after the switch because it writes those bodies in the new release's shape, which the release before's closed models may refuse (a field it does not know, such as `CitedSource.kind` from decision 0183, turns that page's read into a 500), and a release stopped before its switch then leaves them as the live release wrote them (`docs/contracts/infra.md`, Stored pages; decision 0186). A stamp hashes the page's data and a fingerprint of the code that builds pages (`services/page_code.py`), not the release, so a deploy that changes no page code rebuilds nothing; the report carries `pageCode`. The first deploy after a change to page code restales every page once.
+6. Smoke-tests `https://d89rsltpszebp.cloudfront.net/health/ready` and waits until `/health` names the deployed commit.
 
 Craft sync (`.github/workflows/craft-sync.yml`): daily at 21:37 UTC and on dispatch, runs `app.scripts.sync_portal_crafts` in `/opt/kalavigyan/current/backend` on the box over SSM, logging to `deploy/logs/craft-sync/<run id>/`. It prints one JSON report and fails when a portal did not answer (`docs/contracts/portal-craft-feed.md`).
 
@@ -839,6 +857,14 @@ A plain `rollback` promotes the idle slot only when its release has served befor
 nothing, so a release that stopped before its switch is never promoted by accident. Name the
 release to go back to instead. Either way the new colour must answer `/health/ready` before nginx
 switches.
+
+Once it serves, the rollback rebuilds the stale pages and stored documents with the release it
+went back to (`rebuild_stale_pages`) and then refreshes the pages the web holds, so the switch
+stays instant. A newer release may have written those bodies in a shape the older one refuses, so
+until the rebuild reaches a page that page can answer 500 on the release rolled back to; the
+rebuild takes at most about 16 minutes, and the nightly upkeep finishes what it leaves (decision
+0186). Deploy backend never moves production back: it refuses a commit that does not come after
+the release `/health` names, so an older release is served only through this command.
 
 A rollback does not reverse migrations. If a migration has to be undone, run `alembic downgrade -1` from the release that added it, while that migration is still the head, before rolling back; it undoes that one revision. In production (`APP_ENV=production`) `backend/migrations/env.py` refuses any downgrade that would undo more than one revision, before any step runs, and names how many it would undo; each step commits on its own and may drop a table with its rows. To undo more on purpose, run the same command again with `CONFIRM_DOWNGRADE_STEPS` set to that exact number (decision 0174).
 

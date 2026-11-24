@@ -8,6 +8,9 @@ on:
       - "infra/deploy/**"
       - "tools/**"
       - ".github/workflows/backend-checks.yml"
+      - ".github/workflows/deploy-backend.yml"
+      - ".github/actions/**"
+      - ".github/scripts/**"
       - "docs/PLAN.md"
       - "docs/plans/**"
       - "etl/geo/geo_etl/**"
@@ -163,11 +166,17 @@ jobs:
       - name: Import the curated dossiers as the deploy does
         if: matrix.shard == 1
         run: uv run python -m app.scripts.import_curation
-      - name: The release before reads and writes the migrated database
+      - name: The releases before read and write the migrated database
         if: matrix.shard == 1
         env:
-          PREVIOUS_REF: ${{ github.event_name == 'push' && github.ref_name == 'main' && github.event.before || 'main' }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          BASE_REF: ${{ github.event_name == 'push' && github.ref_name == 'main' && github.event.before || 'main' }}
         run: |
-          git fetch --no-tags --depth=1 origin "$PREVIOUS_REF"
-          git worktree add --detach "$RUNNER_TEMP/previous-release" FETCH_HEAD
-          PREVIOUS_RELEASE_BACKEND="$RUNNER_TEMP/previous-release/backend" uv run pytest -q -m db tests/db/test_previous_release_db.py -k release_before
+          releases="$(bash ../.github/scripts/release_order.sh before "$BASE_REF")"
+          for release in $releases; do
+            git fetch --no-tags --depth=1 origin "$release"
+            git worktree add --detach "$RUNNER_TEMP/release-$release" FETCH_HEAD
+            echo "::group::the release $release reads and writes the migrated database"
+            PREVIOUS_RELEASE_BACKEND="$RUNNER_TEMP/release-$release/backend" uv run pytest -q -m db tests/db/test_previous_release_db.py -k release_before
+            echo "::endgroup::"
+          done

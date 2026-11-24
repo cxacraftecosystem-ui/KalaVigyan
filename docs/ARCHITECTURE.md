@@ -676,12 +676,16 @@ flowchart LR
   SE --> IC["import_curation<br/>dossiers, then categories"]
   IC --> SP["sync_portal_crafts"]
   SP --> EM["embed_craft_descriptors,<br/>embed_knowledge"]
-  EM --> RP["rebuild_stale_pages"]
+  EM --> SW["the switch"]
+  SW --> RP["rebuild_stale_pages"]
   classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
   class IC accent
 ```
 
-Every deploy runs these in order while the old colour serves (`docs/RUNBOOK.md`, Deploy).
+Every deploy runs these in order: up to the embeds while the old colour serves, and
+`rebuild_stale_pages` only once the new colour serves and the old one has stopped, because it
+writes stored documents in the new release's shape (`docs/RUNBOOK.md`, Deploy;
+`docs/contracts/infra.md`, Stored pages).
 
 Tables follow DR's Prisma naming (quoted PascalCase tables, camelCase columns) so the portals
 stay mergeable; the full list is `backend/app/models/` and `backend/migrations/versions/`.
@@ -874,13 +878,13 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 
 | Workflow | Runs |
 |---|---|
-| Backend checks | ruff, DB-free pytest, tools tests (hygiene, curation), hygiene check, the curation check of every dossier and the index (`tools/curation/check.py --check-index`, no network), offline migration render; then migrations, seeds and DB tests against PostGIS with pgvector in three shards, each with its own database (`DB_TEST_SHARD`, decision 0163), then the curated dossier import (decision 0053) |
+| Backend checks | ruff, DB-free pytest, tools tests (hygiene, curation), hygiene check, the curation check of every dossier and the index (`tools/curation/check.py --check-index`, no network), offline migration render; then migrations, seeds and DB tests against PostGIS with pgvector in three shards, each with its own database (`DB_TEST_SHARD`, decision 0163), then the curated dossier import (decision 0053) and every table loaded through the models of each release before, the one production serves and the base (decision 0186) |
 | Frontend checks | typecheck, lint and unit specs (after the lockfile audit and the no-comments check); the production build; the smoke specs against that build in a browser, among them the voice dock's recorded bit rate (decision 0161) |
 | Hygiene | the hygiene check over the whole repository on every push to `main` and every pull request, whatever the paths, since Backend checks runs only for backend paths; it also fails a change that leaves `docs/TECH_DEBT.md` with more entries than its baseline (decision 0163) |
 | README check | on a pull request, or a push to `main` or a round branch, that changes `README.md`, a Markdown file under `docs/` or `.claude/skills/`, the README kit or its workflow: the kit rebuilt and diffed, every SVG checked, every mermaid block drawn by mermaid-cli and on github.com, every page rendered by GitHub (`docs/readme-kit/README_STYLE.md`, CI) |
 | Craft data | master-list sha1, lint and tests of `etl/crafts`; weekly regeneration |
 | Geo ETL | `etl/geo` tests and the district statistics build |
-| Deploy backend | after Backend checks succeed on a push to `main` of `cxacraftecosystem-ui/KalaVigyan` |
+| Deploy backend | after Backend checks succeed on a push to `main` of `cxacraftecosystem-ui/KalaVigyan`, for a commit that comes after the release production serves (decision 0186) |
 | E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` nine known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English, Hindi and Urdu, Kachchh's water, which needs a region story with a traced river once the run reads the river lines as loaded from the Khari's basin file, what the cloth is made of, its history, its seasons (a seasons block) and the Ganga for a Varanasi craft (its region story timed), and at Expert depth indigo's generated explainer, every region story, seasons block and supply map noted with its time and what it shows; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark; the Hindi and Urdu answers must also carry a translated sentence and paragraphs in their script, and the Urdu one must read right to left with its prose in a loaded Noto Nastaliq Urdu face (decisions 0029, 0050, 0061, 0077, 0157 and 0160) |
 
 Scheduled and dispatched runs (craft sync, field voices, coverage enrichment, nightly upkeep, the
