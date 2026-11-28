@@ -4,24 +4,23 @@ from functools import partial
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import User
 from app.research.component_proposals import ComponentProposalDraft
 from app.research.page_proposals import (
     COMPONENT,
     LISTED,
     SHOWN,
     WITHDRAWAL,
-    PageBundle,
     PageWithdrawal,
     PartReport,
 )
 
 from .component_lifecycle import live_piece
-from .component_withdrawals import reason_problem, withdrawable_piece
+from .component_withdrawals import Withdrawable
 from .monograph_generated_parts import piece_subject_keys, registered_component
 from .open_work_subjects import CATEGORY, WorkSubject
+from .page_part_checks import PartRun, part_checked
 from .page_preview_parts import SUBJECT_PREFIXES, PreviewDraft
-from .page_proposals_parts import checked_part, refuse_on
+from .page_proposals_parts import checked_part
 
 __all__ = ["previewed_link", "previewed_withdrawals"]
 
@@ -59,26 +58,16 @@ async def previewed_link(
     return PartReport(part=COMPONENT, index=index, outcome=SHOWN, message=SHOWN_LINK)
 
 
-async def previewed_withdrawals(
-    session: AsyncSession, user: User, subject: WorkSubject, bundle: PageBundle, draft: PreviewDraft
-) -> list[PartReport]:
+async def previewed_withdrawals(run: PartRun, draft: PreviewDraft) -> list[PartReport]:
     reports: list[PartReport] = []
-    for index, withdrawal in enumerate(bundle.withdrawals):
-        work = partial(_withdrawn, session, (user, subject), draft, index, withdrawal)
-        reports.append(await checked_part(session, WITHDRAWAL, index, work))
+    for index, withdrawal in enumerate(run.bundle.withdrawals):
+        work = partial(_withdrawn, run, draft, index, withdrawal)
+        reports.append(await checked_part(run.session, WITHDRAWAL, index, work))
     return reports
 
 
-async def _withdrawn(
-    session: AsyncSession,
-    by: tuple[User, WorkSubject],
-    draft: PreviewDraft,
-    index: int,
-    withdrawal: PageWithdrawal,
-) -> PartReport:
-    user, subject = by
-    found = await withdrawable_piece(session, user, withdrawal.label, subject)
-    refuse_on(reason_problem(found, withdrawal.reason))
+async def _withdrawn(run: PartRun, draft: PreviewDraft, index: int, withdrawal: PageWithdrawal) -> PartReport:
+    found: Withdrawable = await part_checked(run, WITHDRAWAL, index, withdrawal)
     draft.withdrawn.add(withdrawal.label)
     shown = SHOWN_ASKED if found.waits else SHOWN_WITHDRAWAL
     return PartReport(part=WITHDRAWAL, index=index, outcome=SHOWN, message=shown)

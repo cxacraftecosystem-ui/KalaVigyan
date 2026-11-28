@@ -231,7 +231,7 @@ async def test_spent_component_and_layout_limits_refuse_their_bundle_parts(
 
     monkeypatch.setattr(page_proposals, "subject_by_key", subject)
     monkeypatch.setattr(page_proposals, "refuse_a_failed_drawing", drawn_whole)
-    monkeypatch.setattr(page_proposals, "propose_component", never_called)
+    monkeypatch.setattr(page_proposals, "stored_proposal", never_called)
     monkeypatch.setattr(page_proposals, "propose_layout", never_called)
     nothing: Any = never_called
     tools = PageTools(

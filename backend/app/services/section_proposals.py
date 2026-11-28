@@ -33,14 +33,17 @@ from .fact_proposals import role_now
 from .monograph_document import has_authored_content
 from .monograph_generated_sections import ReviewedBy, SectionOwner, publish_reviewed_section
 from .open_work_subjects import CATEGORY, WorkSubject, craft_subject, subject_by_key
-from .section_gates import faithful_check, field_facts, section_checks, shown_facts, stale_problem
+from .section_gates import ShownFacts, faithful_check, field_facts, section_checks, shown_facts, stale_problem
 from .task_reservations import complete_task
 
 __all__ = [
     "MESSAGES",
+    "CheckedSection",
     "SectionContext",
     "approve_section",
+    "checked_section",
     "propose_section",
+    "refusal_message",
     "reject_section",
     "row_part",
     "row_subject",
@@ -69,6 +72,12 @@ APPROVED_AT_ONCE = "approved at once: proposed by a {role} account"
 
 
 @dataclass(frozen=True)
+class CheckedSection:
+    facts: ShownFacts
+    checks: tuple[SectionCheck, ...]
+
+
+@dataclass(frozen=True)
 class SectionContext:
     origin: str
     judges: Sequence[StructuredModel]
@@ -84,10 +93,8 @@ async def propose_section(
     context: SectionContext,
     now: datetime,
 ) -> SectionOutcome:
-    if has_authored_content(subject.slug):
-        raise InvalidInput(AUTHORED.format(slug=subject.slug))
-    facts = await field_facts(session, subject, part)
-    checks = section_checks(part, facts)
+    checked = await checked_section(session, subject, part)
+    facts, checks = checked.facts, list(checked.checks)
     if first_refusal(checks) is None:
         checks.append(await faithful_check(part, facts, context.judges))
     row = _row(user, subject, part, checks, context)
@@ -99,6 +106,20 @@ async def propose_section(
         note = APPROVED_AT_ONCE.format(role=ROLE_LABELS.get(role, role))
         await approve_section(session, row, user, note=note, now=now)
     return _outcome(row, checks)
+
+
+async def checked_section(session: AsyncSession, subject: WorkSubject, part: SectionPart) -> CheckedSection:
+    if has_authored_content(subject.slug):
+        raise InvalidInput(AUTHORED.format(slug=subject.slug))
+    facts = await field_facts(session, subject, part)
+    return CheckedSection(facts=facts, checks=tuple(section_checks(part, facts)))
+
+
+def refusal_message(checks: Sequence[SectionCheck]) -> str | None:
+    refused = first_refusal(list(checks))
+    if refused is None:
+        return None
+    return MESSAGES[REFUSED].format(check=refused.check, reason="; ".join(refused.reasons))
 
 
 async def approve_section(
@@ -170,9 +191,8 @@ def _row(
 
 
 def _outcome(row: SectionProposal, checks: list[SectionCheck]) -> SectionOutcome:
-    refused = first_refusal(checks)
-    if refused is not None:
-        message = MESSAGES[REFUSED].format(check=refused.check, reason="; ".join(refused.reasons))
+    message = refusal_message(checks)
+    if message is not None:
         return SectionOutcome(
             outcome=REFUSED, proposal_id=row.id, status=row.status, checks=checks, message=message
         )

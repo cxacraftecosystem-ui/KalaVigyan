@@ -23,8 +23,14 @@ component contracts; where it is silent, they decide.
 - When one fits, place it by its label in the page's layout. When one nearly fits, extend it:
   `extends` its label with `SUBJECT_LINK` to key it to a new craft, concept, compound or place (it
   keeps the label and carries no spec), or with `VARIANT` for a different form of the same thing (a
-  label of its own). Never a copy: a close match in the library refuses a new proposal with the
-  matches and the two ways on.
+  label of its own). Never a copy: a library component of the same kind that shows the same thing,
+  the same cells of one dataset or most of the same facts, refuses a new proposal with the matches
+  and the two ways on. Its place, its kind and its words alone never do: two figures of one
+  district that show different things both pass.
+- `considered_labels` and `extends` name only labels `list_components` returns; a label the
+  cookbook marks page only is drawn on Kutch Ajrakh's page alone and is refused there.
+  `preview_page` runs every check `propose_page` runs on the same part, so fix what it refuses
+  before proposing.
 - A `MISSING_COMPONENT` task names its need: `what-if`, `molecules`, `map`, `reaction-player` or
   `pictures`, and only a component of a kind that need lists completes it. An `experiment_lab`
   completes `what-if`, and a delivered `timeline_map` or `map_layer` completes `map`. Pictures are given, not

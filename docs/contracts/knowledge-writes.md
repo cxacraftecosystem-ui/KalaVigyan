@@ -614,8 +614,11 @@ sentence (`services/section_gates.py`):
    the default route only for an unusable reply. A judge that fails or is missing refuses the part
    with "The checks could not run just now", storing nothing.
 
-`preview_page` runs the first four and draws a passing section in place of the field's published
-one, the draft's new facts after it; the judge runs when the page is proposed.
+`preview_page` runs the first four, the same functions `propose_page` runs
+(`services/section_proposals.checked_section` and `refusal_message`, decision 0254), and draws a
+passing section in place of the field's published one, the draft's new facts after it; a failing
+one is refused with the words the confirm would store. The judge, a model call, runs when the page
+is proposed.
 
 `propose_page` stores every checked section as a `SectionProposal` (migration
 `0125_section_proposals`: `proposerId`, `craftId` or `categoryId`, `field`, `sentences`, `checks`,

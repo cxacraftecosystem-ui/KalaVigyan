@@ -32,7 +32,14 @@ from . import knowledge_view
 from .monograph_document import authored_document, craft_page_url, has_authored_content, store_document
 from .monograph_generated_sections import SectionOwner, publish_section
 
-__all__ = ["SECTION_TAGS", "MonographLoad", "load_monograph"]
+__all__ = [
+    "CROSS_REFERENCE",
+    "SECTION_TAGS",
+    "MonographLoad",
+    "cited_refs",
+    "component_units",
+    "load_monograph",
+]
 
 SECTION_TAGS = frozenset({"p", "li", "blockquote", "dd", "figcaption", "td"})
 SHARED_PREFIX = "shared/"
@@ -194,11 +201,20 @@ def _stored_facts(content: MonographContent, keys: Iterable[str], claims: Mappin
     return [claims[ref] for cite in keys for ref in content.citation_claims.get(cite, []) if ref in claims]
 
 
+def component_units(content: MonographContent, label: str) -> list[str]:
+    return [entry.ref for entry in content.layout if entry.kind == "unit" and entry.within == label]
+
+
+def cited_refs(content: MonographContent, units: Sequence[str]) -> list[str]:
+    keys = [key for unit in units for key in _cites(content.units[unit].nodes)]
+    return [ref for key in keys for ref in content.citation_claims.get(key, [])]
+
+
 async def _register(session: AsyncSession, loading: _Loading, component: ComponentEntry) -> None:
     content, report = loading.content, loading.report
-    units = [e.ref for e in content.layout if e.kind == "unit" and e.within == component.label]
-    keys = [key for ref in units for key in _cites(content.units[ref].nodes)]
-    claim_ids = list(dict.fromkeys(fact.claim_id for fact in _stored_facts(content, keys, loading.claims)))
+    units = component_units(content, component.label)
+    refs = cited_refs(content, units)
+    claim_ids = list(dict.fromkeys(loading.claims[ref].claim_id for ref in refs if ref in loading.claims))
     if not claim_ids:
         report.components_awaiting_facts.append(component.label)
         return

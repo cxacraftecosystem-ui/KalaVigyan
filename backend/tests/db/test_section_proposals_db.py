@@ -341,4 +341,6 @@ async def test_the_preview_draws_a_bundle_s_section_in_place_of_the_published_on
     assert [(section.version, section.status) for section in await chemistry(session)] == [(1, "PUBLISHED")]
     refused = await preview_page(session, user, bundle(sentences[:2]), site=SITE, now=NOW)
     assert [(part.part, part.outcome) for part in refused.parts] == [("section", "REFUSED")]
-    assert refused.parts[0].message.startswith("The SENTENCES check refuses the whole section")
+    assert refused.parts[0].message.startswith(
+        "Not stored for review: the SENTENCES check refused the whole section, as one unit."
+    )

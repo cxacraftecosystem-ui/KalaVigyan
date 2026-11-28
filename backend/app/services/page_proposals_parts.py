@@ -7,10 +7,11 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ExternalFailure, InvalidInput, Refused
-from app.research.component_proposals import ComponentProposalDraft, proposal_crafts
+from app.research.component_proposals import ComponentProposalDraft, ComponentProposalResult, proposal_crafts
 from app.research.knowledge_writes import FactProposal
 from app.research.page_proposals import (
     ACCEPTED,
+    COMPONENT,
     REFUSED,
     PageBundle,
     PageComponent,
@@ -28,6 +29,7 @@ __all__ = [
     "BundleFacts",
     "accepted",
     "checked_part",
+    "component_report",
     "fact_subject_problem",
     "keyed_problem",
     "known_texts",
@@ -90,6 +92,12 @@ def accepted(part: str, index: int, *, status: str | None, ident: Any, message: 
 def refused(part: str, index: int, *, status: str | None, ident: Any, message: str) -> PartReport:
     shown = None if ident is None else str(ident)
     return PartReport(part=part, index=index, outcome=REFUSED, status=status, id=shown, message=message)
+
+
+def component_report(index: int, result: ComponentProposalResult) -> PartReport:
+    made = refused if result.outcome == REFUSED else accepted
+    report = made(COMPONENT, index, status=result.status, ident=result.proposal_id, message=result.message)
+    return report.model_copy(update={"matches": result.matches, "ways_on": result.ways_on})
 
 
 def fact_subject_problem(

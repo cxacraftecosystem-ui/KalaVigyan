@@ -61,11 +61,11 @@ stateDiagram-v2
 | Claim, claim several, release, complete | `services/task_reservations.py` |
 | My tasks (held, completed, outcomes) | `services/contribution_queue_tasks.py`, contract `research/my_tasks.py` |
 | Stewardship | `services/stewardship.py`, contract `research/stewardship.py`, table `CraftSteward` (`models/contributions.py`, migration `0048_contribution_queue`) |
-| A component proposal | `services/component_proposals.py`; the delivered spec `component_proposals_spec.py`, registration `component_proposals_register.py` (`component-specs-general.md`) |
+| A component proposal | `services/component_proposals.py` (`checked_proposal`, the checks, and `stored_proposal`); what a component shows `research/component_showing.py`, the library's showings `services/component_library.library_showings` and `showing_components`; the delivered spec `component_proposals_spec.py`, registration `component_proposals_register.py` (`component-specs-general.md`) |
 | Withdrawing, replacing and taking a component off a page | `services/component_lifecycle.py` (`take_off_pages`, `withdraw_registered`, `retire_replaced`), `component_retirers.py` (who may), `component_withdrawals.py` (at once or asked, and the bundle's page), `component_layout_swaps.py`; tables `KnowledgePieceUnlink` and `PageHold` (`models/component_lifecycle.py`, migration `0103_component_lifecycle`) |
 | Borrowed components and the facts a page holds | `services/borrowed_placements.py`, `services/page_held_facts.py`, `services/component_places_held.held_by_place`; the preview's links and withdrawals `services/page_preview_lifecycle.py` |
 | A page held for one confirmation | `research/page_holds.py`, `services/page_holds.py`, `services/trust_tiers.publishes_at_once`; routes `api/routes/page_holds.py` |
-| `propose_page` and `preview_page` | `research/page_proposals.py` (the bundle and its reports), `services/page_proposals.py` with `page_proposals_parts.py`, `services/page_preview.py` with `page_preview_parts.py`, `page_preview_additions.py` and `page_preview_links.py` |
+| `propose_page` and `preview_page` | `research/page_proposals.py` (the bundle and its reports), the one set of part checks both run `services/page_part_checks.py` (`PART_CHECKS`) with the layout's `services/page_layout_checks.py`, `services/page_proposals.py` with `page_proposals_parts.py`, `services/page_preview.py` with `page_preview_parts.py`, `page_preview_additions.py` and `page_preview_links.py` |
 | Tables | `models/open_work.py` (`TaskReservation`, `ComponentProposal`), migration `0038_open_work`; the delivered spec's columns and `models/page_previews.py` (`PagePreview`), migration `0049_delivered_components` |
 | MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`: `list_open_work`, `my_work`, `reserve_tasks`, `steward_craft`) and `api/mcp_page_tools.py` (`PAGE_TOOLS`: `edit_draft`, `preview_page`, `propose_page`, with `mcp_page_arguments.py` and `mcp_page_texts.py`) and `api/mcp_compose_tools.py` (`COMPOSE_TOOLS`: `compose_component`, its service `services/compose_components.py` with `compose_reads.py` and a module a kind), registered in `api/mcp_tools.py`; each names its group in `_meta["kalavigyan/group"]` |
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
@@ -489,11 +489,21 @@ The delivery, `spec` and `units`, is required on MCP except for a `SUBJECT_LINK`
   concurrent duplicate is refused by the partial unique index on `label`).
 - **The library search**: `component_library.library_components` on the title and description, and
   for the owning craft and each craft subject with the proposal's kind, plus the registered piece
-  holding the same label.
-- **A close match**, any of: the same label; the same kind keyed to the same concept, compound or
-  place; the same kind with titles sharing half their content words or more; a title and
-  description sharing 60 % of their content words or more (words of three letters or more, common
-  words dropped, overlap as shared over all). The extended component is never its own match.
+  holding the same label and, for a delivered proposal, every registered piece of its kind that
+  cites one of its facts or draws from its dataset (`component_library.showing_components`).
+- **A close match** is the same label, or a component that shows the same thing (decision 0254,
+  `research/component_showing.py`). What a component shows is its data, the dataset it draws from
+  (`spec.dataset.code`) and the cells of it it draws (each point's, place's or row's `cell`, whose
+  column is the variable and its unit), and the facts its units cite (a registered piece's
+  `claimIds`). Two components of one kind show the same thing when both draw from one dataset and
+  share 80 % of the cells they draw or more (both drawing none counts as sharing them), or, when
+  either draws from none, when 80 % or more of their facts are shared (shared over all). A place,
+  concept or compound both are keyed to is never a match on its own, and the words of a delivered
+  proposal are not compared: two figures of one district that show different things both pass.
+  A proposal without a spec shows nothing yet, so its words are compared: the same kind with titles
+  sharing half their content words or more, or a title and description sharing 60 % of their
+  content words or more (words of three letters or more, common words dropped, overlap as shared
+  over all). The extended or replaced component is never its own match.
 - A close match returns `{outcome REFUSED, matches[{component, reasons[]}], waysOn[2]}` and stores
   nothing. The two ways on: place the existing component by its label, or propose an extension (a
   new subject link or a variant). Never a copy.
@@ -934,7 +944,9 @@ of a bundle or draft is delivered finished: a spec, except for a `SUBJECT_LINK`.
 and on (the facts' places in `facts`); a picture's `claimIds` may name them the same way. A reference
 beyond the bundle's facts, or to a unit the component lacks, is an argument error.
 
-Parts run in order (facts, structure, components, layout, pictures), each in its own savepoint and
+Parts run in order (facts, structure, components, layout, pictures), each in its own savepoint.
+Each part first passes the one set of part checks (`services/page_part_checks.PART_CHECKS`, one
+check a part kind, decision 0254) that `preview_page` runs on the same part, and is then
 checked exactly as its own tool checks it: a fact through the gates (`knowledge-writes.md`), a
 structure item through its checks, a component through the delivery checks and the library search,
 the layout against the page's current version (stored for review, or written at once by an
@@ -946,7 +958,12 @@ and counting as a component proposal, and sections last, each through its checks
 stored refused, waiting for review or written at once (`status REFUSED`, `PENDING` or `APPROVED`, its
 proposal's id) and counting as a structure item. A `SUBJECT_LINK` or
 a layout placing a borrowed component that cannot pass is refused (Withdrawn, replaced, borrowed and
-held, above), and a whole page from an account that publishes at once is held instead of run. Each
+held, above), and so is a layout placing a label that no registered component, no live component
+proposal, no component of this bundle that was accepted and nothing the page draws holds
+(`services/page_layout_checks.layout_problem`, a picture's label aside): a component the bundle
+failed to make is never written into the page's layout, and the layout is refused with the labels
+named and the tools that make them. A whole page from an account that publishes at once is held
+instead of run. Each
 part of a bundle of more than one part counts against its kind's hour sized for one whole page
 (`api/proposal_limits.PAGE_PART_LIMITS`: 200 facts, 100 structure items, 200 components and
 withdrawals, each kind's bucket shared with single proposals; decision 0233), and the bundle also
@@ -973,15 +990,23 @@ plus the bundle (`PageAdditions` into `monograph_generated.generated_parts`):
 
 | Part | In the preview |
 |---|---|
-| A fact, and a structure item that states a fact | one more sentence at the end of its field's section, citing its proposed sources (unstored sources, numbered after the page's); a conflict is listed only |
-| A component | drawn from its delivered spec where the page will draw it once registered; the delivery checks run, so a component that would be refused is refused here; a `SUBJECT_LINK` whose facts the page holds is drawn as the registered component (listed when another craft owns it, since only that craft's page draws it) |
-| A withdrawal | the component is left off the page, checked as `propose_page` would check who may retire it |
-| A section | drawn in place of its field's published section, the bundle's facts in that field after it, once its first four checks pass (`knowledge-writes.md`, Section proposals); refused with their reasons otherwise; its judge reads it when it is proposed |
-| The layout | replaces the page's own as its next version, refused when its base version is stale |
-| Pictures | listed: they are drawn once uploaded and approved |
+| A fact, and a structure item that states a fact | one more sentence at the end of its field's section, citing its proposed sources (unstored sources, numbered after the page's), once its page and task checks pass, and for a structure item its owner, target and stated checks; a conflict is listed only |
+| A component | drawn from its delivered spec where the page will draw it once registered, once the confirm's own checks pass: the page it is keyed to, a borrowed link, its task, every considered or extended label registered, its subjects, the library search for one that shows the same thing (refused with the matches and the two ways on) and the delivery checks; a `SUBJECT_LINK` whose facts the page holds is drawn as the registered component (listed when another craft owns it, since only that craft's page draws it) |
+| A withdrawal | the component is left off the page, checked as `propose_page` would check who may retire it, its reason and an Admin's request already waiting |
+| A section | drawn in place of its field's published section, the bundle's facts in that field after it, once its first four checks pass (`knowledge-writes.md`, Section proposals); refused with the confirm's own words otherwise; its judge reads it when it is proposed |
+| The layout | replaces the page's own as its next version, refused when its base version is stale, when it places a label nothing holds (the components of the bundle the preview refused among them) or a borrowed one that cannot pass |
+| Pictures | a given one is drawn in place; a new one is listed, once its upload slot passes `give_pictures`'s checks: they are drawn once uploaded and approved |
 
-No source is fetched, so the gates' verdicts are only known when the bundle is proposed. Each part
-reports `SHOWN`, `LISTED` or `REFUSED`. A page with authored content (Kutch Ajrakh) is not
+The preview and the confirm run the same functions on the same part, so a part the confirm would
+refuse is refused here with the same reason. The only checks left to the confirm need what a
+preview does not do (decision 0254): a model call (a fact's later gates, NOVELTY among them, and a
+section's FAITHFUL judge) or a live read of every source (the QUOTES and SOURCE gates of a fact and
+a structure item; `read_source` with `quotes` runs the same reader and matcher beforehand), and what
+only the confirm can know (an hour's limit spent, a label taken by a concurrent proposal, a fact
+this bundle proposes that a picture's slot or a component registered at once needs shown). With no
+layout in the bundle, a published layout that places labels nothing holds is reported as a `LISTED`
+layout part naming them and the tools that fix them, and the page is drawn without them, as the
+site draws it. Each part reports `SHOWN`, `LISTED` or `REFUSED`. A page with authored content (Kutch Ajrakh) is not
 previewed, and a page that would still hold too few published fields to be a monograph (3 for a
 craft, 1 for a family or category) is refused with how to grow it.
 

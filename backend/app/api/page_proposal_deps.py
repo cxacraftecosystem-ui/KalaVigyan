@@ -30,7 +30,7 @@ async def page_proposed(
     session: AsyncSession, bundle: PageBundle, user: User, *, origin: str, site: str
 ) -> PageProposalResult:
     whole = bundle_parts(bundle) > 1
-    snapshot = await page_snapshot(session, user, bundle) if whole else NO_SNAPSHOT
+    snapshot = await page_snapshot(session, user, bundle, now=datetime.now(UTC)) if whole else NO_SNAPSHOT
     context = ToolContext(
         session=session, index=CraftIndexStore(), site=site, user=user, scopes=frozenset({CONTRIBUTE_SCOPE})
     )

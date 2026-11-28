@@ -33,6 +33,7 @@ __all__ = [
     "PageLayoutEntry",
     "arranged_layout",
     "is_component_ref",
+    "is_picture_ref",
     "picture_label",
 ]
 
@@ -70,6 +71,10 @@ SubjectKind = Literal[*SUBJECT_KINDS]
 
 def is_component_ref(ref: str) -> bool:
     return LABEL_SEPARATOR in ref
+
+
+def is_picture_ref(ref: str) -> bool:
+    return ref.split(LABEL_SEPARATOR)[1:2] == [PICTURE_SEGMENT]
 
 
 def picture_label(slug: str, key: str) -> str:

@@ -4,10 +4,10 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import partial
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import InvalidInput
 from app.core.rate_limit import COMPONENT_PROPOSALS, FACT_PROPOSALS, LAYOUT_PROPOSALS, STRUCTURE_PROPOSALS
 from app.models import User
 from app.research.fetcher import Fetcher
@@ -38,27 +38,22 @@ from app.research.structure_proposals import REFUSED as STRUCTURE_REFUSED, Struc
 from app.research.structured import StructuredModel
 from app.research.upload_links import OPEN, SlotDeclaration, UploadSlot, UploadStart
 
-from .borrowed_placements import borrowed_problem, linked_labels, placed_labels
 from .component_lifecycle import withdraw_registered
-from .component_proposals import propose_component
+from .component_proposals import CheckedProposal, stored_proposal
 from .component_withdrawals import ASKED_STATUS, ask_withdrawal, withdrawable_piece
 from .fact_proposals import ProposalAdapters, propose_fact
 from .open_work_subjects import WorkSubject, subject_by_key
 from .page_layout_proposals import propose_layout
 from .page_layouts import subject_path
+from .page_part_checks import PartRun, part_checked
 from .page_preview_pictures import given_picture_report
 from .page_proposals_parts import (
     BundleFacts,
     accepted,
     checked_part,
-    fact_subject_problem,
-    keyed_problem,
-    known_texts,
+    component_report,
     picture_claims,
-    refuse_on,
     refused,
-    resolved_component,
-    structure_subject_problem,
 )
 from .page_renders import refuse_a_failed_drawing
 from .page_translations import checked_translation
@@ -94,8 +89,12 @@ class _Run:
     subject: WorkSubject
     tools: PageTools
     now: datetime
-    facts: BundleFacts = field(default_factory=BundleFacts)
+    checks: PartRun
     reports: list[PartReport] = field(default_factory=list)
+
+    @property
+    def facts(self) -> BundleFacts:
+        return self.checks.facts
 
 
 async def propose_page(
@@ -103,7 +102,8 @@ async def propose_page(
 ) -> PageProposalResult:
     subject = await subject_by_key(session, bundle.subject.kind, bundle.subject.slug)
     await refuse_a_failed_drawing(session, user.id, subject, now=now)
-    run = _Run(session, user, bundle, subject, tools, now)
+    checks = PartRun(session, user, bundle, subject, BundleFacts(), now)
+    run = _Run(session, user, bundle, subject, tools, now, checks)
     for index, fact in enumerate(bundle.facts):
         await _record(run, FACT, index, partial(_fact, run, index, fact))
     for index, item in enumerate(bundle.structure):
@@ -141,9 +141,13 @@ async def _record(run: _Run, part: str, index: int, work: Callable[[], Awaitable
     run.reports.append(report)
 
 
+async def _checked(run: _Run, part: str, index: int, item: object) -> Any:
+    return await part_checked(run.checks, part, index, item)
+
+
 async def _fact(run: _Run, index: int, proposal: FactProposal) -> PartReport:
-    refuse_on(fact_subject_problem(run.bundle, run.subject, index, proposal))
     await run.tools.spend(FACT_PROPOSALS)
+    await _checked(run, FACT, index, proposal)
     reply = await propose_fact(
         run.session, proposal, run.user, run.tools.origin, adapters=run.tools.gates, now=run.now
     )
@@ -154,8 +158,8 @@ async def _fact(run: _Run, index: int, proposal: FactProposal) -> PartReport:
 
 
 async def _structure(run: _Run, index: int, proposal: StructureProposal) -> PartReport:
-    refuse_on(structure_subject_problem(run.bundle, run.subject, index, proposal))
     await run.tools.spend(STRUCTURE_PROPOSALS)
+    await _checked(run, STRUCTURE, index, proposal)
     context = (run.tools.origin, run.tools.fetcher, run.tools.site)
     result = await propose_structure(run.session, run.user, proposal, context=context, now=run.now)
     made = refused if result.outcome == STRUCTURE_REFUSED else accepted
@@ -163,22 +167,18 @@ async def _structure(run: _Run, index: int, proposal: StructureProposal) -> Part
 
 
 async def _component(run: _Run, index: int, component: PageComponent) -> PartReport:
-    draft = resolved_component(component, run.facts)
-    refuse_on(keyed_problem(run.bundle, run.subject, index, draft))
-    refuse_on(await borrowed_problem(run.session, run.subject, linked_labels([component])))
     await run.tools.spend(COMPONENT_PROPOSALS)
-    result = await propose_component(
-        run.session, run.user, draft, now=run.now, known=known_texts(run.facts, draft)
-    )
-    made = refused if result.outcome == REFUSED else accepted
-    report = made(COMPONENT, index, status=result.status, ident=result.proposal_id, message=result.message)
-    return report.model_copy(update={"matches": result.matches, "ways_on": result.ways_on})
+    checked: CheckedProposal = await _checked(run, COMPONENT, index, component)
+    if checked.refused is not None:
+        return component_report(index, checked.refused)
+    result = await stored_proposal(run.session, run.user, checked, now=run.now)
+    run.checks.made.add(checked.draft.label)
+    return component_report(index, result)
 
 
 async def _layout(run: _Run, part: PageLayoutPart) -> PartReport:
-    placed = placed_labels(run.bundle.components, part)
-    refuse_on(await borrowed_problem(run.session, run.subject, placed))
     await run.tools.spend(LAYOUT_PROPOSALS)
+    await _checked(run, LAYOUT, 0, part)
     draft = LayoutProposalDraft(
         subject=LayoutSubject(kind=run.subject.kind, slug=run.subject.slug),
         base_version=part.base_version,
@@ -193,6 +193,7 @@ async def _layout(run: _Run, part: PageLayoutPart) -> PartReport:
 
 async def _section(run: _Run, index: int, part: SectionPart) -> PartReport:
     await run.tools.spend(STRUCTURE_PROPOSALS)
+    await _checked(run, SECTION, index, part)
     context = SectionContext(origin=run.tools.origin, judges=run.tools.judges, site=run.tools.site)
     result = await propose_section(run.session, run.user, run.subject, part, context=context, now=run.now)
     made = refused if result.outcome == SECTION_REFUSED else accepted
@@ -201,6 +202,7 @@ async def _section(run: _Run, index: int, part: SectionPart) -> PartReport:
 
 async def _withdrawal(run: _Run, index: int, withdrawal: PageWithdrawal) -> PartReport:
     await run.tools.spend(COMPONENT_PROPOSALS)
+    await _checked(run, WITHDRAWAL, index, withdrawal)
     found = await withdrawable_piece(run.session, run.user, withdrawal.label, run.subject, lock=True)
     if found.waits:
         asked = await ask_withdrawal(
@@ -215,8 +217,7 @@ async def _withdrawal(run: _Run, index: int, withdrawal: PageWithdrawal) -> Part
 
 
 async def _picture(run: _Run, index: int, picture: PagePicture) -> PartReport:
-    if run.subject.kind == "category":
-        raise InvalidInput("A picture is given to a craft's page; a category's bundle carries none.")
+    await _checked(run, PICTURE, index, picture)
     if picture.contribution_id is not None:
         return await given_picture_report(run.session, run.user, run.subject, index, picture.contribution_id)
     claim_ids = picture_claims(picture, run.facts)
