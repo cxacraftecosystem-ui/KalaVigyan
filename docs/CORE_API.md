@@ -58,10 +58,19 @@ Last reviewed: 2026-11-18.
 | `hash_password(password) -> str` | bcrypt `2b` at `BCRYPT_ROUNDS`; raises `ValueError` for a password it cannot check (a NUL character, or longer than `MAX_CHECKED_PASSWORD_BYTES`). |
 | `verify_password(password, hash) -> bool` | False for a missing hash; constant-time compare. |
 | `verify_password_or_decoy(password, hash) -> bool` | Same, but spends bcrypt time against a decoy when there is no hash, so a missing account is not visible by timing. |
-| `create_access_token(subject, *, token_version, extra_claims=None, expires_minutes=None) -> str` | Signed JWT carrying `TOKEN_VERSION_CLAIM` (`tv`). |
-| `decode_access_token(token) -> dict` | Verifies signature and expiry with the allowed algorithms; raises on any failure. |
+| `create_access_token(subject, *, token_version, session_id, extra_claims=None, expires_minutes=None) -> str` | Signed JWT carrying `TOKEN_VERSION_CLAIM` (`tv`) and `SESSION_ID_CLAIM` (`sid`, its site session), living `JWT_EXPIRES_MINUTES` (a year) unless told otherwise. |
+| `decode_access_token(token) -> dict`, `session_id_of(claims) -> UUID \| None` | Verifies signature and expiry with the allowed algorithms; raises on any failure, a malformed `sid` among them. `session_id_of` is `None` only for a token minted before decision 0255. |
 | `jwt_signing_weakness(secret)`, `verify_jwt_configuration()` | Refuse placeholder or short signing keys (`MIN_JWT_SIGNING_KEY_LENGTH`) at start-up. |
 | `secret_key(name, value, *, min_chars=SECRET_KEY_MIN_CHARS) -> bytes`, `secret_key_or_none(...)` | The one rule for an HMAC key read from the environment: surrounding whitespace dropped, at least 32 characters, else `NotConfigured` naming the key. The `_or_none` form answers `None` for an unset key and logs an error (name only) for one set but too short. Used by the media bundle and the voice binding (decision 0022). |
+
+## core/site_sessions.py: site sessions (decision 0255)
+
+| Name | Guarantee |
+|---|---|
+| `open_site_session(session, user_id, *, now) -> UUID` | A `SiteSession` row for a sign-in; its id is the token's `sid`. |
+| `site_session_live(session, user_id, session_id) -> bool` | The session exists, is the token subject's own and was not signed out; a token without a `sid` passes and lives only to its own expiry. Read by `core/deps.user_from_token` on every request. |
+| `continued_site_session(session, user_id, session_id, *, now) -> UUID` | The session a renewed or rotated token keeps: the same id with `renewedAt` moved, or a new one for a token without a `sid`. |
+| `end_site_session(session, claims, *, now)` | Signs out the claims' own session (`endedAt`), and with it every token renewed from it; anything else is left alone. |
 
 ## core/clock.py: India time
 
@@ -95,7 +104,8 @@ Last reviewed: 2026-11-18.
 | `require_master_admin` | Master admin only. |
 | `refuse_unless_assignable(actor, role)` | 422 for an unknown role, 403 naming the roles the actor may give (`may_assign`). Used by the Manage users and access roster routes that set a role. |
 | `refuse_unless_manageable(actor, target)`, `MANAGE_TARGET_REFUSAL` | 403 unless `may_manage_target`; each Manage users route calls it before changing another account. |
-| `user_from_token(session, token)`, `token_matches_user(claims, user)` | Resolve and check a bearer token outside a route. |
+| `user_from_token(session, token)`, `token_matches_user(claims, user)` | Resolve and check a bearer token outside a route: its account's token version and `sessionsValidFrom`, and its site session (`core/site_sessions.site_session_live`). |
+| `bearer_claims`, `current_session_id` | The bearer's claims and its `sid`, or `None`, without refusing: for sign-out and for the routes that rotate or renew a session and keep its id. |
 | `password_change_pending`, `two_factor_setup_pending`, `refuse_pending_steps` | The pending-step rules used by both dependencies. |
 | `is_configured_master_admin`, `is_break_glass_master` | The account named by `MASTER_ADMIN_EMAIL`. |
 

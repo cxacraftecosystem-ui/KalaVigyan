@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
+import { useSessionRenewal } from "@/components/hooks/useSessionRenewal";
 import { startNewReadGeneration } from "@/lib/inFlight";
 
 import {
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const probes = useRef(0);
   const changedAtProbe = useRef(-1);
   const gateProbe = useRef<Promise<void> | null>(null);
+  useSessionRenewal(user !== null);
 
   const adopt = useCallback((next: User | null) => {
     setSessionOwesPasswordChange(mustChangePassword(next));

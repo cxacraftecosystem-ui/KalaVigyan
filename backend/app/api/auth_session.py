@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.roles import ADMIN, MASTER_ADMIN, STUDENT, has_rank, is_known_role, role_value
 from app.core.security import create_access_token
+from app.core.site_sessions import continued_site_session, open_site_session
 from app.models import User
 from app.schemas.auth import OidcCodeFields
 from app.services import access_roster, oidc_sign_in, reader_profiles
@@ -31,6 +32,7 @@ __all__ = [
     "assert_access_admits",
     "code_grant",
     "find_user",
+    "kept_session_token",
     "open_session",
     "reload_user",
     "role_for_email",
@@ -84,12 +86,19 @@ async def assert_access_admits(session: AsyncSession, email: str, *, is_master: 
     )
 
 
-def session_token(user: User) -> str:
+def session_token(user: User, session_id: uuid.UUID) -> str:
     return create_access_token(
         str(user.id),
         token_version=user.tokenVersion,
+        session_id=session_id,
         extra_claims={"email": user.email, "role": role_value(user)},
     )
+
+
+async def kept_session_token(session: AsyncSession, user: User, session_id: uuid.UUID | None) -> str:
+    kept = await continued_site_session(session, user.id, session_id, now=datetime.now(UTC))
+    await session.commit()
+    return session_token(user, kept)
 
 
 async def reload_user(session: AsyncSession, user_id: uuid.UUID) -> User:
@@ -109,10 +118,11 @@ async def open_session(session: AsyncSession, user: User, access: Any) -> dict[s
     user.lastLoginAt = now
     if user.firstLoginAt is None:
         user.firstLoginAt = now
+    session_id = await open_site_session(session, user.id, now=now)
     await session.commit()
     user = await reload_user(session, user.id)
     return {
-        "accessToken": session_token(user),
+        "accessToken": session_token(user, session_id),
         "tokenType": "bearer",
         "user": serialize_user(user, access_status=access_roster.status_of(access) or "ACTIVE"),
     }

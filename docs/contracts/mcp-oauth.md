@@ -13,6 +13,7 @@ the people who connect a client.
 | Abandoned registrations removed every night | [nightly-upkeep.md](nightly-upkeep.md), 3a |
 | What each call keeps, how long, and the MCP activity screen | [decision 0150](../decisions/0150-mcp-activity-and-box-logs.md); [nightly-upkeep.md](nightly-upkeep.md), 3d |
 | The review scope, its short tokens and the admin tools it lists | [decision 0170](../decisions/0170-review-over-mcp-staged-and-pages-refreshed-now.md); [review-queue.md](review-queue.md), Staged over MCP |
+| Connections that last a year from their last use, and `review` without a time limit | [decision 0255](../decisions/0255-a-signed-in-person-stays-signed-in-on-the-site-and-over-mcp.md) |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
@@ -166,12 +167,11 @@ The client sends the person to `<WEB>/oauth/authorize` with `response_type=code`
    and the scopes it asks for, with a warning when it returns to a program on this computer
    (localhost, 127.x, [::1]). The person reads the scopes (read is always given; a scope their role cannot hold is shown
    with what it needs and cannot be ticked; `review` is given only by an Admin or Master Admin with
-   two-step verification on whose session proved them within the last 15 minutes, read from the
-   session token's `iat`, which a sign-in, a password change and a two-step change set), reads and accepts the MCP terms of use when this
+   two-step verification on, however long ago they signed in, decision 0255), reads and accepts the MCP terms of use when this
    version is not yet accepted, and presses Approve or Cancel (an `ActionGroup`).
 4. Approve posts `POST /api/oauth/authorize/approve {request, scopes, termsVersion}`. The request
    is checked again; a scope not asked for or not held by the role, or `review` without two-step
-   verification or a sign-in within 15 minutes, is 422, a terms version that
+   verification, is 422, a terms version that
    is not the current one 409. The acceptance is recorded, a code is stored with the account's
    token version (`OAuthCode.userTokenVersion`, decision 0185) and the reply is
    `{kind: "redirect", redirectTo: <redirect_uri>?code&state&iss}`, which the page opens.
@@ -199,13 +199,15 @@ it equals its `iss` (the assertion is otherwise not read; decision 0148).
   connection it makes keeps the code's token version.
 - `grant_type=refresh_token` with `refresh_token`, optional `scope` (narrower only, else
   `invalid_scope`) and optional `resource`. Every refresh rotates: the old refresh token is
-  spent, and presenting a spent one revokes the whole connection.
+  spent, and presenting a spent one, however long after, revokes the whole connection, its newest
+  access and refresh tokens with it.
 - The reply is `{access_token, token_type: "Bearer", expires_in: 3600, refresh_token, scope}`
-  with `Cache-Control: no-store` and `Pragma: no-cache`. Access tokens live an hour, refresh
-  tokens 30 days from their issue, so a connection used at least monthly stays. An access token
-  holding `review` lives 15 minutes (`expires_in: 900`), and `review` lasts 8 hours from the
-  connection's grant: a token issued after that leaves it out, and the connection goes on with its
-  other scopes (`research/oauth_rules.live_scopes`, `access_token_seconds`).
+  with `Cache-Control: no-store` and `Pragma: no-cache`. Access tokens live `MCP_ACCESS_TOKEN_SECONDS`
+  (an hour) whatever their scopes, `review` among them, and the client renews them silently with the
+  refresh token. Refresh tokens and their connection live `MCP_REFRESH_TOKEN_SECONDS` (a year) from
+  their last use: every refresh moves the connection's `expiresAt` a year on, so a connection used
+  at least once a year never asks the person to sign in again. A connection untouched for a year
+  ends and is no longer listed (`services/oauth_tokens.refresh_token_lifetime`, decision 0255).
 - Errors are RFC 6749 JSON: `invalid_request`, `invalid_client` (401), `invalid_grant`,
   `unsupported_grant_type`, `invalid_scope`, `invalid_target`.
 - A second connection of the same app by the same person revokes the first, so Settings lists one
@@ -242,11 +244,11 @@ connection, an access token only itself. An unknown token, or one of another cli
 | `read` | everyone, always given | read what a signed-out reader sees |
 | `ask` | `ASK_STANDARD` (every role) | ask and receive cited answers in the person's name |
 | `contribute` | `PROPOSE_KNOWLEDGE` (Researcher and above) | propose facts (one to 25 at once) and follow them (`get_proposal`), sources, structure, pages and their parts (`edit_draft`, `preview_page`, `propose_page`) and pictures (`give_pictures`); search and read sources (`search_sources`, `read_source`, `supply_source`); claim and release tasks (`reserve_tasks`) and list its own work (`my_work`); steward crafts (`steward_craft`) |
-| `review` | `REVIEW_CONTRIBUTIONS` (Admin and Master Admin) with two-step verification on, signed in within the last 15 minutes when it is given | the admin tools, listed in `tools/list` only to a token holding it: read the review queue and open one item or one page proposal as it stood and as it will be (`review_queue`), read published content and stage review decisions (a page proposal's whole, by chapter or by component among them), source corrections and the removal or edit of published content for a person to confirm on the Review page (`review_queue` with `published`, `stage_reviews`), refresh the pages that changed (`refresh_pages`) and read the admin reports (`admin_reports`); the review tasks of `list_open_work` |
+| `review` | `REVIEW_CONTRIBUTIONS` (Admin and Master Admin) with two-step verification on | the admin tools, listed in `tools/list` only to a token holding it: read the review queue and open one item or one page proposal as it stood and as it will be (`review_queue`), read published content and stage review decisions (a page proposal's whole, by chapter or by component among them), source corrections and the removal or edit of published content for a person to confirm on the Review page (`review_queue` with `published`, `stage_reviews`), refresh the pages that changed (`refresh_pages`) and read the admin reports (`admin_reports`); the review tasks of `list_open_work` |
 
 The rule is `research/oauth_rules.may_hold` (what a token holds on every call: the role and
-two-step verification) and `Grantor.may_grant` (what a person may give: that, and for `review` the
-recent sign-in); the words shown are `research/oauth_contract.SCOPE_TEXT`. A Professor's connection
+two-step verification) and `Grantor.may_grant` (what a person may give: the same rule, with no
+time limit since decision 0255); the words shown are `research/oauth_contract.SCOPE_TEXT`. A Professor's connection
 made before decision 0170 keeps its other scopes and no longer holds `review`. Nothing a review
 tool stages is applied by the server: a person confirms it on the Review page
 ([review-queue.md](review-queue.md), Staged over MCP).

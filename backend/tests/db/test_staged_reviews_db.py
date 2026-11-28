@@ -11,7 +11,7 @@ from app.core.errors import InvalidInput
 from app.models import AuditLog, Claim, OAuthGrant, OAuthToken, ReviewEvent, Source, StagedReviewItem, User
 from app.research.review_queue import QueueApproval
 from app.research.staged_reviews import ConfirmedItem, StagedConfirmation, StagedDecision
-from app.services import review_queue_decisions as decisions, staged_reviews
+from app.services import oauth_bearer, oauth_tokens, review_queue_decisions as decisions, staged_reviews
 from app.services.oauth_bearer import McpCaller
 from app.services.review_queue_errors import DecisionConflict, NotYourQueue
 from app.services.staged_review_confirm import confirm_batch, discard_batch
@@ -29,7 +29,8 @@ from .review_queue_seed import (
     People,
     seeded_session,
 )
-from .test_oauth_db import RESOURCE, registered
+from .test_oauth_db import RESOURCE, exchanged, registered
+from .test_review_scope_db import refresh_fields, review_code
 
 pytestmark = pytest.mark.db
 
@@ -202,6 +203,28 @@ async def test_a_batch_expires_after_three_days_and_is_neither_listed_nor_confir
     with pytest.raises(DecisionConflict):
         await confirm_batch(session, staged.batch.id, chosen, people.admin, now=later)
     assert (await statuses(session))[AGENT_WAITING] == "DRAFT"
+
+
+async def test_a_review_connection_almost_a_year_old_still_only_stages_and_a_person_confirms(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, people = seeded
+    people.admin.twoFactorEnabled = True
+    await session.flush()
+    await session.refresh(people.admin)
+    client_id = await registered(session)
+    first = await exchanged(session, client_id, await review_code(session, people.admin, client_id))
+    used = NOW + timedelta(days=360)
+    fields = refresh_fields(client_id, first.refresh_token)
+    renewed = await oauth_tokens.grant_tokens(session, fields, resource=RESOURCE, now=used)
+    caller = await oauth_bearer.caller_for(session, renewed.access_token, resource=RESOURCE, now=used)
+    assert "review" in caller.scopes
+    before = await statuses(session)
+    staged = await stage_decisions(session, asked()[:1], caller, now=used)
+    assert staged.batch is not None and await statuses(session) == before
+    chosen = StagedConfirmation(items=[ConfirmedItem(id=staged.items[0].id, action="approve", reason=WHY)])
+    await confirm_batch(session, staged.batch.id, chosen, people.admin, now=used + timedelta(minutes=5))
+    assert (await statuses(session))[AGENT_WAITING] == "APPROVED"
 
 
 async def test_only_an_admin_stages_or_confirms_and_a_discarded_batch_is_closed(

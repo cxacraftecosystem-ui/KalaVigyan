@@ -23,6 +23,9 @@ const DRAWN_PATHS: readonly (readonly [string, string])[] = [
 
 const FALLBACK_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
 
+export const SESSION_RENEW_AFTER_SECONDS = 24 * 60 * 60;
+export const ACCOUNT_RENEW_PATH = "/api/auth/renew";
+
 const UNCONFIGURED_DETAIL =
   "The service isn't available right now, so you can't sign in or load records. " +
   "Please try again later, or contact your administrator if this continues.";
@@ -211,18 +214,34 @@ export function upstreamUrl(request: Request, origin: string): string {
   return `${origin}${upstreamPath(request)}`;
 }
 
-export function tokenLifetimeSeconds(token: string, nowMs: number = Date.now()): number {
+type TokenClaims = { exp?: unknown; iat?: unknown; sid?: unknown };
+
+function tokenClaims(token: string): TokenClaims | null {
   const payload = token.split(".")[1];
-  if (!payload) return FALLBACK_LIFETIME_SECONDS;
+  if (!payload) return null;
   try {
-    const json = JSON.parse(Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8")) as {
-      exp?: unknown;
-    };
-    if (typeof json.exp !== "number" || !Number.isFinite(json.exp)) return FALLBACK_LIFETIME_SECONDS;
-    return Math.max(0, Math.floor(json.exp - nowMs / 1000));
+    const parsed: unknown = JSON.parse(Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
+    return parsed && typeof parsed === "object" ? (parsed as TokenClaims) : null;
   } catch {
-    return FALLBACK_LIFETIME_SECONDS;
+    return null;
   }
+}
+
+function finite(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+export function tokenLifetimeSeconds(token: string, nowMs: number = Date.now()): number {
+  const exp = tokenClaims(token)?.exp;
+  if (!finite(exp)) return FALLBACK_LIFETIME_SECONDS;
+  return Math.max(0, Math.floor(exp - nowMs / 1000));
+}
+
+export function renewalDue(token: string, nowMs: number = Date.now()): boolean {
+  const claims = tokenClaims(token);
+  if (!claims) return false;
+  if (typeof claims.sid !== "string" || !finite(claims.iat)) return true;
+  return nowMs / 1000 - claims.iat >= SESSION_RENEW_AFTER_SECONDS;
 }
 
 export function newMarker(): string {
@@ -238,13 +257,17 @@ function cookieLine(name: string, value: string, maxAge: number, secure: boolean
   return parts.join("; ");
 }
 
-export function sessionCookieLines(token: string, secure: boolean, nowMs: number = Date.now()): string[] {
+export function renewedCookieLines(token: string, marker: string, secure: boolean, nowMs: number = Date.now()): string[] {
   const names = cookieNames(secure);
   const maxAge = tokenLifetimeSeconds(token, nowMs);
   return [
     cookieLine(names.session, encodeURIComponent(token), maxAge, secure, true),
-    cookieLine(names.marker, newMarker(), maxAge, secure, false)
+    cookieLine(names.marker, marker, maxAge, secure, false)
   ];
+}
+
+export function sessionCookieLines(token: string, secure: boolean, nowMs: number = Date.now()): string[] {
+  return renewedCookieLines(token, newMarker(), secure, nowMs);
 }
 
 export function clearedCookieLines(secure: boolean): string[] {
@@ -389,6 +412,25 @@ export async function handleAdopt(request: Request): Promise<Response> {
   }
   if (upstream.status === 401 || upstream.status === 403) return json(401, { detail: "That session has ended.", adopted: false });
   return json(502, { detail: UNCONFIGURED_DETAIL });
+}
+
+export async function handleRenew(request: Request): Promise<Response> {
+  if (csrfRefusal(request)) return refuseCrossSite();
+  const headers = new Headers({ "cache-control": "no-store" });
+  const token = sessionTokenOf(request);
+  if (!token || !renewalDue(token)) return new Response(null, { status: 204, headers });
+  let upstream: Response | null;
+  try {
+    upstream = await relay(request, ACCOUNT_RENEW_PATH, token, null);
+  } catch {
+    return json(502, { detail: UNCONFIGURED_DETAIL });
+  }
+  if (!upstream) return refuseUnconfigured();
+  const renewed = upstream.ok ? (upstream.headers.get(API_SESSION_TOKEN_HEADER) ?? "").trim() : "";
+  if (!renewed) return new Response(null, { status: upstream.ok ? 204 : upstream.status, headers });
+  const marker = sessionMarkerOf(request) ?? newMarker();
+  for (const line of renewedCookieLines(renewed, marker, isSecureContext(request))) headers.append("set-cookie", line);
+  return new Response(null, { status: 204, headers });
 }
 
 export async function handleEnd(request: Request): Promise<Response> {

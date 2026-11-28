@@ -139,6 +139,7 @@ from app.models.science import (
 )
 from app.models.section_proposals import SectionProposal
 from app.models.sharing import SharedExportFile
+from app.models.site_sessions import SiteSession
 from app.models.source_upkeep import SourceUpkeep
 from app.models.state_values import StateEnvValue
 from app.models.stored_documents import StoredDocument, StoredDocumentVersion
@@ -286,6 +287,7 @@ __all__ = [
     "SectionProposal",
     "SharedExportFile",
     "SharedTermCraft",
+    "SiteSession",
     "Source",
     "SourceLease",
     "SourcePace",

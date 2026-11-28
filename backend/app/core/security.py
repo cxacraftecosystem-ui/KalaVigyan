@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -19,6 +20,8 @@ MIN_JWT_SIGNING_KEY_LENGTH = 32
 SECRET_KEY_MIN_CHARS = 32
 
 TOKEN_VERSION_CLAIM = "tv"
+SESSION_ID_CLAIM = "sid"
+INVALID_TOKEN_DETAIL = "Invalid or expired token"
 
 _PLACEHOLDER_JWT_SECRETS = frozenset(
     {
@@ -124,6 +127,7 @@ def create_access_token(
     subject: str,
     *,
     token_version: int,
+    session_id: uuid.UUID,
     extra_claims: dict[str, Any] | None = None,
     expires_minutes: int | None = None,
 ) -> str:
@@ -135,9 +139,10 @@ def create_access_token(
         "iat": now.timestamp(),
         "exp": now + timedelta(minutes=minutes),
         TOKEN_VERSION_CLAIM: int(token_version),
+        SESSION_ID_CLAIM: str(session_id),
     }
     if extra_claims:
-        reserved = {"sub", "iat", "exp", TOKEN_VERSION_CLAIM} & extra_claims.keys()
+        reserved = {"sub", "iat", "exp", TOKEN_VERSION_CLAIM, SESSION_ID_CLAIM} & extra_claims.keys()
         if reserved:
             raise ValueError(f"extra_claims may not override reserved claims: {', '.join(sorted(reserved))}")
         payload.update(extra_claims)
@@ -159,8 +164,21 @@ def decode_access_token(token: str) -> dict[str, Any]:
             token, settings.jwt_secret, algorithms=[settings.jwt_algorithm], options=_DECODE_OPTIONS
         )
     except jwt.PyJWTError as exc:
-        raise ValueError("Invalid or expired token") from exc
+        raise ValueError(INVALID_TOKEN_DETAIL) from exc
     version = claims.get(TOKEN_VERSION_CLAIM)
     if isinstance(version, bool) or not isinstance(version, int):
-        raise ValueError("Invalid or expired token")
+        raise ValueError(INVALID_TOKEN_DETAIL)
+    session_id_of(claims)
     return claims
+
+
+def session_id_of(claims: dict[str, Any]) -> uuid.UUID | None:
+    raw = claims.get(SESSION_ID_CLAIM)
+    if raw is None:
+        return None
+    if not isinstance(raw, str):
+        raise ValueError(INVALID_TOKEN_DETAIL)
+    try:
+        return uuid.UUID(raw)
+    except ValueError as exc:
+        raise ValueError(INVALID_TOKEN_DETAIL) from exc
