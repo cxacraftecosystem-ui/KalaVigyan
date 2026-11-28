@@ -1375,6 +1375,15 @@ Last updated: 2026-11-27.
     became), the dossiers carry the sections a person wrote and an import restores one only
     where the database holds none, and the post-deploy check proposes its test fact on the first
     public page, in slug order, with a field that holds no fact, read afresh each run.
+  - **Page media and kinds** (PRs #247 and #248, decisions 0252 and 0253), from what the Opus
+    agent building Sanganeri over MCP could not do. Field photographs draw in a preview through the
+    render pass and come with thumbnails; a reaction species is drawn in its material or by a mark,
+    and rule 27 refuses an uncoloured one by name; rule 24 counts every sentence a page draws; rules
+    25 and 26 name what to fix; each stage of a stage player may carry its own scene; the molecule
+    composer finds a compound the page's facts name; relief, rivers and minerals are credited from
+    their files' records. The skills record the build's lessons: facts filed under the field a
+    reader looks in, section sentences that add nothing, pictures from an account's own client
+    reviewed by another, and climate figures from the site's own district values.
   - **Submitted to the Connectors Directory** (2026-11-27): 26 tools, 13 of them read-only, sign-in
     asked only when a tool needs it, with a Client ID Metadata Document. The request to approve the
     file host went to mcp-review@anthropic.com from the newsletter sender.

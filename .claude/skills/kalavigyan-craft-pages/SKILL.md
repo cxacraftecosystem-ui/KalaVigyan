@@ -68,7 +68,7 @@ component's spec, place and the sentences around it), the design skill and SYSTE
 | Reading it and taking quotes | `read_source`, which returns the text the gates will match, page by page or `around` given words, with locators; `read_source` with archive for a snapshot of a page that may vanish |
 | A quote before it is sent | `read_source` with the quote in its `quotes`: the QUOTES gate's verdict, and the nearest passage when it misses |
 | A compound's record and hazards, a plant's taxon name, a place's or craft's item | `lookup`, with kind compound or entity |
-| A photograph from KalaVigyan's own field portals | `list_field_photos`, then place it by its label in the draft's layout (HERO for the masthead, OPENER, PLATE or FIGURE), captioned from what a preview shows it holds; these come before any searched picture |
+| A photograph from KalaVigyan's own field portals | `list_field_photos` (each photo with a thumbnail and its `pictureUrl`), then place it by its label in the draft's layout (HERO for the masthead, OPENER, PLATE or FIGURE), captioned from what its thumbnail shows; the preview draws it (decision 0252), and these come before any searched picture |
 | Finding open pictures | `search_sources` with kinds pictures (Commons and Openverse, open licences only, with author, credit and the site's widths), then `give_pictures` with its `page_url` |
 | A figure of a stage, a material or a section | a composed `diagram` from the figure kit (`components.md`); a player's or card's scene as a kit scene in its slot |
 | A map of the page's places, their years and moves | a declared `timeline_map` in the draft or bundle (the dataset guide, Maps of places); never a drawing |
@@ -78,6 +78,12 @@ component's spec, place and the sentences around it), the design skill and SYSTE
 | A field's written section (its prose) from facts the page shows | a `sections` part `{field, sentences [{text, claim_ids}]}` in the draft (`edit_draft` add) or a bundle: `preview_page` draws it in place of the published section, then `propose_page`; reviewed as `SECTIONS` (decision 0250), followed with `get_proposal` by the part's id (decision 0251) |
 | A reviewed section in the dossiers | never by hand: the lead's `export_dossiers --out` writes it once approved, and an import restores it only where the database holds no section a person wrote (decision 0251) |
 | A component | `list_components` first, then delivered finished as spec and units (the component guide), in a draft or a page bundle, or alone in a bundle to `propose_page` |
+| A picture for each stage of a stage player | every stage but the last carries its own kit `scene` (cookbook, `stage_player`); the player's `drawing` is the finished work it ends on (decision 0253) |
+| A reaction species drawn without colour (rule 27) | give the part a `material`, or a `mark` of `clear`, `gas` or `ion`, and the lane the same swatch, with `edit_draft` (decision 0252) |
+| A 3D molecule of a compound the facts name but no material holds | `lookup` for its CID, then `compose_component` with kind `molecule_3d` and `about.compound`; its `missing` names the fact to propose (decision 0253) |
+| A climate chart or district climate map of the craft's place | the site's own district values: the map's district panel (`/api/map/districts/{lgd}`) holds monthly normals and 45-year series from CHIRPS, GHCN-CAMS and CHELSA, all in the dataset registry; key the figure to the place as a shared component, as Kachchh's are, so every craft of that district draws it (owner, 2026-11-28) |
+| A map layer's dataset record | `get_page` with guide `map-layers/1`; the server credits it under the map, so it is never sent or proposed as a fact (decision 0253) |
+| A fact that reads as a gap (rule 26) | `propose_facts` for what its source does say; an Admin may stage its retraction with `stage_reviews` (decision 0252) |
 | A whole page built over many calls | the `curate_page` prompt: `edit_draft` part by part, `preview_page` with the draft and its checklist report until nothing fails, then `propose_page` with the draft |
 | A whole page's additions given at once: facts, structure, components, layout, pictures | `preview_page`, then `propose_page` with the same bundle |
 | A source only your own access opens: a paywalled paper, a book or PDF you hold, an archive, a site that refuses the fetcher | `supply_source`, then `read_source`'s quote checks against your text; cite it as its `cite_as` gives it |
@@ -190,6 +196,18 @@ family figure only when the page holds every fact its units cite.
    one and its `curatedAt` updated, verified and checked.
 7. **Report** in under 150 words: gaps before and after, each proposal's outcome, sources added,
    what was searched and not found. No prose summaries of the craft.
+
+What the Sanganeri build taught (2026-11-28):
+- **File each fact where a reader looks for it.** Community and livelihood facts filed under HISTORY,
+  OVERVIEW or MATERIALS left SOCIETY with one fact, so its section was refused (FIELD); the GI's
+  protection belongs under POLICY.
+- **A section sentence carries nothing beyond its facts.** One sentence that added a publication date,
+  a citation and a trend got the whole GEOLOGY section refused (FAITHFUL).
+- **Pictures an Admin's own client gives wait for a second reviewer**: the site will not let an
+  account decide its own contribution. Prefer the field photographs, and give searched pictures
+  only where nothing of the craft's own exists.
+- **Check the library before building**: a component that shows what a registered one already
+  shows is refused, so place that one by its label instead.
 
 ## Pages in other languages
 

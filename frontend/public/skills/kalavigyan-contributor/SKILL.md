@@ -375,6 +375,11 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
   component's units what its motion shows: paper keeps the words, the rest step and the drawing, not
   the play. Kit parts, kit scenes and declared timeline maps draw on paper by themselves; a free
   drawing is drawn from its paths, shapes and text, without its textures.
+- A chart or district map of the craft's climate is drawn from the site's own district values, never
+  from numbers you type: `GET /api/map/districts/{lgd}` holds each district's monthly rainfall and
+  temperature normals and its 45-year yearly series (CHIRPS, GHCN-CAMS and CHELSA, all in the
+  dataset registry with their licences). Key the figure to the place, as Kutch Ajrakh's Kachchh
+  charts are keyed, so every craft of that district draws it.
 
 ## Drawing in KalaVigyan's design
 
@@ -505,6 +510,9 @@ your text, and supplying a source counts against the hour's fact proposals.
   details. It waits for an Admin; once approved it is drawn in its slot, a person's picture
   credited to KalaVigyan without a name, a picture from elsewhere to its author and licence. An AI image is always shown as an illustration naming its tool, never as a
   photograph, and never of a real person, place or object.
+- No account decides its own contribution: a picture your account gives waits for another reviewer,
+  even when your account reviews pictures. Place the field photographs first, and give a searched
+  picture only where nothing of the craft's own exists.
 
 ## Checking pictures
 
@@ -523,6 +531,9 @@ your text, and supplying a source counts against the hour's fact proposals.
 - A section is built only from facts its page shows in that field: each sentence names every fact
   it uses in `claim_ids` and adds no duration, degree, cause, place or link between facts that they
   do not state. A fact of another field is cited only when its own record names this field too.
+  File each fact under the field a reader would look in: a community's work, wages and livelihood
+  under SOCIETY, a GI's protection under POLICY. Facts filed elsewhere leave that field's section
+  without the three it needs.
 - At least three sentences, in the order of the craft's process or history, tense as in the facts;
   a field that holds fewer facts takes as many sentences as they allow.
 - A sentence the facts cannot support is not written: research the missing fact, propose it, and
