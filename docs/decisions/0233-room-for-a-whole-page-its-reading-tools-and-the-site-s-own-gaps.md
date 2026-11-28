@@ -19,6 +19,8 @@ system. The contracts are `docs/contracts/open-work.md` (Drafts), `docs/contract
 (the tools and Admin reports), `docs/contracts/monograph-renderer.md` (The page-tool kinds) and
 `docs/contracts/page-layout.md` (the chapters and the field photographs).
 
+Amended by [decision 0252](0252-field-photographs-and-reaction-scenes-drawn-in-a-preview-and-on-the-page.md): a portal photograph placed by its label is seen by the agent as a thumbnail and drawn in the preview's pictures, and a generated masthead names its label for the drawing checks.
+
 | For | Read |
 |---|---|
 | The audit this answers | `.lead/data/ux-1126/audit.md` |

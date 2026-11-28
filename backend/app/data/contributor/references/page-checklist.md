@@ -153,7 +153,9 @@ The rules below refer to them.
     and every figure and picture says in its alt text what it shows. The preview's report fails a
     delivered figure that breaks this and names the element. Figures of materials, sections and
     steps are composed from the figure kit; the delivery refuses hand-drawn art below the bar and
-    names the kit part to use.
+    names the kit part to use. A reaction's species is drawn in the material its facts state, or by
+    the mark of a colourless substance (clear, gas or ion), never as an empty outline, and its lane's
+    swatch says the same; the report names each step and species drawn with no colour.
 
 ## Seen as a reader sees it (owner, 2026-11-24)
 

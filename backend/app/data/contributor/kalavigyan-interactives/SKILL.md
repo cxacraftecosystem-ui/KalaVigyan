@@ -76,7 +76,9 @@ Draw every state's scene from the figure kit: a kit scene `{parts, motion?}` in 
 (a reaction step's `art`, a dip phase's `drawing` and the dip's `scene`, the stage player's
 `drawing`, a toggle's stage box), one to three parts of the composed diagram's vocabulary (up to
 eight `species` parts for a reaction step: its reactants, the reagent that arrives and its
-products, `breaks` on a reactant whose bond its facts say breaks), each labelled by a unit citing
+products, `breaks` on a reactant whose bond its facts say breaks, each in the `material` its facts
+state or, for a colourless substance, by its `mark` (`clear`, `gas`, `ion`), never with neither, which
+draws an empty outline the preview fails, decision 0252), each labelled by a unit citing
 its facts; a step's kit scene draws where it happens, so it needs no
 where icon. A step drawn by hand shows a where icon. One at most 32 units wide draws at its own size, one unit a pixel; a wider drawing draws as the 92 px vignette (decision 0210). Only a state the reader shows again names a `motion` (`react` for a step's species: the
 reactants come in, the reagent arrives, the bond breaks, the product forms); the kit plays it

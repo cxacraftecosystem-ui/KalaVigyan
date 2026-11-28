@@ -1010,8 +1010,14 @@ place of a session from `GET /api/knowledge/pages/previews/{token}/drawn` (`serv
 `page_preview_links.pass_document`), and the site's proxy sends a picture request that carries the
 pass, `/api/knowledge/pages/pictures/{id}` as the document names it, to `GET
 /api/knowledge/pages/drawn-pictures/{id}` (`apiProxy.upstreamPath`), which serves only a picture that
-preview shows (`page_preview_pictures.pass_picture_file`). Both answer 404 to a pass of another
-preview, an expired one or the preview's own link, and 422 without a pass.
+preview shows (`page_preview_pictures.pass_picture_file`). A field photograph's request with the pass,
+`/api/field-voices/images/{id}` as the document names it, goes to `GET
+/api/knowledge/pages/drawn-field-photos/{id}`, which streams the photograph's shown copy (its crop where
+a reviewer cropped it) only while the preview places it and the site still shows it
+(`page_preview_pictures.pass_field_photo`, `field_photo_scope.served_photo`, decision 0252): the public
+route answers a reader with a link to the media bucket, a host the renderer never opens. All three
+answer 404 to a pass of another preview, an expired one or the preview's own link, and 422 without a
+pass.
 
 The renderer opens the link at 390 by 844 px (as a phone) and at 1440 by 900 px, in light with
 motion reduced, lets every picture load and runs `backend/app/data/design/drawing-checks.js` on each
@@ -1056,7 +1062,10 @@ two dated sentences or more and a sentence of places with no map that moves thro
 and no chart, table, tiles or drawing of that field. The craft's reactions and stages are read
 through `services/page_report_held.held_shapes` (a craft's page only); `ways` names the figure a
 contributor writes and, where the registry has a composer for it, `compose_component` with that kind
-as a shortcut. A sentence is a placed `p` unit with facts outside a component; the lede
+as a shortcut. A sentence is a placed `p` unit with facts outside a component; a field's told
+sentences, for rules 23 and 24 and the report's `fields`, also count the distinct cited sentences its
+figures draw (a cited unit inside a component that ends as a sentence, a `related_crafts` component's
+left out) and the cited sentences of its `answer_block` structure blocks (`ReadPage.told_by_field`); the lede
 is the sentences of the opening; a picture is a `picture_plate`.
 
 The report also carries `critique?` and `designRead?` (decision 0237), neither of which changes a
@@ -1094,10 +1103,10 @@ from `DesignReadCache` for 30 days at no cost.
 | 18 | judged, with the number of sentences using each ambiguous term of the lists |
 | 20 | each mechanism of the lists is named in 2 or more sentences; judged without lists |
 | 21 | each reaction of the bundle's structure with every formula has the same elements on both sides; judged without one |
-| 23 | every sentence sits in its field's chapter, and every field holding facts has a sentence |
-| 24 | every field on the page has 3 or more sentences |
-| 25 | no sentence is told twice, and no figure's unit of 40 characters or more repeats one |
-| 26 | no text admits a gap ("not yet", "coming soon", "no data") and no field heading stands without a sentence |
+| 23 | every sentence sits in its field's chapter, and every field holding facts has a sentence, in its prose or a figure |
+| 24 | every field on the page has 3 or more distinct cited sentences, in its prose, inside its figures or in a structure block (decision 0252) |
+| 25 | no sentence is told twice, and no figure's unit of 40 characters or more repeats one; each line names the units told twice, or the figure, its unit and the sentence it repeats |
+| 26 | no text admits a gap ("not yet", "coming soon", "no data") and no field heading stands without a sentence; a fact that reads as a gap is named with its unit, its fact id and the fix (`propose_facts` for a fact stating what its source finds, and an Admin's `stage_reviews` retraction), the page's own unit with `edit_draft` |
 | 5 | judged, with the counts the masthead draws: the sources of the page's own sentences and, apart, those only a `related_crafts` component's sentences cite (`research/page_report_sources.py`) |
 | 28 | the render's problems at either width fail it, each as `<width> px, <label>: <problem>`; a render with none passes it; pictures that could not be made leave it judged with the reason, never passed |
 | 29 | judged, with each opportunity's chapter, what, facts and ways; passed when there is none; never failed, and `propose_page` never refuses on it |

@@ -106,7 +106,13 @@ artisan (`FieldImage.artisanLinked` false, whatever `field_voices.artisan_images
 (`cleared_photos`, the `list_field_photos` tool) and drawn (`field_plates`); a label of any other is
 ignored as an entry naming nothing. Its plate's picture is `/api/field-voices/images/<id>`, its
 caption the layout's, the portal's or its alt text, and its credit "Photo: <credited people>, via
-<portal>" (`photo_credit`).
+<portal>" (`photo_credit`). `list_field_photos` (12 a page by default, 24 at most) gives each its
+`pictureUrl` on the site and shows each as a 320 px thumbnail captioned with its label, read from its
+shown copy (`services/field_photo_thumbnails`), and says how many it could not show; a preview's
+renderer reads the placed photograph through its pass (`open-work.md`, Drawn as a reader sees it), so
+the preview's pictures and its drawing checks see it as a reader does. On a generated page the
+masthead's photograph is drawn in a figure that names its label (`data-component`), where the drawing
+checks look for the masthead picture (decision 0252).
 
 ## Routes and the MCP tool
 

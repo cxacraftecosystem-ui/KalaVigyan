@@ -257,8 +257,10 @@ reaction are composed from the site's kit, never drawn: a `diagram` with a `head
 unit and `panels`, each panel naming one to three parts with a cited `label` (up to eight when
 every part is a species of one reaction). The parts are `cloth`, `block`, `bath`, `paste`, `heat`,
 `water`, `tool`, `section`, `piece` and `species` (its `role` a `reactant`, `reagent` or
-`product`, and `breaks` marking the reactant in which a stated bond is broken); each takes a depicted material, a named form or a
-layer list, never a coordinate, size or colour. A panel's `motion` (`dip`, `take`, `dry`, `react`)
+`product`, `breaks` marking the reactant in which a stated bond is broken, and its colour: a
+`material` its facts state, or a `mark`, `clear`, `gas` or `ion`, for a colourless substance, as its
+lane's swatch says; a species with neither draws as an empty outline, which the preview fails); each
+takes a depicted material, a named form or a layer list, never a coordinate, size or colour. A panel's `motion` (`dip`, `take`, `dry`, `react`)
 plays on Play in a diagram and rests complete; in a reaction, dip or stage player the kit plays it
 on its own once the player is in view, with one Pause, and never under reduced motion. What each part takes, draws
 and serves is in `kalavigyan://contracts/component-specs-general.md` (The figure kit), and

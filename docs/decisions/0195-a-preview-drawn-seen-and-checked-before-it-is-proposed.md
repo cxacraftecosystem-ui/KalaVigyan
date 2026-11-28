@@ -14,6 +14,8 @@ and [decision 0193](0193-components-withdrawn-replaced-or-borrowed-and-pages-hel
 a reader sees it, the checklist report) and `docs/contracts/infra.md` (Renderer); the operations are
 in `docs/RUNBOOK.md`, Page renderer.
 
+Amended by [decision 0252](0252-field-photographs-and-reaction-scenes-drawn-in-a-preview-and-on-the-page.md): the pass also opens `/drawn-field-photos/{id}`, so a placed field photograph is drawn in the preview's pictures.
+
 | For | Read |
 |---|---|
 | The preview, the draft and the checklist report it changes | [decision 0110](0110-contributor-supplied-sources.md) |

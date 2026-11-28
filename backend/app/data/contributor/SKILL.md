@@ -327,6 +327,12 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
   place another craft's player or molecule on a page: its units cite that craft's facts and the
   page's checks refuse it. When it composes nothing, propose each item its `missing` names and call
   it again; add what it returns to the draft as it is, with your task as its `task_key`.
+- A reaction step's species is drawn in the colour its facts state, never as an empty outline: give
+  each `species` part with no colour a `material` (a depicted material, as Kutch Ajrakh draws
+  alizarin in `--dye-madder` and harda's tannin in `--dye-harda`) or, for a colourless substance, a
+  `mark` (`clear`, `gas`, `ion`), and give its lane the same swatch, with `edit_draft`. The preview's
+  rule 27 names each step and species to fix, and its drawing checks refuse the page until none is
+  left.
 - See it drawn before you propose it: put it in a draft or a bundle with the facts it rests on and
   call `preview_page`. Send it with `propose_page`, alone in a bundle when it rests only on held
   facts. A page's edition `/crafts/<slug>/v<N>` and the rest of a page drawn at that version stay readable after a rebuild, until something is removed, edited, withdrawn or retracted from the page, which drops its earlier editions (the one current then once the web has refreshed the page); a page drawn at a dropped version reads the rest of the current one, and Monograph parity names a page whose rest could not be read. A close match in the library refuses it with the matches and two ways on. An Admin's
@@ -480,8 +486,10 @@ your text, and supplying a source counts against the hour's fact proposals.
   domain, CC0, CC BY and CC BY-SA, and says why it refuses one. Open the thumbnail each accepted
   picture returns before you place it, then lay it out in your draft by its `plate` label. A picture an answer finds by search must name the craft, its places or its family's world in its title. Pictures you give through `give_pictures` are never refused by that rule, so give the craft's own pictures, captioned by what they show.
 - `list_field_photos` lists a craft's field photographs from KalaVigyan's portals that its page
-  already shows, never an artisan's identity photograph, each with its label, caption and credit;
-  place one in the draft's layout by its label where its chapter's story needs it.
+  already shows, never an artisan's identity photograph, each with its label, caption, credit and
+  `pictureUrl`, and shows each as a thumbnail captioned with its label: look at it, caption it from
+  what it shows, and place it in the draft's layout by its label where its chapter's story needs it
+  (`HERO` for the masthead). The preview's pictures draw it in place and its drawing checks see it.
 - Accepted: PNG, JPEG, WebP or AVIF as they are; GIF as its first frame; HEIC, HEIF, TIFF or BMP
   made WebP; SVG cleaned.
 - Every picture is screened before review (its format and size, a repeat of a held picture,

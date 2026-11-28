@@ -27,6 +27,8 @@ stage) and
 (The figure kit, Kit scenes, `timeline`) and `docs/contracts/component-specs-science.md` (the
 players, `molecule_3d`, Composed from a craft's own facts).
 
+Amended by [decision 0252](0252-field-photographs-and-reaction-scenes-drawn-in-a-preview-and-on-the-page.md): a species is drawn in its material or by the mark of a colourless substance, and one with neither is named by rule 27 and refused by the drawing checks.
+
 | For | Read |
 |---|---|
 | The design system's motion rules and the two reduced-motion switches | [decision 0092](0092-design-system.md) and the kalavigyan-design skill, section 6 |
