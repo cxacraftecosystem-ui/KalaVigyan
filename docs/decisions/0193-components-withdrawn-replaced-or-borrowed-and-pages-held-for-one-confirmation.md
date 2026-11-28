@@ -21,6 +21,8 @@ The contracts are `docs/contracts/open-work.md` (Withdrawn, replaced, borrowed a
 
 Amended by [decision 0248](0248-what-the-fresh-agent-could-not-fix-on-sanganeri.md): a borrowed component citing facts the page does not hold is not drawn on the page either.
 
+Amended by [decision 0254](0254-a-preview-refuses-what-the-confirm-refuses-a-layout-names-only-what-exists-and-a-duplicate-shows-the-same-thing.md): a layout placing a label nothing holds, a component its bundle failed to make among them, is refused with the labels named, and every part passes the confirm's own checks, the ones `preview_page` runs, before it writes.
+
 | For | Read |
 |---|---|
 | Who may withdraw, and the consent rule it amends | [decision 0101](0101-knowledge-architecture-for-every-craft.md), items 8 and 12 |
