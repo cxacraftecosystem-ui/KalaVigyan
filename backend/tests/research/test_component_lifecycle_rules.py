@@ -69,8 +69,8 @@ def test_a_replacement_takes_a_label_of_its_own_and_is_never_a_link() -> None:
 
 def test_the_component_a_proposal_replaces_is_never_its_close_match() -> None:
     same = [summary(OLD)]
-    assert [match.component.label for match in close_matches(draft(), same)] == [OLD]
-    assert close_matches(draft(replaces=OLD), same) == []
+    assert [match.component.label for match in close_matches(draft(), same, {})] == [OLD]
+    assert close_matches(draft(replaces=OLD), same, {}) == []
 
 
 def test_a_bundle_may_hold_withdrawals_alone_each_once_and_counts_them_as_parts() -> None:

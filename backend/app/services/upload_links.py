@@ -46,6 +46,7 @@ __all__ = [
     "LinkRefused",
     "Picture",
     "UnknownLink",
+    "checked_slot",
     "fill_by_link",
     "fill_slot",
     "link_view",
@@ -114,14 +115,7 @@ async def start_upload(
     now: datetime,
     lifetime: timedelta = UPLOAD_LINK_LIFETIME,
 ) -> IssuedLink:
-    if not can(user, Capability.PROPOSE_KNOWLEDGE):
-        raise InvalidInput(NEEDS_PROPOSER)
-    if declaration is not None:
-        _checked(slot, declaration)
-    await _refuse_too_many(session, user.id, now)
-    craft = await checked_craft(session, slot.craft_slug)
-    aimed = await checked_target(session, craft, slot)
-    facts = await _facts(session, aimed.claim_ids)
+    craft, aimed, facts = await checked_slot(session, user, slot, declaration, now=now)
     link = new_secret(LINK_PREFIX)
     slot_token = None if declaration is None else new_secret(SLOT_PREFIX)
     row = UploadLink(
@@ -142,6 +136,19 @@ async def start_upload(
     session.add(row)
     await session.flush()
     return await _issued(session, row, craft, (link, slot_token), facts)
+
+
+async def checked_slot(
+    session: AsyncSession, user: User, slot: UploadSlot, declaration: SlotDeclaration | None, *, now: datetime
+) -> tuple[Craft, UploadSlot, list[SlotFact]]:
+    if not can(user, Capability.PROPOSE_KNOWLEDGE):
+        raise InvalidInput(NEEDS_PROPOSER)
+    if declaration is not None:
+        _checked(slot, declaration)
+    await _refuse_too_many(session, user.id, now)
+    craft = await checked_craft(session, slot.craft_slug)
+    aimed = await checked_target(session, craft, slot)
+    return craft, aimed, await _facts(session, aimed.claim_ids)
 
 
 async def link_view(session: AsyncSession, user: User, token: str, *, now: datetime) -> UploadLinkView:

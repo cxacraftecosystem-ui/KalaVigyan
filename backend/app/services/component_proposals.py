@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import uuid
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -25,12 +26,13 @@ from app.research.component_proposals import (
     proposal_crafts,
     task_problem,
 )
+from app.research.component_showing import delivered_showing
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.knowledge_api import ComponentSummary
 from app.research.open_work_texts import counted
 
 from .clip_stills import delivered_stills
-from .component_library import library_components
+from .component_library import library_components, library_showings, showing_components
 from .component_proposals_register import register_component, registers
 from .component_proposals_spec import NO_KNOWN, CheckedDelivery, checked_delivery
 from .component_withdrawals import replacement_waits
@@ -40,7 +42,7 @@ from .open_work_components import registered_pieces
 from .review_queue_errors import DecisionConflict
 from .task_reservations import complete_task
 
-__all__ = ["propose_component"]
+__all__ = ["CheckedProposal", "checked_proposal", "propose_component", "stored_proposal"]
 
 APPROVED = "APPROVED"
 PENDING = "PENDING"
@@ -76,6 +78,15 @@ LINKED = {
 }
 
 
+@dataclass(frozen=True)
+class CheckedProposal:
+    draft: ComponentProposalDraft
+    owner: Craft | None
+    waits: bool
+    delivery: CheckedDelivery | None
+    refused: ComponentProposalResult | None = None
+
+
 async def propose_component(
     session: AsyncSession,
     user: User,
@@ -84,6 +95,19 @@ async def propose_component(
     now: datetime,
     known: Mapping[uuid.UUID, Sequence[str]] = NO_KNOWN,
 ) -> ComponentProposalResult:
+    checked = await checked_proposal(session, user, draft, known=known)
+    if checked.refused is not None:
+        return checked.refused
+    return await stored_proposal(session, user, checked, now=now)
+
+
+async def checked_proposal(
+    session: AsyncSession,
+    user: User,
+    draft: ComponentProposalDraft,
+    *,
+    known: Mapping[uuid.UUID, Sequence[str]] = NO_KNOWN,
+) -> CheckedProposal:
     problem = task_problem(draft)
     if problem is not None:
         raise InvalidInput(problem)
@@ -91,12 +115,22 @@ async def propose_component(
     waits = await replacement_waits(session, user, draft.replaces)
     owner = None if draft.craft_slug is None else await known_craft(session, draft.craft_slug)
     await _check_subjects(session, draft)
-    matches = close_matches(draft, await _candidates(session, draft))
+    candidates = await _candidates(session, draft)
+    showings = await library_showings(session, {candidate.label for candidate in candidates})
+    matches = close_matches(draft, candidates, showings)
     if matches:
-        return _refused(draft, matches)
+        return CheckedProposal(draft, owner, waits, None, _refused(draft, matches))
     delivery = await checked_delivery(session, draft, known=known) if draft.delivered else None
-    approved = has_rank(user, PROFESSOR) and not waits
-    row = _proposal(draft, user, None if owner is None else owner.id, delivery, now=now, approved=approved)
+    return CheckedProposal(draft, owner, waits, delivery)
+
+
+async def stored_proposal(
+    session: AsyncSession, user: User, checked: CheckedProposal, *, now: datetime
+) -> ComponentProposalResult:
+    draft, delivery = checked.draft, checked.delivery
+    approved = has_rank(user, PROFESSOR) and not checked.waits
+    owner = None if checked.owner is None else checked.owner.id
+    row = _proposal(draft, user, owner, delivery, now=now, approved=approved)
     await _stored(session, row)
     if delivery is not None and delivery.clips:
         await delivered_stills(media_bucket(), delivery.clips)
@@ -211,6 +245,9 @@ async def _candidates(session: AsyncSession, draft: ComponentProposalDraft) -> l
     ]
     for slug in proposal_crafts(draft):
         found += (await library_components(session, slug=slug, kind=draft.kind)).components
+    if draft.spec is not None:
+        shown = delivered_showing(draft.kind, draft.spec, draft.units)
+        found += await showing_components(session, draft.kind, shown)
     return found
 
 

@@ -35,7 +35,15 @@ from .staged_published import published_before, published_label
 from .staged_review_apply import dry_run
 from .testimony_views import Turns
 
-__all__ = ["ASKED_ALREADY", "Staged", "StagedRefusal", "stage_decisions", "stage_request", "staged_today"]
+__all__ = [
+    "ASKED_ALREADY",
+    "Staged",
+    "StagedRefusal",
+    "request_problem",
+    "stage_decisions",
+    "stage_request",
+    "staged_today",
+]
 
 NOT_AN_ADMIN = "Staging review decisions is for Admins and Master Admins."
 TWICE = "This item is already decided earlier in the same call."
@@ -99,16 +107,23 @@ async def stage_decisions(
 async def stage_request(
     session: AsyncSession, decision: StagedDecision, proposer: User, *, client_name: str, now: datetime
 ) -> StagedReviewItem:
-    label = await published_label(session, decision)
-    if label is None:
-        raise InvalidInput(_missing(decision))
-    if await _waiting(session, decision, now=now):
-        raise InvalidInput(ASKED_ALREADY)
+    problem = await request_problem(session, decision, now=now)
+    if problem is not None:
+        raise InvalidInput(problem)
+    label = str(await published_label(session, decision))
     batch = StagedReview(
         proposerId=proposer.id, clientName=client_name, createdAt=now, expiresAt=batch_expiry(now)
     )
     _, (item,) = await _stored(session, [(decision, label)], batch)
     return item
+
+
+async def request_problem(session: AsyncSession, decision: StagedDecision, *, now: datetime) -> str | None:
+    if await published_label(session, decision) is None:
+        return _missing(decision)
+    if await _waiting(session, decision, now=now):
+        return ASKED_ALREADY
+    return None
 
 
 async def staged_today(session: AsyncSession, proposer: User, *, now: datetime) -> int:

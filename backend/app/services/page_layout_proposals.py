@@ -26,6 +26,7 @@ __all__ = [
     "current_version",
     "proposal_subject",
     "propose_layout",
+    "stale_layout",
 ]
 
 PENDING, APPROVED, REJECTED = "PENDING", "APPROVED", "REJECTED"
@@ -46,9 +47,9 @@ async def propose_layout(
     session: AsyncSession, user: User, draft: LayoutProposalDraft, *, origin: str, site: str, now: datetime
 ) -> LayoutProposalResult:
     subject = await subject_by_key(session, draft.subject.kind, draft.subject.slug)
-    current = await current_version(session, subject)
-    if draft.base_version != current:
-        raise Refused(STALE_LAYOUT, STALE.format(slug=subject.slug, current=current, base=draft.base_version))
+    stale = await stale_layout(session, subject, draft.base_version)
+    if stale is not None:
+        raise Refused(STALE_LAYOUT, stale)
     written = None
     if can(user, Capability.REVIEW_CONTRIBUTIONS):
         written = (await store_layout(session, subject, draft.entries, actor=user)).version
@@ -66,6 +67,13 @@ async def propose_layout(
         page_url=f"{site}{subject_path(subject)}",
         message=MESSAGES[outcome].format(version=written),
     )
+
+
+async def stale_layout(session: AsyncSession, subject: WorkSubject, base_version: int) -> str | None:
+    current = await current_version(session, subject)
+    if base_version == current:
+        return None
+    return STALE.format(slug=subject.slug, current=current, base=base_version)
 
 
 async def current_version(session: AsyncSession, subject: WorkSubject) -> int:

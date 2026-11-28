@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 import pytest
@@ -11,10 +12,15 @@ from app.research.component_proposals import (
     task_problem,
     word_overlap,
 )
+from app.research.component_showing import Showing
 from app.research.knowledge_api import ComponentSubject, ComponentSummary
+
+from .general_spec_fixtures import CHART, chart_units
 
 TANNIC_ACID = "0c000000-0000-4000-8000-000000000001"
 ALUM = "0c000000-0000-4000-8000-000000000002"
+RAIN_FACT = uuid.UUID("0c000000-0000-4000-8000-0000000000a1")
+HEAT_FACT = uuid.UUID("0c000000-0000-4000-8000-0000000000a2")
 
 
 def draft(**changes: Any) -> ComponentProposalDraft:
@@ -56,7 +62,7 @@ def test_word_overlap_is_shared_words_over_all_words() -> None:
     assert word_overlap(frozenset(), frozenset()) == 0.0
 
 
-def test_the_same_kind_keyed_to_the_same_compound_is_a_close_match() -> None:
+def test_the_same_kind_keyed_to_the_same_compound_is_no_longer_a_close_match_by_itself() -> None:
     held = summary(
         label="shared/chemistry/tannin-structure",
         title="Tannin structure",
@@ -65,7 +71,7 @@ def test_the_same_kind_keyed_to_the_same_compound_is_a_close_match() -> None:
         craft_slug=None,
         subjects=[ComponentSubject(kind="COMPOUND", key=TANNIC_ACID, name="Tannic acid")],
     )
-    assert match_reasons(draft(), held) == ["the same kind, keyed to the same compound Tannic acid"]
+    assert match_reasons(draft(), held, None) == []
 
 
 def test_the_same_kind_on_the_same_craft_with_another_topic_is_not_a_match() -> None:
@@ -76,7 +82,7 @@ def test_the_same_kind_on_the_same_craft_with_another_topic_is_not_a_match() -> 
         kind="reaction_player",
         subjects=[{"kind": "CRAFT", "key": "Kutch-Ajrakh"}, {"kind": "CONCEPT", "key": ALUM}],
     )
-    assert match_reasons(proposed, summary()) == []
+    assert match_reasons(proposed, summary(), None) == []
 
 
 def test_a_title_sharing_half_its_words_in_the_same_kind_is_a_close_match() -> None:
@@ -87,7 +93,7 @@ def test_a_title_sharing_half_its_words_in_the_same_kind_is_a_close_match() -> N
         kind="reaction_player",
         subjects=[{"kind": "CRAFT", "key": "Kutch-Ajrakh"}],
     )
-    assert match_reasons(proposed, summary()) == ["the same kind with a title sharing 50% of its words"]
+    assert match_reasons(proposed, summary(), None) == ["the same kind with a title sharing 50% of its words"]
 
 
 def test_a_near_copy_of_any_kind_is_a_close_match_and_the_same_label_always_is() -> None:
@@ -98,10 +104,35 @@ def test_a_near_copy_of_any_kind_is_a_close_match_and_the_same_label_always_is()
         kind="diagram",
         subjects=[{"kind": "CRAFT", "key": "Kutch-Ajrakh"}],
     )
-    assert match_reasons(copy, summary()) == [
+    assert match_reasons(copy, summary(), None) == [
         "it already has this label",
         "a title and description sharing 100% of their words",
     ]
+
+
+def delivered(claim: uuid.UUID, **changes: Any) -> ComponentProposalDraft:
+    return draft(
+        label="jaipur-test/climate/rain-chart",
+        title="Indigo reduction and oxidation",
+        description="A player that steps indigo through its reduction to leucoindigo in the vat and back in air.",
+        kind="chart",
+        field="CLIMATE",
+        subjects=[{"kind": "PLACE", "key": "lgd:102"}],
+        spec=CHART,
+        units=chart_units(claim),
+        **changes,
+    )
+
+
+def test_a_delivered_component_is_matched_by_what_it_shows_not_by_its_words_or_its_place() -> None:
+    chart = summary(kind="chart", subjects=[ComponentSubject(kind="PLACE", key="lgd:102", name="Jaipur")])
+    other = Showing(dataset=None, cells=frozenset(), facts=frozenset({HEAT_FACT}))
+    assert match_reasons(delivered(RAIN_FACT), chart, other) == []
+    same = Showing(dataset=None, cells=frozenset(), facts=frozenset({RAIN_FACT}))
+    assert match_reasons(delivered(RAIN_FACT), chart, same) == [
+        "it rests on the same facts, 100% of them shared"
+    ]
+    assert match_reasons(delivered(RAIN_FACT), summary(kind="map_layer"), same) == []
 
 
 def test_the_component_extended_is_never_its_own_match_and_each_label_counts_once() -> None:
@@ -111,9 +142,9 @@ def test_the_component_extended_is_never_its_own_match_and_each_label_counts_onc
         subjects=[ComponentSubject(kind="COMPOUND", key=TANNIC_ACID, name="Tannic acid")],
     )
     plain = draft(label="shared/chemistry/tannic-acid-molecule-2")
-    assert [match.component.label for match in close_matches(plain, [held, held])] == [held.label]
+    assert [match.component.label for match in close_matches(plain, [held, held], {})] == [held.label]
     link = draft(extends=held.label, extension="SUBJECT_LINK", label=held.label)
-    assert close_matches(link, [held]) == []
+    assert close_matches(link, [held], {}) == []
 
 
 @pytest.mark.parametrize(
