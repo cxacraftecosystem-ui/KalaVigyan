@@ -74,7 +74,7 @@ hands back the storyboard's pages with what it composes; read them before you pl
 
 Draw every state's scene from the figure kit: a kit scene `{parts, motion?}` in the player's slot
 (a reaction step's `art`, a dip phase's `drawing` and the dip's `scene`, the stage player's
-`drawing`, a toggle's stage box), one to three parts of the composed diagram's vocabulary (up to
+`drawing` and each stage's own `scene` but the last's, a toggle's stage box), one to three parts of the composed diagram's vocabulary (up to
 eight `species` parts for a reaction step: its reactants, the reagent that arrives and its
 products, `breaks` on a reactant whose bond its facts say breaks), each labelled by a unit citing
 its facts; a step's kit scene draws where it happens, so it needs no
@@ -143,7 +143,7 @@ design's bar or left out.
   page (hidden, not missing), and each state is one press away on the rail. The rail marks the
   state shown as pressed and the status line names it; nothing on it reads as work in progress.
 - Paper rests where the page rests: the export draws a player's `current` step, a dip's scene and
-  its dips, a stage player's drawing, and a molecule at its `yaw` and `pitch`, with every step and
+  its dips, a stage player's drawing and each stage's scene, and a molecule at its `yaw` and `pitch`, with every step and
   choice listed. Choose `current` and the rest angle as the state that explains most when still.
 - Motion explains a change between two cited states and nothing else: the design system's named
   motions and durations, on the element that changes, never decoration.

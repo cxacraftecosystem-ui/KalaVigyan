@@ -365,7 +365,14 @@ unresolved place is refused by name: "look it up with lookup (kind entity, qid Q
 again". The layers are checked against what the site holds (`map_credits`: the layer files and
 `map_layer_store.listed_layers`), and the spec is stored with `places[].found {latitude, longitude,
 wikidataId?, districtLgd?}`, `datasets` (the boundary record `DR_DISTRICT_SHAPES` first, then each
-layer's records from the registry) and `boundaryCaption` (`datasets.BOUNDARY_CAPTION`).
+layer's records in the order the layers are named) and `boundaryCaption` (`datasets.BOUNDARY_CAPTION`).
+A physical layer's records are the ones its own file carries (`services/layer_records.physical_records`:
+each code once, with the day its first download was read and its SHA-256, the registry's record as the
+map layers build wrote it), whether or not the database holds a row, and a file that names none is
+refused (`timeline_maps.NO_LAYER_RECORD`); a district layer's is its stored `EnvDataset` row
+(`NO_RECORD` when none is held). Every layer and its record is listed in the guide page `map-layers`
+(`services/layer_guide`, `get_page` with `guide` `map-layers/1`), a layer without one marked as
+refused (decision 0253).
 
 **Drawing** (`TimelineMapDeclaredView`): `withDeclared` tells the forms apart by kind
 (`lib/componentSpecsTimelineMap.declaredForm`), so Kutch Ajrakh's authored route map keeps its own

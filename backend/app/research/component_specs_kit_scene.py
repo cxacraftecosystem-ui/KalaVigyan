@@ -33,7 +33,7 @@ DRAWN = "drawn"
 KIT = "kit"
 STILL = (
     "a kit scene here names no motion: this scene rests as the reader sees it, and only a reaction step, a dip "
-    "phase or a dip player's scene is shown again when the reader presses"
+    "phase, a dip player's scene or a stage's own scene is shown again when the reader presses"
 )
 
 

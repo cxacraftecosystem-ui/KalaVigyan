@@ -25,6 +25,7 @@ fixtures, which now carry a timeline map's recorded placement). The contracts ar
 | The kind fixtures served with each drawing's themes | [decision 0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | The site's physical and district layers | [decision 0016](0016-region-profile.md), [decision 0114](0114-kinds-and-datasets.md) |
 | A places map drawn on the same base, told what it is about (amends this record) | [decision 0232](0232-every-places-map-drawn-on-the-site-s-own-map-base-and-told-what-it-is-about.md) |
+| A physical layer credited from the record its own file carries, and every layer's record read over MCP (amends this record) | [decision 0253](0253-a-stage-s-own-scene-a-compound-its-facts-name-and-every-map-layer-s-dataset-record.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

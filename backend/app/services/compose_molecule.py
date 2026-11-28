@@ -11,10 +11,18 @@ from app.science.molecule_conformer import conformer_geometry, element_counts, h
 from app.science.molecule_drawing import REST_PITCH, REST_YAW, molecule_drawing
 from app.science.molecule_elements import DRAWN_ELEMENTS, ELEMENTS, atom_token, key_label
 
-from .compose_held import About, Composition, CraftHeld, HeldCompound, HeldMaterial, composed, refused
+from .compose_held import About, Composition, CraftHeld, HeldCompound, NamedCompound, composed, refused
 from .compose_parts import FIGURE, UnitBook, composed_component, joined, key_word, rich_formula
 
-__all__ = ["CANDIDATES_MAX", "MOLECULES_MAX", "SIDE_FACTS_MAX", "molecule_3d", "molecule_candidates"]
+__all__ = [
+    "CANDIDATES_MAX",
+    "MOLECULES_MAX",
+    "NONE_HELD",
+    "NO_COMPOUND",
+    "SIDE_FACTS_MAX",
+    "molecule_3d",
+    "molecule_candidates",
+]
 
 MOLECULES_MAX = 2
 CANDIDATES_MAX = 4
@@ -24,11 +32,14 @@ NOTE = "Its 3D conformer is PubChem's record."
 CONFORMERS_KEY = "3D conformers computed by PubChem."
 TURN_HINT = "Drag, or use the arrow keys, to turn it; plus and minus zoom."
 NONE_HELD = (
-    "a material of {name} held with its PubChem compound and stated by its own facts: lookup gives a "
-    "compound's CID, and propose_facts states what the material is"
+    "a material of {name} held with its PubChem compound and stated by its own facts, or a compound its facts "
+    "name given as about.compound: lookup gives a compound's CID, and propose_facts states what the material "
+    "or compound is"
 )
 NO_MATERIAL = "the material {key}: {slug} holds no material of its own with a PubChem compound under that key"
-NO_COMPOUND = "the compound CID {cid}: no material of {slug} is held as that compound"
+NO_COMPOUND = (
+    "the compound CID {cid}: no material of {slug} is held as that compound and no fact of it names it"
+)
 NO_CONFORMER = "a 3D conformer for {name} (CID {cid}): PubChem holds none"
 UNREAD = "a 3D conformer for {name} (CID {cid}) that this server can read: {problem}"
 UNDRAWN = (
@@ -39,42 +50,51 @@ UNDRAWN = (
 
 @dataclass(frozen=True)
 class _Model:
-    material: HeldMaterial
-    compound: HeldCompound
+    source: NamedCompound
     geometry: MoleculeGeometry
 
+    @property
+    def compound(self) -> HeldCompound:
+        return self.source.compound
 
-def molecule_candidates(craft: CraftHeld, about: About) -> tuple[list[HeldMaterial], str | None]:
+
+def molecule_candidates(
+    craft: CraftHeld, about: About, named: Sequence[NamedCompound] = ()
+) -> tuple[list[NamedCompound], str | None]:
     held = [m for m in craft.materials if m.compound is not None and craft.stated(m.claim_ids)]
     if about.material is not None:
         held = [m for m in held if m.key == about.material]
         if not held:
             return [], NO_MATERIAL.format(key=about.material, slug=craft.slug)
+    found = [NamedCompound(m.compound, m.claim_ids) for m in held if m.compound is not None]
+    if about.material is None:
+        found += [compound for compound in named if craft.stated(compound.claim_ids)]
     if about.compound is not None:
-        held = [m for m in held if m.compound is not None and m.compound.cid == about.compound]
-        if not held:
+        found = [compound for compound in found if compound.compound.cid == about.compound]
+        if not found:
             return [], NO_COMPOUND.format(cid=about.compound, slug=craft.slug)
-    if not held:
+    if not found:
         return [], NONE_HELD.format(name=craft.name)
-    return _first_of_each_compound(held)[:CANDIDATES_MAX], None
+    return _first_of_each_compound(found)[:CANDIDATES_MAX], None
 
 
-def _first_of_each_compound(materials: Sequence[HeldMaterial]) -> list[HeldMaterial]:
-    first: dict[int, HeldMaterial] = {}
-    for material in materials:
-        if material.compound is not None:
-            first.setdefault(material.compound.cid, material)
+def _first_of_each_compound(found: Sequence[NamedCompound]) -> list[NamedCompound]:
+    first: dict[int, NamedCompound] = {}
+    for source in found:
+        first.setdefault(source.compound.cid, source)
     return list(first.values())
 
 
-def molecule_3d(craft: CraftHeld, about: About, conformers: Mapping[int, str | None]) -> Composition:
-    candidates, problem = molecule_candidates(craft, about)
+def molecule_3d(
+    craft: CraftHeld, about: About, conformers: Mapping[int, str | None], named: Sequence[NamedCompound] = ()
+) -> Composition:
+    candidates, problem = molecule_candidates(craft, about, named)
     if problem is not None:
         return refused(problem)
     models: list[_Model] = []
     gaps: list[str] = []
-    for material in candidates:
-        model, gap = _model(material, conformers)
+    for source in candidates:
+        model, gap = _model(source, conformers)
         if gap is not None:
             gaps.append(gap)
         elif model is not None and len(models) < MOLECULES_MAX:
@@ -85,9 +105,9 @@ def molecule_3d(craft: CraftHeld, about: About, conformers: Mapping[int, str | N
     return composed(composed_component(craft, _piece(craft, models, book), book), left_out=gaps)
 
 
-def _model(material: HeldMaterial, conformers: Mapping[int, str | None]) -> tuple[_Model | None, str | None]:
-    compound = material.compound
-    if compound is None or compound.cid not in conformers:
+def _model(source: NamedCompound, conformers: Mapping[int, str | None]) -> tuple[_Model | None, str | None]:
+    compound = source.compound
+    if compound.cid not in conformers:
         return None, None
     sdf = conformers[compound.cid]
     if sdf is None:
@@ -102,7 +122,7 @@ def _model(material: HeldMaterial, conformers: Mapping[int, str | None]) -> tupl
         return None, UNDRAWN.format(
             elements=joined(undrawn), name=compound.name, cid=compound.cid, drawn=drawn
         )
-    return _Model(material, compound, geometry), None
+    return _Model(source, geometry), None
 
 
 def _piece(craft: CraftHeld, models: Sequence[_Model], book: UnitBook) -> dict[str, Any]:
@@ -131,7 +151,7 @@ def _piece(craft: CraftHeld, models: Sequence[_Model], book: UnitBook) -> dict[s
 
 
 def _side_facts(craft: CraftHeld, models: Sequence[_Model]) -> tuple[uuid.UUID, ...]:
-    return craft.stated(claim for model in models for claim in model.material.claim_ids)[:SIDE_FACTS_MAX]
+    return craft.stated(claim for model in models for claim in model.source.claim_ids)[:SIDE_FACTS_MAX]
 
 
 def _molecule(model: _Model) -> dict[str, Any]:

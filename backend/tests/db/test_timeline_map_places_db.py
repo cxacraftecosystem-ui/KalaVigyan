@@ -17,12 +17,13 @@ from app.research.component_proposals import ComponentProposalDraft, ProposedSub
 from app.research.component_specs import checked_spec
 from app.research.component_specs_general_delivery import DeliveredUnit
 from app.research.component_specs_timeline_map import DeclaredTimelineMapSpec
+from app.services import timeline_maps
 from app.services.component_proposals_spec import checked_delivery
 from app.services.entity_points import entity_points
 from app.services.place_lookups import item_key
 from app.services.source_lookup_models import EntityLookup, EntityRecord
 from app.services.timeline_map_places import NOT_IN_REGISTER, NOT_LOOKED_UP, OUTSIDE_DISTRICTS, found_places
-from app.services.timeline_maps import NO_BOUNDARY, map_credits, placed_spec
+from app.services.timeline_maps import NO_BOUNDARY, NO_LAYER_RECORD, map_credits, placed_spec
 from app.sources.reference.wikidata_places import PlaceCandidate, PlacePoint
 
 pytestmark = pytest.mark.db
@@ -155,11 +156,25 @@ async def test_a_cited_coordinate_is_placed_as_given_and_in_the_district_that_ho
     assert away.places[0].district_lgd is None
 
 
-async def test_only_layers_the_site_holds_are_drawn_and_every_one_is_credited(session: AsyncSession) -> None:
+async def test_only_layers_the_site_holds_are_drawn_and_every_one_is_credited(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    await session.execute(delete(EnvDataset).where(EnvDataset.code.in_(CREDITED[1:])))
     physical = await map_credits(session, ["relief", "rivers", "minerals"])
-    assert physical.problems == [
-        "the layer minerals rests on USGS_MRDS, which the site holds no dataset record for"
-    ]
+    assert physical.problems == []
+    assert [dataset.code for dataset in physical.datasets] == [*CREDITED, "USGS_MRDS"]
+    relief = physical.datasets[1]
+    assert (relief.version, relief.doi, relief.licence) == (
+        "1",
+        "10.7289/V5C8276M",
+        "Public domain (U.S. Government work)",
+    )
+    assert relief.read_on is not None and relief.sha256 is not None
+    monkeypatch.setattr(timeline_maps, "physical_records", lambda name: ())
+    unrecorded = await map_credits(session, ["relief"])
+    assert unrecorded.problems == [NO_LAYER_RECORD.format(name="relief")]
+    assert [dataset.code for dataset in unrecorded.datasets] == ["DR_DISTRICT_SHAPES"]
+    monkeypatch.undo()
     unheld = await map_credits(session, ["annual-precipitation"])
     assert (
         len(unheld.problems) == 1

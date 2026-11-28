@@ -24,7 +24,9 @@ from .component_specs_science_parts import (
 )
 
 __all__ = [
+    "DRAWN_STAGE",
     "PHASE_KEY_PATTERN",
+    "REST_SCENE",
     "Condition",
     "DipPhase",
     "DipPlayerSpec",
@@ -45,6 +47,11 @@ __all__ = [
 
 PHASE_KEY_PATTERN = r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
 PHASE_KEY_MAX = 40
+DRAWN_STAGE = "stage {name}'s scene drawn by hand is one whole svg drawing, as the player's drawing is"
+REST_SCENE = (
+    "the last stage, where the player rests, is drawn by the player's drawing: give that picture as drawing "
+    "and leave the last stage without a scene of its own"
+)
 SWATCH_MARKS = ("clear", "gas", "ion")
 Cid = Annotated[int, Field(ge=1)]
 PhaseKey = Annotated[str, Field(pattern=PHASE_KEY_PATTERN, max_length=PHASE_KEY_MAX)]
@@ -200,6 +207,13 @@ class StageEntry(SpecModel):
     after_sentence: UnitRef | None = None
     materials: UnitRef | None = None
     swatch: ColourToken | None = Field(default=None, exclude_if=absent)
+    scene: SceneDrawing | None = Field(default=None, exclude_if=absent)
+
+    @model_validator(mode="after")
+    def _a_drawn_scene_is_one_drawing(self) -> Self:
+        if isinstance(self.scene, SvgNode) and self.scene.tag != "svg":
+            raise ValueError(DRAWN_STAGE.format(name=self.name))
+        return self
 
 
 class StageFinish(SpecModel):
@@ -217,3 +231,9 @@ class StagePlayerSpec(SpecModel):
     stages: list[StageEntry] = Field(min_length=2)
     finish: StageFinish
     after_label: Label
+
+    @model_validator(mode="after")
+    def _rests_on_its_drawing(self) -> Self:
+        if self.stages[-1].scene is not None:
+            raise ValueError(REST_SCENE)
+        return self

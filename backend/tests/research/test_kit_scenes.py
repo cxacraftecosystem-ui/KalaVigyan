@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from app.research.component_specs import checked_spec
 from app.research.component_specs_general_delivery import DeliveredUnit, spec_problems
 from app.research.component_specs_kit_scene import KIT_SCENE_KINDS, KitScene, kit_scenes, scene_form
+from app.research.component_specs_science_players import DRAWN_STAGE, REST_SCENE
 from app.research.drawn_art import SCENE_POINTER, scene_problems
 
 from . import science_spec_fixtures as science
@@ -217,3 +218,81 @@ def test_kutch_ajrakh_s_authored_dip_would_be_refused_from_a_contributor_and_is_
     assert any(
         " by hand, which the kit's " in problem for problem in scene_problems("dip_player", dumped, {})
     )
+
+
+CARVED = {"parts": [{"part": "block", "motif": "star", "paste": "--dye-kut", "label": "u0606"}]}
+STAGE_UNITS = (810, 820, 850)
+
+
+def staged_player(*scenes: Any) -> dict[str, Any]:
+    spec = kit_stage_player()
+    names = ("khudai", "dabu", "dhulai")
+    spec["stages"] = [
+        science.stage_entry(name, first) for name, first in zip(names, STAGE_UNITS, strict=True)
+    ]
+    for stage, scene in zip(spec["stages"], scenes, strict=False):
+        if scene is not None:
+            stage["scene"] = scene
+    return spec
+
+
+def test_a_stage_takes_its_own_scene_and_one_without_keeps_none() -> None:
+    spec = staged_player(CARVED, None)
+    checked = checked_spec("stage_player", spec)
+    dumped = checked.model_dump(mode="json", by_alias=True)
+    assert dumped == spec
+    assert "scene" not in dumped["stages"][1]
+    assert [path for path, _ in kit_scenes(checked)] == ["stages[0].scene"]
+    assert spec_problems("stage_player", spec, units(spec)) == []
+
+
+def test_a_stage_s_own_scene_may_move_when_its_stage_is_shown_while_the_drawing_rests() -> None:
+    spec = staged_player(CARVED, DIPS)
+    assert [path for path, _ in kit_scenes(checked_spec("stage_player", spec))] == [
+        "stages[0].scene",
+        "stages[1].scene",
+    ]
+    with pytest.raises(ValidationError, match="names no motion"):
+        checked_spec("stage_player", {**spec, "drawing": DIPS})
+
+
+def test_a_player_with_no_stage_scene_is_kept_as_before() -> None:
+    spec = staged_player()
+    dumped = checked_spec("stage_player", spec).model_dump(mode="json", by_alias=True)
+    assert dumped == spec
+    assert all("scene" not in stage for stage in dumped["stages"])
+
+
+def test_the_last_stage_rests_on_the_player_s_drawing_and_names_no_scene_of_its_own() -> None:
+    with pytest.raises(ValidationError, match=re.escape(REST_SCENE)):
+        checked_spec("stage_player", staged_player(CARVED, None, STILL))
+
+
+def test_a_stage_scene_drawn_by_hand_is_one_svg_held_to_the_bar_for_drawn_art() -> None:
+    with pytest.raises(ValidationError, match=re.escape(DRAWN_STAGE.format(name="khudai"))):
+        checked_spec("stage_player", staged_player({"tag": "g", "children": LINE_WORK["children"]}))
+    spec = staged_player(LINE_WORK)
+    assert checked_spec("stage_player", spec)
+    assert spec_problems("stage_player", spec, units(spec)) == []
+    painted = copy.deepcopy(LINE_WORK)
+    painted["children"].append(
+        {
+            "tag": "rect",
+            "attrs": {"x": "10", "y": "40", "width": "60", "height": "30", "fill": "var(--dye-indigo)"},
+        }
+    )
+    painted["children"].append({"tag": "title", "children": ["A cloth lifted from the vat"]})
+    refused = staged_player(painted)
+    pointer = SCENE_POINTER.format(kind="stage_player")
+    assert spec_problems("stage_player", refused, units(refused)) == [
+        "the stage_player's drawing at stages[0].scene paints --dye-indigo by hand, which the kit's cloth part "
+        f"draws textured, framed and named in a key; {pointer}"
+    ]
+
+
+def test_a_stage_scene_s_labels_cite_their_facts() -> None:
+    spec = staged_player(CARVED)
+    assert spec_problems("stage_player", spec, units(spec, frozenset({"u0606"}))) == [
+        "the unit u0606, the label of the kit scene at stages[0].scene's block part, cites no fact: a kit "
+        "part's label rests on the facts that state it"
+    ]

@@ -80,7 +80,7 @@ agent delivering one, read it.
   beside the frame, never a word inside the drawing. A scene's `motion` (`dip`, `take`, `dry`,
 `react` for a scene of species) is
   allowed only where the reader shows the scene again (a reaction step, a dip phase, a dip player's
-  scene); the stage player's drawing, the toggle's stage box and the seal rest as drawn, so a kit
+  scene, a stage's own scene); the stage player's drawing, the toggle's stage box and the seal rest as drawn, so a kit
   scene there names none (`KitStill`). The kit plays a shown scene's part with the design system's
   named motion (`kitMove`, the `data-playing` hook of `app/motion.css`) and never under either
   reduced-motion switch.
@@ -154,6 +154,16 @@ Ajrakh's living cloth (`.lc-bsvg`) and any other stage player alike (`stageDrive
 item, swaps in a stage's own kit scene where its list item holds one, lays the stage's swatch in
 a band that dips in at the foot of the stage box and keeps the ribbon's pressed stage in view.
 The ribbon scrolls without a scroll bar on a phone.
+A stage may carry its own `scene` (`StageEntry.scene`, decision 0253): a kit scene, which may name one
+motion since the scene is shown again whenever its stage is, or a drawing whose root is one `svg`
+(`DRAWN_STAGE`), held to the bar for drawn art like the player's own. The last stage carries none
+(`REST_SCENE`): the player rests on it, and its picture is the `drawing`. The view
+(`StageList.tsx`) draws a stage's scene in its list item (`.lc-scene`, `artkit.css`, the key beside a
+kit scene, a drawing's root given the `kv-kit-scene` class); `genericStages` clones the scene of the
+stage shown into the stage box (`ownScene`), and for a stage without one the scene of the nearest
+stage before it that has one, else the rest drawing, and plays its motion with the stage band. A
+spec with no stage scene draws as before. The export draws every stage's scene after the rest
+drawing (`page_export_science.stage_player_figure`).
 Ajrakh: `kutch-ajrakh/process/cloth-after-each-stage`.
 
 ## diagram

@@ -157,6 +157,11 @@ to your places.
 4. Send no coordinates the server finds, no datasets and no credits: the server writes the places'
    points, the boundary record and every layer's dataset record into the stored spec, and the page
    prints the boundary note and each credit under the map.
+5. Read the layers and their records with `get_page` and `guide` `map-layers/1`: every layer a map
+   draws (relief, rivers, minerals, OpenStreetMap's small waters and every district layer), the
+   dataset each rests on, and each record whole, its source, version, licence, citation, DOI, the
+   day it was read and its SHA-256. That is how a layer is checked and named in prose; a layer the
+   page marks as holding no record is refused until one is held.
 
 A map you draw yourself, as a `drawing` or your own SVG (an outline, a base map's colours, place
 dots), is refused with a pointer to the `map_layer` and the `timeline_map`.
@@ -231,7 +236,9 @@ In the repository:
 - A physical map layer (rivers, lakes, relief, minerals) enters `tools/maplayers`: its download as a
   `Source` in `maplayers/sources.py` (the dataset's code, the file and its address), built by
   `tools/maplayers_build.py` into `frontend/public/layers` with the full record, the day read and
-  the SHA-256 of every download it read. The base map's countries come from
+  the SHA-256 of every download it read. The server credits a map's physical layer from the record
+  in that file (mirrored into `backend/app/data/layers`), so the layer needs no database row, and a
+  file that names no record is refused. The base map's countries come from
   `tools/basemap_build.py`.
 - Heavy downloads run on GitHub Actions, never on a laptop.
 
@@ -255,6 +262,7 @@ In the repository:
 | How many facts a bundle holds | that test again, against `research/page_proposals` |
 | A map layer's classes, limits and frame | `test_map_layer_proposals.py` in `backend/tests/research`, against `research/map_layer_proposals` and `research/map_layer_geojson` |
 | A map of places: how a place is named, its entries and the layers it may ask for | `test_timeline_map_specs.py` in `backend/tests/research`, against `research/component_specs_timeline_map` |
+| Each layer's dataset record and the page that lists them | `test_map_layer_records.py` in `backend/tests/mcp`, against `services/layer_records` and `services/layer_guide` |
 | This text, as every prompt and the site serve it | `test_skill_references.py` in `backend/tests/mcp` |
 
 Read it again whenever a layer's tolerance, the map's frame or the dataset registry's rules change.

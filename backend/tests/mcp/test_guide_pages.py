@@ -37,6 +37,7 @@ SERVED = {
     "drawing",
     "bar",
     "contents",
+    "map-layers",
     *KIT_GUIDES,
     *worked_topics(),
 }
@@ -81,7 +82,10 @@ def test_a_heading_inside_a_fence_starts_no_section_and_the_title_follows_frontm
 def test_every_markdown_resource_but_the_index_is_a_guide_beside_the_bar_and_the_contents() -> None:
     assert set(GUIDES) >= SERVED
     markdown = {uri for uri, resource in RESOURCES.items() if resource.mime_type == "text/markdown"}
-    made = {f"{GUIDE_PREFIX}{topic}/1" for topic in ("bar", "contents", *KIT_GUIDES, *worked_topics())}
+    made = {
+        f"{GUIDE_PREFIX}{topic}/1"
+        for topic in ("bar", "contents", "map-layers", *KIT_GUIDES, *worked_topics())
+    }
     assert {guide.whole for guide in GUIDES.values()} == (markdown - {INDEX_URI}) | made
 
 

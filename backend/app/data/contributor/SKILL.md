@@ -291,7 +291,10 @@ callers share one allowance between them.
   cobalt; quartz; sem; cinnabar (hingula); red ochre (geru). Any other colour comes back in
   `leftOut` asking for a specimen record, which the team adds only with the fact that quotes it.
 - `molecule_3d` composes any compound of the kit's twenty elements that PubChem holds a 3D
-  conformer for; another element is named in `missing`.
+  conformer for; another element is named in `missing`. A compound none of the page's materials
+  holds is composed when the page's own facts name it: give its PubChem CID (from `lookup`) as
+  `about.compound`, and the facts naming it by PubChem's name, or a synonym, stand beside the model.
+  When none does, `missing` says so: propose a fact that names it, then compose again.
 - A community or person a source names in connection with a craft goes in as `GROUP_NAME` (`name`,
   `group_kind` `COMMUNITY` or `PERSON`, the sources whose quotes state it, no field, statement or
   task), on any craft: approved, it only keeps that name out of AI pictures and is never shown.
@@ -310,6 +313,9 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
 | `MISSING_COMPONENT` | `MISSING_COMPONENT:craft:<slug>:<need>` | a component of a kind the need lists, keyed to that craft |
 | `FLAGSHIP` | `FLAGSHIP:category:<slug>` | a family page's flagship, delivered finished as a `reaction_player`, `dip_player`, `stage_player` or `experiment_lab`, keyed to the anchor craft the task names, in a bundle for that category page (the interactives skill) |
 
+- A stage player shows each stage's own picture. Each stage but the last takes a kit `scene` of
+  what its facts name, and the player's `drawing` is the work once finished (`cookbook.md`,
+  `stage_player`).
 - Design first, then choose how to make it (`cookbook.md`, How a figure gets made): a coded
   figure, a kind the site draws, or what `compose_component` returns when it fits. For a kind
   filled by hand, `list_components` first, searched by craft and words:
@@ -338,7 +344,9 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
   `qid` `lookup` found, its LGD district, or a coordinate a fact states (`at`); caption every place
   with a point, route or undated fact whose unit states its years, names its place or states the
   move; ask for `relief`, `rivers`, `minerals` or a district layer by name, and send no coordinates
-  or credits. Anything past these is yours to code (the cookbook's `coded_figure`). The server
+  or credits: `get_page` with `guide` `map-layers/1` lists every layer with the dataset record the
+  server credits under the map (source, version, licence, citation, the day read, the SHA-256).
+  Anything past these is yours to code (the cookbook's `coded_figure`). The server
   refuses a place it cannot resolve, by name; a `drawing`, or SVG of your own, that is a map is
   refused (the dataset guide, Maps of places).
 - A figure drawn from a table of values rests on a dataset, not on one fact per value:

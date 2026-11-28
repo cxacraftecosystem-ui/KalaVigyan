@@ -18,6 +18,7 @@ __all__ = [
     "HeldSpecies",
     "HeldStage",
     "HeldTiming",
+    "NamedCompound",
     "composed",
     "refused",
 ]
@@ -59,6 +60,12 @@ class HeldCompound:
     cid: int
     name: str
     formula: str | None = None
+
+
+@dataclass(frozen=True)
+class NamedCompound:
+    compound: HeldCompound
+    claim_ids: tuple[uuid.UUID, ...] = ()
 
 
 @dataclass(frozen=True)
