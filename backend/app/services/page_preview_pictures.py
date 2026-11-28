@@ -23,7 +23,9 @@ from .page_preview_links import UnknownPreview, passed_preview
 
 __all__ = [
     "GIVEN_STATUSES",
+    "NO_CATEGORY",
     "OwnPicture",
+    "checked_given",
     "given_picture_report",
     "given_plates",
     "own_picture_file",
@@ -52,23 +54,26 @@ def preview_picture_url(contribution_id: uuid.UUID) -> str:
     return PREVIEW_PICTURE_PATH.format(id=contribution_id)
 
 
-async def given_plates(
+async def checked_given(
     session: AsyncSession, user: User, subject: WorkSubject, ids: Sequence[uuid.UUID]
-) -> list[PlateSource]:
+) -> list[tuple[ImageContribution, MediaAsset]]:
     rows = await _given(session, user, subject, ids)
     missing = [str(given) for given in ids if given not in {row.id for row, _ in rows}]
     if missing:
         raise InvalidInput(NOT_GIVEN.format(slug=subject.slug, id=", ".join(missing)))
-    return await plates_of(session, rows, preview_picture_url)
+    return rows
+
+
+async def given_plates(
+    session: AsyncSession, user: User, subject: WorkSubject, ids: Sequence[uuid.UUID]
+) -> list[PlateSource]:
+    return await plates_of(session, await checked_given(session, user, subject, ids), preview_picture_url)
 
 
 async def given_picture_report(
     session: AsyncSession, user: User, subject: WorkSubject, index: int, contribution_id: uuid.UUID
 ) -> PartReport:
-    rows = await _given(session, user, subject, [contribution_id])
-    if not rows:
-        raise InvalidInput(NOT_GIVEN.format(slug=subject.slug, id=contribution_id))
-    ((row, _),) = rows
+    ((row, _),) = await checked_given(session, user, subject, [contribution_id])
     message = GIVEN_SHOWN if row.status == APPROVED else GIVEN_WAITING
     return PartReport(
         part=PICTURE, index=index, outcome=ACCEPTED, status=row.status, id=str(row.id), message=message

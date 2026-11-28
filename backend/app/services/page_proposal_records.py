@@ -30,11 +30,13 @@ class PageSnapshot:
 NO_SNAPSHOT = PageSnapshot()
 
 
-async def page_snapshot(session: AsyncSession, user: User, bundle: PageBundle) -> PageSnapshot:
+async def page_snapshot(
+    session: AsyncSession, user: User, bundle: PageBundle, *, now: datetime
+) -> PageSnapshot:
     if only_translation(bundle):
         return NO_SNAPSHOT
     try:
-        previewed = await previewed_document(session, user, bundle)
+        previewed = await previewed_document(session, user, bundle, now=now)
     except InvalidInput:
         return NO_SNAPSHOT
     before = await generated_document_of(session, previewed.subject)

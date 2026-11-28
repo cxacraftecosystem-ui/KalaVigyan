@@ -79,7 +79,7 @@ async def proposed(session: AsyncSession, *, drawn: bool) -> PageProposal:
     previewed = await preview_page(session, maker, bundle(), site=SITE, now=NOW)
     if drawn:
         await keep_drawn_pictures(session, maker, previewed.preview_url, [shot("first-screen-390")], now=NOW)
-    snapshot = await page_snapshot(session, maker, bundle())
+    snapshot = await page_snapshot(session, maker, bundle(), now=NOW)
     result = await propose_page(session, maker, bundle(), tools=tools(), now=NOW)
     row = await record_page_proposal(session, maker, (bundle(), result, snapshot), origin="AGENT", now=NOW)
     assert row is not None

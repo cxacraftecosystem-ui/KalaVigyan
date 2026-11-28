@@ -16,6 +16,8 @@ in `docs/RUNBOOK.md`, Page renderer.
 
 Amended by [decision 0252](0252-field-photographs-and-reaction-scenes-drawn-in-a-preview-and-on-the-page.md): the pass also opens `/drawn-field-photos/{id}`, so a placed field photograph is drawn in the preview's pictures.
 
+Amended by [decision 0254](0254-a-preview-refuses-what-the-confirm-refuses-a-layout-names-only-what-exists-and-a-duplicate-shows-the-same-thing.md): the preview runs the confirm's own part checks on each part, with the same reasons, and names a published layout's missing labels.
+
 | For | Read |
 |---|---|
 | The preview, the draft and the checklist report it changes | [decision 0110](0110-contributor-supplied-sources.md) |

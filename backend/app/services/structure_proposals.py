@@ -45,7 +45,7 @@ from .structure_proposals_write import held_claims
 from .supplied_sources_gate import keep_supplied
 from .task_reservations import complete_task, give_back_task
 
-__all__ = ["CANDIDATE_REF", "curated_subject", "propose_structure"]
+__all__ = ["CANDIDATE_REF", "curated_subject", "fitting_structure", "propose_structure", "stated_refusal"]
 
 CANDIDATE_REF = "structure"
 NOT_CURATED = (
@@ -103,8 +103,7 @@ async def propose_structure(
 ) -> StructureProposalResult:
     origin, fetcher, site = context
     role = await role_now(session, user.id)
-    owner = await _fitting_owner(session, proposal)
-    await check_question_task(session, proposal.task_key, tuple(filter(None, (proposal.field,))))
+    owner = await fitting_structure(session, proposal)
     checked = await _checked(session, fetcher, proposal, user.id)
     kept = await _kept(session, checked.read, user.id) if checked.passed else {}
     row = _row(proposal, (owner, user.id, origin), checked, kept, now)
@@ -117,6 +116,21 @@ async def propose_structure(
         note = f"approved at once: proposed by a {ROLE_LABELS.get(role, role)} account"
         await approve_structure(session, row, user, note=note, now=now)
     return _result(row, owner, checked.checks, site)
+
+
+async def fitting_structure(session: AsyncSession, proposal: StructureProposal) -> StructureOwner:
+    owner = await _fitting_owner(session, proposal)
+    await check_question_task(session, proposal.task_key, tuple(filter(None, (proposal.field,))))
+    return owner
+
+
+def stated_refusal(proposal: StructureProposal) -> str | None:
+    if proposal.item.kind == CONFLICT:
+        return None
+    stated = stated_check(proposal.item, _quotes(proposal))
+    if stated.passed:
+        return None
+    return MESSAGES[REFUSED].format(check=stated.check, reason=stated.reasons[0])
 
 
 async def _fitting_owner(session: AsyncSession, proposal: StructureProposal) -> StructureOwner:
@@ -137,8 +151,7 @@ async def _checked(
 ) -> _Checked:
     if proposal.item.kind == CONFLICT:
         return _Checked(checks=(), read=())
-    quotes = [quote.text for source in proposal.sources for quote in source.quotes]
-    stated = stated_check(proposal.item, quotes)
+    stated = stated_check(proposal.item, _quotes(proposal))
     if not stated.passed:
         return _Checked(checks=(stated,), read=())
     read = tuple([await read_source(session, fetcher, s, proposer_id=proposer_id) for s in proposal.sources])
@@ -148,6 +161,10 @@ async def _checked(
         StructureCheck(check=item.gate, passed=item.passed, reasons=list(item.reasons)) for item in outcomes
     ]
     return _Checked(checks=(stated, *gates), read=read)
+
+
+def _quotes(proposal: StructureProposal) -> list[str]:
+    return [quote.text for source in proposal.sources for quote in source.quotes]
 
 
 def _gated_statement(proposal: StructureProposal) -> str:

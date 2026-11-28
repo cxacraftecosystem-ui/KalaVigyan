@@ -266,12 +266,12 @@ def test_the_closest_components_lead_with_the_most_reasons_then_the_most_shared_
     extended = _summary(
         "shared/chemistry/old-bath", "mordant_bath", "Alum mordant bath", DRAFT["description"]
     )
-    found = closest_components(draft, [far, same_label, extended, near, far])
+    found = closest_components(draft, [far, same_label, extended, near, far], {})
     assert [match.component.label for match in found] == [near.label, same_label.label, far.label]
     assert [match.overlap for match in found] == [0.7, 0.077, 0.0]
     assert [len(match.reasons) for match in found] == [2, 1, 0]
     assert found[1].reasons == ["it already has this label"]
-    assert [match.component.label for match in closest_components(draft, [far, near], limit=1)] == [
+    assert [match.component.label for match in closest_components(draft, [far, near], {}, limit=1)] == [
         near.label
     ]
 

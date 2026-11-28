@@ -18,6 +18,7 @@ from app.services.page_preview import preview_page
 from app.services.page_proposals import propose_page
 from app.services.trust_tiers import publishes_at_once
 
+from ..research.general_spec_fixtures import table_units
 from .component_lifecycle_seed import (
     ADMIN,
     BARE_CLAIM,
@@ -196,7 +197,7 @@ async def test_only_an_account_whose_proposals_reach_readers_at_once_has_its_pag
 
 
 def whole_page() -> dict[str, Any]:
-    component = {"proposal": replacement(replaces=None), "cites": {}}
+    component = {"proposal": replacement(replaces=None, units=table_units(FAMILY_CLAIM)), "cites": {}}
     return {"components": [component], "layout": placed(NEW)}
 
 

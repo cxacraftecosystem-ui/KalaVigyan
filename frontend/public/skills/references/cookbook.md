@@ -32,6 +32,12 @@ chapter, role and size. **Check** is what to look at in the preview. A kind fill
 **Shape**, its spec's top-level keys, `?` marking an optional one; every string a reader sees is a
 unit id (`u0001`).
 
+A label marked page only is drawn on Ajrakh's authored page alone and is not in the library,
+because none of its units cites a stored fact: read it in its guide for the thinking, and never
+name it in `considered_labels`, `extends` or a layout, which take only the labels `list_components`
+returns. Every other label is in the library, to place on a page whose facts it rests on or to
+consider before making one of your own.
+
 ## How a figure gets made
 
 - **Designed first.** Decide what the reader must see or do, from the facts and the design
@@ -54,6 +60,9 @@ unit id (`u0001`).
 A page's layout is a list of entries `{ref, chapter, order, role, size?, crop?, caption?}`, on top
 of the layout version `get_page` returned, sent in the draft's `add.layout`. `ref` is a
 component's label or a text unit's id; `order` counts from 1 within the chapter, no two alike.
+A layout places only a label the library holds, one waiting for review, one its own bundle makes
+and the preview shows or the page already draws; a layout naming any other is refused with the
+labels named, so a component the bundle failed to make never stands named on the page.
 
 - **Chapters.** A generated page has `opening` (the masthead), `glance`, `made`, `chem`, `why`,
   `history`, `market`, `whatif`, `people`, `kin` and `sources`. Ajrakh's `answer` is `opening`,
@@ -158,7 +167,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **When a page needs it**: a mechanism turns on a molecule's shape or on atoms it gains or loses.
 - **In Kutch Ajrakh**: indigo and leucoindigo differ by two hydrogens, and madder's red is two
   molecules, so both pairs are shown turnable (`ajrakh-chemistry/1`):
-  `shared/chemistry/indican-indigo-leucoindigo-3d` (`[class="mols"]`) and
+  `shared/chemistry/indican-indigo-leucoindigo-3d` (`[class="mols"]`, page only) and
   `shared/chemistry/alizarin-purpurin-3d` (`[class="mols mol-two"]`).
 - **Made by**: `compose_component` with kind `molecule_3d` (`about {compound}` by its CID) composes
   it from PubChem's 3D record, for a compound a material holds or one the page's own facts name by
@@ -176,7 +185,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **When a page needs it**: the facts compare alternatives a maker chooses between.
 - **In Kutch Ajrakh**: its sources compare a natural vat with a chemical one, madder with synthetic
   alizarin and clean wash water with iron-laden, so the reader gets to choose
-  (`ajrakh-what-if/1`): `kutch-ajrakh/chemistry/what-if-lab` (`#lab`).
+  (`ajrakh-what-if/1`): `kutch-ajrakh/chemistry/what-if-lab` (`#lab`, page only).
 - **Made by**: `compose_component` with kind `experiment_lab` can compose it with one
   `choice_toggle` per experiment from the page's alternatives; or a `coded_figure`.
 - **Facts**: `ALTERNATIVE` structure items and the facts that compare each pair.
@@ -249,10 +258,10 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
   districts, a spread told step by step.
 - **In Kutch Ajrakh**: `shared/climate/kachchh-district-climate-map` (`ajrakh-why-kachchh/1`,
   `[aria-labelledby="fig3-t"]`) is what a `districts` part draws;
-  `kutch-ajrakh/geology/dhamadka-epicentre-circle-map` is a 20 km `ring` round Dhamadka;
-  `kutch-ajrakh/history/dhamadka-to-ajrakhpur-move-map` is a `route`; the two Suran maps
-  (`kutch-ajrakh/geography/suran-flowing-north-map` and
-  `kutch-ajrakh/geography/suran-dry-below-tapar-dam-map`) are a frame on the villages with
+  `kutch-ajrakh/geology/dhamadka-epicentre-circle-map` (page only) is a 20 km `ring` round
+  Dhamadka; `kutch-ajrakh/history/dhamadka-to-ajrakhpur-move-map` (page only) is a `route`; the
+  two Suran maps, `kutch-ajrakh/geography/suran-flowing-north-map` (page only) and
+  `kutch-ajrakh/geography/suran-dry-below-tapar-dam-map` (page only), are a frame on the villages with
   `rivers` emphasised (the Suran itself is too small for the site's data, so its sentence carries
   it).
 - **Made by**: `edit_draft`, a declared spec by hand (values from a dataset: `propose_dataset`
@@ -292,7 +301,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **When a page needs it**: a mechanism turns on a bond or ring a flat drawing shows best.
 - **In Kutch Ajrakh**: red is alizarin closing a ring on aluminium, which a flat drawing shows
   better than words (`ajrakh-chemistry/1`): `shared/chemistry/alizarin-aluminium-ring-structures`
-  (`#fig3-en`); the same in Hindi for its readers (`ajrakh-reading/1`):
+  (`#fig3-en`, page only); the same in Hindi for its readers (`ajrakh-reading/1`):
   `shared/chemistry/alizarin-purpurin-structures-hindi` (`#fig3-hi`).
 - **Made by**: `edit_draft`, filled by hand from `lookup` kind compound records.
 - **Shape**: `{id, head {figure, number, title, titleId?, dek?}, dekStyle?, scale, molecules
@@ -309,7 +318,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
   hypothesis.
 - **In Kutch Ajrakh**: one source's wording of indigo forming does not balance, so the page shows
   it as a hypothesis beside the balanced form (`ajrakh-chemistry/1`):
-  `kutch-ajrakh/chemistry/indoxyl-to-indigo-hypothesis` (`[class="kv-hyp wrap"]`).
+  `kutch-ajrakh/chemistry/indoxyl-to-indigo-hypothesis` (`[class="kv-hyp wrap"]`, page only).
 - **Made by**: `edit_draft`, filled by hand.
 - **Shape**: `{kicker, title, mark, line {reactants [{formula, name?}], products [{formula,
   name?}]}, why}`.
@@ -342,8 +351,9 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
   distances between its villages are each easier seen than told (`ajrakh-chemistry/1`):
   `shared/chemistry/indigo-leaf-to-cloth-chain` (`[aria-labelledby="ch-h"]`); and
   (`ajrakh-why-kachchh/1`) `kutch-ajrakh/geology/ajrakhpur-borewell-depth`
-  (`[class="well-svg kv-well"]`) and `kutch-ajrakh/geography/bhuj-ajrakhpur-dhamadka-distances`
-  (`[aria-labelledby="dst-t"]`).
+  (`[class="well-svg kv-well"]`, page only) and
+  `kutch-ajrakh/geography/bhuj-ajrakhpur-dhamadka-distances`
+  (`[aria-labelledby="dst-t"]`, page only).
 - **Made by**: `edit_draft`, declared with kit parts (`components/1`, The figure kit); or a
   `coded_figure` when the parts must move.
 - **Shape**: `{head {title, caption?}, layout, alt, panels [{label, text?, via?, motion?, parts}]}`,
@@ -359,12 +369,14 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
   that matters.
 - **In Kutch Ajrakh**: where sources give a span (days of fermenting, hours in the red bath), a
   climate series, a workshop's output or a count of makers, the numbers are drawn to scale:
-  `ajrakh-chemistry/1`, `kutch-ajrakh/process/kut-fermenting-days-range` and
-  `kutch-ajrakh/process/red-bath-hours-range`; `ajrakh-why-kachchh/1`,
-  `shared/climate/kachchh-annual-rainfall-chart` and `shared/climate/kachchh-annual-temperature-chart`;
+  `ajrakh-chemistry/1`, `kutch-ajrakh/process/kut-fermenting-days-range` (page only) and
+  `kutch-ajrakh/process/red-bath-hours-range` (page only); `ajrakh-why-kachchh/1`,
+  `shared/climate/kachchh-annual-rainfall-chart` and
+  `shared/climate/kachchh-annual-temperature-chart` (page only);
   `ajrakh-market/1`, `kutch-ajrakh/economics/dhamadka-yardage-2014`; `ajrakh-what-if/1`,
-  `kutch-ajrakh/process/vat-setting-days` and `kutch-ajrakh/process/red-bath-hours`;
-  `ajrakh-people/1`, `kutch-ajrakh/society/khavda-khatris-2011-dots`.
+  `kutch-ajrakh/process/vat-setting-days` (page only) and
+  `kutch-ajrakh/process/red-bath-hours` (page only);
+  `ajrakh-people/1`, `kutch-ajrakh/society/khavda-khatris-2011-dots` (page only).
 - **Made by**: `edit_draft`, a declared spec; a table of values through `propose_dataset` first.
 - **Shape**: `{head {title, caption?}, form, valueLabel, series [{name, points [{label, value,
   reading, cell?}]}], emphasis, dataset?}`, worked in `components/1`.
@@ -378,8 +390,8 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **When a page needs it**: a source gives two or three striking quantities about one subject.
 - **In Kutch Ajrakh**: an effluent plant's year and cost, and a survey's stages, centres and
   masters, are numbers worth seeing at a glance beside their prose (`ajrakh-why-kachchh/1`):
-  `kutch-ajrakh/ecology/effluent-treatment-stats` (`[class="ws-stats"]`) and
-  `kutch-ajrakh/geography/lower-sindh-ajrak-survey-stats` (`[class="ws-stats three"]`).
+  `kutch-ajrakh/ecology/effluent-treatment-stats` (`[class="ws-stats"]`, page only) and
+  `kutch-ajrakh/geography/lower-sindh-ajrak-survey-stats` (`[class="ws-stats three"]`, page only).
 - **Made by**: `edit_draft`, filled by hand.
 - **Shape**: `{classes?, tiles [{figure, small?, caption}]}`.
 - **Facts**: each number in a fact's statement or quote.
@@ -503,8 +515,8 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **In Kutch Ajrakh**: the whole cloth opens the page, and each chapter shows what its words name:
   `ajrakh-answer/1`, `kutch-ajrakh/design/cloth-field-and-borders-photo`
   (`[class="plate kv-open-photo"]`, the masthead); `ajrakh-cloth/1`,
-  `kutch-ajrakh/design/indigo-ground-print-photo`; `ajrakh-made/1`,
-  `shared/process/printing-block-carving-photo` (a margin plate); `ajrakh-chemistry/1`,
+  `kutch-ajrakh/design/indigo-ground-print-photo` (page only); `ajrakh-made/1`,
+  `shared/process/printing-block-carving-photo` (a margin plate, page only); `ajrakh-chemistry/1`,
   `shared/materials/madder-roots-and-dyed-silk-photo` and
   `kutch-ajrakh/materials/natural-dye-materials-photo`; `ajrakh-why-kachchh/1`,
   `shared/geography/great-rann-of-kachchh-photo` (the opener) and
@@ -523,10 +535,13 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **Shows**: an AI-made illustration of a step or place, always labelled an illustration.
 - **When a page needs it**: no photograph shows a moment the story needs.
 - **In Kutch Ajrakh**: its media gallery shows moments no photograph caught, each labelled AI
-  (`ajrakh-media/1`): `kutch-ajrakh/chemistry/ai-cloth-lifted-from-vat`,
-  `kutch-ajrakh/history/ai-caravan-on-salt-flat`, `kutch-ajrakh/design/ai-double-sided-ajrakh-drying`,
-  `kutch-ajrakh/geography/ai-dry-riverbed-and-well`, `kutch-ajrakh/economics/ai-stacked-printed-yardage`,
-  `kutch-ajrakh/design/ai-block-divided-into-sixteen` and `kutch-ajrakh/process/ai-cloth-steeping-in-saaj`.
+  (`ajrakh-media/1`): `kutch-ajrakh/chemistry/ai-cloth-lifted-from-vat` (page only),
+  `kutch-ajrakh/history/ai-caravan-on-salt-flat` (page only),
+  `kutch-ajrakh/design/ai-double-sided-ajrakh-drying` (page only),
+  `kutch-ajrakh/geography/ai-dry-riverbed-and-well` (page only),
+  `kutch-ajrakh/economics/ai-stacked-printed-yardage` (page only),
+  `kutch-ajrakh/design/ai-block-divided-into-sixteen` (page only) and
+  `kutch-ajrakh/process/ai-cloth-steeping-in-saaj` (page only).
 - **Made by**: `give_pictures` with origin `AI_GENERATED`, its tool, model and prompt declared by
   the person; the authored page's are its own.
 - **Facts**: the facts it shows; never a real person, place or object.
@@ -538,7 +553,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **Shows**: the authored page's specimen of the cloth, with its label card.
 - **When a page needs it**: the authored page's own.
 - **In Kutch Ajrakh**: the stars on an indigo ground are the cloth's identity, shown full width
-  (`ajrakh-cloth/1`): `kutch-ajrakh/design/indigo-ground-specimen` (`[class="hero"]`).
+  (`ajrakh-cloth/1`): `kutch-ajrakh/design/indigo-ground-specimen` (`[class="hero"]`, page only).
 - **Made by**: the authored page; a contribution gives a picture or designs a `coded_figure`.
 - **Facts**: none to propose.
 - **Place**: not placed by a contribution.
@@ -549,7 +564,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **Shows**: a short AI-made film of one moment of the process.
 - **When a page needs it**: the authored page's own.
 - **In Kutch Ajrakh**: the green-to-blue moment of its first figure, in motion (`ajrakh-media/1`):
-  `kutch-ajrakh/chemistry/ai-video-blue-in-the-air` (`#vid`).
+  `kutch-ajrakh/chemistry/ai-video-blue-in-the-air` (`#vid`, page only).
 - **Made by**: the authored page; no tool delivers a video.
 - **Facts**: none to propose.
 - **Place**: not placed by a contribution.
@@ -574,7 +589,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **When a page needs it**: the authored page's own; a contribution reaches it with a coded figure.
 - **In Kutch Ajrakh**: what happens inside one cotton fibre in the vat and the air cannot be
   photographed, so a model counts it (`ajrakh-chemistry/1`):
-  `shared/chemistry/indigo-in-cotton-fibre-explainer` (`[aria-labelledby="mf-t"]`).
+  `shared/chemistry/indigo-in-cotton-fibre-explainer` (`[aria-labelledby="mf-t"]`, page only).
 - **Made by**: the authored page; for your craft, a `coded_figure`.
 - **Facts**: as the coded figure's.
 - **Place**: as the coded figure's.
@@ -596,7 +611,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **Shows**: why the craft is where it is: its region's water, soil, climate and trade.
 - **When a page needs it**: every craft page with places; the site builds it.
 - **In Kutch Ajrakh**: the ground under its villages explains its water and its colours
-  (`ajrakh-why-kachchh/1`): `kutch-ajrakh/geography/why-here` (`[class="kv-page kv-why-here"]`).
+  (`ajrakh-why-kachchh/1`): `kutch-ajrakh/geography/why-here` (`[class="kv-page kv-why-here"]`, page only).
 - **Made by**: the site, from the page's places and environment facts.
 - **Facts**: place, water, soil and climate facts of the page.
 - **Place**: the site's, in `why`.
@@ -636,7 +651,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 
 - **Shows**: the page read aloud.
 - **When a page needs it**: the site builds it.
-- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/listen` (`[class="end-block kv-listen-block"]`).
+- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/listen` (`[class="end-block kv-listen-block"]`, page only).
 - **Made by**: the site.
 - **Facts**: none.
 - **Place**: the site's.
@@ -646,7 +661,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 
 - **Shows**: questions a reader checks themselves with.
 - **When a page needs it**: the site builds it.
-- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/check-yourself-quiz` (`#quiz-block`).
+- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/check-yourself-quiz` (`#quiz-block`, page only).
 - **Made by**: the site.
 - **Facts**: none.
 - **Place**: the site's.
@@ -656,7 +671,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 
 - **Shows**: the questions a reader might ask next.
 - **When a page needs it**: the site builds it.
-- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/ask-next` (`[class="asknext"]`).
+- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/ask-next` (`[class="asknext"]`, page only).
 - **Made by**: the site.
 - **Facts**: none.
 - **Place**: the site's.
@@ -666,7 +681,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 
 - **Shows**: Cite this monograph.
 - **When a page needs it**: the site builds it.
-- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/cite-this-page` (`#kv-cite`).
+- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/cite-this-page` (`#kv-cite`, page only).
 - **Made by**: the site.
 - **Facts**: none.
 - **Place**: the site's.
@@ -676,7 +691,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 
 - **Shows**: the page in another language.
 - **When a page needs it**: the site builds it; translations are `TRANSLATE` tasks.
-- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/answer-in-hindi-and-urdu` (`#lang-demo`).
+- **In Kutch Ajrakh**: `ajrakh-reading/1`, `kutch-ajrakh/overview/answer-in-hindi-and-urdu` (`#lang-demo`, page only).
 - **Made by**: the site, from translated passages.
 - **Facts**: the passages, as a `translation` part.
 - **Place**: the site's.
@@ -716,7 +731,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 
 - **Shows**: how the page was made, step by step.
 - **When a page needs it**: the site builds it.
-- **In Kutch Ajrakh**: `ajrakh-sources/1`, `kutch-ajrakh/overview/how-this-answer-was-made` (`[class="kv-made-fold"]`).
+- **In Kutch Ajrakh**: `ajrakh-sources/1`, `kutch-ajrakh/overview/how-this-answer-was-made` (`[class="kv-made-fold"]`, page only).
 - **Made by**: the site.
 - **Facts**: none.
 - **Place**: the site's.
@@ -726,8 +741,8 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 
 - **Shows**: the page's sources, numbered, and the kin crafts' apart.
 - **When a page needs it**: the site builds it.
-- **In Kutch Ajrakh**: `ajrakh-sources/1`, `kutch-ajrakh/overview/source-list` (`#kv-src-status`)
-  and `kutch-ajrakh/overview/kin-craft-sources` (`#kv-src-kin`).
+- **In Kutch Ajrakh**: `ajrakh-sources/1`, `kutch-ajrakh/overview/source-list` (`#kv-src-status`, page only)
+  and `kutch-ajrakh/overview/kin-craft-sources` (`#kv-src-kin`, page only).
 - **Made by**: the site, from the sources your facts cite.
 - **Facts**: every fact's sources.
 - **Place**: the site's.
@@ -738,7 +753,7 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **Shows**: the picture and data credits.
 - **When a page needs it**: the site builds it.
 - **In Kutch Ajrakh**: `ajrakh-sources/1`, `kutch-ajrakh/overview/picture-and-data-credits`
-  (`[class="wrap credits kv-credits"]`).
+  (`[class="wrap credits kv-credits"]`, page only).
 - **Made by**: the site, from what the server read of each picture and dataset.
 - **Facts**: none.
 - **Place**: the site's.

@@ -8,6 +8,7 @@ from .base import ContractModel, absent
 from .component_proposals import (
     ComponentProposalDraft,
     ProposedSubject,
+    Showings,
     content_words,
     match_reasons,
     word_overlap,
@@ -29,7 +30,11 @@ class ClosestComponent(ContractModel):
 
 
 def closest_components(
-    draft: ComponentProposalDraft, candidates: Iterable[ComponentSummary], *, limit: int = CLOSEST_SHOWN
+    draft: ComponentProposalDraft,
+    candidates: Iterable[ComponentSummary],
+    showings: Showings,
+    *,
+    limit: int = CLOSEST_SHOWN,
 ) -> list[ClosestComponent]:
     proposed = content_words(f"{draft.title} {draft.description}")
     seen: set[str] = set()
@@ -39,7 +44,7 @@ def closest_components(
             continue
         seen.add(candidate.label)
         overlap = word_overlap(proposed, content_words(f"{candidate.title} {candidate.description}"))
-        reasons = match_reasons(draft, candidate)
+        reasons = match_reasons(draft, candidate, showings.get(candidate.label))
         ranked.append(
             ClosestComponent(component=candidate, overlap=round(overlap, OVERLAP_DIGITS), reasons=reasons)
         )

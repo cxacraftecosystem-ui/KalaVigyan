@@ -16,7 +16,7 @@ from .component_library_applies import applies_on
 from .component_lifecycle import NOT_RETIRING, NOT_YOURS, live_piece, piece_owners
 from .component_retirers import may_retire, stewards_piece
 from .open_work_subjects import CATEGORY, WorkSubject
-from .staged_reviews import stage_request
+from .staged_reviews import request_problem, stage_request
 
 __all__ = [
     "ASKED_STATUS",
@@ -26,6 +26,8 @@ __all__ = [
     "replacement_waits",
     "retirement_waits",
     "withdrawable_piece",
+    "withdrawal_decision",
+    "withdrawal_problem",
 ]
 
 ASKED_STATUS = "STAGED"
@@ -92,9 +94,22 @@ async def ask_withdrawal(
 ) -> str:
     if reason is None or not _gives_a_reason(reason):
         raise InvalidInput(_reason_needed(piece))
-    decision = StagedDecision(kind=COMPONENTS, id=piece.id, action=REMOVE, reason=reason)
+    decision = withdrawal_decision(piece, reason)
     await stage_request(session, decision, user, client_name=REQUEST_CLIENTS[origin], now=now)
     return ASKED.format(label=piece.label, days=BATCH_DAYS)
+
+
+def withdrawal_decision(piece: KnowledgePiece, reason: str) -> StagedDecision:
+    return StagedDecision(kind=COMPONENTS, id=piece.id, action=REMOVE, reason=reason)
+
+
+async def withdrawal_problem(
+    session: AsyncSession, found: Withdrawable, reason: str | None, *, now: datetime
+) -> str | None:
+    problem = reason_problem(found, reason)
+    if problem is not None or not found.waits or reason is None:
+        return problem
+    return await request_problem(session, withdrawal_decision(found.piece, reason), now=now)
 
 
 async def _on_page(session: AsyncSession, piece: KnowledgePiece, subject: WorkSubject) -> bool:
