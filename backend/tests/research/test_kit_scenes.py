@@ -242,13 +242,14 @@ def test_a_stage_takes_its_own_scene_and_one_without_keeps_none() -> None:
     dumped = checked.model_dump(mode="json", by_alias=True)
     assert dumped == spec
     assert "scene" not in dumped["stages"][1]
-    assert [path for path, _ in kit_scenes(checked)] == ["stages[0].scene"]
+    assert [path for path, _ in kit_scenes(checked)] == ["drawing", "stages[0].scene"]
     assert spec_problems("stage_player", spec, units(spec)) == []
 
 
 def test_a_stage_s_own_scene_may_move_when_its_stage_is_shown_while_the_drawing_rests() -> None:
     spec = staged_player(CARVED, DIPS)
     assert [path for path, _ in kit_scenes(checked_spec("stage_player", spec))] == [
+        "drawing",
         "stages[0].scene",
         "stages[1].scene",
     ]
