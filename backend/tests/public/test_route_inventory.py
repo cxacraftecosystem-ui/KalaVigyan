@@ -116,6 +116,7 @@ SERVICE_ROUTES = {
     ("PUT", "/api/dataset-uploads/{token}"),
     ("GET", "/api/knowledge/pages/previews/{token}/drawn"),
     ("GET", "/api/knowledge/pages/drawn-pictures/{contribution_id}"),
+    ("GET", "/api/knowledge/pages/drawn-field-photos/{image_id}"),
 }
 ASKING_ROUTES = {
     ("GET", "/api/answers/config"),

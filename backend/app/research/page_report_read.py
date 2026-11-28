@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import re
 from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
 from app.models.component_kinds import LINK_TOOL_KINDS
 
+from .component_specs_blocks import ANSWER_BLOCK_KIND
+from .kin_crafts import KIN_KIND
 from .monograph_document import MonographDocument
-from .monograph_page import ComponentEntry
+from .monograph_page import ComponentEntry, MonographContent
+from .quotes import quote_key
 from .spec_strings import spec_strings
 
 __all__ = ["OPENING", "PICTURE_KIND", "ReadPage", "Sentence", "cite_keys", "node_text"]
@@ -17,6 +21,9 @@ OPENING = "opening"
 PICTURE_KIND = "picture_plate"
 SENTENCE_TAG = "p"
 CITE_MARK = "cite"
+TOLD_TAGS = frozenset({"p", "li", "dd", "span"})
+SENTENCE_END = re.compile(r"[.!?][\"'’”)\]]*$")
+BLOCK_KEY = "block"
 
 
 @dataclass(frozen=True)
@@ -43,6 +50,7 @@ class ReadPage:
     within: Mapping[str, str]
     figures: tuple[ComponentEntry, ...]
     pictures: tuple[ComponentEntry, ...]
+    told: tuple[Sentence, ...] = ()
 
     @classmethod
     def of(cls, document: MonographDocument) -> ReadPage:
@@ -56,7 +64,8 @@ class ReadPage:
         )
         figures = tuple(c for c in content.components if c.kind not in (PICTURE_KIND, *LINK_TOOL_KINDS))
         pictures = tuple(c for c in content.components if c.kind == PICTURE_KIND)
-        return cls(document, sentences, within, figures, pictures)
+        told = (*sentences, *_drawn_sentences(content), *_block_sentences(document))
+        return cls(document, sentences, within, figures, pictures, told)
 
     def text(self, unit_id: str) -> str:
         unit = self.document.content.units.get(unit_id)
@@ -99,6 +108,45 @@ class ReadPage:
 
     def by_field(self) -> Counter[str]:
         return Counter(sentence.field for sentence in self.sentences if sentence.field)
+
+    def told_by_field(self) -> Counter[str]:
+        told = dict.fromkeys((s.field, quote_key(s.text).casefold()) for s in self.told if s.field and s.text)
+        return Counter(field for field, _ in told)
+
+
+def _drawn_sentences(content: MonographContent) -> Iterator[Sentence]:
+    kin = {component.label for component in content.components if component.kind == KIN_KIND}
+    for entry in content.layout:
+        unit = content.units.get(entry.ref) if entry.kind == "unit" and entry.within not in kin else None
+        if unit is None or not unit.claim_ids or unit.tag not in TOLD_TAGS:
+            continue
+        text = node_text(unit.nodes).strip()
+        if SENTENCE_END.search(text):
+            yield Sentence(entry.ref, text, unit.field, unit.chapter, tuple(unit.claim_ids))
+
+
+def _block_sentences(document: MonographDocument) -> Iterator[Sentence]:
+    for component in document.content.components:
+        if component.kind != ANSWER_BLOCK_KIND:
+            continue
+        block = document.specs.get(component.label, {}).get(BLOCK_KEY)
+        for text, claims in _cited_texts(block):
+            yield Sentence(component.label, text, component.field, component.chapter, claims)
+
+
+def _cited_texts(value: Any) -> Iterator[tuple[str, tuple[str, ...]]]:
+    if isinstance(value, list):
+        for item in value:
+            yield from _cited_texts(item)
+        return
+    if not isinstance(value, Mapping):
+        return
+    citations = value.get("citations")
+    if isinstance(value.get("text"), str) and isinstance(citations, list) and citations:
+        claims = tuple(str(c["claimId"]) for c in citations if isinstance(c, Mapping) and c.get("claimId"))
+        yield value["text"].strip(), claims
+    for item in value.values():
+        yield from _cited_texts(item)
 
 
 def cite_keys(value: Any) -> list[str]:

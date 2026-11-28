@@ -24,7 +24,7 @@ from .compose_parts import (
     species_token,
     unique_word,
 )
-from .compose_scene import reaction_scene, species_drawn, species_scene
+from .compose_scene import reaction_scene, species_drawn, species_mark, species_scene
 
 __all__ = ["REACTION_WORDS", "STEPS_MAX", "reaction_player"]
 
@@ -210,7 +210,7 @@ def _side(craft: CraftHeld, species: Sequence[HeldSpecies]) -> list[dict[str, An
         items.append(
             {
                 "item": "species",
-                "swatch": species_token(craft, each.name) or CLEAR,
+                "swatch": species_token(craft, each.name) or species_mark(each) or CLEAR,
                 "name": [each.name],
                 "formula": rich_formula(each.formula),
                 "state": [],

@@ -24,6 +24,7 @@ skill (pictures by `page_url`; a field's prose from a draft).
 
 Amended by [decision 0249](0249-a-category-draws-its-crafts-shared-figures-a-craft-its-own-place-s-and-the-checks-wait-for-the-api.md): a category's page also holds its crafts' facts, and a craft's page draws a shared figure keyed to its own place.
 Amended by [decision 0250](0250-a-contributor-s-ai-proposes-a-field-s-section-from-the-facts-its-page-holds.md): a field's prose is also written over MCP as a reviewed section proposal, which What is left asked for.
+Amended by [decision 0252](0252-field-photographs-and-reaction-scenes-drawn-in-a-preview-and-on-the-page.md): rules 25 and 26 name the figure, the sentence it repeats, the fact that reads as a gap and the tool that fixes it.
 
 | For | Read |
 |---|---|

@@ -168,7 +168,7 @@ def picture_licence(credit: str) -> str:
 
 
 def _fields(page: ReadPage, given: ReportInput) -> list[FieldLine]:
-    shown = page.by_field()
+    shown = page.told_by_field()
     drawn = Counter(figure.field for figure in page.figures)
     coverage = given.document.coverage
     return [

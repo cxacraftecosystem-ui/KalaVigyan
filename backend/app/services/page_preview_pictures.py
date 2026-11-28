@@ -15,6 +15,8 @@ from app.models import ImageContribution, MediaAsset, User
 from app.research.craft_contributed import CONTRIBUTED_MIMES
 from app.research.page_proposals import ACCEPTED, PICTURE, PartReport
 
+from .field_photo_scope import served_photo
+from .field_voices_image_store import IMAGE_ROUTE
 from .monograph_generated_pictures import PlateSource, plates_of
 from .open_work_subjects import CATEGORY, WorkSubject
 from .page_preview_links import UnknownPreview, passed_preview
@@ -25,6 +27,7 @@ __all__ = [
     "given_picture_report",
     "given_plates",
     "own_picture_file",
+    "pass_field_photo",
     "pass_picture_file",
     "preview_picture_url",
     "shown_picture_file",
@@ -98,6 +101,19 @@ async def pass_picture_file(
         return None
     owner = await session.get(User, row.userId)
     return None if owner is None else await shown_picture_file(session, owner, contribution_id)
+
+
+async def pass_field_photo(
+    session: AsyncSession, render_pass: str, image_id: uuid.UUID, *, now: datetime
+) -> OwnPicture | None:
+    try:
+        row = await passed_preview(session, render_pass, now=now)
+    except UnknownPreview:
+        return None
+    if IMAGE_ROUTE.format(id=image_id) not in json.dumps(row.document):
+        return None
+    served = await served_photo(session, image_id)
+    return None if served is None else OwnPicture(key=served.key, mime=served.mime)
 
 
 async def _given(

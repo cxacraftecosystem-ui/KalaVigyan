@@ -215,7 +215,9 @@ them `themed`, so the page shows the variant its reader's theme asks for. Inline
 drawings (`SvgNode`) and colour tokens are drawn with the page's tokens, so the delivery check
 holds them to the roles (and the molecule kit's `mol-*` and `atom-*`) without variants. The
 preview's report fails a delivered figure off the vocabulary, a drawing without its four
-variants and a figure or picture without its alt text (checklist rule 27). Agents that draw
+variants, a figure or picture without its alt text and a reaction step's species drawn with no
+colour, with the lane swatch that disagrees (checklist rule 27, `page_report_species`, decision 0252).
+Agents that draw
 KalaVigyan's knowledge themselves read `kalavigyan://design/tokens.css` and
 `kalavigyan://design/drawing.md`.
 
@@ -443,7 +445,7 @@ copies for the web (`frontend/lib/artKit.ts`), and both sides' tests hold the th
 | `tool` | `tool` (`block`, `brush`, `chisel`, `mallet`, `knife`, `stick`), `held` (default true), `load?` | the tool in a hand, a brush or a stick loaded with its material | textiles, metal, stone, wood, fibre, paper, more crafts |
 | `section` | `layers` 2 to 6, each `{material, label}` top to bottom, a material or `earth` | a layered section, earth in the hatch grammar's strata, each layer named in the key | textiles, metal, clay, leather, more crafts |
 | `piece` | `shape` (`lump`, `vessel`, `slab`, `billet`, `sheet`, `figure`, `culm`), `material?`, `inlay?` `{motif, material}` | a shaped piece in its material (line work and its family's texture when none is stated), an inlay tiled in its material | metal, clay, stone, wood, fibre, paper, more crafts |
-| `species` | `role` (`reactant`, `reagent`, `product`), `material?`, `breaks` (default false, a reactant's only) | a species of one reaction as a bead in its material with the speckle texture and an ink edge (a dashed outline when no colour is recorded), a crack across it where a bond breaks, a small arrow into a reagent that arrives; a scene of species stands the reactants and reagents before an arrow and the products after it (decision 0228) | every family |
+| `species` | `role` (`reactant`, `reagent`, `product`), `material?` or `mark?` (`clear`, `gas`, `ion`, the lane's marks, one or neither), `breaks` (default false, a reactant's only) | a species of one reaction as a bead in its material with the speckle texture and an ink edge; a colourless one by its mark: `clear` a raised bead with a solid ink-2 edge and a glint, `gas` three small rings, `ion` a bead with an ink-1 edge round a smaller ring; one with neither a dashed outline marked `data-kit-uncoloured`, which the preview's rule 27 names and its drawing checks fail (decision 0252); a crack across it where a bond breaks, a small arrow into a reagent that arrives; a scene of species stands the reactants and reagents before an arrow and the products after it (decision 0228) | every family |
 
 Motifs are `star`, `lattice`, `dots` and `lines`. A material is a depicted `--dye-*` or `--dip-*`
 token the design system records (`drawing_roles.MATERIAL_ROLES`); a material no record holds is
@@ -597,7 +599,7 @@ fault.
 | Its places resolved and refused, its layers held and credited, a looked-up item's point kept | `backend/tests/db/test_timeline_map_places_db.py` |
 | The hand-drawn map refused, both ways | `backend/tests/research/test_drawn_maps.py` |
 | The kit's vocabulary, its families and the golden both sides read | `backend/tests/research/test_art_kit.py` and `frontend/e2e/art-kit-unit.spec.ts` |
-| A species part's roles, its bond, a scene of up to eight species and the react motion, the page's still of it | `backend/tests/research/test_kit_species.py`, `backend/tests/exports/test_export_species.py`, `frontend/e2e/players-play-unit.spec.ts` |
+| A species part's roles, its bond, a scene of up to eight species and the react motion, the page's still of it, a colourless species' mark and one with no colour named and failed | `backend/tests/research/test_kit_species.py`, `backend/tests/exports/test_export_species.py`, `frontend/e2e/players-play-unit.spec.ts`, `frontend/e2e/kit-species-unit.spec.ts`, `backend/tests/research/test_page_report_species.py` |
 | A timeline's points and Play, no slider, and its play state, on a page and in an answer | `frontend/e2e/monograph-kinds-general-unit.spec.ts`, `frontend/e2e/timeline-map-declared-unit.spec.ts`, `frontend/e2e/journey-renderers-unit.spec.ts`, `frontend/e2e/answer-players-unit.spec.ts` |
 | The composed diagram's spec, its layouts, motions, materials and cited labels | `backend/tests/research/test_component_specs_kit.py` |
 | The hand-drawn figure refused and allowed, rule by rule, with Kutch Ajrakh's authored figures left alone | `backend/tests/research/test_drawn_art.py` |

@@ -94,7 +94,7 @@ def test_a_repeated_sentence_a_progress_state_and_an_admitted_gap_fail() -> None
     found = verdicts(given(page_document(extra=extra)))
     assert (found[10], found[25], found[26]) == ("FAIL", "FAIL", "FAIL")
     assert evidence(given(page_document(extra=extra)), 25) == [
-        "'The madder bath turns the alum print red.' is told twice"
+        "'The madder bath turns the alum print red.' is told twice, in chemistry-2 and chemistry-4"
     ]
 
 

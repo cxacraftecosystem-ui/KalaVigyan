@@ -408,13 +408,19 @@ kit cannot draw is left out and named, with the fact to propose; a phase whose c
 is drawn by the parts that take no colour (the bath without its piece, the paste, the heat and the
 water). A reaction player draws each step's own species as its scene (`compose_scene.species_scene`,
 decision 0228): every reactant and product a `species` part labelled by the reaction's facts, in its
-material's recorded colour or as an outline, with the `react` motion; oxygen (`O2` or a name saying
+material's recorded colour, else by the mark of a colourless substance (`gas` for oxygen, hydrogen,
+nitrogen or carbon dioxide by name or formula, `clear` for water, `ion` for a charged formula or a name
+saying ion), else with neither, drawn as an empty outline that the preview's rule 27 names and its
+drawing checks fail until the contributor gives the colour its facts state; its lane's swatch is the
+same colour or mark, else `clear` (`compose_scene.species_mark`, decision 0252); with the `react`
+motion; oxygen (`O2` or a name saying
 oxygen) arrives where it is one of several reactants, otherwise a mordant (its material's role, or a
 name saying alum, aluminium, iron, ferrous, ferric or mordant) where it is not the only kind; a
 bond breaks only in a hydrolysis, a dehydration or a dehydroxylation (in the first reactant that is
 not water) or where one reactant gives two products or more. When a reaction has more species than
 a scene holds (eight), the player keeps one scene for all its steps, drawn in line work (each
-species an ink outline, dashed when no colour is recorded for it), so nothing is painted by hand.
+species an ink outline, dashed when neither a colour nor a mark is recorded for it), so nothing is
+painted by hand.
 
 ## How this document is kept true
 
@@ -427,7 +433,7 @@ species an ink outline, dashed when no colour is recorded for it), so nothing is
 | One component of each kind checked by hand against the approved page, the client's kinds against the backend's, and the shape refusals | `frontend/e2e/monograph-science-views-unit.spec.ts` |
 | The colours a drawing accepts, as the interactives skill lists them | `backend/tests/mcp/test_interactives_skill.py`, against `COLOUR_TOKEN_PATTERN` |
 | A model's geometry and its drawn group, and a molecule key's atom swatches | `backend/tests/research/test_molecule_geometry_spec.py` |
-| A composed reaction step's species: the reagent that arrives, the bond that breaks, the colours its materials record, the line work kept for a crowded reaction | `backend/tests/compose/test_compose_scene.py`, `backend/tests/compose/test_compose_reaction.py` |
+| A composed reaction step's species: the reagent that arrives, the bond that breaks, the colours its materials record, a colourless species' mark, the line work kept for a crowded reaction | `backend/tests/compose/test_compose_scene.py`, `backend/tests/compose/test_compose_reaction.py` |
 | Every player playing in view from its first step, one Pause, a step pressed playing on, a molecule turning and holding still, nothing moving under either switch, and no part of a player scrolling at 320 px | `frontend/e2e/players-play-unit.spec.ts`, `frontend/e2e/composed-interactives-unit.spec.ts`, `frontend/e2e/kit-players-unit.spec.ts`, `backend/tests/research/test_kit_style_rules.py` |
 | PubChem's recorded conformer gives Ajrakh's alizarin data, and its projection Ajrakh's drawing | `backend/tests/science/test_molecule_model.py` |
 | A delivered molecule carries its own `mol-data` to a generated page | `backend/tests/layouts/test_generated_molecules.py` |

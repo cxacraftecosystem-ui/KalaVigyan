@@ -55,6 +55,12 @@ GAP = re.compile(
     re.IGNORECASE,
 )
 SYMBOL = re.compile(r"[A-Z][a-z]?")
+DENSE_PASSED = "each of {fields} fields has {least} or more cited sentences, in its prose or its figures"
+GAP_TEXT = "edit_draft: remove {unit} and add it back saying what its facts state"
+GAP_FACT = (
+    "{unit} draws fact {facts}; propose_facts a fact of {field} stating what its source does find, and an "
+    "Admin retracts fact {facts} with stage_reviews (kind FACTS, action retract)"
+)
 JUDGE_HINTS: Mapping[int, str] = {
     8: "look at the media chapter as a gallery keyed to the section titles",
     11: "the site draws toasts and announcements; check them on the private link",
@@ -261,7 +267,7 @@ def _fields_placed(page: ReadPage, given: ReportInput) -> Verdict:
         if s.field and s.chapter != OPENING and s.chapter != field_chapter(s.field)
     ]
     coverage = given.document.coverage
-    shown = page.by_field()
+    shown = page.told_by_field()
     if coverage is not None:
         problems += [
             f"{c.field} holds {c.claims} facts but no sentence on the page"
@@ -272,28 +278,32 @@ def _fields_placed(page: ReadPage, given: ReportInput) -> Verdict:
 
 
 def _dense(page: ReadPage, given: ReportInput) -> Verdict:
-    shown = page.by_field()
+    shown = page.told_by_field()
     thin = [f"{name} has {n} sentences" for name, n in shown.items() if n < DENSE_SENTENCES]
-    return _verdict(thin, f"each of {len(shown)} fields has {DENSE_SENTENCES} or more cited sentences")
+    return _verdict(thin, DENSE_PASSED.format(fields=len(shown), least=DENSE_SENTENCES))
 
 
 def _no_repeats(page: ReadPage, given: ReportInput) -> Verdict:
-    keys = Counter(quote_key(s.text).casefold() for s in page.sentences)
+    told: dict[str, list[str]] = {}
+    for s in page.sentences:
+        told.setdefault(quote_key(s.text).casefold(), []).append(s.unit_id)
     problems = [
-        f"'{s.text[:80]}' is told twice" for s in page.sentences if keys[quote_key(s.text).casefold()] > 1
+        f"'{s.text[:80]}' is told twice, in {' and '.join(told[key])}"
+        for s in page.sentences
+        if len(told[key := quote_key(s.text).casefold()]) > 1
     ]
-    held = {unit for figure in page.figures for unit in page.held(figure.label)}
     problems += [
-        f"{unit} repeats a sentence of the page"
-        for unit in sorted(held)
-        if len(text := page.text(unit)) >= REPEAT_MIN_CHARS and keys[quote_key(text).casefold()]
+        f"{unit} in {figure.label} repeats {told[key][0]}: '{text[:80]}'"
+        for figure in page.figures
+        for unit in page.held(figure.label)
+        if len(text := page.text(unit)) >= REPEAT_MIN_CHARS and (key := quote_key(text).casefold()) in told
     ]
     return _verdict(list(dict.fromkeys(problems)), "no sentence is told twice")
 
 
 def _no_holes(page: ReadPage, given: ReportInput) -> Verdict:
     units = page.document.content.units
-    problems = [f"'{page.text(ref)[:80]}' admits a gap" for ref in units if GAP.search(page.text(ref))]
+    problems = [_gap(page, ref) for ref in units if GAP.search(page.text(ref))]
     shown = page.by_field()
     problems += [
         f"the heading of {unit.field} has no sentence under it"
@@ -301,6 +311,17 @@ def _no_holes(page: ReadPage, given: ReportInput) -> Verdict:
         if unit.tag == HEADING_TAG and unit.field and not shown.get(unit.field)
     ]
     return _verdict(problems, "no empty heading and no admitted gap")
+
+
+def _gap(page: ReadPage, ref: str) -> str:
+    unit = page.document.content.units[ref]
+    said = f"'{page.text(ref)[:80]}'"
+    if not unit.claim_ids:
+        owner = page.within.get(ref)
+        where = f"{ref} in {owner}" if owner else ref
+        return f"{said} admits a gap: {GAP_TEXT.format(unit=where)}"
+    facts = ", ".join(unit.claim_ids)
+    return f"{said} reads as a gap: {GAP_FACT.format(unit=ref, facts=facts, field=unit.field or 'its field')}"
 
 
 def _designed(page: ReadPage, given: ReportInput) -> Verdict:

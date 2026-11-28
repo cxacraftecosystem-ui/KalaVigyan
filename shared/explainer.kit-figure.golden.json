@@ -219,6 +219,7 @@
                   {
                     "part": "species",
                     "role": "reagent",
+                    "mark": "gas",
                     "breaks": false,
                     "label": "u0015"
                   },

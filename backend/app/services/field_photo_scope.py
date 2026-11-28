@@ -18,6 +18,7 @@ __all__ = ["ServedPhoto", "served_photo", "shown_field_photos", "shown_size"]
 @dataclass(frozen=True)
 class ServedPhoto:
     key: str
+    mime: str
 
 
 def shown_field_photos(craft_id: uuid.UUID | None = None) -> list[ColumnElement[bool]]:
@@ -36,15 +37,18 @@ async def served_photo(session: AsyncSession, image_id: uuid.UUID) -> ServedPhot
     review = aliased(FieldPhotoReview)
     found = (
         await session.execute(
-            select(FieldImage.objectKey, _cropped(review, review.cropKey)).where(
-                FieldImage.id == image_id, *shown_field_photos()
-            )
+            select(
+                FieldImage.objectKey,
+                FieldImage.mimeType,
+                _cropped(review, review.cropKey),
+                _cropped(review, review.cropMime),
+            ).where(FieldImage.id == image_id, *shown_field_photos())
         )
     ).first()
     if found is None:
         return None
-    original, crop = found
-    return ServedPhoto(key=crop or original)
+    original, original_mime, crop, crop_mime = found
+    return ServedPhoto(key=crop or original, mime=crop_mime if crop else original_mime)
 
 
 def _reviewed() -> ColumnElement[bool]:

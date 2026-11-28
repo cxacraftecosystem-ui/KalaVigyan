@@ -26,7 +26,12 @@ from app.services.object_store import media_bucket
 from app.services.own_proposals import require_terms
 from app.services.page_preview import preview_page
 from app.services.page_preview_links import UnknownPreview, pass_document, preview_document
-from app.services.page_preview_pictures import OwnPicture, pass_picture_file, shown_picture_file
+from app.services.page_preview_pictures import (
+    OwnPicture,
+    pass_field_photo,
+    pass_picture_file,
+    shown_picture_file,
+)
 
 router = APIRouter(prefix="/knowledge/pages", tags=["knowledge"])
 proposer = require(Capability.PROPOSE_KNOWLEDGE)
@@ -101,6 +106,16 @@ async def read_drawn_picture(
 ) -> Response:
     found = await pass_picture_file(session, render_pass, contribution_id, now=datetime.now(UTC))
     return await _picture(session, found, theme)
+
+
+@router.get("/drawn-field-photos/{image_id}")
+async def read_drawn_field_photo(
+    image_id: uuid.UUID,
+    render_pass: str = Header(alias=RENDER_PASS_HEADER, pattern=TOKEN_PATTERN),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    found = await pass_field_photo(session, render_pass, image_id, now=datetime.now(UTC))
+    return await _picture(session, found, None)
 
 
 async def _picture(session: AsyncSession, found: OwnPicture | None, theme: str | None) -> Response:

@@ -61,3 +61,15 @@ def test_a_reaction_step_takes_a_species_scene_in_its_art_and_a_diagram_panel_ta
     steps = checked_spec("reaction_player", spec).model_dump(mode="json", by_alias=True)["steps"]
     assert [part["role"] for part in steps[0]["scene"]["art"]["parts"]] == ["reactant", "reagent", "product"]
     assert steps[1]["scene"]["art"]["motion"] == "react"
+
+
+def test_a_species_is_drawn_by_its_material_or_by_a_mark_of_a_colourless_substance_never_both() -> None:
+    for mark in ("clear", "gas", "ion"):
+        part = SpeciesPart.model_validate({**OXYGEN, "mark": mark})
+        assert part.mark == mark and not part.uncoloured
+    assert SpeciesPart.model_validate(OXYGEN).uncoloured and not SpeciesPart.model_validate(IRON).uncoloured
+    with pytest.raises(ValidationError, match="its material's colour or by its mark"):
+        SpeciesPart.model_validate({**IRON, "mark": "clear"})
+    with pytest.raises(ValidationError, match="mark"):
+        SpeciesPart.model_validate({**OXYGEN, "mark": "liquid"})
+    assert "mark" not in SpeciesPart.model_validate(IRON).model_dump(mode="json", by_alias=True)

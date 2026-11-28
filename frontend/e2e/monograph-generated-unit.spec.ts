@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -16,6 +16,7 @@ import { componentPlace } from "../lib/monographScopes";
 import { sourceGroups, sourceSplit, UNGRADED_GROUP } from "../lib/monographSources";
 
 import { CAPTION, COMMONS_FILE, CREDIT, generatedDocument, HERO, LEDE, MASTHEAD_UNITS } from "./generatedMonographFixture";
+import { drawingReview, type DrawingPlan } from "./parity/drawingChecks";
 
 const markup = (element: ReactElement) => renderToStaticMarkup(element);
 const provided = (element: ReactElement) => markup(createElement(AuthProvider, null, createElement(ThemeProvider, null, element)));
@@ -49,6 +50,26 @@ test("the masthead is the approved page's: the name over the cited lede, its too
   expect(html).toContain('style="object-position:50% 50%"');
   expect(html).toContain(`<figcaption><p class="cap">${CAPTION}</p><p class="credit">${CREDIT}</p></figcaption>`);
   expect(html).not.toContain('data-testid="typographic-plate"');
+});
+
+const SWATCH = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23888'/%3E%3C/svg%3E";
+const MASTHEAD_PLAN: DrawingPlan = { masthead: HERO, chapters: [], components: [{ label: HERO, role: "picture", placed: true }] };
+
+async function mastheadProblems(page: Page, html: string): Promise<string[]> {
+  const shown = html.replace(/<img [^>]*>/, `<img src="${SWATCH}" alt="Picture I02" style="display:block;width:100%;height:240px">`);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setContent(`<style>body{margin:0;font:16px/1.4 sans-serif}svg{display:inline-block;width:16px;height:16px}</style>${shown}`);
+  const review = await drawingReview(page, MASTHEAD_PLAN);
+  return review.problems.filter((found) => found.label === HERO).map((found) => found.problem);
+}
+
+test("the masthead photograph is drawn in the slot its label names, so the release's drawing checks find it in the first screen", async ({ page }) => {
+  const document = generatedDocument();
+  const html = markup(createElement(KitMasthead, { document, label: pagePlan(document).label! }));
+  expect(html).toContain(`<figure class="plate kv-open-photo" data-component="${HERO}"><div class="kv-open-stage"><div class="ph"><img `);
+  expect(await mastheadProblems(page, html)).toEqual([]);
+  const unlabelled = await mastheadProblems(page, html.replace(` data-component="${HERO}"`, ""));
+  expect(unlabelled).toEqual(["the masthead picture is not drawn", "is placed in the layout but the page does not draw it"]);
 });
 
 test("a generated document without a licensed photograph shows its typographic plate at the masthead, the label holding only its GI and place", () => {

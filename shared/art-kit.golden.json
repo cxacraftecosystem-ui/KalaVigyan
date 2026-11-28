@@ -80,7 +80,7 @@
     "species": {
       "families": ["textiles", "metal", "clay", "stone", "wood", "leather", "fibre", "paper", "more"],
       "subjects": ["species", "reactant", "reactants", "reagent", "reagents"],
-      "choices": { "role": ["reactant", "reagent", "product"] },
+      "choices": { "role": ["reactant", "reagent", "product"], "mark": ["clear", "gas", "ion"] },
       "materials": ["material"],
       "motion": "react"
     }
