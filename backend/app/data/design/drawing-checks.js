@@ -13,6 +13,7 @@
   const HEADINGS = "h2, h3, h4, h5, h6, [role='heading']";
   const CLIPPING = new Set(["hidden", "auto", "scroll", "clip"]);
   const DRAWN_ROLES = new Set(["picture", "chart", "map", "interactive"]);
+  const UNCOLOURED = "[data-kit-uncoloured]";
   const AT_REST_ROLES = new Set(["chart", "map", "interactive"]);
 
   function componentProblems(element) {
@@ -24,6 +25,8 @@
       const width = svg.getBoundingClientRect().width;
       if (view && view.width >= LIMITS.iconLeast && view.width <= LIMITS.iconView && width > LIMITS.iconWidth) problems.push(`an icon of ${view.width} units draws ${Math.round(width)}px wide`);
     }
+    const uncoloured = element.querySelectorAll(UNCOLOURED).length;
+    if (uncoloured) problems.push(`draws ${uncoloured} species with no colour, each an empty outline in its scene: give each its material or its mark (clear, gas or ion)`);
     for (const node of element.querySelectorAll("*")) {
       const size = parseFloat(getComputedStyle(node).fontSize);
       const height = node.getBoundingClientRect().height;

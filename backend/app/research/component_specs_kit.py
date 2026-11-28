@@ -17,6 +17,7 @@ from .art_kit import (
     PARTS_PER_PANEL_MAX,
     PASTE_FORMS,
     PIECE_SHAPES,
+    SPECIES_MARKS,
     SPECIES_PER_SCENE_MAX,
     SPECIES_ROLES,
     TOOLS,
@@ -78,6 +79,7 @@ TOO_MANY_PARTS = (
 ONLY_A_REACTANT_BREAKS = (
     "only a reactant breaks: the bond-break mark is drawn on the species a bond breaks in"
 )
+COLOUR_OR_MARK = "a species is drawn in its material's colour or by its mark (clear, gas or ion), not both"
 
 
 def _material(token: str) -> str:
@@ -170,14 +172,21 @@ class SpeciesPart(ContractModel):
     part: Literal["species"]
     role: Literal[*SPECIES_ROLES]
     material: Material | None = Field(default=None, exclude_if=absent)
+    mark: Literal[*SPECIES_MARKS] | None = Field(default=None, exclude_if=absent)
     breaks: bool = False
     label: UnitRef
 
     @model_validator(mode="after")
-    def _a_reactant_breaks(self) -> Self:
+    def _a_reactant_breaks_and_one_way_to_draw(self) -> Self:
         if self.breaks and self.role != REACTANT:
             raise ValueError(ONLY_A_REACTANT_BREAKS)
+        if self.material is not None and self.mark is not None:
+            raise ValueError(COLOUR_OR_MARK)
         return self
+
+    @property
+    def uncoloured(self) -> bool:
+        return self.material is None and self.mark is None
 
 
 KitPartSpec = Annotated[

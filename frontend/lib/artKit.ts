@@ -22,7 +22,7 @@ export const ART_KIT = {
     tool: { families: ["textiles", "metal", "stone", "wood", "fibre", "paper", "more"], subjects: ["hand", "hands", "chisel", "mallet", "brush"], choices: { tool: ["block", "brush", "chisel", "mallet", "knife", "stick"] }, materials: ["load"], motion: null },
     section: { families: ["textiles", "metal", "clay", "leather", "more"], subjects: ["section", "cutaway", "strata", "layers"], choices: {}, materials: ["layers.material"], motion: null },
     piece: { families: ["metal", "clay", "stone", "wood", "fibre", "paper", "more"], subjects: ["slab", "billet", "lump"], choices: { shape: ["lump", "vessel", "slab", "billet", "sheet", "figure", "culm"], "inlay.motif": MOTIFS }, materials: ["material", "inlay.material"], motion: null },
-    species: { families: ["textiles", "metal", "clay", "stone", "wood", "leather", "fibre", "paper", "more"], subjects: ["species", "reactant", "reactants", "reagent", "reagents"], choices: { role: ["reactant", "reagent", "product"] }, materials: ["material"], motion: "react" }
+    species: { families: ["textiles", "metal", "clay", "stone", "wood", "leather", "fibre", "paper", "more"], subjects: ["species", "reactant", "reactants", "reagent", "reagents"], choices: { role: ["reactant", "reagent", "product"], mark: ["clear", "gas", "ion"] }, materials: ["material"], motion: "react" }
   }
 } as const;
 
@@ -39,6 +39,7 @@ export type WaterForm = (typeof ART_KIT.parts.water.choices.form)[number];
 export type ToolName = (typeof ART_KIT.parts.tool.choices.tool)[number];
 export type PieceShape = (typeof ART_KIT.parts.piece.choices.shape)[number];
 export type SpeciesRole = (typeof ART_KIT.parts.species.choices.role)[number];
+export type SpeciesMark = (typeof ART_KIT.parts.species.choices.mark)[number];
 
 export const KIT_PART_NAMES = Object.keys(ART_KIT.parts) as KitPartName[];
 export const KIT_LAYOUTS = Object.keys(ART_KIT.layouts) as KitLayout[];

@@ -22,6 +22,7 @@ __all__ = [
     "PARTS_PER_PANEL_MAX",
     "PASTE_FORMS",
     "PIECE_SHAPES",
+    "SPECIES_MARKS",
     "SPECIES_PER_SCENE_MAX",
     "SPECIES_ROLES",
     "TOOLS",
@@ -44,6 +45,7 @@ WATER_FORMS = ("running", "still", "sprinkled")
 TOOLS = ("block", "brush", "chisel", "mallet", "knife", "stick")
 PIECE_SHAPES = ("lump", "vessel", "slab", "billet", "sheet", "figure", "culm")
 SPECIES_ROLES = ("reactant", "reagent", "product")
+SPECIES_MARKS = ("clear", "gas", "ion")
 KIT_MOTIONS = ("dip", "take", "dry", "react")
 EARTH = "earth"
 PARTS_PER_PANEL_MAX = 3
@@ -158,7 +160,7 @@ KIT_PARTS: Mapping[str, KitPart] = MappingProxyType(
                 "species",
                 FAMILIES,
                 "species reactant reactants reagent reagents",
-                choices={"role": SPECIES_ROLES},
+                choices={"role": SPECIES_ROLES, "mark": SPECIES_MARKS},
                 materials=("material",),
                 motion="react",
             ),

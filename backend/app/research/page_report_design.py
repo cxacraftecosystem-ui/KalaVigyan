@@ -5,6 +5,7 @@ from typing import Any
 
 from .component_specs_general import GENERAL_DRAWING
 from .drawing_spec_rules import THEMES_KEY, spec_design_problems
+from .page_report_species import species_colour_problems
 from .unit_ids import DELIVERED_UNITS
 
 __all__ = ["DESIGN_RULE", "THEME_NAMES", "delivered", "design_evidence"]
@@ -30,6 +31,7 @@ def design_evidence(
     for label, kind in figures:
         if delivered(held(label)):
             found += _figure_problems(label, kind, specs.get(label, {}), text)
+        found += species_colour_problems(label, specs.get(label, {}), text)
     for label in pictures:
         picture = specs.get(label, {}).get(PICTURE_KEY) or {}
         if not str(picture.get(ALT_KEY) or "").strip():

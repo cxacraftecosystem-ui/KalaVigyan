@@ -11,6 +11,13 @@ __all__ = ["BEAD", "REACTION_ARROW", "species_boxes", "species_nodes", "species_
 
 PART_BOX = 120.0
 BEAD = "M14 60 A46 46 0 1 0 106 60 A46 46 0 1 0 14 60 Z"
+GLINT = "M34 44 A30 30 0 0 1 54 28"
+GAS = (
+    "M30 46 A14 14 0 1 0 58 46 A14 14 0 1 0 30 46 Z M64 52 A14 14 0 1 0 92 52 A14 14 0 1 0 64 52 Z "
+    "M40 82 A14 14 0 1 0 68 82 A14 14 0 1 0 40 82 Z"
+)
+CORE = "M42 60 A18 18 0 1 0 78 60 A18 18 0 1 0 42 60 Z"
+GAS_MARK, ION_MARK = "gas", "ion"
 CRACK = "M60 14 L51 40 L66 58 L52 80 L60 106"
 ARRIVAL = "M60 1 V11 M54 5 L60 11 L66 5"
 REACTION_ARROW = "M110 80 H129 M123 74 L130 80 L123 86"
@@ -26,17 +33,28 @@ Box = tuple[float, float, float]
 
 
 def species_nodes(part: SpeciesPart) -> list[Node]:
-    if part.material is not None:
-        nodes = material_path(BEAD, part.material)
-    else:
-        bead = path(BEAD, fill=PAPER, stroke=INK_SOFT, width="1.4")
-        bead["attrs"]["stroke-dasharray"] = UNRECORDED_DASH
-        nodes = [bead]
+    nodes = _bead(part)
     if part.breaks:
         nodes += [path(CRACK, stroke=PAPER, width="5"), path(CRACK, stroke=INK, width="1.4")]
     if part.role == REAGENT:
         nodes.append(path(ARRIVAL, stroke=INK_SOFT, width="1.6"))
     return nodes
+
+
+def _bead(part: SpeciesPart) -> list[Node]:
+    if part.material is not None:
+        return material_path(BEAD, part.material)
+    if part.mark == GAS_MARK:
+        return [path(GAS, fill=PAPER, stroke=INK_SOFT, width="1.4")]
+    if part.mark == ION_MARK:
+        return [path(BEAD, fill=PAPER, stroke=INK, width="1.6"), path(CORE, stroke=INK_SOFT, width="1.4")]
+    if part.mark is not None:
+        glint = path(GLINT, stroke=INK_SOFT, width="3")
+        glint["attrs"]["stroke-linecap"] = "round"
+        return [path(BEAD, fill=PAPER, stroke=INK_SOFT, width="1.4"), glint]
+    bead = path(BEAD, fill=PAPER, stroke=INK_SOFT, width="1.4")
+    bead["attrs"]["stroke-dasharray"] = UNRECORDED_DASH
+    return [bead]
 
 
 def species_boxes(parts: Sequence[SpeciesPart]) -> list[Box]:

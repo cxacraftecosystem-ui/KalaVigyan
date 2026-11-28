@@ -9,7 +9,7 @@ from app.research.art_kit import SPECIES_PER_SCENE_MAX
 from .compose_held import CraftHeld, HeldReaction, HeldSpecies, HeldStage
 from .compose_parts import UnitBook, material_named, species_token
 
-__all__ = ["reaction_scene", "species_drawn", "species_scene"]
+__all__ = ["reaction_scene", "species_drawn", "species_mark", "species_scene"]
 
 SCENE_WIDTH = 640
 SCENE_HEIGHT = 180
@@ -31,6 +31,10 @@ OXYGEN_WORD = "oxygen"
 OXYGEN_FORMULA = "O2"
 WATER_WORD = "water"
 WATER_FORMULA = "H2O"
+GAS_FORMULAS = frozenset({"O2", "H2", "N2", "CO2"})
+ION_WORDS = frozenset({"ion", "ions"})
+CHARGES = ("+", "-")
+CLEAR_MARK, GAS_MARK, ION_MARK = "clear", "gas", "ion"
 MORDANT_ROLE = "MORDANT"
 AGENT_WORDS = frozenset({"alum", "aluminium", "aluminum", "iron", "ferrous", "ferric", "mordant"})
 BREAKING_KINDS = frozenset({"HYDROLYSIS", "DEHYDRATION", "DEHYDROXYLATION"})
@@ -72,11 +76,24 @@ def _species(
 ) -> Node:
     part: Node = {"part": SPECIES_PART, "role": role, "label": book.cited(species.name, claims)}
     token = species_token(craft, species.name)
+    mark = species_mark(species)
     if token is not None:
         part["material"] = token
+    elif mark is not None:
+        part["mark"] = mark
     if breaks:
         part["breaks"] = True
     return part
+
+
+def species_mark(species: HeldSpecies) -> str | None:
+    if _oxygen(species) or _formula(species) in GAS_FORMULAS:
+        return GAS_MARK
+    if _water(species):
+        return CLEAR_MARK
+    if _formula(species).endswith(CHARGES) or ION_WORDS & _words(species.name):
+        return ION_MARK
+    return None
 
 
 def _arriving(craft: CraftHeld, reactants: Sequence[HeldSpecies]) -> set[int]:
@@ -155,7 +172,7 @@ def _step_group(craft: CraftHeld, reaction: HeldReaction, step: int, current: in
 def _swatch(craft: CraftHeld, species: HeldSpecies, at: tuple[float, float], size: float) -> Node:
     material = material_named(craft, species.name)
     paint = {"fill": OUTLINE_FILL, "stroke": INK, "stroke-width": "1.5"}
-    if material is None or not material.tokens:
+    if (material is None or not material.tokens) and species_mark(species) is None:
         paint["stroke-dasharray"] = UNRECORDED_DASH
     return _rect(at[0], at[1], (size, size), {"rx": "4", **paint})
 

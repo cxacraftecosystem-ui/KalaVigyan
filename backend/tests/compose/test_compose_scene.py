@@ -119,3 +119,32 @@ def test_a_reaction_draws_as_species_only_when_its_scene_holds_every_one() -> No
     assert not species_drawn(reaction("OTHER", (), (HeldSpecies("p"),)))
     no_product = species_scene(BAGRU, reaction("OTHER", (HeldSpecies("r"),), ()), UnitBook())
     assert "motion" not in no_product
+
+
+def test_a_colourless_species_is_drawn_by_its_mark_and_a_species_with_no_recorded_colour_by_neither() -> None:
+    book = UnitBook()
+    scene = species_scene(
+        BAGRU,
+        reaction(
+            "REDOX",
+            (
+                HeldSpecies("ferrous ions", "Fe2+"),
+                HeldSpecies("atmospheric oxygen"),
+                HeldSpecies("water", "H2O"),
+            ),
+            (HeldSpecies("ferric tannate"), HeldSpecies("hydrogen", "H2"), HeldSpecies("alizarin")),
+        ),
+        book,
+    )
+    KitScene.model_validate(scene)
+    drawn = [
+        (book.units()[part["label"]].text, part.get("material"), part.get("mark")) for part in scene["parts"]
+    ]
+    assert drawn == [
+        ("ferrous ions", None, "ion"),
+        ("atmospheric oxygen", None, "gas"),
+        ("water", None, "clear"),
+        ("ferric tannate", None, None),
+        ("hydrogen", None, "gas"),
+        ("alizarin", "--dye-madder", None),
+    ]
