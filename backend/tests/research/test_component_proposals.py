@@ -138,6 +138,8 @@ def test_a_delivered_component_is_matched_by_what_it_shows_not_by_its_words_or_i
 def test_the_component_extended_is_never_its_own_match_and_each_label_counts_once() -> None:
     held = summary(
         label="shared/chemistry/tannic-acid-molecule",
+        title=draft().title,
+        description=draft().description,
         kind="molecule_3d",
         subjects=[ComponentSubject(kind="COMPOUND", key=TANNIC_ACID, name="Tannic acid")],
     )

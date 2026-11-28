@@ -39,6 +39,7 @@ GROUP_NAME = {
         {
             "url": "https://example.org/printers",
             "title": "The printers of the town",
+            "language": "en",
             "quotes": [{"text": "Khatri printers work in the town", "locator": "para 1"}],
         }
     ],

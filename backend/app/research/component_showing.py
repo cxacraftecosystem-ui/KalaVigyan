@@ -34,6 +34,7 @@ SAME_DATASET = "it draws from the same dataset {code}"
 SAME_FACTS = "it rests on the same facts, {share:.0%} of them shared"
 
 Cell = tuple[int, str]
+NO_DATA: tuple[str | None, frozenset[Cell]] = (None, frozenset())
 
 
 @dataclass(frozen=True)
@@ -50,7 +51,7 @@ def delivered_showing(kind: str, spec: Mapping[str, Any], units: Mapping[str, De
 
 def piece_showing(kind: str, payload: Mapping[str, Any], claim_ids: Iterable[uuid.UUID]) -> Showing:
     delivered = delivered_of(payload)
-    dataset, cells = (None, frozenset()) if delivered is None else _data(kind, delivered.spec)
+    dataset, cells = NO_DATA if delivered is None else _data(kind, delivered.spec)
     return Showing(dataset=dataset, cells=cells, facts=frozenset(claim_ids))
 
 
@@ -76,7 +77,7 @@ def _data(kind: str, spec: Mapping[str, Any]) -> tuple[str | None, frozenset[Cel
     try:
         checked = checked_spec(kind, spec)
     except ValidationError, InvalidInput:
-        return None, frozenset()
+        return NO_DATA
     dataset = cited_dataset(checked)
     cells = frozenset((cited.cell.row, cited.cell.column) for cited in cited_cells(checked))
     return (None if dataset is None else dataset.code), cells
