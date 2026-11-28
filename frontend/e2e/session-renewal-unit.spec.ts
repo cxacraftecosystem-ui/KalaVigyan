@@ -27,9 +27,9 @@ function claimsOf(token: string): Claims {
   return JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString("utf8")) as Claims;
 }
 
-function issued(daysAgo: number, sid: string | undefined = "s1"): string {
+function issued(daysAgo: number): string {
   const iat = nowSeconds() - Math.round(daysAgo * DAY);
-  return tokenOf({ sid, iat, exp: iat + YEAR });
+  return tokenOf({ sid: "s1", iat, exp: iat + YEAR });
 }
 
 class Api {
@@ -140,7 +140,8 @@ test("a session renewed within the day is left as it is and the API is not asked
 
 test("a session from before session ids is renewed at once into one that has an id", async () => {
   const api = new Api();
-  const browser = new Browser(issued(0.1, undefined));
+  const iat = nowSeconds() - 600;
+  const browser = new Browser(tokenOf({ iat, exp: iat + 7 * DAY }));
   await inPage(api, browser, () => renewSession());
   expect(api.renewals).toBe(1);
   expect(claimsOf(browser.token()).sid).toBe("s-new");

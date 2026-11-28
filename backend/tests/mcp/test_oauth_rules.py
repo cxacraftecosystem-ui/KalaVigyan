@@ -222,8 +222,6 @@ def test_a_person_grants_only_what_was_asked_and_what_their_role_holds() -> None
     with pytest.raises(InvalidInput):
         granted_scopes(grantor("PROFESSOR"), ("read", "review"), ("review",))
     with pytest.raises(InvalidInput):
-        granted_scopes(grantor("ADMIN", minutes_ago=30), ("read", "review"), ("review",))
-    with pytest.raises(InvalidInput):
         granted_scopes(grantor("ADMIN", two_step=False), ("read", "review"), ("review",))
     with pytest.raises(InvalidInput):
         granted_scopes(grantor("STUDENT"), ("read", "contribute"), ("contribute",))

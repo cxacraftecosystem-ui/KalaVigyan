@@ -26,7 +26,7 @@ $do$
 
 def upgrade() -> None:
     op.create_table(
-        TABLE,
+        "SiteSession",
         sa.Column("id", sa.UUID(), server_default=sa.text("gen_random_uuid()"), nullable=False),
         sa.Column("userId", sa.UUID(), nullable=False),
         sa.Column("createdAt", STAMP, server_default=sa.text("now()"), nullable=False),

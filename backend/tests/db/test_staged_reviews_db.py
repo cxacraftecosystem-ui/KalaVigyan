@@ -211,6 +211,7 @@ async def test_a_review_connection_almost_a_year_old_still_only_stages_and_a_per
     session, people = seeded
     people.admin.twoFactorEnabled = True
     await session.flush()
+    await session.refresh(people.admin)
     client_id = await registered(session)
     first = await exchanged(session, client_id, await review_code(session, people.admin, client_id))
     used = NOW + timedelta(days=360)
