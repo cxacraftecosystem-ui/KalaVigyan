@@ -31,6 +31,7 @@ reports).
 | A steward's withdrawal of another's component staged for an Admin to confirm | [decision 0212](0212-a-steward-asks-an-admin-a-structure-edit-states-what-it-brings-and-a-removed-layout-stays-removed.md) |
 | A page proposal's decision, whole, by chapter or by component, staged for a person to confirm | [decision 0236](0236-a-reviewer-sees-a-page-as-it-stood-and-as-it-will-be-and-decides-it-whole-by-chapter-or-by-component.md) |
 | A staged batch confirmed by its person in their own MCP client as well as on the Review page | [decision 0243](0243-a-staged-decision-confirmed-in-the-person-s-own-mcp-client.md) |
+| `review` given and kept without a time limit, its tokens an hour like the others (items 1 and 2) | [decision 0255](0255-a-signed-in-person-stays-signed-in-on-the-site-and-over-mcp.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

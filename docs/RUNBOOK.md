@@ -338,6 +338,29 @@ sudo kv-render-env && sudo kv-blue-green restart     # on the box
 
 Never rotate `TWO_FACTOR_ENCRYPTION_KEY`, `SECRETS_ENCRYPTION_KEY` or `TRANSCRIPT_ENCRYPTION_KEY` by overwriting them: stored data is encrypted with them.
 
+## Sign-in lifetimes (decision 0255)
+
+A person who signs in once stays signed in while they use the site or their AI client. The lifetimes
+are settings with their defaults in `backend/app/core/config.py`:
+
+| Setting | Default | What it bounds |
+|---|---|---|
+| `JWT_EXPIRES_MINUTES` | 525600 (a year; at most 576000, 400 days, the browsers' cap on a cookie) | a site session token and its cookie; the web renews it at most once a day while the site is used (`POST /api/session/renew`), so only a year without a visit ends it |
+| `MCP_ACCESS_TOKEN_SECONDS` | 3600 (an hour; 60 to 86400) | an MCP access token, renewed silently by the client's refresh token |
+| `MCP_REFRESH_TOKEN_SECONDS` | 31536000 (a year; at least 3600) | an MCP connection and its refresh token, counted from the last refresh |
+
+On 2026-11-28 production set none of the three (not in `/kalavigyan/env/`, not a GitHub secret or
+variable, not in `backend/.env`), so the defaults apply. To set one, put the same value in all
+three at once, as Secrets says, then re-render the box `.env`; a shorter value applies to tokens
+minted after it, never to those already issued.
+
+What still ends a session at once: Sign out (that session only, `SiteSession.endedAt`); a
+suspension, refusal or removal from the access roster, Sign out everywhere, a role change, a
+password change or reset, and a two-step change (all of the account's sessions and MCP
+connections, through `tokenVersion` and `sessionsValidFrom`; a password or two-step change keeps the
+changer's own session); Revoke on Settings, Connected apps (that connection); a refresh token
+presented a second time (that connection). Rotating `JWT_SECRET` signs every site session out.
+
 ## Yahoo sign-in
 
 Decision 0026. The backend redeems Yahoo's code with the client secret, so the secret never reaches a browser.
@@ -561,14 +584,14 @@ Claude sends files only to hosts Anthropic approved for a listed connector: emai
 `mcp-review@anthropic.com` (subject `Connector file hosts: KalaVigyan`) naming the API host, which
 receives every upload, before relying on uploads from Claude.
 
-### Reviewing over MCP (decision 0170)
+### Reviewing over MCP (decisions 0170 and 0255)
 
 An Admin or Master Admin with two-step verification on can review from their AI client.
 
-1. Sign in on the site (or sign out and in again: `review` is given only within 15 minutes of a
-   sign-in), then add or reconnect the server in the AI client and tick Review on the consent page.
-   A review token lives 15 minutes and the client renews it; `review` itself ends 8 hours after the
-   consent, and the connection goes on without it.
+1. Signed in on the site, add or reconnect the server in the AI client and tick Review on the
+   consent page. `review` lasts as long as the connection: its tokens live an hour like the others
+   and the client renews them silently, and the connection lasts a year from its last use (Sign-in
+   lifetimes, above).
 2. The client lists four more tools: `review_queue` (the queue and one item whole, the page
    proposals and, with `page`, one page as it stood and as it will be with its pictures, or with
    `published` a page's published items and one with its editable fields), `stage_reviews` (up to
