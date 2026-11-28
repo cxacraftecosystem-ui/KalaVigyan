@@ -3,11 +3,16 @@ import {
   LEGACY_TOKEN_STORAGE_KEY,
   SESSION_ADOPT_PATH,
   SESSION_END_PATH,
-  SESSION_MARKER_COOKIE
+  SESSION_MARKER_COOKIE,
+  SESSION_RENEW_PATH
 } from "@/lib/sessionCookie";
 import { isReadingRoute } from "@/lib/readingRoutes";
 
 let endedMarker: string | null = null;
+
+export const RENEWAL_CHECK_MS = 60 * 60 * 1000;
+
+let lastRenewalCheck: number | null = null;
 
 let migration: Promise<void> | null = null;
 
@@ -52,9 +57,20 @@ export function endSession(): void {
   }
 }
 
+export async function renewSession(nowMs: number = Date.now()): Promise<void> {
+  if (!getSessionMarker() || typeof fetch === "undefined") return;
+  if (lastRenewalCheck !== null && nowMs - lastRenewalCheck < RENEWAL_CHECK_MS) return;
+  lastRenewalCheck = nowMs;
+  try {
+    await fetch(SESSION_RENEW_PATH, { method: "POST", cache: "no-store" });
+  } catch {
+  }
+}
+
 export function resetSessionStateForTests(): void {
   endedMarker = null;
   migration = null;
+  lastRenewalCheck = null;
 }
 
 function readLegacyToken(): string | null {

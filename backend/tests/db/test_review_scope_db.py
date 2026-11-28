@@ -33,22 +33,25 @@ async def account(session: AsyncSession, role: str, *, two_step: bool) -> User:
     return made
 
 
-async def review_code(session: AsyncSession, user: User, client_id: str, *, minutes_ago: int = 5) -> str:
+async def review_code(session: AsyncSession, user: User, client_id: str) -> str:
     consent = Consent(
         request=asked(client_id, scope=REVIEW_ASKED), scopes=["review"], terms_version=MCP_TERMS_VERSION
     )
-    who = grantor(user, signed_in_at=NOW - timedelta(minutes=minutes_ago))
-    sent = await oauth_consent.approve(session, who, consent, endpoints=ENDPOINTS)
+    sent = await oauth_consent.approve(session, grantor(user), consent, endpoints=ENDPOINTS)
     return parse_qs(urlsplit(sent.redirect_to).query)["code"][0]
 
 
-async def test_an_admin_with_two_step_who_signed_in_recently_gets_a_short_review_token(
+def refresh_fields(client_id: str, refresh_token: str) -> dict[str, str]:
+    return {"grant_type": "refresh_token", "refresh_token": refresh_token, "client_id": client_id}
+
+
+async def test_an_admin_with_two_step_gets_a_review_token_that_lives_an_hour_like_the_others(
     session: AsyncSession,
 ) -> None:
     admin = await account(session, "ADMIN", two_step=True)
     client_id = await registered(session)
     reply = await exchanged(session, client_id, await review_code(session, admin, client_id))
-    assert (reply.scope, reply.expires_in) == ("read review", 900)
+    assert (reply.scope, reply.expires_in) == ("read review", 3600)
     caller = await oauth_bearer.caller_for(session, reply.access_token, resource=RESOURCE, now=NOW)
     assert caller.scopes == frozenset({"read", "review"})
     admin.twoFactorEnabled = False
@@ -57,38 +60,43 @@ async def test_an_admin_with_two_step_who_signed_in_recently_gets_a_short_review
     assert later.scopes == frozenset({"read"})
 
 
-async def test_review_ends_eight_hours_after_the_grant_and_the_connection_goes_on(
+async def test_review_lasts_as_long_as_the_connection_and_refreshes_silently_for_a_year(
     session: AsyncSession,
 ) -> None:
     admin = await account(session, "MASTER_ADMIN", two_step=True)
     client_id = await registered(session)
     reply = await exchanged(session, client_id, await review_code(session, admin, client_id))
-    fields = {"grant_type": "refresh_token", "refresh_token": reply.refresh_token, "client_id": client_id}
-    renewed = await oauth_tokens.grant_tokens(
-        session, fields, resource=RESOURCE, now=NOW + timedelta(hours=8, minutes=1)
-    )
-    assert (renewed.scope, renewed.expires_in) == ("read", 3600)
+    used = NOW
+    for days in (1, 30, 364, 700):
+        used = NOW + timedelta(days=days)
+        reply = await oauth_tokens.grant_tokens(
+            session, refresh_fields(client_id, reply.refresh_token), resource=RESOURCE, now=used
+        )
+        assert (reply.scope, reply.expires_in) == ("read review", 3600)
+    caller = await oauth_bearer.caller_for(session, reply.access_token, resource=RESOURCE, now=used)
+    assert caller.scopes == frozenset({"read", "review"})
+    [listed] = await oauth_connections.connections(session, admin, now=used + timedelta(days=200))
+    assert listed.scopes == ["read", "review"]
 
 
 @pytest.mark.parametrize(
-    ("role", "two_step", "minutes_ago"),
-    [("ADMIN", False, 5), ("ADMIN", True, 16), ("PROFESSOR", True, 5), ("RESEARCHER", True, 5)],
+    ("role", "two_step"),
+    [("ADMIN", False), ("MASTER_ADMIN", False), ("PROFESSOR", True), ("RESEARCHER", True)],
 )
-async def test_review_is_refused_without_admin_two_step_and_a_recent_sign_in(
-    session: AsyncSession, role: str, two_step: bool, minutes_ago: int
+async def test_review_is_refused_without_admin_and_two_step(
+    session: AsyncSession, role: str, two_step: bool
 ) -> None:
     user = await account(session, role, two_step=two_step)
     client_id = await registered(session)
-    who = grantor(user, signed_in_at=NOW - timedelta(minutes=minutes_ago))
     prompt = await oauth_consent.review(
-        session, who, asked(client_id, scope=REVIEW_ASKED), endpoints=ENDPOINTS
+        session, grantor(user), asked(client_id, scope=REVIEW_ASKED), endpoints=ENDPOINTS
     )
     assert isinstance(prompt, AuthorizationPrompt)
     review = next(choice for choice in prompt.scopes if choice.scope == "review")
     assert review.allowed is False
     assert review.needs is not None and "two-step verification" in review.needs
     with pytest.raises(InvalidInput):
-        await review_code(session, user, client_id, minutes_ago=minutes_ago)
+        await review_code(session, user, client_id)
 
 
 async def test_connected_apps_lists_only_connections_the_server_still_serves(session: AsyncSession) -> None:
@@ -115,8 +123,8 @@ async def test_review_ends_with_the_connection_when_two_step_changes_and_lists_a
     reply = await exchanged(session, client_id, await review_code(session, admin, client_id))
     [listed] = await oauth_connections.connections(session, admin, now=NOW)
     assert listed.scopes == ["read", "review"]
-    [later] = await oauth_connections.connections(session, admin, now=NOW + timedelta(hours=8))
-    assert later.scopes == ["read"]
+    [later] = await oauth_connections.connections(session, admin, now=NOW + timedelta(days=90))
+    assert later.scopes == ["read", "review"]
     admin.twoFactorEnabled = False
     admin.tokenVersion += 1
     await session.flush()

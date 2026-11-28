@@ -6,7 +6,7 @@ import hmac
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from ipaddress import ip_address
 from typing import Any
 from urllib.parse import SplitResult, urlencode, urlsplit, urlunsplit
@@ -18,7 +18,6 @@ from app.core.roles import Capability, can
 __all__ = [
     "ACCESS_DENIED",
     "ACCESS_TOKEN_PREFIX",
-    "ACCESS_TOKEN_SECONDS",
     "CODE_PREFIX",
     "CODE_SECONDS",
     "INVALID_CLIENT",
@@ -32,10 +31,6 @@ __all__ = [
     "PKCE_METHOD",
     "REDIRECT_URIS_MAX",
     "REFRESH_TOKEN_PREFIX",
-    "REFRESH_TOKEN_SECONDS",
-    "REVIEW_ACCESS_TOKEN_SECONDS",
-    "REVIEW_GRANT_SECONDS",
-    "REVIEW_SIGN_IN_SECONDS",
     "SCOPE_MAX_CHARS",
     "SECRET_MAX_CHARS",
     "STATE_MAX_CHARS",
@@ -44,12 +39,10 @@ __all__ = [
     "UNSUPPORTED_RESPONSE_TYPE",
     "Grantor",
     "OAuthError",
-    "access_token_seconds",
     "challenge_is_valid",
     "held_scopes",
     "is_loopback_host",
     "joined_scopes",
-    "live_scopes",
     "may_hold",
     "ordered_scopes",
     "pkce_matches",
@@ -68,18 +61,12 @@ ACCESS_TOKEN_PREFIX = "kvmcp_at_"
 REFRESH_TOKEN_PREFIX = "kvmcp_rt_"
 CODE_PREFIX = "kvmcp_ac_"
 SECRET_MAX_CHARS = 200
-ACCESS_TOKEN_SECONDS = 60 * 60
-REFRESH_TOKEN_SECONDS = 30 * 24 * 60 * 60
 CODE_SECONDS = 5 * 60
 MCP_TERMS_VERSION = "2026-11-19"
 STATE_MAX_CHARS = 1024
 SCOPE_MAX_CHARS = 200
 REDIRECT_URI_MAX_CHARS = 2048
 REDIRECT_URIS_MAX = 10
-REVIEW_SIGN_IN_SECONDS = 15 * 60
-REVIEW_ACCESS_TOKEN_SECONDS = 15 * 60
-REVIEW_GRANT_SECONDS = 8 * 60 * 60
-CLOCK_SKEW = timedelta(minutes=1)
 LOOPBACK_NAMES = frozenset({"localhost"})
 REFUSED_SCHEMES = frozenset({"javascript", "data", "file", "vbscript", "about", "blob", "filesystem", "ftp"})
 
@@ -207,31 +194,10 @@ def may_hold(user_or_role: Any, scope: str) -> bool:
 @dataclass(frozen=True)
 class Grantor:
     user: Any
-    signed_in_at: datetime | None
     now: datetime
 
     def may_grant(self, scope: str) -> bool:
-        if not may_hold(self.user, scope):
-            return False
-        return scope != REVIEW_SCOPE or self.signed_in_recently
-
-    @property
-    def signed_in_recently(self) -> bool:
-        if self.signed_in_at is None:
-            return False
-        earliest = self.now - timedelta(seconds=REVIEW_SIGN_IN_SECONDS)
-        return earliest <= self.signed_in_at <= self.now + CLOCK_SKEW
-
-
-def live_scopes(scopes: Iterable[str], *, granted_at: datetime, now: datetime) -> tuple[str, ...]:
-    held = set(scopes)
-    if now >= granted_at + timedelta(seconds=REVIEW_GRANT_SECONDS):
-        held.discard(REVIEW_SCOPE)
-    return ordered_scopes(held)
-
-
-def access_token_seconds(scopes: Iterable[str]) -> int:
-    return REVIEW_ACCESS_TOKEN_SECONDS if REVIEW_SCOPE in set(scopes) else ACCESS_TOKEN_SECONDS
+        return may_hold(self.user, scope)
 
 
 def held_scopes(user_or_role: Any, scopes: Iterable[str]) -> tuple[str, ...]:

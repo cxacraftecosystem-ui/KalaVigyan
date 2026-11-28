@@ -19,6 +19,10 @@ _BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 _ALLOWED_JWT_ALGORITHMS = frozenset({"HS256", "HS384", "HS512"})
 
+_MINUTES_PER_DAY = 24 * 60
+_YEAR_MINUTES = 365 * _MINUTES_PER_DAY
+_BROWSER_COOKIE_CAP_MINUTES = 400 * _MINUTES_PER_DAY
+
 _VERCEL_SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 VERCEL_PREVIEW_ID = r"[a-z0-9]{9}"
@@ -80,7 +84,9 @@ class Settings(BaseSettings):
 
     jwt_secret: str = Field(alias="JWT_SECRET")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
-    jwt_expires_minutes: int = Field(default=60 * 24 * 7, alias="JWT_EXPIRES_MINUTES")
+    jwt_expires_minutes: int = Field(
+        default=_YEAR_MINUTES, ge=1, le=_BROWSER_COOKIE_CAP_MINUTES, alias="JWT_EXPIRES_MINUTES"
+    )
     allow_weak_jwt_secret: bool = Field(default=False, alias="ALLOW_WEAK_JWT_SECRET")
 
     secrets_encryption_key: str | None = Field(default=None, alias="SECRETS_ENCRYPTION_KEY")
@@ -168,6 +174,12 @@ class Settings(BaseSettings):
     field_voices_image_hosts: str | None = Field(default=None, alias="FIELD_VOICES_IMAGE_HOSTS")
     mcp_server_enabled: bool = Field(default=False, alias="MCP_SERVER_ENABLED")
     mcp_file_uploads_enabled: bool = Field(default=True, alias="MCP_FILE_UPLOADS_ENABLED")
+    mcp_access_token_seconds: int = Field(
+        default=60 * 60, ge=60, le=24 * 60 * 60, alias="MCP_ACCESS_TOKEN_SECONDS"
+    )
+    mcp_refresh_token_seconds: int = Field(
+        default=_YEAR_MINUTES * 60, ge=60 * 60, alias="MCP_REFRESH_TOKEN_SECONDS"
+    )
     malware_scan_socket: str = Field(default="/var/run/clamav/clamd.ctl", alias="MALWARE_SCAN_SOCKET")
     vercel_deploy_hook_url: str | None = Field(default=None, alias="VERCEL_DEPLOY_HOOK_URL")
 

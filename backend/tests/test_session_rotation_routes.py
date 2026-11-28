@@ -6,6 +6,7 @@ from app.main import create_app
 
 ROTATING = {
     ("POST", "/api/auth/change-password"),
+    ("POST", "/api/auth/renew"),
     ("POST", "/api/auth/two-factor/enable"),
     ("POST", "/api/auth/two-factor/disable"),
 }

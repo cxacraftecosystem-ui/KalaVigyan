@@ -1,11 +1,18 @@
 import asyncio
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.auth_session import TWO_FACTOR_REQUIRED_HEADER, open_session, reload_user
+from app.api.auth_session import (
+    SESSION_TOKEN_HEADER,
+    TWO_FACTOR_REQUIRED_HEADER,
+    kept_session_token,
+    open_session,
+    reload_user,
+)
 from app.api.routes.auth_signup import router as signup_router
 from app.api.routes.password_links import router as password_links_router
 from app.api.sign_in import (
@@ -19,9 +26,16 @@ from app.api.sign_in import (
 )
 from app.core.config import get_settings
 from app.core.db import get_session
-from app.core.deps import get_current_user, get_current_user_any_step, is_break_glass_master
+from app.core.deps import (
+    bearer_claims,
+    current_session_id,
+    get_current_user,
+    get_current_user_any_step,
+    is_break_glass_master,
+)
 from app.core.rate_limit import client_ip, ip_hash, refund_ip
 from app.core.security import verify_password
+from app.core.site_sessions import end_site_session
 from app.core.throttle_refusal import too_many_requests
 from app.models import ConsentRecord, User
 from app.schemas.auth import ConsentRequest, GoogleLinkRequest, LoginRequest, OidcNonceRequest
@@ -109,7 +123,23 @@ async def login(
 
 
 @router.post("/logout")
-async def logout() -> dict[str, bool]:
+async def logout(
+    claims: dict[str, Any] | None = Depends(bearer_claims), session: AsyncSession = Depends(get_session)
+) -> dict[str, bool]:
+    if claims is not None:
+        await end_site_session(session, claims, now=datetime.now(UTC))
+        await session.commit()
+    return {"ok": True}
+
+
+@router.post("/renew")
+async def renew(
+    response: Response,
+    user: User = Depends(get_current_user_any_step),
+    session_id: uuid.UUID | None = Depends(current_session_id),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, bool]:
+    response.headers[SESSION_TOKEN_HEADER] = await kept_session_token(session, user, session_id)
     return {"ok": True}
 
 

@@ -153,6 +153,7 @@ OWN_RECORD_ROUTES = {
     ("POST", "/api/auth/two-factor/disable"),
     ("POST", "/api/auth/two-factor/recovery-codes"),
     ("POST", "/api/auth/change-password"),
+    ("POST", "/api/auth/renew"),
     ("POST", "/api/auth/first-password/nonce"),
     ("POST", "/api/auth/google/link"),
     ("POST", "/api/auth/google/link-nonce"),

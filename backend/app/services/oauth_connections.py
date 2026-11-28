@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import OAuthClient, OAuthGrant, User
 from app.research.oauth_contract import Connection
-from app.research.oauth_rules import held_scopes, live_scopes
+from app.research.oauth_rules import held_scopes
 
 from .oauth_clients import shown_host
 from .oauth_tokens import grant_matches_user, revoke_grant
@@ -28,7 +28,7 @@ async def connections(session: AsyncSession, user: User, *, now: datetime) -> li
             id=grant.id,
             client_name=client.name,
             client_host=shown_host(client),
-            scopes=list(live_scopes(held_scopes(user, grant.scopes), granted_at=grant.createdAt, now=now)),
+            scopes=list(held_scopes(user, grant.scopes)),
             connected_at=grant.createdAt,
             last_used_at=grant.lastUsedAt,
         )

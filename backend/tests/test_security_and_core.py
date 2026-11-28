@@ -1,5 +1,6 @@
 import base64
 import time
+import uuid
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -22,6 +23,8 @@ from app.core.security import (
 )
 from app.services import auth_nonces, google_auth, two_factor
 
+SESSION = uuid.UUID("5e55105e-0000-4000-8000-000000000001")
+
 
 def test_password_round_trip() -> None:
     hashed = hash_password("correct horse battery")
@@ -43,7 +46,7 @@ def test_weak_jwt_secrets() -> None:
 
 
 def test_token_carries_version() -> None:
-    token = create_access_token("abc", token_version=3)
+    token = create_access_token("abc", token_version=3, session_id=SESSION)
     claims = decode_access_token(token)
     assert claims[TOKEN_VERSION_CLAIM] == 3
     assert claims["sub"] == "abc"
@@ -75,7 +78,7 @@ class FakeUser:
 
 
 def test_token_version_bump_ends_sessions() -> None:
-    claims = decode_access_token(create_access_token("abc", token_version=1))
+    claims = decode_access_token(create_access_token("abc", token_version=1, session_id=SESSION))
     assert token_matches_user(claims, FakeUser(1))
     assert not token_matches_user(claims, FakeUser(2))
     assert not token_matches_user(claims, FakeUser(1, deleted=True))
@@ -83,7 +86,7 @@ def test_token_version_bump_ends_sessions() -> None:
 
 def _token_issued_at(monkeypatch: pytest.MonkeyPatch, moment: datetime) -> dict[str, object]:
     monkeypatch.setattr(security, "datetime", SimpleNamespace(now=lambda _zone: moment))
-    return decode_access_token(create_access_token("abc", token_version=1))
+    return decode_access_token(create_access_token("abc", token_version=1, session_id=SESSION))
 
 
 def test_a_token_issued_after_sessions_end_in_the_same_second_is_live_and_one_before_is_not(
