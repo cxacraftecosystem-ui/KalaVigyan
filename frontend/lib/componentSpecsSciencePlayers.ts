@@ -88,6 +88,7 @@ export type StageEntry = {
   afterSentence: string | null;
   materials: string | null;
   swatch?: string;
+  scene?: SvgNode | KitScene;
 };
 export type StagePlayerSpec = {
   key: string;
@@ -189,7 +190,8 @@ export const stagePlayerShape: Shape<StagePlayerSpec> = object<StagePlayerSpec>(
       differs: nullable(differsShape),
       afterSentence: nullable(unitRef),
       materials: nullable(unitRef),
-      swatch: optional(colourToken)
+      swatch: optional(colourToken),
+      scene: optional(sceneOr(svgNodeShape))
     }),
     2
   ),

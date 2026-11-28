@@ -102,5 +102,5 @@ def test_a_conformer_with_sulphur_and_a_metal_is_composed_with_each_atom_in_its_
 def test_a_molecule_about_a_compound_no_material_names_is_refused_with_its_reason() -> None:
     refused = molecule_3d(BAGRU, About(compound=5318432), CONFORMERS)
     assert refused.missing == (
-        "the compound CID 5318432: no material of Bagru-Print is held as that compound",
+        "the compound CID 5318432: no material of Bagru-Print is held as that compound and no fact of it names it",
     )

@@ -59,13 +59,13 @@ export function StagePlayer({ component, spec, renderUnit }: ComponentViewProps)
         {isKitScene(drawing) ? <KitSceneKey scene={drawing} ids={ids} renderUnit={renderUnit} className="lc-key" /> : null}
         <StageRibbon player={player} />
         <p className="src-line lc-src">{renderUnit(player.source)}</p>
-        <StageList player={player} renderUnit={renderUnit} />
+        <StageList player={player} ids={ids} renderUnit={renderUnit} />
         <div className="lc-fin">
           <h3>{renderUnit(player.finish.heading)}</h3>
           {player.finish.paragraphs.map((unit) => <p key={unit}>{renderUnit(unit)}</p>)}
         </div>
       </div>
-      <KitSceneTextures ids={ids} scenes={[drawing]} />
+      <KitSceneTextures ids={ids} scenes={[drawing, ...player.stages.map((entry) => entry.scene)]} />
     </figure>
   );
 }

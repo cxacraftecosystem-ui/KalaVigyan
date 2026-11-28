@@ -161,8 +161,11 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
   `shared/chemistry/indican-indigo-leucoindigo-3d` (`[class="mols"]`) and
   `shared/chemistry/alizarin-purpurin-3d` (`[class="mols mol-two"]`).
 - **Made by**: `compose_component` with kind `molecule_3d` (`about {compound}` by its CID) composes
-  it from PubChem's 3D record.
-- **Facts**: the material's compound with its CID (`lookup` kind compound finds it).
+  it from PubChem's 3D record, for a compound a material holds or one the page's own facts name by
+  PubChem's name or a synonym; a refusal names what is missing (no record under that CID, no fact
+  naming it).
+- **Facts**: the material's compound with its CID, or a fact of the page naming the compound
+  (`lookup` kind compound gives the CID and PubChem's name).
 - **Place**: `chem`, role `FIGURE`, size `COLUMN`, beside the reaction it explains.
 - **Check**: the molecule rests drawn, its name and formula in words beside it.
 
@@ -202,12 +205,14 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
 - **In Kutch Ajrakh**: its eleven stages each leave the cloth visibly changed, so one cloth is drawn
   after each (`ajrakh-made/1`): `kutch-ajrakh/process/cloth-after-each-stage`
   (`[aria-labelledby="fig2-t"]`).
-- **Made by**: `compose_component` with kind `stage_player` once composed stage players land, every
-  stage a step with its scene from the kit; a `coded_figure` of the stages; or the spec filled by
-  hand in `edit_draft`, its drawing from kit parts only.
+- **Made by**: the spec filled by hand in `edit_draft`, each stage with its own `scene` from the kit
+  (a carved block, a cloth in a bath, washing water), its motion played when the stage is shown, and
+  the `drawing` the finished work the player rests on; a stage without a scene keeps the nearest
+  earlier stage's; or a `coded_figure` of the stages.
 - **Shape**: `{key, head {figure, number, title, titleId?, dek?}, drawing, restName, play, source,
   stages [{name, english, local, after, number, heading, texts, why?, differs?, afterSentence?,
-  materials?, swatch?}], finish {heading, paragraphs}, afterLabel}`.
+  materials?, swatch?, scene?}], finish {heading, paragraphs}, afterLabel}`; the last stage takes no
+  `scene`.
 - **Facts**: every stage with its `STAGE_AFTER` (colours) and `STAGE_WHY`, its local name.
 - **Place**: `made`, role `FIGURE`, size `WIDE`, after the chapter's opening prose.
 - **Check**: every stage is reachable, and the rest state is the finished work.
@@ -226,7 +231,8 @@ and dates with no map, quantities with no figure); it is yours to judge, never a
   latitude?, at?, home?}], points? [{place, yearFrom, yearTo, text}], routes? [{start, end,
   yearFrom, yearTo, text}], undated? [{place?, text}], layers?}`; places by index.
 - **Facts**: each place by Wikidata item (`lookup` kind entity), LGD district or a stated
-  coordinate; each point's unit states its years and names its place.
+  coordinate; each point's unit states its years and names its place. Each layer's dataset record
+  is read with `get_page` and `guide` `map-layers/1`; the server credits it under the map.
 - **Place**: `history` for a dated record, `why` for the craft's places; role `FIGURE`, `WIDE`.
 - **Check**: every place is drawn and named, and the map frames them.
 

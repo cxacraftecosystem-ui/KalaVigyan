@@ -164,7 +164,8 @@ def stage_player_figure(ask: FigureAsk, spec: object) -> ExportFigure | None:
     lines += [ask.unit(spec.finish.heading, "subheading"), *ask.units(spec.finish.paragraphs)]
     lines.append(ask.unit(spec.source, "credit"))
     swatches = [stage.swatch for stage in spec.stages]
-    stills = [scene_of(raw_at(ask, "drawing")), swatch_strip(swatches) if any(swatches) else None]
+    scenes = [scene_of(raw_at(ask, "stages", at, "scene")) for at in range(len(spec.stages))]
+    stills = [scene_of(raw_at(ask, "drawing")), *scenes, swatch_strip(swatches) if any(swatches) else None]
     return ask.figure(stills, lines, ask.title(spec.head.title))
 
 

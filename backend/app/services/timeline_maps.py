@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from functools import cache
-from types import MappingProxyType
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.data.map_layers import LAYERS_DIR, MINERALS_FILE, RELIEF_FILE, RIVERS_FILE
 from app.geo.datasets import region_dataset
 from app.research.component_specs_map_parts import MapParts
 from app.research.component_specs_science_coded import CodedFigureSpec
 from app.research.component_specs_timeline_map import DeclaredTimelineMapSpec
 from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, DatasetRef
 
+from .layer_records import PHYSICAL_FILES, physical_records
 from .map_layer_places import held_map_problems, held_water_problems
 from .map_layer_store import listed_layers
 from .region_records import dataset_records
@@ -25,18 +22,18 @@ from .timeline_map_places import found_places
 __all__ = [
     "NOT_HELD",
     "NO_BOUNDARY",
+    "NO_LAYER_RECORD",
     "NO_RECORD",
-    "PHYSICAL_FILES",
     "MapCredits",
     "SpecPlacement",
     "map_credits",
     "placed_spec",
 ]
 
-PHYSICAL_FILES = MappingProxyType({"relief": RELIEF_FILE, "rivers": RIVERS_FILE, "minerals": MINERALS_FILE})
 NO_BOUNDARY = f"the site holds no {BOUNDARY_DATASET_CODE} record to cite beneath the map"
 NOT_HELD = "the site holds no layer named {name!r}: name relief, rivers, minerals or one of its district layers ({held})"
 NO_RECORD = "the layer {name} rests on {code}, which the site holds no dataset record for"
+NO_LAYER_RECORD = "the layer {name}'s file names no dataset record the map could credit"
 
 
 @dataclass(frozen=True)
@@ -78,28 +75,31 @@ async def map_credits(session: AsyncSession, layers: Sequence[str]) -> MapCredit
     if boundary is None:
         return MapCredits(problems=[NO_BOUNDARY])
     held = {layer.spec.id: layer.spec.dataset_code for layer in listing.layers}
-    wanted: dict[str, str] = {}
+    credited: dict[str, DatasetRef | None] = {}
+    stored: dict[str, str] = {}
     problems: list[str] = []
     for name in layers:
-        codes = physical_codes(name) if name in PHYSICAL_FILES else (held[name],) if name in held else ()
-        if not codes:
+        if name in PHYSICAL_FILES:
+            refs = physical_records(name)
+            problems += [] if refs else [NO_LAYER_RECORD.format(name=name)]
+            credited |= {ref.code: ref for ref in refs if ref.code not in credited}
+        elif name in held:
+            credited.setdefault(held[name], None)
+            stored.setdefault(held[name], name)
+        else:
             problems.append(
                 NOT_HELD.format(name=name, held=", ".join(sorted(held)) or "no district layer is stored")
             )
-        wanted |= dict.fromkeys(codes, name)
-    records = await dataset_records(session, wanted)
+    records = await dataset_records(session, stored)
     problems += [
-        NO_RECORD.format(name=name, code=code) for code, name in wanted.items() if code not in records
+        NO_RECORD.format(name=name, code=code) for code, name in stored.items() if code not in records
     ]
     datasets = [
         region_dataset(boundary),
-        *(region_dataset(records[code]) for code in wanted if code in records),
+        *(
+            ref if ref is not None else region_dataset(records[code])
+            for code, ref in credited.items()
+            if ref is not None or code in records
+        ),
     ]
     return MapCredits(datasets=datasets, problems=problems)
-
-
-@cache
-def physical_codes(name: str) -> tuple[str, ...]:
-    body = json.loads((LAYERS_DIR / PHYSICAL_FILES[name]).read_text(encoding="utf-8"))
-    rows = body.get("datasets") or [body.get("source") or {}]
-    return tuple(dict.fromkeys(str(row["code"]) for row in rows if row.get("code")))

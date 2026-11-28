@@ -44,9 +44,9 @@ Choose by what the reader must see:
 | places and what lies around them: neighbours, a move, a ring, a value per district, a story in steps | `map_layer`, on the site's own base map |
 | a mechanism, a section, a tool or an object | a composed `diagram` (The figure kit), or `drawing` for what no kit part draws |
 | one stated equation | `equation_card` |
-| molecules | `structure_diagram` (flat, with their PubChem records from `lookup`) or `molecule_3d` |
+| molecules | `structure_diagram` (flat, with their PubChem records from `lookup`) or `molecule_3d` (composed by `compose_component` from a compound the page's materials hold, or one its facts name given as `about.compound` by its CID) |
 | a reaction a source states step by step | `reaction_player` |
-| a process stage by stage | `stage_player`, or `dip_player` for successive immersions |
+| a process stage by stage | `stage_player`, each stage with its own kit `scene`, or `dip_player` for successive immersions |
 | what each material is and does | `material_cards`, and `swatch_cards` or `swatch_pair` for its colours; `swatch_cards` may show one swatch, none, and a `why`, and a page whose stages name their colours gets its key from the site |
 | sources that disagree | `source_disagreements` |
 | a what-if experiment | `experiment_lab` holding one `choice_toggle` per experiment |
@@ -262,7 +262,10 @@ every part is a species of one reaction). The parts are `cloth`, `block`, `bath`
 lane's swatch says; a species with neither draws as an empty outline, which the preview fails); each
 takes a depicted material, a named form or a layer list, never a coordinate, size or colour. A panel's `motion` (`dip`, `take`, `dry`, `react`)
 plays on Play in a diagram and rests complete; in a reaction, dip or stage player the kit plays it
-on its own once the player is in view, with one Pause, and never under reduced motion. What each part takes, draws
+on its own once the player is in view, with one Pause, and never under reduced motion. A stage player's
+stage may carry its own `scene`, shown in the stage box whenever that stage is, with its motion; a stage
+without one keeps the scene of the nearest stage before it that has one, and the last stage rests on the
+player's `drawing`, so it carries none. What each part takes, draws
 and serves is in `kalavigyan://contracts/component-specs-general.md` (The figure kit), and
 `/design/kit` shows every part in every material.
 

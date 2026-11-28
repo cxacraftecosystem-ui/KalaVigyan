@@ -17,6 +17,7 @@ from app.research.bar_references import KIT_GUIDES, worked_topic
 from app.research.base import ContractModel
 from app.research.page_counts import BAR_SLUG, Counts, chapter_order, content_counts, total_counts
 from app.services.bar_references import kit_text, worked_chapters, worked_text
+from app.services.layer_guide import MAP_LAYERS_TOPIC, map_layers_text
 from app.services.page_layouts import page_path
 from app.services.page_report import bar_content
 
@@ -84,7 +85,8 @@ TEMPLATE_DESCRIPTION = (
     "One numbered page, of at most {size:,} bytes, of a guide the server serves: a reference, a skill, a design "
     "page or a contract by its file's name (playbook, cookbook, page-checklist, components, drawing, open-work, "
     "kalavigyan-contributor, kalavigyan-design, system), the Kutch Ajrakh bar (bar), one of Ajrakh's chapters "
-    "worked through (ajrakh-chemistry), the kit (kit-stylesheet, kit-script) or the list of every page "
+    "worked through (ajrakh-chemistry), the kit (kit-stylesheet, kit-script), the map layers with their "
+    "dataset records (map-layers) or the list of every page "
     "({contents}). Each page names where it sits and the next."
 )
 
@@ -173,6 +175,7 @@ def _registry() -> Mapping[str, Guide]:
     made = [
         Guide(BAR, f"{GUIDE_PREFIX}{BAR}/{FIRST_PAGE}", bar_text),
         Guide(CONTENTS, GUIDE_PREFIX + CONTENTS_ADDRESS, contents_text),
+        _made(MAP_LAYERS_TOPIC, map_layers_text),
         *(_made(worked_topic(chapter), partial(worked_text, chapter)) for chapter in worked_chapters()),
         *(_made(topic, partial(kit_text, topic)) for topic in KIT_GUIDES),
     ]

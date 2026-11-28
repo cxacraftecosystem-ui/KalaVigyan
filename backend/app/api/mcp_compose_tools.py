@@ -35,8 +35,8 @@ DESCRIPTION = (
     "Composes a craft's own interactive from the facts and structure its page holds, as the server builds it: "
     "reaction_player from its stored reactions in the order of their stages, dip_player from its stages in a "
     "bath with their colour after, drawn as the depicted colour of the dye, mordant or resist named, "
-    "molecule_3d from a compound its materials name with PubChem's 3D conformer (atoms, bonds, turned and "
-    "zoomed by pointer, touch and keyboard), experiment_lab from the alternatives its facts compare, with a "
+    "molecule_3d from a compound its materials hold, or one its facts name given by its PubChem CID, with "
+    "PubChem's 3D conformer (atoms, bonds, turned and zoomed by pointer, touch and keyboard), experiment_lab from the alternatives its facts compare, with a "
     "toggle for each. Every state and label cites only that craft's own facts; nothing is borrowed from "
     "another page. about narrows it to one stage, reaction or material key or a compound's CID. The result is "
     "finished components ({proposal, cites}) in the shape a page draft's add takes; nothing is stored or "
@@ -65,7 +65,9 @@ class ComposeAbout(Arguments):
     stage: str | None = Field(default=None, pattern=ENTRY_KEY, description="A stage key, such as S03")
     reaction: str | None = Field(default=None, pattern=ENTRY_KEY, description="A reaction key, such as R01")
     material: str | None = Field(default=None, pattern=ENTRY_KEY, description="A material key, such as M05")
-    compound: int | None = Field(default=None, ge=1, description="A PubChem CID one of its materials holds")
+    compound: int | None = Field(
+        default=None, ge=1, description="A PubChem CID one of its materials holds or its facts name"
+    )
 
     @model_validator(mode="after")
     def _one_at_most(self) -> Self:

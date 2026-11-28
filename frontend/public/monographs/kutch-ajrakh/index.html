@@ -9423,9 +9423,16 @@ KV.boot('pt', function (document) {
     var rest = +lc.getAttribute('data-rest') || stages.length, cur = rest, n = stages.length, drive = null;
     var restName = hEl ? hEl.innerHTML : '', restScene = big ? big.querySelector('svg') : null;
     if (!n || !big) return;
+    function ownScene(s) {
+      for (var k = s; k > 0 && k < rest; k--) {
+        var own = items[k - 1] ? items[k - 1].querySelector('svg.kv-kit-scene') : null;
+        if (own) return own;
+      }
+      return null;
+    }
     function scene(s) {
-      var from = items[s - 1] ? items[s - 1].querySelector('svg.kv-kit-scene') : null, shown = big.querySelector(':scope > svg');
-      var drawn = s === rest || !from ? restScene : from.cloneNode(true);
+      var from = ownScene(s), shown = big.querySelector(':scope > svg');
+      var drawn = from ? from.cloneNode(true) : restScene;
       if (shown && drawn && shown !== drawn) shown.replaceWith(drawn);
     }
     function show(s, animate) {
