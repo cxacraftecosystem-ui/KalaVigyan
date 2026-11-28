@@ -146,8 +146,8 @@ async def _checked(run: _Run, part: str, index: int, item: object) -> Any:
 
 
 async def _fact(run: _Run, index: int, proposal: FactProposal) -> PartReport:
-    await _checked(run, FACT, index, proposal)
     await run.tools.spend(FACT_PROPOSALS)
+    await _checked(run, FACT, index, proposal)
     reply = await propose_fact(
         run.session, proposal, run.user, run.tools.origin, adapters=run.tools.gates, now=run.now
     )
@@ -158,8 +158,8 @@ async def _fact(run: _Run, index: int, proposal: FactProposal) -> PartReport:
 
 
 async def _structure(run: _Run, index: int, proposal: StructureProposal) -> PartReport:
-    await _checked(run, STRUCTURE, index, proposal)
     await run.tools.spend(STRUCTURE_PROPOSALS)
+    await _checked(run, STRUCTURE, index, proposal)
     context = (run.tools.origin, run.tools.fetcher, run.tools.site)
     result = await propose_structure(run.session, run.user, proposal, context=context, now=run.now)
     made = refused if result.outcome == STRUCTURE_REFUSED else accepted
@@ -167,18 +167,18 @@ async def _structure(run: _Run, index: int, proposal: StructureProposal) -> Part
 
 
 async def _component(run: _Run, index: int, component: PageComponent) -> PartReport:
+    await run.tools.spend(COMPONENT_PROPOSALS)
     checked: CheckedProposal = await _checked(run, COMPONENT, index, component)
     if checked.refused is not None:
         return component_report(index, checked.refused)
-    await run.tools.spend(COMPONENT_PROPOSALS)
     result = await stored_proposal(run.session, run.user, checked, now=run.now)
     run.checks.made.add(checked.draft.label)
     return component_report(index, result)
 
 
 async def _layout(run: _Run, part: PageLayoutPart) -> PartReport:
-    await _checked(run, LAYOUT, 0, part)
     await run.tools.spend(LAYOUT_PROPOSALS)
+    await _checked(run, LAYOUT, 0, part)
     draft = LayoutProposalDraft(
         subject=LayoutSubject(kind=run.subject.kind, slug=run.subject.slug),
         base_version=part.base_version,
@@ -192,8 +192,8 @@ async def _layout(run: _Run, part: PageLayoutPart) -> PartReport:
 
 
 async def _section(run: _Run, index: int, part: SectionPart) -> PartReport:
-    await _checked(run, SECTION, index, part)
     await run.tools.spend(STRUCTURE_PROPOSALS)
+    await _checked(run, SECTION, index, part)
     context = SectionContext(origin=run.tools.origin, judges=run.tools.judges, site=run.tools.site)
     result = await propose_section(run.session, run.user, run.subject, part, context=context, now=run.now)
     made = refused if result.outcome == SECTION_REFUSED else accepted
@@ -201,8 +201,8 @@ async def _section(run: _Run, index: int, part: SectionPart) -> PartReport:
 
 
 async def _withdrawal(run: _Run, index: int, withdrawal: PageWithdrawal) -> PartReport:
-    await _checked(run, WITHDRAWAL, index, withdrawal)
     await run.tools.spend(COMPONENT_PROPOSALS)
+    await _checked(run, WITHDRAWAL, index, withdrawal)
     found = await withdrawable_piece(run.session, run.user, withdrawal.label, run.subject, lock=True)
     if found.waits:
         asked = await ask_withdrawal(

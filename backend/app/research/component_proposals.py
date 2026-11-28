@@ -196,23 +196,20 @@ def word_overlap(first: frozenset[str], second: frozenset[str]) -> float:
 def match_reasons(
     draft: ComponentProposalDraft, candidate: ComponentSummary, shown: Showing | None
 ) -> list[str]:
-    reasons = ["it already has this label"] if candidate.label == draft.label else []
-    if draft.spec is not None and shown is not None:
-        same = same_showing(delivered_showing(draft.kind, draft.spec, draft.units), shown)
-        return [*reasons, *([same] if same is not None and candidate.kind == draft.kind else [])]
-    return [*reasons, *_word_reasons(draft, candidate)]
+    return _reasons(draft, _drawn(draft), candidate, shown)
 
 
 def close_matches(
     draft: ComponentProposalDraft, candidates: Iterable[ComponentSummary], showings: Showings
 ) -> list[ComponentMatch]:
+    drawn = _drawn(draft)
     seen: set[str] = set()
     found = []
     for candidate in candidates:
         if candidate.label in seen or candidate.label in (draft.extends, draft.replaces):
             continue
         seen.add(candidate.label)
-        reasons = match_reasons(draft, candidate, showings.get(candidate.label))
+        reasons = _reasons(draft, drawn, candidate, showings.get(candidate.label))
         if reasons:
             found.append(ComponentMatch(component=candidate, reasons=reasons))
     return found
@@ -237,6 +234,20 @@ def task_problem(draft: ComponentProposalDraft) -> str | None:
     if key.slug not in proposal_crafts(draft):
         return f"the proposal completes {draft.task_key} only when it is keyed to the craft {key.slug}"
     return None
+
+
+def _drawn(draft: ComponentProposalDraft) -> Showing | None:
+    return None if draft.spec is None else delivered_showing(draft.kind, draft.spec, draft.units)
+
+
+def _reasons(
+    draft: ComponentProposalDraft, drawn: Showing | None, candidate: ComponentSummary, shown: Showing | None
+) -> list[str]:
+    reasons = ["it already has this label"] if candidate.label == draft.label else []
+    if drawn is None or shown is None:
+        return [*reasons, *_word_reasons(draft, candidate)]
+    same = same_showing(drawn, shown) if candidate.kind == draft.kind else None
+    return [*reasons, *([] if same is None else [same])]
 
 
 def _word_reasons(draft: ComponentProposalDraft, candidate: ComponentSummary) -> list[str]:
