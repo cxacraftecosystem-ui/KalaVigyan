@@ -6,8 +6,7 @@ open. `list_field_photos` shows each photograph as a thumbnail with its address,
 page's masthead photograph sits in a figure that names its label, where the drawing checks look. A
 reaction step's species is drawn in the material its facts state or by the mark of a colourless
 substance (`clear`, `gas`, `ion`), never as an empty outline: the preview names each one drawn with
-no colour, and its drawing checks refuse the page until none is left.
-Rule 24 counts a field's cited sentences wherever the page draws them, so a page whose sections are
+no colour, and its drawing checks refuse the page until none is left. Rule 24 counts a field's cited sentences wherever the page draws them, so a page whose sections are
 written in full passes; rule 25 names the figure, the unit and the sentence it repeats, and rule 26
 the fact that reads as a gap and the tool that fixes it.
 
@@ -15,13 +14,13 @@ Date: 2026-11-28. Status: accepted (the lead's lane brief `ux-1126/page-media`, 
 Opus agent's Sanganeri Hand Block Printing build over MCP filed what it could not do). It amends
 [decision 0195](0195-a-preview-drawn-seen-and-checked-before-it-is-proposed.md) (the pass opens a
 third route), [decision 0228](0228-players-molecules-and-timelines-that-play-and-a-reaction-s-species-drawn-from-the-kit.md)
-(a species with no recorded colour is no longer drawn as a dashed outline on a published page) and
+(a species with no recorded colour is no longer drawn as a dashed outline on a published page),
 [decision 0233](0233-room-for-a-whole-page-its-reading-tools-and-the-site-s-own-gaps.md) (a portal
 photograph placed by its label is now seen and drawn) and [decision 0248](0248-what-the-fresh-agent-could-not-fix-on-sanganeri.md)
 (the tool named for each failed rule now names the figure, the sentence and the fact). No migration. The contracts are
-`docs/contracts/open-work.md` (Drawn as a reader sees it), `docs/contracts/page-layout.md` (Field
-photographs), `docs/contracts/component-specs-general.md` (The figure kit) and
-`docs/contracts/component-specs-science.md` (the composed reaction player) and `docs/contracts/open-work.md` (the checklist report: rules 23 to 26), with the
+`docs/contracts/open-work.md` (Drawn as a reader sees it; the checklist report, rules 23 to 26),
+`docs/contracts/page-layout.md` (Field photographs), `docs/contracts/component-specs-general.md` (The
+figure kit) and `docs/contracts/component-specs-science.md` (the composed reaction player), with the
 contributor skill, the component guide, the interactives skill and the page checklist (rule 27).
 
 | For | Read |
