@@ -82,7 +82,7 @@ component's spec, place and the sentences around it), the design skill and SYSTE
 | A reaction species drawn without colour (rule 27) | give the part a `material`, or a `mark` of `clear`, `gas` or `ion`, and the lane the same swatch, with `edit_draft` (decision 0252) |
 | A 3D molecule of a compound the facts name but no material holds | `lookup` for its CID, then `compose_component` with kind `molecule_3d` and `about.compound`; its `missing` names the fact to propose (decision 0253) |
 | A climate chart or district climate map of the craft's place | the site's own district values: the map's district panel (`/api/map/districts/{lgd}`) holds monthly normals and 45-year series from CHIRPS, GHCN-CAMS and CHELSA, all in the dataset registry; key the figure to the place as a shared component, as Kachchh's are, so every craft of that district draws it (owner, 2026-11-28) |
-| A map layer's dataset record | `get_page` with guide `map-layers/1`; the server credits it under the map, so it is never sent or proposed as a fact (decision 0253) |
+| A map layer's dataset record | read each layer's source, licence and checksum with `get_page`, guide `map-layers/1`; nothing of it is sent or proposed (decision 0253) |
 | A fact that reads as a gap (rule 26) | `propose_facts` for what its source does say; an Admin may stage its retraction with `stage_reviews` (decision 0252) |
 | A whole page built over many calls | the `curate_page` prompt: `edit_draft` part by part, `preview_page` with the draft and its checklist report until nothing fails, then `propose_page` with the draft |
 | A whole page's additions given at once: facts, structure, components, layout, pictures | `preview_page`, then `propose_page` with the same bundle |
