@@ -10,6 +10,7 @@ from app.api.auth_session import session_token
 from app.core.config import get_settings
 from app.core.db import session_scope
 from app.core.security import verify_password
+from app.core.site_sessions import open_site_session
 from app.models import AccessRoster, AuditLog, User
 from app.services import two_factor
 from tests.google_fake import GOOGLE_CLIENT_ID, FakeGoogle
@@ -57,7 +58,7 @@ async def provider_account(provider: str, *, two_factor_secret: str | None = Non
         session.add(user)
         session.add(AccessRoster(email=email, status="ACTIVE", admitRole="RESEARCHER"))
         await session.flush()
-        token = session_token(user)
+        token = session_token(user, await open_site_session(session, user.id, now=datetime.now(UTC)))
     return email, token
 
 

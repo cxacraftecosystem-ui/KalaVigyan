@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import Any
 
 from sqlalchemy import ColumnElement, Select, and_, false, func, or_, select
@@ -15,6 +15,8 @@ from app.models import (
     KnowledgePiece,
     KnowledgePieceSubject as Subject,
 )
+from app.research.component_showing import Showing, piece_showing
+from app.research.component_specs_general_delivery import DELIVERED_KEY
 from app.research.knowledge_api import (
     COMPONENTS_LIMIT_MAX,
     ComponentSubject,
@@ -34,7 +36,15 @@ from .component_library_applies import (
 from .component_places_held import held_pieces, piece_facts
 from .knowledge_api import known_craft
 
-__all__ = ["APPLIED_CRAFT", "APPLIED_PIECE", "applies_to", "library_components", "registered_pieces"]
+__all__ = [
+    "APPLIED_CRAFT",
+    "APPLIED_PIECE",
+    "applies_to",
+    "library_components",
+    "library_showings",
+    "registered_pieces",
+    "showing_components",
+]
 
 OPEN_CONCEPT = "OPEN"
 LABEL_SEPARATORS = "/-"
@@ -71,6 +81,31 @@ async def library_components(
         query=query,
         components=[_summary(piece, owner, subjects.get(piece.id, [])) for piece, owner in rows],
     )
+
+
+async def library_showings(session: AsyncSession, labels: Collection[str]) -> dict[str, Showing]:
+    if not labels:
+        return {}
+    rows = await session.execute(
+        select(
+            KnowledgePiece.label, KnowledgePiece.kind, KnowledgePiece.payload, KnowledgePiece.claimIds
+        ).where(KnowledgePiece.label.in_(list(labels)), *registered_pieces())
+    )
+    return {str(label): piece_showing(kind, payload, claims) for label, kind, payload, claims in rows.all()}
+
+
+async def showing_components(session: AsyncSession, kind: str, shown: Showing) -> list[ComponentSummary]:
+    alike: list[ColumnElement[bool]] = (
+        [KnowledgePiece.claimIds.overlap(sorted(shown.facts))] if shown.facts else []
+    )
+    if shown.dataset is not None:
+        alike.append(KnowledgePiece.payload[DELIVERED_KEY]["spec"]["dataset"]["code"].astext == shown.dataset)
+    if not alike:
+        return []
+    listing = _listing([*registered_pieces(), KnowledgePiece.kind == kind, or_(*alike)], None)
+    rows = (await session.execute(listing.limit(COMPONENTS_LIMIT_MAX))).all()
+    subjects = await _subjects(session, [piece.id for piece, _ in rows])
+    return [_summary(piece, owner, subjects.get(piece.id, [])) for piece, owner in rows]
 
 
 def _listing(conditions: list[ColumnElement[bool]], query: str | None) -> Select[Any]:

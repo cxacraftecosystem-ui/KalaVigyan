@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
@@ -27,41 +26,31 @@ from app.research.page_proposals import (
     PageBundle,
     PageComponent,
     PageLayoutPart,
+    PagePicture,
     PagePreviewResult,
     PageSubject,
     PartReport,
 )
-from app.research.section_proposals import SENTENCES, SectionPart, first_refusal
+from app.research.section_proposals import SENTENCES, SectionPart
 from app.research.structure_proposals import CONFLICT, StructureProposal
-from app.research.structure_proposals_values import stated_check
 
-from .borrowed_placements import borrowed_problem, linked_labels, placed_labels
-from .component_proposals_spec import checked_delivery
+from .component_proposals import CheckedProposal
 from .monograph_document import has_authored_content
 from .monograph_generated import generated_parts
 from .monograph_generated_assembly import assembled_document
 from .monograph_generated_drawings import Drawings
 from .open_work_subjects import WorkSubject, subject_by_key
-from .page_layout_proposals import STALE, current_version
-from .page_layouts import subject_path
+from .page_layout_checks import published_missing
+from .page_layouts import layout_of, subject_path
+from .page_part_checks import PartRun, part_checked
 from .page_preview_lifecycle import previewed_link, previewed_withdrawals
 from .page_preview_links import preview_path, store_preview
 from .page_preview_parts import PreviewDraft, previewed_component
 from .page_preview_pictures import given_plates
-from .page_proposals_parts import (
-    checked_part,
-    fact_subject_problem,
-    keyed_problem,
-    known_texts,
-    refuse_on,
-    resolved_component,
-    structure_subject_problem,
-)
+from .page_proposals_parts import checked_part, component_report, refuse_on
 from .page_translation_preview import only_translation, preview_translation, previewed_translation
-from .section_gates import field_facts, section_checks
-from .structure_proposals import curated_subject
-from .structure_proposals_dossier import dossier_problem
-from .structure_proposals_page import target_problem
+from .section_proposals import CheckedSection, refusal_message
+from .structure_proposals import stated_refusal
 
 __all__ = ["PreviewedPage", "preview_page", "previewed_document"]
 
@@ -115,7 +104,7 @@ async def preview_page(
 ) -> PagePreviewResult:
     if only_translation(bundle):
         return await preview_translation(session, user, bundle, site=site, now=now)
-    previewed = await previewed_document(session, user, bundle)
+    previewed = await previewed_document(session, user, bundle, now=now)
     subject, document, reports = previewed.subject, previewed.document, list(previewed.reports)
     if bundle.translation is not None:
         document, translated = await previewed_translation(session, subject, document, bundle.translation)
@@ -134,151 +123,128 @@ async def preview_page(
     )
 
 
-async def previewed_document(session: AsyncSession, user: User, bundle: PageBundle) -> PreviewedPage:
+async def previewed_document(
+    session: AsyncSession, user: User, bundle: PageBundle, *, now: datetime
+) -> PreviewedPage:
     subject = await subject_by_key(session, bundle.subject.kind, bundle.subject.slug)
     if has_authored_content(subject.slug):
         raise InvalidInput(AUTHORED.format(slug=subject.slug))
     draft = PreviewDraft(digest=hashlib.sha256(bundle.model_dump_json().encode("utf-8")).hexdigest())
+    run = PartRun(session, user, bundle, subject, draft.facts, now)
     reports = [
-        *await _reports(session, bundle, subject, draft),
-        *await _pictures(session, user, bundle, subject, draft),
-        *await previewed_withdrawals(session, user, subject, bundle, draft),
+        *await _reports(run, draft),
+        *await _pictures(run, draft),
+        *await previewed_withdrawals(run, draft),
     ]
     parts = await generated_parts(session, subject, draft.additions())
     document = None if parts is None else assembled_document(parts, Drawings())
     if document is None:
         raise InvalidInput(THIN)
+    if bundle.layout is None:
+        reports += await _published_layout(run, document)
     return PreviewedPage(subject, document, reports)
 
 
-async def _reports(
-    session: AsyncSession, bundle: PageBundle, subject: WorkSubject, draft: PreviewDraft
-) -> list[PartReport]:
+async def _reports(run: PartRun, draft: PreviewDraft) -> list[PartReport]:
+    bundle, session = run.bundle, run.session
     reports: list[PartReport] = []
     for index, fact in enumerate(bundle.facts):
-        report = await checked_part(session, FACT, index, partial(_fact, bundle, subject, draft, index, fact))
+        report = await checked_part(session, FACT, index, partial(_fact, run, draft, index, fact))
         if report.outcome == REFUSED:
             draft.facts.refuse(index)
         reports.append(report)
     for index, item in enumerate(bundle.structure):
-        work = partial(_structure, session, (bundle, subject), draft, index, item)
+        work = partial(_structure, run, draft, index, item)
         reports.append(await checked_part(session, STRUCTURE, index, work))
     for index, component in enumerate(bundle.components):
-        work = partial(_component, session, (bundle, subject), draft, index, component)
+        work = partial(_component, run, draft, index, component)
         reports.append(await checked_part(session, COMPONENT, index, work))
     if bundle.layout is not None:
-        work = partial(_layout, session, (bundle, subject), draft, bundle.layout)
+        work = partial(_layout, run, draft, bundle.layout)
         reports.append(await checked_part(session, LAYOUT, 0, work))
     for index, section in enumerate(bundle.sections):
-        work = partial(_section, session, subject, draft, index, section)
+        work = partial(_section, run, draft, index, section)
         reports.append(await checked_part(session, SECTION, index, work))
     return reports
 
 
-async def _pictures(
-    session: AsyncSession, user: User, bundle: PageBundle, subject: WorkSubject, draft: PreviewDraft
-) -> list[PartReport]:
+async def _pictures(run: PartRun, draft: PreviewDraft) -> list[PartReport]:
     reports: list[PartReport] = []
-    for index, picture in enumerate(bundle.pictures):
-        if picture.contribution_id is None:
-            reports.append(_report(PICTURE, index, LISTED, LISTED_PICTURE))
-            continue
-        work = partial(_given, session, (user, subject), draft, index, picture.contribution_id)
-        reports.append(await checked_part(session, PICTURE, index, work))
+    for index, picture in enumerate(run.bundle.pictures):
+        work = partial(_picture, run, draft, index, picture)
+        reports.append(await checked_part(run.session, PICTURE, index, work))
     return reports
 
 
-async def _given(
-    session: AsyncSession,
-    owner: tuple[User, WorkSubject],
-    draft: PreviewDraft,
-    index: int,
-    contribution_id: uuid.UUID,
-) -> PartReport:
-    user, subject = owner
-    draft.pictures += await given_plates(session, user, subject, [contribution_id])
+async def _picture(run: PartRun, draft: PreviewDraft, index: int, picture: PagePicture) -> PartReport:
+    await part_checked(run, PICTURE, index, picture)
+    if picture.contribution_id is None:
+        return _report(PICTURE, index, LISTED, LISTED_PICTURE)
+    draft.pictures += await given_plates(run.session, run.user, run.subject, [picture.contribution_id])
     return _report(PICTURE, index, SHOWN, SHOWN_PICTURE)
 
 
-async def _fact(
-    bundle: PageBundle, subject: WorkSubject, draft: PreviewDraft, index: int, fact: FactProposal
-) -> PartReport:
-    refuse_on(fact_subject_problem(bundle, subject, index, fact))
+async def _fact(run: PartRun, draft: PreviewDraft, index: int, fact: FactProposal) -> PartReport:
+    await part_checked(run, FACT, index, fact)
     claim_id = draft.drafted(f"fact:{index}", fact.field, fact.statement, fact.sources)
     draft.facts.keep(index, claim_id, fact)
     return _report(FACT, index, SHOWN, SHOWN_FACT)
 
 
-async def _structure(
-    session: AsyncSession,
-    page: tuple[PageBundle, WorkSubject],
-    draft: PreviewDraft,
-    index: int,
-    item: StructureProposal,
-) -> PartReport:
-    bundle, subject = page
-    refuse_on(structure_subject_problem(bundle, subject, index, item))
-    _, curated = await curated_subject(session, item.subject)
-    refuse_on(dossier_problem(item) or target_problem(curated, item.item))
+async def _structure(run: PartRun, draft: PreviewDraft, index: int, item: StructureProposal) -> PartReport:
+    await part_checked(run, STRUCTURE, index, item)
+    refuse_on(stated_refusal(item))
     if item.item.kind == CONFLICT:
         return _report(STRUCTURE, index, LISTED, LISTED_CONFLICT)
-    stated = stated_check(item.item, [quote.text for source in item.sources for quote in source.quotes])
-    if not stated.passed:
-        raise InvalidInput(stated.reasons[0])
     if item.field is None or item.statement is None:
         return _report(STRUCTURE, index, LISTED, LISTED_NAME)
     draft.drafted(f"structure:{index}", item.field, item.statement, item.sources)
     return _report(STRUCTURE, index, SHOWN, SHOWN_STATEMENT)
 
 
-async def _component(
-    session: AsyncSession,
-    page: tuple[PageBundle, WorkSubject],
-    draft: PreviewDraft,
-    index: int,
-    component: PageComponent,
-) -> PartReport:
-    bundle, subject = page
-    resolved = resolved_component(component, draft.facts)
-    refuse_on(keyed_problem(bundle, subject, index, resolved))
-    refuse_on(await borrowed_problem(session, subject, linked_labels([component])))
+async def _component(run: PartRun, draft: PreviewDraft, index: int, component: PageComponent) -> PartReport:
+    checked: CheckedProposal = await part_checked(run, COMPONENT, index, component)
+    if checked.refused is not None:
+        return component_report(index, checked.refused)
+    resolved = checked.draft
     if resolved.extension == SUBJECT_LINK and resolved.extends is not None:
-        return await previewed_link(session, subject, draft, index, resolved)
-    if not resolved.delivered:
+        report = await previewed_link(run.session, run.subject, draft, index, resolved)
+    elif checked.delivery is None:
         raise InvalidInput(NO_SPEC)
-    delivery = await checked_delivery(session, resolved, known=known_texts(draft.facts, resolved))
-    draft.components.append(previewed_component(resolved, delivery))
-    return _report(COMPONENT, index, SHOWN, SHOWN_COMPONENT)
+    else:
+        draft.components.append(previewed_component(resolved, checked.delivery))
+        report = _report(COMPONENT, index, SHOWN, SHOWN_COMPONENT)
+    run.made.add(resolved.label)
+    return report
 
 
-async def _layout(
-    session: AsyncSession, page: tuple[PageBundle, WorkSubject], draft: PreviewDraft, part: PageLayoutPart
-) -> PartReport:
-    bundle, subject = page
-    current = await current_version(session, subject)
-    if part.base_version != current:
-        raise InvalidInput(STALE.format(slug=subject.slug, current=current, base=part.base_version))
-    refuse_on(await borrowed_problem(session, subject, placed_labels(bundle.components, part)))
+async def _layout(run: PartRun, draft: PreviewDraft, part: PageLayoutPart) -> PartReport:
+    await part_checked(run, LAYOUT, 0, part)
+    subject = run.subject
     draft.layout = PageLayout(
-        subject_kind=subject.kind, subject_slug=subject.slug, version=current + 1, entries=list(part.entries)
+        subject_kind=subject.kind,
+        subject_slug=subject.slug,
+        version=part.base_version + 1,
+        entries=list(part.entries),
     )
     return _report(LAYOUT, 0, SHOWN, SHOWN_LAYOUT)
 
 
-async def _section(
-    session: AsyncSession, subject: WorkSubject, draft: PreviewDraft, index: int, part: SectionPart
-) -> PartReport:
-    checks = section_checks(part, await field_facts(session, subject, part))
-    refused = first_refusal(checks)
-    if refused is not None:
-        raise InvalidInput(
-            f"The {refused.check} check refuses the whole section: {'; '.join(refused.reasons)}."
-        )
+async def _section(run: PartRun, draft: PreviewDraft, index: int, part: SectionPart) -> PartReport:
+    checked: CheckedSection = await part_checked(run, SECTION, index, part)
+    refuse_on(refusal_message(checked.checks))
     draft.written[part.field] = [
         sentence.model_dump(mode="json", by_alias=True) for sentence in part.sentences
     ]
-    said = next(check for check in checks if check.check == SENTENCES).reasons[0]
+    said = next(check for check in checked.checks if check.check == SENTENCES).reasons[0]
     return _report(SECTION, index, SHOWN, SHOWN_SECTION.format(field=part.field.lower(), said=said))
+
+
+async def _published_layout(run: PartRun, document: MonographDocument) -> list[PartReport]:
+    drawn = {component.label for component in document.content.components}
+    published = await layout_of(run.session, run.subject)
+    notice = await published_missing(run.session, published, {*drawn, *run.made})
+    return [] if notice is None else [_report(LAYOUT, 0, LISTED, notice)]
 
 
 def _report(part: str, index: int, outcome: str, message: str) -> PartReport:

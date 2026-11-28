@@ -44,8 +44,8 @@ VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
 CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
 
 
-def grantor(user: User, *, signed_in_at: datetime | None = NOW) -> Grantor:
-    return Grantor(user=user, signed_in_at=signed_in_at, now=NOW)
+def grantor(user: User) -> Grantor:
+    return Grantor(user=user, now=NOW)
 
 
 def sha256(raw: str) -> str:

@@ -13,8 +13,9 @@ import {
   upstreamUrl
 } from "@/lib/server/apiProxy";
 import { REVALIDATE_ROUTE } from "@/lib/server/revalidation";
+import { SESSION_ADOPT_PATH, SESSION_END_PATH, SESSION_RENEW_PATH } from "@/lib/sessionCookie";
 
-const WEB_ROUTES = new Set(["/api/session/adopt", "/api/session/end", "/api/version", REVALIDATE_ROUTE]);
+const WEB_ROUTES = new Set([SESSION_ADOPT_PATH, SESSION_END_PATH, SESSION_RENEW_PATH, "/api/version", REVALIDATE_ROUTE]);
 
 function answeredByTheWeb(path: string, method: string): boolean {
   return WEB_ROUTES.has(path) || isAccountWrite(path, method);

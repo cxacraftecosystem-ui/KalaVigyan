@@ -10,12 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ComponentProposal, Craft, User
 from app.research.component_proposals import SUBJECT_LINK, ComponentProposalDraft, ProposedSubject
+from app.research.component_specs_general_delivery import DeliveredUnit
 from app.research.crafts import QUESTION_MAX_CHARS, CraftRef
 from app.research.review_queue import COMPONENTS, KIND_ORIGINS, ComponentItem, QueueDecision
 from app.research.review_queue_components import ClosestComponent, ComponentReview, closest_components
 
 from . import audit
-from .component_library import library_components
+from .component_library import library_components, library_showings
 from .component_proposals_register import register_component, registers
 from .knowledge_view import craft_ref
 from .review_queue_delivery import delivered_review
@@ -132,7 +133,7 @@ async def _closest(session: AsyncSession, draft: ComponentProposalDraft) -> list
     found = list((await library_components(session, query=words)).components)
     if draft.craft_slug is not None:
         found += (await library_components(session, slug=draft.craft_slug, kind=draft.kind)).components
-    return closest_components(draft, found)
+    return closest_components(draft, found, await library_showings(session, {c.label for c in found}))
 
 
 def _draft(row: ComponentProposal, craft_slug: str | None) -> ComponentProposalDraft:
@@ -150,4 +151,6 @@ def _draft(row: ComponentProposal, craft_slug: str | None) -> ComponentProposalD
         extension=row.extension,
         replaces=row.replacesLabel,
         task_key=row.taskKey,
+        spec=row.spec,
+        units={ref: DeliveredUnit.model_validate(unit) for ref, unit in (row.units or {}).items()},
     )

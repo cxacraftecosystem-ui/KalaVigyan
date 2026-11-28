@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping
 from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -11,6 +11,7 @@ from app.models.knowledge_pieces import DESCRIPTION_MAX_CHARS, LABEL_PATTERN, TI
 from app.models.open_work import PROPOSAL_EXTENSIONS, PROPOSAL_STATUSES
 
 from .base import ContractModel
+from .component_showing import Showing, delivered_showing, same_showing
 from .component_specs import not_contributable
 from .component_specs_general_delivery import UNITS_MAX, DeliveredUnit, UnitKey
 from .crafts import SLUG_MAX_CHARS
@@ -32,6 +33,7 @@ __all__ = [
     "ComponentProposalDraft",
     "ComponentProposalResult",
     "ProposedSubject",
+    "Showings",
     "close_matches",
     "content_words",
     "match_reasons",
@@ -52,7 +54,6 @@ DESCRIPTION_MIN_CHARS = 40
 SUBJECTS_MAX = 20
 CONSIDERED_MAX = 50
 SUBJECT_KEY_MAX_CHARS = 64
-SHARED_KEY_KINDS = frozenset({"CONCEPT", "COMPOUND", "PLACE"})
 WORD_PATTERN = re.compile(r"[a-z0-9]+")
 STOP_WORDS = frozenset(
     {
@@ -91,6 +92,7 @@ WAYS_ON = (
 )
 
 ProposalStatus = Literal[*PROPOSAL_STATUSES]
+Showings = Mapping[str, Showing]
 Extension = Literal[*EXTENSIONS]
 Outcome = Literal[*OUTCOMES]
 
@@ -191,35 +193,23 @@ def word_overlap(first: frozenset[str], second: frozenset[str]) -> float:
     return len(first & second) / len(union) if union else 0.0
 
 
-def match_reasons(draft: ComponentProposalDraft, candidate: ComponentSummary) -> list[str]:
-    reasons = []
-    if candidate.label == draft.label:
-        reasons.append("it already has this label")
-    same_kind = candidate.kind == draft.kind
-    shared = _shared_keys(draft.subjects, candidate)
-    if same_kind and shared:
-        reasons.append(f"the same kind, keyed to the same {', '.join(shared)}")
-    title = word_overlap(content_words(draft.title), content_words(candidate.title))
-    if same_kind and title >= CLOSE_TITLE_OVERLAP:
-        reasons.append(f"the same kind with a title sharing {title:.0%} of its words")
-    text = word_overlap(
-        _words(draft.title, draft.description), _words(candidate.title, candidate.description)
-    )
-    if text >= CLOSE_TEXT_OVERLAP:
-        reasons.append(f"a title and description sharing {text:.0%} of their words")
-    return reasons
+def match_reasons(
+    draft: ComponentProposalDraft, candidate: ComponentSummary, shown: Showing | None
+) -> list[str]:
+    return _reasons(draft, _drawn(draft), candidate, shown)
 
 
 def close_matches(
-    draft: ComponentProposalDraft, candidates: Iterable[ComponentSummary]
+    draft: ComponentProposalDraft, candidates: Iterable[ComponentSummary], showings: Showings
 ) -> list[ComponentMatch]:
+    drawn = _drawn(draft)
     seen: set[str] = set()
     found = []
     for candidate in candidates:
         if candidate.label in seen or candidate.label in (draft.extends, draft.replaces):
             continue
         seen.add(candidate.label)
-        reasons = match_reasons(draft, candidate)
+        reasons = _reasons(draft, drawn, candidate, showings.get(candidate.label))
         if reasons:
             found.append(ComponentMatch(component=candidate, reasons=reasons))
     return found
@@ -246,16 +236,32 @@ def task_problem(draft: ComponentProposalDraft) -> str | None:
     return None
 
 
+def _drawn(draft: ComponentProposalDraft) -> Showing | None:
+    return None if draft.spec is None else delivered_showing(draft.kind, draft.spec, draft.units)
+
+
+def _reasons(
+    draft: ComponentProposalDraft, drawn: Showing | None, candidate: ComponentSummary, shown: Showing | None
+) -> list[str]:
+    reasons = ["it already has this label"] if candidate.label == draft.label else []
+    if drawn is None or shown is None:
+        return [*reasons, *_word_reasons(draft, candidate)]
+    same = same_showing(drawn, shown) if candidate.kind == draft.kind else None
+    return [*reasons, *([] if same is None else [same])]
+
+
+def _word_reasons(draft: ComponentProposalDraft, candidate: ComponentSummary) -> list[str]:
+    reasons = []
+    title = word_overlap(content_words(draft.title), content_words(candidate.title))
+    if candidate.kind == draft.kind and title >= CLOSE_TITLE_OVERLAP:
+        reasons.append(f"the same kind with a title sharing {title:.0%} of its words")
+    text = word_overlap(
+        _words(draft.title, draft.description), _words(candidate.title, candidate.description)
+    )
+    if text >= CLOSE_TEXT_OVERLAP:
+        reasons.append(f"a title and description sharing {text:.0%} of their words")
+    return reasons
+
+
 def _words(title: str, description: str) -> frozenset[str]:
     return content_words(f"{title} {description}")
-
-
-def _shared_keys(subjects: Sequence[ProposedSubject], candidate: ComponentSummary) -> list[str]:
-    proposed = {
-        (subject.kind, subject.key.casefold()) for subject in subjects if subject.kind in SHARED_KEY_KINDS
-    }
-    return sorted(
-        f"{subject.kind.lower()} {subject.name}"
-        for subject in candidate.subjects
-        if (subject.kind, subject.key.casefold()) in proposed
-    )

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
@@ -12,11 +13,11 @@ from app.api.auth_session import (
     THROTTLED_DETAIL,
     TWO_FACTOR_REQUIRED_HEADER,
     code_grant,
+    kept_session_token,
     reload_user,
-    session_token,
 )
 from app.core.db import get_session
-from app.core.deps import get_current_user, get_current_user_any_step
+from app.core.deps import current_session_id, get_current_user, get_current_user_any_step
 from app.core.rate_limit import refund_account, sign_in_attempt_by_account
 from app.core.security import hash_password, verify_password
 from app.core.throttle_refusal import refuse_when_throttled, too_many_requests
@@ -150,6 +151,7 @@ async def change_password(
     payload: ChangePasswordRequest,
     response: Response,
     user: User = Depends(get_current_user_any_step),
+    session_id: uuid.UUID | None = Depends(current_session_id),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, bool]:
     refuse_when_throttled(await sign_in_attempt_by_account(str(user.id)), THROTTLED_DETAIL)
@@ -160,6 +162,6 @@ async def change_password(
         await _confirm_current_password(user, payload)
     await refund_account(str(user.id))
     user = await _store_new_password(session, user, payload.newPassword, proved_by=proved_by)
-    response.headers[SESSION_TOKEN_HEADER] = session_token(user)
+    response.headers[SESSION_TOKEN_HEADER] = await kept_session_token(session, user, session_id)
     await mailer.send(mailer.password_changed_mail(user.email))
     return {"ok": True}

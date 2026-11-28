@@ -1384,6 +1384,14 @@ Last updated: 2026-11-27.
     their files' records. The skills record the build's lessons: facts filed under the field a
     reader looks in, section sentences that add nothing, pictures from an account's own client
     reviewed by another, and climate figures from the site's own district values.
+  - **Proposal parity** (PR #250, decision 0254), after Sanganeri's climate round passed its preview
+    and lost eight of nine parts at confirm: six charts named a page-only Kachchh label, a map was
+    called a copy because it shared a place, and the layout was written over the refused labels.
+    The preview now runs the confirm's part checks, a layout never names a missing component, the
+    copy check compares what two components show, and the cookbook marks its page-only labels.
+  - **Long sessions** (PR #252, decision 0255, migration `0126_long_sessions`): once signed in, a
+    person stays signed in for a year of use, on the site, in admin view and over MCP; sign-out is
+    ended on the server, and every revocation still takes effect at once.
   - **Submitted to the Connectors Directory** (2026-11-27): 26 tools, 13 of them read-only, sign-in
     asked only when a tool needs it, with a Client ID Metadata Document. The request to approve the
     file host went to mcp-review@anthropic.com from the newsletter sender.

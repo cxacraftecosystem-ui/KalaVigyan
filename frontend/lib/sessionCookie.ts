@@ -10,3 +10,4 @@ export const SESSION_ROTATED_HEADER = "x-session-rotated";
 
 export const SESSION_ADOPT_PATH = "/api/session/adopt";
 export const SESSION_END_PATH = "/api/session/end";
+export const SESSION_RENEW_PATH = "/api/session/renew";

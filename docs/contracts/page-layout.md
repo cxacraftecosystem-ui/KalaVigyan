@@ -58,7 +58,13 @@ document's default order. An entry moves its unit or component to its `chapter`.
 within a component (`within`) travel with it; the layout orders top-level entries only. A layout
 entry naming something the document does not hold is ignored, so a removed fact never breaks a
 layout, and a new unit or component lands at the end of its chapter until a layout places it
-(decision 0101 item 14).
+(decision 0101 item 14). A published layout naming a component that does not exist draws the page
+without it, never broken; the web client reads the stored layout only to size, crop and set what
+the document holds (`monographPlacement.ts`). A proposed layout may not name one: `propose_page` and
+`preview_page` refuse a layout placing a label that no registered component, no live proposal, no
+component the same bundle makes and nothing the page draws holds, and `preview_page` names those
+of the published layout when its bundle carries none (`open-work.md`, Previews before submitting;
+decision 0254).
 
 ## Storage, writes and the backfill
 

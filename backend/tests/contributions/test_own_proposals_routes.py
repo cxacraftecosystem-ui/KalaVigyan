@@ -97,9 +97,7 @@ def test_a_close_match_comes_back_with_its_matches_and_the_two_ways_on(
         outcome="REFUSED",
         label=PROPOSAL["label"],
         message="1 component in the library already shows this; nothing was stored.",
-        matches=[
-            ComponentMatch(component=HELD, reasons=["the same kind, keyed to the same craft Kutch Ajrakh"])
-        ],
+        matches=[ComponentMatch(component=HELD, reasons=["it rests on the same facts, 100% of them shared"])],
         ways_on=list(WAYS_ON),
     )
     seen: list[Any] = []

@@ -341,7 +341,7 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
   left.
 - See it drawn before you propose it: put it in a draft or a bundle with the facts it rests on and
   call `preview_page`. Send it with `propose_page`, alone in a bundle when it rests only on held
-  facts. A page's edition `/crafts/<slug>/v<N>` and the rest of a page drawn at that version stay readable after a rebuild, until something is removed, edited, withdrawn or retracted from the page, which drops its earlier editions (the one current then once the web has refreshed the page); a page drawn at a dropped version reads the rest of the current one, and Monograph parity names a page whose rest could not be read. A close match in the library refuses it with the matches and two ways on. An Admin's
+  facts. A page's edition `/crafts/<slug>/v<N>` and the rest of a page drawn at that version stay readable after a rebuild, until something is removed, edited, withdrawn or retracted from the page, which drops its earlier editions (the one current then once the web has refreshed the page); a page drawn at a dropped version reads the rest of the current one, and Monograph parity names a page whose rest could not be read. A component of its kind that the library already holds, drawing the same dataset's cells or resting on most of the same facts, refuses it with the matches and two ways on; a shared place or similar words never do. `considered_labels` and `extends` take only labels `list_components` returns, never one the cookbook marks page only. An Admin's
   approval registers it so every page it applies to draws it; a Professor's or Admin's own is
   registered at once.
 - **Maps.** Never draw geography: the site draws its own base under every map. For the places
@@ -459,7 +459,13 @@ job in order.
   whole, and `draft_id` reads one, a proposed one with its outcome too.
 - `preview_page` with the `draft_id` draws the draft's page behind a private link with its checklist
   report: fix every failure, judge the other rules on the link, on a phone and a desktop in both
-  themes, and preview again.
+  themes, and preview again. It runs every check `propose_page` runs on each part, with the same
+  reason and the tool that fixes it, so a part it shows passes them and a part it refuses would be
+  refused; only the checks that need a model or a live read of the sources wait for `propose_page`
+  (a fact's gates, a structure item's QUOTES and SOURCE, a section's FAITHFUL judge). A layout
+  placing a label nothing makes is refused, the components the same bundle failed to make among
+  them, and a published layout naming one is reported as a listed layout part: build each in the
+  draft or take it out of the layout.
 - `propose_page` with the `draft_id` proposes it once, each part through its own checks, and the
   draft keeps the outcome; follow each part with `get_proposal`.
 
