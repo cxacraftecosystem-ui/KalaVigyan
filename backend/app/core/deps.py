@@ -27,7 +27,8 @@ from app.core.roles import (
     role_rank,
     role_value,
 )
-from app.core.security import TOKEN_VERSION_CLAIM, decode_access_token
+from app.core.security import TOKEN_VERSION_CLAIM, decode_access_token, session_id_of
+from app.core.site_sessions import site_session_live
 from app.models import User
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -134,6 +135,8 @@ async def user_from_token(session: AsyncSession, token: str) -> User:
     user = await session.get(User, user_id)
     if user is None or not token_matches_user(claims, user):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=SESSION_ENDED_DETAIL)
+    if not await site_session_live(session, user.id, session_id_of(claims)):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=SESSION_ENDED_DETAIL)
     return user
 
 
@@ -141,6 +144,22 @@ def _bearer_token(credentials: HTTPAuthorizationCredentials | None) -> str | Non
     if credentials is None or not credentials.credentials:
         return None
     return credentials.credentials
+
+
+def bearer_claims(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> dict[str, Any] | None:
+    token = _bearer_token(credentials)
+    if token is None:
+        return None
+    try:
+        return decode_access_token(token)
+    except ValueError:
+        return None
+
+
+def current_session_id(claims: dict[str, Any] | None = Depends(bearer_claims)) -> uuid.UUID | None:
+    return None if claims is None else session_id_of(claims)
 
 
 async def _signed_in_user(session: AsyncSession, token: str) -> User:
@@ -243,8 +262,10 @@ async def require_master_admin(user: User = Depends(get_current_user)) -> User:
 __all__ = [
     "ROLE_RANK",
     "Capability",
+    "bearer_claims",
     "can",
     "capabilities_of",
+    "current_session_id",
     "get_current_user",
     "get_current_user_any_step",
     "get_optional_user",

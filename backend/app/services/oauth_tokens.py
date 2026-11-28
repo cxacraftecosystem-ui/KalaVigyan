@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.deps import token_matches_user
 from app.core.security import TOKEN_VERSION_CLAIM
 from app.models import OAuthClient, OAuthCode, OAuthGrant, OAuthToken, User
@@ -24,13 +25,10 @@ from app.research.oauth_rules import (
     INVALID_SCOPE,
     INVALID_TARGET,
     REFRESH_TOKEN_PREFIX,
-    REFRESH_TOKEN_SECONDS,
     SECRET_MAX_CHARS,
     UNSUPPORTED_GRANT_TYPE,
     OAuthError,
-    access_token_seconds,
     joined_scopes,
-    live_scopes,
     pkce_matches,
     requested_scopes,
 )
@@ -44,6 +42,7 @@ __all__ = [
     "grant_matches_user",
     "grant_tokens",
     "new_secret",
+    "refresh_token_lifetime",
     "revoke_grant",
     "revoke_token",
     "stored_secret",
@@ -54,6 +53,10 @@ REFRESH = "REFRESH"
 UNKNOWN_CODE = "The code is unknown, expired or spent; start the sign-in again."
 UNKNOWN_REFRESH = "The refresh token is unknown, expired or revoked; sign in again."
 REUSED = "This was already used once, so the connection it made is revoked; sign in again."
+
+
+def refresh_token_lifetime() -> timedelta:
+    return timedelta(seconds=get_settings().mcp_refresh_token_seconds)
 
 
 def new_secret(prefix: str) -> str:
@@ -164,7 +167,7 @@ async def _refresh(
     scopes = _narrowed(fields.get("scope"), tuple(grant.scopes))
     if not await _claim(session, OAuthToken, token.id, now):
         raise OAuthError(INVALID_GRANT, UNKNOWN_REFRESH)
-    grant.expiresAt = now + timedelta(seconds=REFRESH_TOKEN_SECONDS)
+    grant.expiresAt = now + refresh_token_lifetime()
     return await _issue(session, grant, scopes, now=now)
 
 
@@ -222,7 +225,7 @@ async def _new_grant(session: AsyncSession, code: OAuthCode, user: User, *, now:
         resource=code.resource,
         userTokenVersion=code.userTokenVersion,
         createdAt=now,
-        expiresAt=now + timedelta(seconds=REFRESH_TOKEN_SECONDS),
+        expiresAt=now + refresh_token_lifetime(),
     )
     session.add(grant)
     await session.flush()
@@ -234,8 +237,7 @@ async def _issue(
 ) -> TokenReply:
     access = new_secret(ACCESS_TOKEN_PREFIX)
     refresh = new_secret(REFRESH_TOKEN_PREFIX)
-    scopes = live_scopes(scopes, granted_at=grant.createdAt, now=now)
-    seconds = access_token_seconds(scopes)
+    seconds = get_settings().mcp_access_token_seconds
     session.add_all(
         [
             _token_row(grant, ACCESS, access, scopes, now + timedelta(seconds=seconds)),

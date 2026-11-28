@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -7,12 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth_session import (
     SESSION_TOKEN_HEADER,
     assert_access_admits,
+    kept_session_token,
     open_session,
     reload_user,
-    session_token,
 )
 from app.core.db import get_session
-from app.core.deps import get_current_user_any_step, is_break_glass_master
+from app.core.deps import current_session_id, get_current_user_any_step, is_break_glass_master
 from app.core.rate_limit import code_attempt, refund_code
 from app.core.throttle_refusal import refuse_when_throttled, too_many_requests
 from app.models import User
@@ -75,6 +76,7 @@ async def two_factor_enable(
     payload: TwoFactorCodeRequest,
     response: Response,
     user: User = Depends(get_current_user_any_step),
+    session_id: uuid.UUID | None = Depends(current_session_id),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     await _spend_budget(str(user.id))
@@ -87,8 +89,7 @@ async def two_factor_enable(
     await audit.record(
         session, action="auth.two_factor_enabled", actor=fresh, target_type="User", target_id=fresh.id
     )
-    await session.commit()
-    token = session_token(fresh)
+    token = await kept_session_token(session, fresh, session_id)
     response.headers[SESSION_TOKEN_HEADER] = token
     return {"recovery_codes": codes, "accessToken": token}
 
@@ -98,6 +99,7 @@ async def two_factor_disable(
     payload: TwoFactorCodeRequest,
     response: Response,
     user: User = Depends(get_current_user_any_step),
+    session_id: uuid.UUID | None = Depends(current_session_id),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     await _spend_budget(str(user.id))
@@ -110,8 +112,7 @@ async def two_factor_disable(
     await audit.record(
         session, action="auth.two_factor_disabled", actor=fresh, target_type="User", target_id=fresh.id
     )
-    await session.commit()
-    token = session_token(fresh)
+    token = await kept_session_token(session, fresh, session_id)
     response.headers[SESSION_TOKEN_HEADER] = token
     return {"ok": True, "accessToken": token}
 

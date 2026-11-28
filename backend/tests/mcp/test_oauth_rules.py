@@ -1,18 +1,21 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
 
 from app.core.errors import InvalidInput
 from app.research.oauth_authorization import checked_authorization, granted_scopes
-from app.research.oauth_contract import AuthorizationRequest, ClientRegistration, registered_client
+from app.research.oauth_contract import (
+    SCOPE_TEXT,
+    AuthorizationRequest,
+    ClientRegistration,
+    registered_client,
+)
 from app.research.oauth_rules import (
     Grantor,
     OAuthError,
-    access_token_seconds,
     challenge_is_valid,
     held_scopes,
-    live_scopes,
     pkce_matches,
     redirect_uri_matches,
     redirect_uri_problem,
@@ -32,9 +35,8 @@ def account(role: str, *, two_step: bool = True) -> SimpleNamespace:
     return SimpleNamespace(role=role, twoFactorEnabled=two_step)
 
 
-def grantor(role: str, *, two_step: bool = True, minutes_ago: int | None = 5) -> Grantor:
-    signed_in = None if minutes_ago is None else NOW - timedelta(minutes=minutes_ago)
-    return Grantor(user=account(role, two_step=two_step), signed_in_at=signed_in, now=NOW)
+def grantor(role: str, *, two_step: bool = True) -> Grantor:
+    return Grantor(user=account(role, two_step=two_step), now=NOW)
 
 
 def authorization(**changes: str | None) -> AuthorizationRequest:
@@ -165,32 +167,27 @@ def test_review_is_for_admins_with_two_step_on_and_contribute_needs_propose_know
 @pytest.mark.parametrize(
     ("who", "may"),
     [
-        (grantor("ADMIN", minutes_ago=5), True),
-        (grantor("MASTER_ADMIN", minutes_ago=15), True),
-        (grantor("ADMIN", minutes_ago=16), False),
-        (grantor("ADMIN", minutes_ago=None), False),
+        (grantor("ADMIN"), True),
+        (grantor("MASTER_ADMIN"), True),
         (grantor("ADMIN", two_step=False), False),
+        (grantor("MASTER_ADMIN", two_step=False), False),
         (grantor("PROFESSOR"), False),
         (grantor("RESEARCHER"), False),
     ],
 )
-def test_review_is_granted_only_by_an_admin_with_two_step_who_signed_in_within_fifteen_minutes(
+def test_review_is_granted_by_an_admin_with_two_step_however_long_ago_they_signed_in(
     who: Grantor, may: bool
 ) -> None:
     assert who.may_grant("review") is may
     assert who.may_grant("read") is True
 
 
-def test_a_review_token_lives_fifteen_minutes_and_review_ends_eight_hours_after_the_grant() -> None:
-    assert access_token_seconds(("read", "review")) == 900
-    assert access_token_seconds(("read", "contribute")) == 3600
-    granted = NOW - timedelta(hours=8)
-    assert live_scopes(("read", "contribute", "review"), granted_at=granted, now=NOW) == (
-        "read",
-        "contribute",
-    )
-    soon = NOW - timedelta(hours=7, minutes=59)
-    assert live_scopes(("review", "read"), granted_at=soon, now=NOW) == ("read", "review")
+def test_the_review_words_name_no_time_limit_and_keep_the_person_s_confirmation() -> None:
+    review = SCOPE_TEXT["review"]
+    assert "confirms" in review.description
+    assert "for as long as the connection lasts" in review.description
+    assert "minutes" not in review.needs and "hours" not in review.description
+    assert "two-step verification" in review.needs
 
 
 def test_an_authorization_request_needs_code_s256_and_this_resource() -> None:
