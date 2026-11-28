@@ -19,13 +19,13 @@ and released together, each batch verified on production.
 
 ## Live now
 
-- **KalaVigyan `main` with the UX round** (2026-11-26 to 2026-11-27, decisions 0225 to 0253,
+- **KalaVigyan `main` with the UX round** (2026-11-26 to 2026-11-27, decisions 0225 to 0254,
   PROGRESS.md, UX round): the page release `7f841c1c` (0227 to 0234, migration head
   `0121_coded_figures`), the gap release of PR #234 (0235 to 0246, migration head
   `0124_leftovers`), the listing release of PR #237 (`5d41a13e`, 0247 and 0248) and its fix
   (PR #240, 0249), then the section release (PR #243 and #242, 0250, migration head
   `0125_section_proposals`) and its leftovers (PR #245, 0251), then the page media and kinds (PRs #247 and #248, 0252
-  and 0253). A contributor's AI builds a
+  and 0253) and proposal parity (PR #250, 0254). A contributor's AI builds a
   page from one line and the owner's rule holds: the AI follows Ajrakh's thinking, never copies it,
   and may write its own code over cited data. The owner submitted KalaVigyan to Anthropic's
   Connectors Directory on 2026-11-27; file uploads stay off until Anthropic approves the API host
@@ -56,12 +56,19 @@ and released together, each batch verified on production.
     name the figure, unit or fact to fix. A stage player draws each stage's own scene; the molecule
     composer finds a compound the page's own facts name by its PubChem CID; every map layer carries
     its dataset record (`get_page` guide `map-layers/1`).
+  - **Proposal parity (decision 0254).** `preview_page` runs every part check `propose_page` makes,
+    from one table (`page_part_checks.PART_CHECKS`), except a fact's later gates, structure's QUOTES
+    and SOURCE gates and the section judge. A layout naming a label nothing holds is refused with the
+    labels named, and a published layout with a missing label draws without it. Two components are
+    copies only when they draw 80% of the same cells of one dataset or share 80% of their facts, not
+    because they share a place. The cookbook marks its 40 page-only labels.
   - **Sanganeri built over MCP in Claude Code** (owner, 2026-11-28: one craft at a time). Rounds 1
     and 2 are published: a 13-stage player, an indigo dip player, three reaction players, three
     coded figures (one-bath print, dabu cracks, printing table), a water-and-courts timeline map,
     three 3D molecules, and sections for POLICY, PHYSICS, CLIMATE, BOTANY, HEALTH, SOCIETY and
-    CHEMISTRY. Round 3 builds Jaipur's climate figures from the site's own district values. The
-    field photographs follow once this release is live. Sixteen pictures the owner's account gave
+    CHEMISTRY. Round 3 published seven Jaipur climate figures from the site's own district values
+    (monthly normals and 45-year series) and GEOLOGY. Round 4 places the field photographs, colours
+    the reaction species and gives each stage its scene. Sixteen pictures the owner's account gave
     wait for a second reviewer.
 - **KalaVigyan `main` at `f0f965b7`** (2026-11-25, decisions 0211 to 0224, PROGRESS.md, Quality
   round), verified on production: `/health` and `/api/version` on it, Vercel READY, CloudWatch
