@@ -30,8 +30,8 @@ const FILLED = [species("reactant", "u5009", { material: "--dye-madder" }), spec
 
 test("a colourless species takes the lane's marks, one way to be drawn, and no other word", () => {
   expect(ART_KIT.parts.species.choices.mark).toEqual(["clear", "gas", "ion"]);
-  for (const mark of ART_KIT.parts.species.choices.mark) expect(scene([species("reagent", "u1", { mark }), species("product", "u2")]).parts[0]).toMatchObject({ mark });
-  expect(() => scene([species("reagent", "u1", { mark: "liquid" }), species("product", "u2")])).toThrow(ShapeError);
+  for (const mark of ART_KIT.parts.species.choices.mark) expect(scene([species("reagent", "u0601", { mark }), species("product", "u0602")]).parts[0]).toMatchObject({ mark });
+  expect(() => scene([species("reagent", "u0601", { mark: "liquid" }), species("product", "u0602")])).toThrow(ShapeError);
 });
 
 test("a species is drawn in its material, a colourless one by its mark, and only one with neither as a dashed outline that says so", () => {
@@ -43,7 +43,7 @@ test("a species is drawn in its material, a colourless one by its mark, and only
   expect(empty.match(/data-kit-uncoloured=""/g)).toHaveLength(2);
   expect(empty.match(/stroke-dasharray="6 4"/g)).toHaveLength(2);
   for (const mark of ["clear", "ion"]) {
-    const marked = drawn([species("reagent", "u1", { mark }), species("product", "u2", { material: "--dye-kut" })]);
+    const marked = drawn([species("reagent", "u0601", { mark }), species("product", "u0602", { material: "--dye-kut" })]);
     expect(marked).toContain(`data-kit-mark="${mark}"`);
     expect(marked).not.toContain("stroke-dasharray");
   }
