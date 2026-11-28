@@ -14,7 +14,7 @@ export const LEDE_KICKER = "The monograph";
 export const TITLE_SIZE_MAX_CHARS = 18;
 
 export type MastheadPhoto = { src: string; alt: string; originalWidth: number; originalHeight: number; focal: FocalBox | undefined; caption: string; credit: string };
-export type MastheadPlate = { picture: Picture; captions: CaptionLine[]; credit: string };
+export type MastheadPlate = { label: string; picture: Picture; captions: CaptionLine[]; credit: string };
 
 export type DocumentLabel = {
   kicker: string;
@@ -60,8 +60,8 @@ function plateSpec(document: MonographDocument, label: string | null): PicturePl
 
 export function mastheadPlate(document: MonographDocument, label: string | null): MastheadPlate | null {
   const plate = plateSpec(document, label);
-  if (!plate?.figure) return null;
-  return { picture: plate.picture, captions: plate.figure.captions, credit: plate.figure.credit };
+  if (!label || !plate?.figure) return null;
+  return { label, picture: plate.picture, captions: plate.figure.captions, credit: plate.figure.credit };
 }
 
 export function mastheadPhoto(document: MonographDocument, label: string | null): MastheadPhoto | null {

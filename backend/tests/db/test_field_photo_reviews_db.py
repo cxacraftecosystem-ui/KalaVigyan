@@ -42,7 +42,7 @@ async def test_a_held_photograph_stays_hidden_until_its_own_decision_shows_it() 
         await decided(session, image, await person(session, "ADMIN"), photos, decision="SHOW")
         assert ITEM in await photo_ids(session, craft.id)
         served = await served_photo(session, image.id)
-        assert served is not None and served.key == image.objectKey
+        assert served is not None and (served.key, served.mime) == (image.objectKey, image.mimeType)
         listed = await field_list(session, craft, kind="images", cursor=None)
         assert ITEM in {photo.item_id for photo in listed.images}
 

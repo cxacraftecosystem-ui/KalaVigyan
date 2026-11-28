@@ -110,7 +110,7 @@ export function MastheadPlateView({ document, view }: { document: MonographDocum
     );
   }
   return (
-    <figure className="plate kv-open-photo">
+    <figure className="plate kv-open-photo" data-component={view.plate.label}>
       <div className="kv-open-stage">
         <Photo plate={view.plate} />
         <LabelCard view={view} />

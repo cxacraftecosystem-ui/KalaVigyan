@@ -14,6 +14,12 @@ export const API_SESSION_TOKEN_HEADER = "x-session-token";
 export const RENDER_PASS_HEADER = "x-kv-render-pass";
 export const OWN_PICTURES_PATH = "/api/knowledge/pages/pictures/";
 export const DRAWN_PICTURES_PATH = "/api/knowledge/pages/drawn-pictures/";
+export const FIELD_PHOTOS_PATH = "/api/field-voices/images/";
+export const DRAWN_FIELD_PHOTOS_PATH = "/api/knowledge/pages/drawn-field-photos/";
+const DRAWN_PATHS: readonly (readonly [string, string])[] = [
+  [OWN_PICTURES_PATH, DRAWN_PICTURES_PATH],
+  [FIELD_PHOTOS_PATH, DRAWN_FIELD_PHOTOS_PATH]
+];
 
 const FALLBACK_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
 
@@ -190,11 +196,15 @@ export function upstreamHeaders(request: Request, token: string | null, source: 
   return headers;
 }
 
+function drawnPath(pathname: string): string | null {
+  const found = DRAWN_PATHS.find(([shown]) => pathname.startsWith(shown));
+  return found ? `${found[1]}${pathname.slice(found[0].length)}` : null;
+}
+
 export function upstreamPath(request: Request): string {
   const url = new URL(request.url);
-  const drawn = request.headers.has(RENDER_PASS_HEADER) && url.pathname.startsWith(OWN_PICTURES_PATH);
-  const path = drawn ? `${DRAWN_PICTURES_PATH}${url.pathname.slice(OWN_PICTURES_PATH.length)}` : url.pathname;
-  return `${path}${url.search}`;
+  const drawn = request.headers.has(RENDER_PASS_HEADER) ? drawnPath(url.pathname) : null;
+  return `${drawn ?? url.pathname}${url.search}`;
 }
 
 export function upstreamUrl(request: Request, origin: string): string {

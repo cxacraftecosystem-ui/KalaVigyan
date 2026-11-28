@@ -135,7 +135,7 @@ async def test_the_crop_is_served_and_the_original_never_is() -> None:
         )
         assert made.made_key is not None and made.made_key != image.objectKey
         served = await served_photo(session, image.id)
-        assert served is not None and served.key == made.made_key
+        assert served is not None and (served.key, served.mime) == (made.made_key, "image/jpeg")
         body, mime = photos.objects[made.made_key]
         assert mime == "image/jpeg" and body != photos.objects[image.objectKey][0]
         listed, _total = await craft_field_photos(session, craft.id, limit=25, offset=0)
