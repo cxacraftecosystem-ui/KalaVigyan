@@ -3,6 +3,9 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
+from app.research.monograph_document import MonographDocument
+from app.research.page_report import ReportInput, page_report
+from app.research.page_report_read import ReadPage
 from app.research.why_here import WHY_HERE_KIND
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
@@ -21,6 +24,7 @@ from .generated_parts import BAGH, generated
 
 RIVER = "The Baghini river runs past the printers' village."
 RAIN = "Monsoon rain stops the printing for three months."
+TRADE = "Printers in Bagh sell their printed cloth in Indore."
 LABEL = "bagh-print/geography/why-here"
 SLOT = f'<div class="kv-page kv-why-here" data-app=""><kv-slot component="{LABEL}"></kv-slot></div>'
 
@@ -141,3 +145,38 @@ def test_the_tag_of_a_stored_document_changes_with_its_ground() -> None:
     folded = f"{'a' * 64}:{ground.model_dump_json(by_alias=True)}"
     assert ground_hash("a" * 64, ground) == hashlib.sha256(folded.encode("utf-8")).hexdigest()
     assert ground_hash("a" * 64, None) == "a" * 64
+
+
+def drawn_with_ground(tmp_path: Path, *texts: str) -> MonographDocument:
+    told = tuple({"text": text, "claimIds": [str(BAGH)]} for text in texts)
+    base = generated()
+    parts = dataclasses.replace(
+        base,
+        sections=(*base.sections, StoredSection("GEOGRAPHY", 1, told)),
+        pictures=(),
+        ground=fixture_ground(),
+    )
+    built = assembled_document(parts, Drawings(root=tmp_path))
+    assert built is not None
+    return built
+
+
+def geography_line(document: MonographDocument) -> tuple[int, str]:
+    lines = {line.field: line for line in page_report(ReportInput(document=document), {}).fields}
+    return lines["GEOGRAPHY"].sentences, lines["GEOGRAPHY"].standing
+
+
+def test_a_sentence_the_ground_figure_holds_still_counts_for_its_field_as_the_page_draws_it(
+    tmp_path: Path,
+) -> None:
+    built = drawn_with_ground(tmp_path, RIVER, RAIN, TRADE)
+    assert built.specs[LABEL]["notes"][0]["reading"] == "river"
+    page = ReadPage.of(built)
+    assert (page.by_field()["GEOGRAPHY"], page.told_by_field()["GEOGRAPHY"]) == (2, 3)
+    assert geography_line(built) == (3, "DENSE")
+
+
+def test_a_place_field_of_two_sentences_stays_thin_though_its_figure_holds_one(tmp_path: Path) -> None:
+    built = drawn_with_ground(tmp_path, RIVER, RAIN)
+    assert [note["reading"] for note in built.specs[LABEL]["notes"]] == ["river"]
+    assert geography_line(built) == (2, "THIN")

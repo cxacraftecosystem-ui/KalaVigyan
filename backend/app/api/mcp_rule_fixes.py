@@ -41,10 +41,14 @@ RULE_FIXES: Mapping[int, str] = MappingProxyType(
         23: FIELD_PROSE,
         24: FIELD_PROSE,
         25: (
-            "edit_draft: remove the figure whose unit repeats a sentence and add it back with units that add "
-            "to the prose"
+            "edit_draft: remove the figure each line names, whose unit repeats the sentence it quotes, and add "
+            "it back with units that add to the prose"
         ),
-        26: FIELD_PROSE,
+        26: (
+            f"{FIELD_PROSE}; a text that reads as a gap is named with its unit and its facts: edit_draft for "
+            "the page's own unit, propose_facts for a fact stated from what its source finds, and an Admin "
+            "retracts the gap's fact with stage_reviews"
+        ),
         27: (
             "edit_draft: remove the figure and add it back drawn with the design's tokens and the kit "
             "(kit-stylesheet/1)"
